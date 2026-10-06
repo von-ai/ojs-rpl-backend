@@ -1,3 +1,49 @@
+# OJS RPL Backend
+
+## PostgreSQL for Local Development
+
+The service uses PostgreSQL 18. Make sure Docker and Docker Compose are
+available, then copy the example configuration:
+
+```sh
+cp .env.example .env
+```
+
+Start PostgreSQL:
+
+```sh
+docker compose up -d --wait postgres
+```
+
+The database is available at `127.0.0.1:5432`, with the database name and
+username `ojs_rpl` and the development password `ojs_rpl_dev`. You can
+customize these settings through the `DB_*` variables in `.env`.
+Applications running on the host can use these settings to connect to PostgreSQL.
+
+Check the service status or open the database console:
+
+```sh
+docker compose ps
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Stop the service:
+
+```sh
+docker compose down
+```
+
+Data is stored in the `postgres_data` volume and persists after the service
+stops. `docker compose down -v` deletes the volume and all its data.
+The database name, username, and password variables are only applied when
+the volume is first initialized; changing `.env` does not modify an existing database.
+
+If the volume already contains PostgreSQL 16 data, migrate it to PostgreSQL
+18 using dump/restore or `pg_upgrade` before using this configuration.
+Changing the image version does not automatically migrate existing data.
+
+## Laravel
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
