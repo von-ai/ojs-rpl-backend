@@ -128,12 +128,209 @@ test('reviewer authorization cannot return the identity-bearing submission schem
 
 test('review workspace is blind while preserving the originating reviewer draft', () => {
     const workspace = { data: { assignment_id: 'assignment-1', manuscript_file_id: 'anonymous-file-1', title: 'Title', abstract: 'Abstract', deadline: '2026-10-20T00:00:00Z', guidelines: 'Guidelines', draft: null }, meta: { request_id: 'request-1' } };
+    workspace.data.rubric = { id: 'rubric-1', version: 1, criteria: { originality: 'Originality', methodology: 'Methodology', clarity: 'Clarity', significance: 'Significance' }, minimum_score: 1, maximum_score: 5, guidelines: 'Review fairly.' };
     check('ReviewWorkspaceResponse', workspace);
     for (const key of ['author_id', 'contributors', 'other_reviewers', 'source_object_key']) {
         check('ReviewWorkspaceResponse', { ...workspace, data: { ...workspace.data, [key]: 'private' } }, false);
     }
     assert.match(getOperation('getReviewerWorkspace').description, /accepted/);
     assert.match(getOperation('downloadPrivateFile').description, /after accepting/);
+});
+
+test('a new submission can be saved before metadata and guideline consent are complete', () => {
+    check('CreateSubmissionRequest', { title: 'Working title' });
+    check('CreateSubmissionRequest', { author_guidelines_accepted: false });
+    check('CreateSubmissionRequest', {}, false);
+    check('CreateSubmissionRequest', { title: 'Working title', status: 'published' }, false);
+    assert.match(getOperation('submitSubmission').description, /complete|non-empty/);
+    assert.deepEqual(getOperation('completeIncompleteSubmission')['x-workflow'].allowed_states, ['incomplete']);
+});
+
+test('public issues reject drafts and editorial readiness information', () => {
+    const issue = { id: 'issue-1', type: 'issue', attributes: { journal_id: 'journal-1', volume: '1', number: '1', year: 2026, title: 'Issue', status: 'published', articles: [] } };
+    check('PublicIssueResource', issue);
+    check('PublicIssueResource', { ...issue, attributes: { ...issue.attributes, status: 'draft' } }, false);
+    for (const field of ['readiness_errors', 'scheduled_at', 'ready_to_publish', 'publication_failure_code']) {
+        check('PublicIssueResource', { ...issue, attributes: { ...issue.attributes, [field]: 'private' } }, false);
+    }
+    for (const name of ['listPublicIssues', 'getPublicIssue', 'getCurrentPublicIssue']) {
+        assert.match(getOperation(name).responses['200'].content['application/json'].schema.$ref, /PublicIssue/);
+    }
+});
+
+test('every paginated collection requires pagination totals and links', () => {
+    for (const { operation } of operations) {
+        if (!(operation.parameters ?? []).map(resolve).some(p => p.name === 'page')) continue;
+        const envelope = resolve(operation.responses['200'].content['application/json'].schema);
+        assert.ok(envelope.required.includes('links'), operation.operationId);
+        assert.ok(resolve(envelope.properties.meta).required.includes('pagination'), operation.operationId);
+    }
+});
+
+test('upload purpose binds MIME and existing parent before a dependent resource is created', () => {
+    const upload = { journal_id: 'journal-1', resource_type: 'submission', resource_id: 'submission-1', purpose: 'galley_final', file_name: 'galley.pdf', content_type: 'application/pdf', size: 1024, checksum_sha256: 'a'.repeat(64), mode: 'single' };
+    check('CreateUploadSessionRequest', upload);
+    check('CreateUploadSessionRequest', { ...upload, resource_type: 'galley' }, false);
+    check('CreateUploadSessionRequest', { ...upload, purpose: 'primary_manuscript', content_type: 'text/html' }, false);
+    check('CreateUploadSessionRequest', { ...upload, purpose: 'reviewer_annotation', resource_type: 'review' });
+    check('CreateUploadSessionRequest', { ...upload, purpose: 'reviewer_annotation', resource_type: 'submission' }, false);
+    check('CreateUploadSessionRequest', { ...upload, arbitrary_storage_key: 'private/object' }, false);
+    assert.ok(getOperation('getUploadSession'));
+    assert.ok(getOperation('abortUploadSession'));
+});
+
+test('single and multipart completion payloads are unambiguous and bounded', () => {
+    const part = { part_number: 1, etag: 'etag-1', size: 1024, checksum_sha256: 'a'.repeat(64) };
+    check('CompleteUploadRequest', { mode: 'single', etag: 'etag-1' });
+    check('CompleteUploadRequest', { mode: 'multipart', parts: [part] });
+    check('CompleteUploadRequest', { mode: 'single', etag: 'etag-1', parts: [part] }, false);
+    check('CompleteUploadRequest', { mode: 'multipart', parts: [] }, false);
+    check('CompleteUploadRequest', { mode: 'multipart', parts: [{ ...part, part_number: 5 }] }, false);
+    check('UploadPartRequest', { part_number: 1, size: 5242881, checksum_sha256: 'a'.repeat(64) }, false);
+    assert.match(getOperation('completeUploadSession').description, /unique, contiguous and complete/);
+});
+
+test('terminal upload sessions cannot return a reusable signed target', () => {
+    const session = { data: { id: 'upload-1', type: 'upload_session', attributes: { file_id: 'file-1', mode: 'single', status: 'completed', expires_at: '2026-10-07T00:00:00Z', version: 1 } }, meta: { request_id: 'request-1' } };
+    Object.assign(session.data.attributes, { size: 1024, checksum_sha256: 'a'.repeat(64), content_type: 'application/pdf', file_name: 'manuscript.pdf' });
+    check('UploadSessionResponse', session);
+    check('UploadSessionResponse', { ...session, data: { ...session.data, attributes: { ...session.data.attributes, upload_url: 'https://storage.example.org/private' } } }, false);
+    const active = { ...session.data.attributes, status: 'pending_upload', upload_url: 'https://storage.example.org/upload', method: 'PUT', required_headers: {} };
+    check('UploadSessionResponse', { ...session, data: { ...session.data, attributes: active } });
+});
+
+test('copyedit approvals bind the whole output set and final galley requires a predecessor', () => {
+    check('CopyeditApprovalRequest', { files: [{ file_id: 'file-1', checksum_sha256: 'a'.repeat(64) }, { file_id: 'file-2', checksum_sha256: 'b'.repeat(64) }] });
+    check('CopyeditApprovalRequest', { files: [] }, false);
+    check('CopyeditApprovalRequest', { file_id: 'file-1', checksum_sha256: 'a'.repeat(64) }, false);
+    assert.equal(getOperation('approveCopyeditAsAuthor').requestBody.content['application/json'].schema.$ref, '#/components/schemas/CopyeditApprovalRequest');
+    check('CreateGalleyRequest', { file_id: 'file-1', format: 'pdf', stage: 'draft' });
+    check('CreateGalleyRequest', { file_id: 'file-1', format: 'pdf', stage: 'final' }, false);
+    check('CreateGalleyRequest', { file_id: 'file-1', format: 'pdf', stage: 'final', supersedes_galley_id: 'proof-1' });
+});
+
+test('journal managers cannot mutate a global profile through membership administration', () => {
+    check('UpdateJournalUserRequest', { expertise: ['Environment'], status: 'active' });
+    for (const field of ['full_name', 'email', 'affiliation', 'password', 'system_roles']) {
+        check('UpdateJournalUserRequest', { [field]: 'new value' }, false);
+    }
+    check('UpdateProfileRequest', { full_name: 'Account Owner' });
+    assert.deepEqual(getOperation('deleteSystemUser')['x-required-roles'], ['system_administrator']);
+    assert.deepEqual(getOperation('removeJournalMembership')['x-required-roles'], ['journal_manager']);
+    assert.match(getOperation('removeJournalMembership').description, /active submissions/);
+});
+
+test('active context distinguishes global administrator from a journal role', () => {
+    check('ActiveContext', { journal_id: 'journal-1', role: 'author' });
+    check('ActiveContext', { journal_id: null, role: 'system_administrator' });
+    check('ActiveContext', { journal_id: 'journal-1', role: 'system_administrator' }, false);
+    check('ActiveContext', { journal_id: null, role: 'journal_manager' }, false);
+});
+
+test('reviewer application and extension decisions require a reason and restricted actors', () => {
+    check('ReviewerApplicationRequest', { expertise: ['Environment'], statement: 'Research experience.' });
+    check('ReviewerApplicationRequest', { expertise: [], statement: 'Research experience.' }, false);
+    check('ApplicationDecisionRequest', { decision: 'approve', reason: 'Expertise verified' });
+    check('ApplicationDecisionRequest', { decision: 'approve' }, false);
+    check('ExtensionDecisionRequest', { decision: 'decline', reason: 'Issue deadline' });
+    check('ExtensionDecisionRequest', { decision: 'decline' }, false);
+    assert.deepEqual(getOperation('decideReviewerApplication')['x-required-roles'], ['journal_manager']);
+    assert.ok(!getOperation('decideReviewExtension')['x-required-roles'].includes('reviewer'));
+});
+
+test('integration testing cannot accept arbitrary hosts or apply unbound raw secrets', () => {
+    check('IntegrationCandidateRequest', { configuration_profile_id: 'profile-1', credential_ref: 'credentials/crossref-1' });
+    check('IntegrationCandidateRequest', { configuration_profile_id: 'profile-1', credential_ref: 'credentials/crossref-1', url: 'http://127.0.0.1/admin' }, false);
+    check('TestIntegrationRequest', { candidate_id: 'candidate-1' });
+    check('TestIntegrationRequest', { candidate_settings: { url: 'http://169.254.169.254' } }, false);
+    check('UpdateSystemSettingsRequest', { integration_secrets: { crossref: 'raw-secret' } }, false);
+    check('ApplyIntegrationRequest', { candidate_id: 'candidate-1', reason: 'Verified in sandbox' });
+    check('ApplyIntegrationRequest', { reason: 'No test' }, false);
+    assert.match(getOperation('applyTestedIntegration').description, /passed, unexpired/);
+});
+
+test('human and automated audit actors have distinct required identities', () => {
+    const event = { id: 'event-1', type: 'audit_log', attributes: { journal_id: null, actor_id: null, effective_role: null, actor_type: 'system', system_actor: 'publication_scheduler', action: 'issue.published', resource_type: 'issue', resource_id: 'issue-1', request_id: 'request-1', occurred_at: '2026-10-07T00:00:00Z' } };
+    check('AuditLogResource', event);
+    check('AuditLogResource', { ...event, attributes: { ...event.attributes, actor_id: 'forged-user' } }, false);
+    check('AuditLogResource', { ...event, attributes: { ...event.attributes, actor_type: 'user', actor_id: 'user-1', effective_role: 'system_administrator', system_actor: null } });
+    check('AuditLogResource', { ...event, attributes: { ...event.attributes, actor_type: 'user', system_actor: null } }, false);
+    assert.deepEqual(getOperation('listSystemAuditLogs')['x-required-roles'], ['system_administrator']);
+});
+
+test('revision decisions require a due date while accept/reject do not', () => {
+    check('CreateEditorialDecisionRequest', { decision: 'accept', note_for_author: 'Accepted.' });
+    check('CreateEditorialDecisionRequest', { decision: 'major_revision', note_for_author: 'Revise.' }, false);
+    check('CreateEditorialDecisionRequest', { decision: 'major_revision', note_for_author: 'Revise.', revision_due_at: '2026-11-01T00:00:00Z' });
+    check('OverrideDecisionRequest', { corrected_decision: 'minor_revision', note_for_author: 'Revise.', reason: 'Correct previous decision' }, false);
+});
+
+test('session and password policies have achievable bounded values', () => {
+    check('UpdateSystemSettingsRequest', { access_token_minutes: 15, session_max_minutes: 1440, password_min_length: 12 });
+    check('UpdateSystemSettingsRequest', { access_token_minutes: 1441 }, false);
+    check('UpdateSystemSettingsRequest', { password_min_length: 129 }, false);
+    check('UpdateJournalSettingsRequest', { revision_grace_days: null, auto_withdraw_overdue_revisions: false });
+    check('UpdateJournalSettingsRequest', { revision_grace_days: -1 }, false);
+});
+
+test('journal content CRUD is private and published projections reject draft content', () => {
+    for (const kind of ['Section', 'JournalPage', 'Announcement', 'EmailTemplate']) {
+        for (const action of ['create', 'update', 'delete']) assert.deepEqual(getOperation(`${action}${kind}`)['x-required-roles'], ['journal_manager']);
+    }
+    const page = { id: 'page-1', type: 'journal_page', attributes: { slug: 'about', title: 'About', body_html: '<p>About this journal.</p>', published: true } };
+    check('PublicJournalPageResource', page);
+    check('PublicJournalPageResource', { ...page, attributes: { ...page.attributes, published: false } }, false);
+    assert.ok(getOperation('getSubmissionPolicy').security.length === 0);
+});
+
+test('all detailed SRS use cases have traceable operations and no endpoint claims implementation', () => {
+    const covered = new Set(operations.flatMap(({ operation }) => operation['x-use-cases'] ?? []));
+    for (let i = 1; i <= 18; i++) assert.ok(covered.has(`UC-${String(i).padStart(2, '0')}`));
+    for (const { operation } of operations) {
+        assert.equal(operation['x-implementation-status'], 'planned', operation.operationId);
+        assert.ok(operation['x-non-functional-requirements'].includes('NF-07'));
+    }
+});
+
+test('workflow guards refer to known states and always document a conflict response', () => {
+    for (const { operation } of operations) {
+        const flow = operation['x-workflow'];
+        if (!flow) continue;
+        const states = resolve(flow.state_schema).enum;
+        for (const state of flow.allowed_states) assert.ok(states.includes(state), `${operation.operationId}: ${state}`);
+        const outcomes = [flow.resulting_state, ...Object.values(flow.result_by_decision ?? {}), ...Object.values(flow.result_by_stage ?? {})].filter(Boolean);
+        for (const state of outcomes) assert.ok(states.includes(state), `${operation.operationId}: ${state}`);
+        assert.ok(operation.responses['409']);
+    }
+});
+
+test('GET operations never accept request bodies and public reads never inherit bearer security', () => {
+    for (const { path, method, operation } of operations) {
+        if (method === 'get') assert.equal(operation.requestBody, undefined, operation.operationId);
+        if (path.startsWith('/api/v1/public/') || path === '/oai') assert.deepEqual(operation.security, [], operation.operationId);
+        if (path.startsWith('/api/v1/system/')) assert.deepEqual(operation['x-required-roles'], ['system_administrator'], operation.operationId);
+    }
+});
+
+test('OAuth callback can represent denial while preserving mandatory state binding', () => {
+    const callback = getOperation('handleOrcidCallback');
+    const params = callback.parameters.map(resolve);
+    assert.equal(params.find(p => p.name === 'state').required, true);
+    assert.notEqual(params.find(p => p.name === 'code').required, true);
+    assert.ok(params.some(p => p.name === 'error'));
+    assert.match(callback.description, /exactly one of code or error/);
+    assert.ok(getOperation('getOrcidConnection'));
+    assert.ok(api.paths['/api/v1/auth/orcid/authorize'].post);
+    assert.equal(api.paths['/api/v1/auth/orcid/authorize'].get, undefined);
+});
+
+test('journal templates cannot override authentication/security email and mononyms remain valid', () => {
+    check('EmailTemplateEvent', 'review.invitation');
+    check('EmailTemplateEvent', 'account.password_reset', false);
+    assert.ok(getOperation('listEmailTemplateEvents'));
+    check('Contributor', { family_name: 'Adrian', email: 'author@example.org', affiliation: 'University', sequence: 1, corresponding: true });
+    check('PublicContributor', { family_name: 'Adrian', affiliation: 'University', sequence: 1, corresponding: true });
+    check('CreateReviewRoundRequest', { review_type: 'single_blind', minimum_completed_reviews: 1, manuscript_file_id: 'file-1' }, false);
 });
 
 test('author feedback rejects confidential comments and reviewer identifiers', () => {

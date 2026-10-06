@@ -1,5 +1,11 @@
 # SIRIDA backend and API contract review
 
+**Follow-up, 7 October 2026:** draft.3 now defines 201 planned operations and closes
+the contract gaps below. See [current contract decisions and gap closure](contract-decisions.md)
+for the updated behavior, 37 contract regressions and remaining runtime/deployment
+gates. The findings, traceability and test counts below are the historical draft.2
+review; they do not describe gaps still missing from draft.3.
+
 Reviewed on 6 October 2026 against `main` commit
 [`87a13f3`](https://github.com/von-ai/ojs-rpl-backend/tree/87a13f3).
 
@@ -76,7 +82,7 @@ challenge. Import routes move from `/users/imports` to `/user-imports` to remove
 overlap with `/users/{user_id}/...`. These are breaking draft-contract corrections;
 frontend mocks and generated clients must regenerate from draft.2.
 
-## Proposal traceability and remaining implementation work
+## Historical draft.2 traceability and remaining implementation work
 
 **Every row below is unimplemented at runtime.** “Covered” describes contract
 coverage only. The remaining column also identifies contract/product gaps that
@@ -145,7 +151,7 @@ Team decisions before implementation:
 7. Keep payment/APC out of version 1 per SRS scope. Existing access-model enum values
    are policy metadata, not an implemented entitlement or payment system.
 
-## Validation and limits
+## Historical draft.2 validation and limits
 
 Run from a clean checkout:
 

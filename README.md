@@ -7,9 +7,12 @@ This repository currently contains a Laravel scaffold and a **planned**
 registered or implemented. Do not use the contract as evidence that authentication,
 authorization, submission or publishing functionality is production-ready.
 
-See the [SIRIDA proposal review](docs/review-srs.md) for corrected contract defects,
-use-case traceability, remaining implementation work and unresolved product/hosting
-decisions. Draft contract changes require regenerating client mocks and SDKs.
+The current draft.3 defines 201 planned operations. See the
+[contract decisions and gap closure](docs/contract-decisions.md) for workflow,
+privacy, upload, integration and configuration rules, and the
+[historical SIRIDA proposal review](docs/review-srs.md) for original findings.
+Draft contract changes require regenerating client mocks and SDKs; upload-session
+routes now use `/api/v1/upload-sessions` and several response/request schemas changed.
 
 Validate the contract with Node.js 22.12+ (development/CI tooling only):
 
