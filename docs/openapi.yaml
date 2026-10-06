@@ -2,7 +2,7 @@ openapi: 3.1.1
 jsonSchemaDialect: https://spec.openapis.org/oas/3.1/dialect/base
 info:
   title: BRIDA Scientific Journal Management API
-  version: 1.0.0-draft.1
+  version: 1.0.0-draft.2
   summary: REST API contract for the BRIDA journal editorial and publishing platform.
   description: |
     Contract-first API for a modular Laravel monolith covering authentication, RBAC,
@@ -16,6 +16,21 @@ info:
 
     Payment and APC processing are intentionally excluded from version 1 because the
     approved SRS classifies them as out of scope.
+
+    Implementation status: planned contract. The Laravel application currently exposes
+    only the scaffold routes; these domain endpoints are not implemented yet. See
+    docs/review-srs.md for traceability, unresolved decisions, and implementation gates.
+
+    Authorization requires an active, verified account, journal membership and
+    object ownership or assignment as well as the listed role. Every path/body/file
+    identifier must belong to the same authorized journal and workflow. Global roles
+    are separate from journal memberships. A role alone never grants object access.
+
+    Optimistic concurrency: x-concurrency-resource identifies the aggregate whose
+    strong ETag must be obtained with GET and sent unchanged in If-Match. Command
+    subresources share that aggregate version. A stale validator returns 412; a
+    missing required validator returns 428; workflow conflicts return 409. Re-fetch
+    the aggregate after a command. Never manufacture ETags from a version number.
   contact:
     name: BRIDA Journal Platform Team
   license:
@@ -29,23 +44,41 @@ servers:
     description: Local development
 tags:
   - name: Authentication
+    description: Account registration, verification, sessions and password recovery.
   - name: ORCID
+    description: Researcher identity linking through ORCID OAuth.
   - name: Public Catalog
+    description: Published journal, issue and article projections.
   - name: Submissions
+    description: Author submissions, revisions and workflow history.
   - name: Files
+    description: Authorized file uploads, scanning and downloads.
   - name: Desk Review
+    description: Initial editorial screening and editor assignments.
   - name: Peer Review
+    description: Reviewer invitations, blind workspaces and evaluations.
   - name: Editorial Decisions
+    description: Internal decisions and author-safe released feedback.
   - name: Production
+    description: Copyediting, galley versions and proofreading approvals.
   - name: Issues
+    description: Issue composition, scheduling and publication.
   - name: Users and Roles
+    description: Journal memberships and scoped role administration.
   - name: Settings
+    description: Journal and platform configuration.
   - name: Notifications
+    description: Current-user notifications and event summaries.
   - name: Audit
+    description: Sanitized append-only audit history.
   - name: Operations
+    description: Authorized asynchronous job progress.
   - name: Crossref
+    description: DOI XML deposits, status and retries.
   - name: OAI-PMH
+    description: OAI-PMH 2.0 metadata harvesting.
   - name: Health
+    description: Process liveness and dependency readiness.
 security:
   - bearerAuth: []
 components:
@@ -54,14 +87,17 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Short-lived access JWT. Refresh tokens are rotated through the refresh endpoint.
+      description: Access JWT with a lifetime of at most 24 hours (NF-02). Refresh tokens rotate once per
+        use; replay revokes the token family. Logout, password reset, account deactivation and role
+        changes must revoke or re-evaluate affected sessions and permissions.
   headers:
     XRequestId:
       description: Correlation identifier for logs, audit records, and support.
       schema:
         type: string
     ETag:
-      description: Opaque resource version used for optimistic concurrency.
+      description: Opaque strong validator. Read it from the relevant GET response; never infer it from
+        the version field.
       schema:
         type: string
         example: '"7"'
@@ -70,6 +106,16 @@ components:
       schema:
         type: integer
         minimum: 1
+    NoStore:
+      description: Sensitive responses must not be stored by browsers or shared caches.
+      schema:
+        type: string
+        const: no-store
+    WwwAuthenticate:
+      description: HTTP authentication challenge for bearer-protected resources.
+      schema:
+        type: string
+        example: Bearer realm="sirida"
   parameters:
     JournalId:
       name: journal_id
@@ -218,7 +264,10 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Unique client-generated key. Reusing it with a different payload returns 409.
+      description: Unique client-generated key scoped to actor, journal and operation. Retain the request
+        fingerprint and result for at least 24 hours. Reuse with a different payload returns 409. After
+        authentication/authorization, replay an identical completed request before evaluating changed
+        workflow versions; do not repeat side effects.
       schema:
         type: string
         minLength: 16
@@ -227,32 +276,49 @@ components:
       name: If-Match
       in: header
       required: true
-      description: ETag of the resource version being mutated.
+      description: Strong ETag from GET of x-concurrency-resource. Stale validators return 412; missing
+        validators return 428.
       schema:
         type: string
     IfMatchOptional:
       name: If-Match
       in: header
       required: false
-      description: Required when replacing an existing draft; omitted when creating it.
+      description: "Required when replacing an existing draft. For first creation, omit this header and
+        send If-None-Match: * instead."
       schema:
         type: string
+    IfNoneMatchCreate:
+      name: If-None-Match
+      in: header
+      required: false
+      description: Use * only for first creation of a review draft. Send exactly one of If-Match (replace)
+        or If-None-Match (create).
+      schema:
+        type: string
+        const: "*"
   responses:
     Accepted:
       description: Request accepted for asynchronous processing.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     NoContent:
       description: Request completed with no response body.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     BadRequest:
       description: Malformed or semantically invalid request.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
       content:
         application/problem+json:
           schema:
@@ -262,6 +328,10 @@ components:
       headers:
         X-Request-ID:
           $ref: "#/components/headers/XRequestId"
+        WWW-Authenticate:
+          $ref: "#/components/headers/WwwAuthenticate"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
       content:
         application/problem+json:
           schema:
@@ -281,14 +351,25 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     NotFound:
       description: Resource was not found or is hidden by object-level authorization.
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     Conflict:
-      description: State transition, idempotency, uniqueness, or resource-version conflict.
+      description: Workflow state, idempotency or uniqueness conflict. An unsuccessful If-Match
+        precondition returns 412 instead.
       content:
         application/problem+json:
           schema:
@@ -302,12 +383,22 @@ components:
             instance: /api/v1/journals/01J/submissions/01S/submit
             request_id: 01K5REQUEST00000000000001
             errors: []
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     Gone:
       description: A one-time token or upload session has expired.
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     ValidationError:
       description: One or more fields failed validation.
       content:
@@ -326,11 +417,20 @@ components:
               - field: email
                 code: already_exists
                 message: The email is already registered.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
     RateLimited:
       description: Rate limit exceeded.
       headers:
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
       content:
         application/problem+json:
           schema:
@@ -340,10 +440,37 @@ components:
       headers:
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+    PreconditionFailed:
+      description: The supplied conditional header does not match the current resource. Fetch the current
+        representation before retrying.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+    PreconditionRequired:
+      description: A required conditional header is missing. Fetch the relevant resource ETag before changing it.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/XRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
   schemas:
     Identifier:
       type: string
@@ -441,17 +568,9 @@ components:
           items:
             $ref: "#/components/schemas/ValidationIssue"
     Role:
-      type: string
-      enum:
-        - author
-        - reviewer
-        - section_editor
-        - editor_in_chief
-        - copy_editor
-        - layout_editor
-        - proofreader
-        - journal_manager
-        - system_administrator
+      oneOf:
+        - $ref: "#/components/schemas/JournalRole"
+        - $ref: "#/components/schemas/SystemRole"
     SubmissionStatus:
       type: string
       enum:
@@ -546,7 +665,11 @@ components:
       type: object
       additionalProperties: false
       required:
-        [full_name, email, username, password, affiliation, requested_role]
+        - full_name
+        - email
+        - username
+        - password
+        - affiliation
       properties:
         full_name:
           type: string
@@ -571,7 +694,25 @@ components:
         requested_role:
           type: string
           enum: [author, reviewer]
-          description: Reviewer may require Journal Manager approval; author is the default active role.
+          description: A reviewer request is pending until Journal Manager approval in the selected journal.
+            It never immediately grants reviewer privileges. Reader/Author is the default after verification.
+          default: author
+        journal_id:
+          $ref: "#/components/schemas/Identifier"
+          description: Journal receiving a reviewer application; required when requested_role is reviewer.
+      allOf:
+        - if:
+            properties:
+              requested_role:
+                const: reviewer
+            required:
+              - requested_role
+          then:
+            required:
+              - journal_id
+            properties:
+              journal_id:
+                $ref: "#/components/schemas/Identifier"
     TokenRequest:
       type: object
       additionalProperties: false
@@ -648,14 +789,18 @@ components:
           const: Bearer
         access_token:
           type: string
-          writeOnly: true
+          readOnly: true
         access_token_expires_at:
           $ref: "#/components/schemas/Timestamp"
+          description: No later than 24 hours after access token issuance. Refreshing must respect the server
+            session policy.
         refresh_token:
           type: string
-          writeOnly: true
+          readOnly: true
         refresh_token_expires_at:
           $ref: "#/components/schemas/Timestamp"
+      description: Returned only over TLS on successful login/refresh. Never log tokens or include them in
+        URLs, audit snapshots, notifications or SSE.
     UserAttributes:
       type: object
       additionalProperties: false
@@ -715,7 +860,7 @@ components:
           type: array
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/Role"
+            $ref: "#/components/schemas/JournalRole"
         permissions:
           type: array
           uniqueItems: true
@@ -733,19 +878,6 @@ components:
           $ref: "#/components/schemas/UserResource"
         meta:
           $ref: "#/components/schemas/ResourceMeta"
-    UserListResponse:
-      type: object
-      additionalProperties: false
-      required: [data, meta, links]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/UserResource"
-        meta:
-          $ref: "#/components/schemas/ResourceMeta"
-        links:
-          $ref: "#/components/schemas/PaginationLinks"
     MeResponse:
       type: object
       additionalProperties: false
@@ -754,7 +886,10 @@ components:
         data:
           type: object
           additionalProperties: false
-          required: [user, memberships]
+          required:
+            - user
+            - memberships
+            - system_roles
           properties:
             user:
               $ref: "#/components/schemas/UserResource"
@@ -762,6 +897,13 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Membership"
+            system_roles:
+              type: array
+              items:
+                $ref: "#/components/schemas/SystemRole"
+              uniqueItems: true
+              description: Global roles granted through a separate privileged provisioning process; never derived
+                from journal memberships.
         meta:
           $ref: "#/components/schemas/ResourceMeta"
     AuthTokenResponse:
@@ -772,7 +914,11 @@ components:
         data:
           type: object
           additionalProperties: false
-          required: [tokens, user, memberships]
+          required:
+            - tokens
+            - user
+            - memberships
+            - system_roles
           properties:
             tokens:
               $ref: "#/components/schemas/AuthTokens"
@@ -782,6 +928,13 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Membership"
+            system_roles:
+              type: array
+              items:
+                $ref: "#/components/schemas/SystemRole"
+              uniqueItems: true
+              description: Global roles granted through a separate privileged provisioning process; never derived
+                from journal memberships.
         meta:
           $ref: "#/components/schemas/ResourceMeta"
     OrcidAuthorizationResponse:
@@ -943,7 +1096,7 @@ components:
         contributors:
           type: array
           items:
-            $ref: "#/components/schemas/Contributor"
+            $ref: "#/components/schemas/PublicContributor"
         doi:
           type: string
         published_at:
@@ -1464,7 +1617,13 @@ components:
           $ref: "#/components/schemas/Identifier"
         resource_type:
           type: string
-          enum: [submission, revision, review, copyedit, galley, user_import]
+          enum:
+            - submission
+            - revision
+            - review
+            - copyedit
+            - galley
+            - journal
         resource_id:
           $ref: "#/components/schemas/Identifier"
         purpose:
@@ -1491,6 +1650,26 @@ components:
         checksum_sha256:
           type: string
           pattern: "^[a-fA-F0-9]{64}$"
+      description: For purpose=user_import, resource_type must be journal and resource_id must equal
+        journal_id; this avoids requiring an import ID before its input file exists. Only a Journal
+        Manager of that journal may upload import files. CSV/XLSX are allowed only for imports;
+        primary/revision manuscripts accept PDF/DOC/DOCX; galley MIME must match its format. Server checks
+        ownership, purpose, actual MIME, size, checksum and scan status.
+      allOf:
+        - if:
+            properties:
+              purpose:
+                const: user_import
+            required:
+              - purpose
+          then:
+            properties:
+              resource_type:
+                const: journal
+              content_type:
+                enum:
+                  - text/csv
+                  - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
     CompleteUploadRequest:
       type: object
       additionalProperties: false
@@ -1773,7 +1952,10 @@ components:
     CreateReviewRoundRequest:
       type: object
       additionalProperties: false
-      required: [review_type, minimum_completed_reviews]
+      required:
+        - review_type
+        - minimum_completed_reviews
+        - manuscript_file_id
       properties:
         review_type:
           type: string
@@ -1786,6 +1968,8 @@ components:
         note:
           type: string
           maxLength: 5000
+        manuscript_file_id:
+          $ref: "#/components/schemas/Identifier"
     ReviewRoundResource:
       type: object
       additionalProperties: false
@@ -1800,14 +1984,13 @@ components:
           type: object
           additionalProperties: false
           required:
-            [
-              submission_id,
-              round,
-              review_type,
-              minimum_completed_reviews,
-              status,
-              created_at,
-            ]
+            - submission_id
+            - round
+            - review_type
+            - minimum_completed_reviews
+            - status
+            - created_at
+            - manuscript_file_id
           properties:
             submission_id:
               $ref: "#/components/schemas/Identifier"
@@ -1828,6 +2011,8 @@ components:
               enum: [open, decision_ready, closed]
             created_at:
               $ref: "#/components/schemas/Timestamp"
+            manuscript_file_id:
+              $ref: "#/components/schemas/Identifier"
     ReviewRoundResponse:
       type: object
       additionalProperties: false
@@ -1876,14 +2061,15 @@ components:
           type: object
           additionalProperties: false
           required:
-            [
-              review_round_id,
-              reviewer_id,
-              status,
-              response_due_at,
-              review_due_at,
-              version,
-            ]
+            - review_round_id
+            - reviewer_id
+            - status
+            - response_due_at
+            - review_due_at
+            - version
+            - title
+            - abstract
+            - submission_id
           properties:
             review_round_id:
               $ref: "#/components/schemas/Identifier"
@@ -1902,6 +2088,15 @@ components:
             version:
               type: integer
               minimum: 1
+            title:
+              type: string
+            abstract:
+              type: string
+            submission_id:
+              $ref: "#/components/schemas/Identifier"
+          description: Invitation preview visible only to its reviewer and authorized editors. No author
+            names, affiliations, contact details, manuscript identifiers, source keys or other reviewers.
+            Title/abstract text must be screened for identifying content under double-blind review.
     ReviewAssignmentResponse:
       type: object
       additionalProperties: false
@@ -1914,7 +2109,10 @@ components:
     ReviewAssignmentListResponse:
       type: object
       additionalProperties: false
-      required: [data, meta]
+      required:
+        - data
+        - meta
+        - links
       properties:
         data:
           type: array
@@ -1922,6 +2120,8 @@ components:
             $ref: "#/components/schemas/ReviewAssignmentResource"
         meta:
           $ref: "#/components/schemas/ResourceMeta"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
     ExtensionRequest:
       type: object
       additionalProperties: false
@@ -1991,16 +2191,9 @@ components:
     ReviewDraftRequest:
       type: object
       additionalProperties: false
-      required:
-        [
-          scores,
-          comments_for_author,
-          confidential_comments_for_editor,
-          recommendation,
-        ]
       properties:
         scores:
-          $ref: "#/components/schemas/ReviewScores"
+          $ref: "#/components/schemas/ReviewDraftScores"
         comments_for_author:
           type: string
           maxLength: 50000
@@ -2014,6 +2207,7 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Identifier"
+      minProperties: 1
     SubmitReviewRequest:
       type: object
       additionalProperties: false
@@ -2059,24 +2253,20 @@ components:
           type: object
           additionalProperties: false
           required:
-            [
-              assignment_id,
-              scores,
-              comments_for_author,
-              recommendation,
-              status,
-              version,
-            ]
+            - assignment_id
+            - status
+            - version
           properties:
             assignment_id:
               $ref: "#/components/schemas/Identifier"
             scores:
-              $ref: "#/components/schemas/ReviewScores"
+              $ref: "#/components/schemas/ReviewDraftScores"
             comments_for_author:
               type: string
             confidential_comments_for_editor:
               type: string
-              description: Present only in editor-facing serializers.
+              description: Visible only to the originating reviewer and authorized editors. Never included in
+                author-facing feedback.
             recommendation:
               $ref: "#/components/schemas/ReviewRecommendation"
             annotation_file_ids:
@@ -2091,6 +2281,29 @@ components:
             version:
               type: integer
               minimum: 1
+          allOf:
+            - if:
+                properties:
+                  status:
+                    const: submitted
+                required:
+                  - status
+              then:
+                required:
+                  - scores
+                  - comments_for_author
+                  - recommendation
+                  - submitted_at
+                properties:
+                  scores:
+                    $ref: "#/components/schemas/ReviewScores"
+                  comments_for_author:
+                    type: string
+                    minLength: 1
+                  recommendation:
+                    $ref: "#/components/schemas/ReviewRecommendation"
+                  submitted_at:
+                    $ref: "#/components/schemas/Timestamp"
     ReviewResponse:
       type: object
       additionalProperties: false
@@ -2606,7 +2819,7 @@ components:
       properties:
         articles:
           type: array
-          minItems: 1
+          minItems: 0
           uniqueItems: true
           items:
             $ref: "#/components/schemas/IssueArticleInput"
@@ -2642,7 +2855,7 @@ components:
           minItems: 1
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/Role"
+            $ref: "#/components/schemas/JournalRole"
     UpdateJournalUserRequest:
       type: object
       additionalProperties: false
@@ -2662,6 +2875,8 @@ components:
         status:
           type: string
           enum: [active, inactive]
+          description: Status of this journal membership only. Must not deactivate the global account or any
+            other journal membership.
     ReplaceRolesRequest:
       type: object
       additionalProperties: false
@@ -2669,10 +2884,12 @@ components:
       properties:
         roles:
           type: array
-          minItems: 1
+          minItems: 0
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/Role"
+            $ref: "#/components/schemas/JournalRole"
+          description: An empty list revokes all journal roles. Reject removing or deactivating the last
+            active Editor in Chief. Never grants or revokes platform roles.
         reason:
           type: string
           minLength: 3
@@ -2689,7 +2906,7 @@ components:
           minItems: 1
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/Role"
+            $ref: "#/components/schemas/JournalRole"
         send_invitation_email:
           type: boolean
           default: true
@@ -3115,6 +3332,291 @@ components:
           $ref: "#/components/schemas/CrossrefDepositResource"
         meta:
           $ref: "#/components/schemas/ResourceMeta"
+    JournalRole:
+      type: string
+      enum:
+        - reader
+        - author
+        - reviewer
+        - section_editor
+        - editor_in_chief
+        - copy_editor
+        - layout_editor
+        - proofreader
+        - journal_manager
+    SystemRole:
+      type: string
+      enum:
+        - system_administrator
+    ReviewAssignmentBatchResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewAssignmentResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
+    ReviewDraftScores:
+      type: object
+      additionalProperties: false
+      properties:
+        originality:
+          type: integer
+          minimum: 1
+          maximum: 5
+        methodology:
+          type: integer
+          minimum: 1
+          maximum: 5
+        clarity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        significance:
+          type: integer
+          minimum: 1
+          maximum: 5
+    AuthorReviewFeedback:
+      type: object
+      additionalProperties: false
+      required:
+        - reviewer_label
+        - comments_for_author
+        - annotation_file_ids
+      properties:
+        reviewer_label: &a1
+          type: string
+        comments_for_author: *a1
+        annotation_file_ids:
+          type: array
+          items:
+            $ref: "#/components/schemas/Identifier"
+    AuthorDecisionResource:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          type: string
+          const: author_decision
+        attributes:
+          type: object
+          additionalProperties: false
+          required:
+            - submission_id
+            - decision
+            - note_for_author
+            - sent_at
+            - reviews
+          properties:
+            submission_id:
+              $ref: "#/components/schemas/Identifier"
+            decision:
+              $ref: "#/components/schemas/EditorialDecisionType"
+            note_for_author:
+              type: string
+            revision_due_at:
+              $ref: "#/components/schemas/Timestamp"
+            sent_at:
+              $ref: "#/components/schemas/Timestamp"
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/AuthorReviewFeedback"
+    AuthorDecisionListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorDecisionResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+    JournalUserResource:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          type: string
+          const: journal_user
+        attributes:
+          type: object
+          additionalProperties: false
+          required:
+            - user
+            - membership
+            - version
+          properties:
+            user:
+              $ref: "#/components/schemas/UserResource"
+            membership:
+              $ref: "#/components/schemas/Membership"
+            version:
+              type: integer
+              minimum: 1
+    JournalUserResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          $ref: "#/components/schemas/JournalUserResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
+    JournalUserListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/JournalUserResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+    ReadyArticleResource:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          type: string
+          const: ready_article
+        attributes:
+          type: object
+          additionalProperties: false
+          required:
+            - submission_id
+            - title
+            - status
+            - approved_galley_ids
+          properties:
+            submission_id:
+              $ref: "#/components/schemas/Identifier"
+            title:
+              type: string
+            status:
+              type: string
+              const: ready_to_publish
+            approved_galley_ids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Identifier"
+              minItems: 1
+    ReadyArticleListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadyArticleResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+    OaiPmhRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - verb
+      properties:
+        verb:
+          type: string
+          enum:
+            - Identify
+            - ListMetadataFormats
+            - ListSets
+            - GetRecord
+            - ListIdentifiers
+            - ListRecords
+        identifier:
+          type: string
+        metadataPrefix:
+          type: string
+          enum:
+            - oai_dc
+        from:
+          type: string
+        until:
+          type: string
+        set:
+          type: string
+        resumptionToken:
+          type: string
+      description: Wire arguments. The provider enforces verb-specific combinations and returns protocol
+        errors inside OAI-PMH XML; metadataPrefix=oai_dc is supported.
+    PublicContributor:
+      type: object
+      additionalProperties: false
+      required:
+        - given_name
+        - family_name
+        - affiliation
+        - sequence
+        - corresponding
+      properties:
+        given_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        family_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        affiliation:
+          type: string
+          minLength: 1
+          maxLength: 255
+        orcid_id:
+          type: string
+          pattern: ^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$
+        sequence:
+          type: integer
+          minimum: 1
+        corresponding:
+          type: boolean
+      description: Public contributor metadata. Contact email and internal identity keys are private and
+        must never be copied from submission contributors into this projection.
 
 paths:
   /health/live:
@@ -3131,6 +3633,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
 
   /health/ready:
     get:
@@ -3147,19 +3652,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "503":
           description: API is alive but a required dependency is unavailable.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
 
   /api/v1/auth/register:
     post:
       tags: [Authentication]
       operationId: registerUser
       summary: Register a user account
-      description: Creates an inactive account and queues a verification email valid for 24 hours.
+      description: Creates a pending account and queues a single-use verification email valid for 24
+        hours. Verification activates default Reader/Author access. A reviewer application is pending
+        Journal Manager approval in journal_id and never grants privileged roles.
       security: []
       x-use-cases: [UC-01]
       x-required-roles: [public]
@@ -3261,12 +3774,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [Submissions]
       operationId: createSubmission
@@ -3287,6 +3807,10 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -3295,6 +3819,12 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}:
     parameters:
@@ -3304,25 +3834,29 @@ paths:
       tags: [Submissions]
       operationId: getSubmission
       summary: Get role-aware submission details
-      description: The response serializer removes fields that the current audience may not see.
+      description: Private author/editor/production representation. Reviewers use their invitation and
+        workspace endpoints; this schema contains author identities and is never returned through reviewer
+        authorization. Authors see only their own submission; staff require a relevant assignment or
+        journal-level management permission.
       x-use-cases: [UC-05, UC-06]
       x-required-roles:
-        [
-          author,
-          reviewer,
-          section_editor,
-          editor_in_chief,
-          copy_editor,
-          layout_editor,
-          proofreader,
-          journal_manager,
-        ]
+        - author
+        - section_editor
+        - editor_in_chief
+        - copy_editor
+        - layout_editor
+        - proofreader
+        - journal_manager
       responses:
         "200":
           description: Role-aware submission details.
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -3331,6 +3865,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     patch:
       tags: [Submissions]
       operationId: updateSubmission
@@ -3351,6 +3887,10 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -3363,6 +3903,13 @@ paths:
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/contributors:
     parameters:
@@ -3389,10 +3936,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/submit:
     parameters:
@@ -3421,10 +3984,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/withdraw:
     parameters:
@@ -3452,8 +4031,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/timeline:
     parameters:
@@ -3476,8 +4073,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimelineListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/revisions:
     parameters:
@@ -3504,10 +4110,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RevisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/revisions/{revision_id}:
     parameters:
@@ -3535,10 +4152,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RevisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}/revisions/{revision_id}
+    get:
+      tags:
+        - Submissions
+      operationId: getRevision
+      summary: Read a revision and its current version
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-07
+      x-required-roles:
+        - author
+        - section_editor
+        - editor_in_chief
+      responses:
+        "200":
+          description: Read a revision and its current version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevisionResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/revisions/{revision_id}/submit:
     parameters:
@@ -3567,10 +4233,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}/revisions/{revision_id}
 
   /api/v1/files/upload-sessions:
     post:
@@ -3578,9 +4260,21 @@ paths:
       operationId: createUploadSession
       summary: Create a direct-to-object-storage upload session
       description: Validates file purpose, name, declared MIME type, size, ownership, and workflow state.
-      x-use-cases: [UC-05, UC-07, UC-09, UC-13, UC-14, UC-18]
+      x-use-cases:
+        - UC-05
+        - UC-07
+        - UC-09
+        - UC-13
+        - UC-14
+        - UC-18
+        - UC-16
       x-required-roles:
-        [author, reviewer, copy_editor, layout_editor, proofreader]
+        - author
+        - reviewer
+        - copy_editor
+        - layout_editor
+        - proofreader
+        - journal_manager
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -3605,6 +4299,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UploadSessionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
@@ -3613,6 +4312,8 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/files/upload-sessions/{upload_id}/complete:
     parameters:
@@ -3621,9 +4322,21 @@ paths:
       tags: [Files]
       operationId: completeUploadSession
       summary: Verify an uploaded object and queue security scanning
-      x-use-cases: [UC-05, UC-07, UC-09, UC-13, UC-14, UC-18]
+      x-use-cases:
+        - UC-05
+        - UC-07
+        - UC-09
+        - UC-13
+        - UC-14
+        - UC-18
+        - UC-16
       x-required-roles:
-        [author, reviewer, copy_editor, layout_editor, proofreader]
+        - author
+        - reviewer
+        - copy_editor
+        - layout_editor
+        - proofreader
+        - journal_manager
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -3639,12 +4352,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FileResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "410":
           $ref: "#/components/responses/Gone"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/files/{file_id}:
     parameters:
@@ -3671,6 +4395,10 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -3679,12 +4407,22 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      description: Check the same object and assignment access as downloadPrivateFile. Reviewer-visible
+        metadata must refer only to the authorized anonymized version, with safe filenames and no original
+        file identifier.
     delete:
       tags: [Files]
       operationId: deleteDraftFile
       summary: Delete an unattached draft file
       x-use-cases: [UC-05, UC-07, UC-09, UC-13, UC-14]
-      x-required-roles: [author, reviewer, copy_editor, layout_editor]
+      x-required-roles:
+        - author
+        - reviewer
+        - copy_editor
+        - layout_editor
+        - journal_manager
       parameters:
         - $ref: "#/components/parameters/IfMatch"
       responses:
@@ -3694,6 +4432,15 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/files/{file_id}
 
   /api/v1/files/{file_id}/download:
     parameters:
@@ -3702,7 +4449,11 @@ paths:
       tags: [Files]
       operationId: downloadPrivateFile
       summary: Authorize and redirect to a signed private download
-      description: The selected file version is audience-aware and preserves blind-review rules.
+      description: Authorize the exact journal, submission, assignment, file purpose and immutable version
+        before issuing a short-lived URL. A reviewer may download only the round-pinned anonymized
+        manuscript after accepting the invitation, never by guessing the original file ID.
+        Invited/declined/cancelled assignments are denied. Validate clean scan status; never log signed
+        URLs.
       x-use-cases: [UC-06, UC-08, UC-09, UC-13, UC-14, UC-18]
       x-required-roles:
         [
@@ -3724,12 +4475,18 @@ paths:
               schema:
                 type: string
                 format: uri
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews:
     parameters:
@@ -3756,10 +4513,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DeskReviewResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}/pass:
     parameters:
@@ -3782,8 +4550,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}/request-completion:
     parameters:
@@ -3812,8 +4596,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}/reject:
     parameters:
@@ -3842,10 +4644,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/editor-assignment:
     parameters:
@@ -3872,10 +4690,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubmissionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/ethics-escalations:
     parameters:
@@ -3900,6 +4734,14 @@ paths:
           $ref: "#/components/responses/Accepted"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/auth/email/verify:
     post:
@@ -3922,6 +4764,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "410":
           $ref: "#/components/responses/Gone"
         "422":
@@ -3946,13 +4791,22 @@ paths:
           $ref: "#/components/responses/Accepted"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      description: Always return the same 202 response for syntactically valid email input, including
+        unknown accounts. Queue delivery only when eligible; rate-limit requests without disclosing
+        account existence.
 
   /api/v1/auth/login:
     post:
       tags: [Authentication]
       operationId: login
       summary: Authenticate with email or username and password
-      description: Locks the account for 15 minutes after five consecutive failed attempts.
+      description: Only active, email-verified accounts may authenticate. Five consecutive failures
+        against the same account (including email/username aliases) lock it for 15 minutes from the fifth
+        failure and queue one security email. Successful login resets the failure counter and records an
+        audit event. Return a generic credential error; rate-limit both account and source independently.
+        Access JWT lifetime must not exceed 24 hours.
       security: []
       x-use-cases: [UC-02]
       x-required-roles: [public]
@@ -3971,6 +4825,8 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -3983,6 +4839,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+          headers:
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -4009,8 +4872,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthTokenResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      description: Authenticate using the supplied refresh token, not an access JWT. Rotate it atomically
+        once; replay revokes the token family. Reject inactive/unverified accounts and recompute effective
+        permissions. Access JWT lifetime must not exceed 24 hours.
 
   /api/v1/auth/logout:
     post:
@@ -4024,6 +4897,8 @@ paths:
           $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/auth/password/forgot:
     post:
@@ -4044,6 +4919,11 @@ paths:
           $ref: "#/components/responses/Accepted"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      description: Always return the same 202 response for syntactically valid email input, including
+        unknown accounts. Queue delivery only when eligible; rate-limit requests without disclosing
+        account existence.
 
   /api/v1/auth/password/reset:
     post:
@@ -4066,6 +4946,8 @@ paths:
           $ref: "#/components/responses/Gone"
         "422":
           $ref: "#/components/responses/ValidationError"
+      description: Consume a valid, unexpired one-time token, update the password hash, revoke existing
+        sessions/token families and notify the account owner. Never log the password or token.
 
   /api/v1/me:
     get:
@@ -4081,8 +4963,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MeResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/auth/orcid/authorize:
     get:
@@ -4099,8 +4990,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrcidAuthorizationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/auth/orcid/callback:
     get:
@@ -4130,6 +5030,8 @@ paths:
               schema:
                 type: string
                 format: uri
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
@@ -4149,6 +5051,15 @@ paths:
           $ref: "#/components/responses/NoContent"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/me
 
   /api/v1/public/journals:
     get:
@@ -4169,6 +5080,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
 
   /api/v1/public/journals/{journal_slug}:
     parameters:
@@ -4187,6 +5101,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -4216,6 +5133,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/public/journals/{journal_slug}/issues/{issue_id}:
     parameters:
@@ -4235,6 +5157,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -4291,10 +5216,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArticleListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "422":
           $ref: "#/components/responses/ValidationError"
         "503":
           $ref: "#/components/responses/Unavailable"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/public/journals/{journal_slug}/articles/{article_id}:
     parameters:
@@ -4314,6 +5244,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArticleResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -4341,6 +5274,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CitationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -4370,12 +5306,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SignedDownloadResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/journals/{journal_id}/reviewers:
     parameters:
@@ -4406,8 +5349,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewerListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/review-rounds:
     parameters:
@@ -4435,10 +5387,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewRoundResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Pin a clean immutable manuscript_file_id belonging to this submission/revision.
+        Reviewers receive its screened anonymized derivative in double-blind review. Later uploads never
+        silently replace the version under review; re-review requires a new round.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/review-rounds/{round_id}/assignments:
     parameters:
@@ -4464,11 +5435,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReviewAssignmentListResponse"
+                $ref: "#/components/schemas/ReviewAssignmentBatchResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/accept:
     parameters:
@@ -4490,10 +5472,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewAssignmentResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/decline:
     parameters:
@@ -4521,10 +5517,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewAssignmentResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/extension-requests:
     parameters:
@@ -4551,10 +5563,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtensionRequestResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/reminders:
     parameters:
@@ -4580,6 +5603,14 @@ paths:
           $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/cancel:
     parameters:
@@ -4607,8 +5638,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewAssignmentResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/workspace:
     parameters:
@@ -4618,7 +5667,10 @@ paths:
       tags: [Peer Review]
       operationId: getReviewerWorkspace
       summary: Get a privacy-filtered blind-review workspace
-      description: Never exposes author identities, source object keys, or other reviewers.
+      description: Only the assigned reviewer whose invitation has been accepted may open the workspace
+        (including an overdue accepted assignment). Invited, declined, no_response and cancelled
+        assignments have no manuscript access. Pin the anonymized manuscript to the review round; never
+        expose author identities, source object keys or other reviewers.
       x-use-cases: [UC-08, UC-09]
       x-required-roles: [reviewer]
       responses:
@@ -4628,10 +5680,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewWorkspaceResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/review-draft:
     parameters:
@@ -4645,6 +5704,7 @@ paths:
       x-required-roles: [reviewer]
       parameters:
         - $ref: "#/components/parameters/IfMatchOptional"
+        - $ref: "#/components/parameters/IfNoneMatchCreate"
       requestBody:
         required: true
         content:
@@ -4657,6 +5717,10 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
@@ -4667,6 +5731,53 @@ paths:
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: "The assigned reviewer may save an incomplete evaluation after accepting. Use
+        If-None-Match: * for first creation or If-Match from GET review-draft for replacement; supplying
+        neither returns 428, both returns 400, and a failed condition returns 412. Submission requires the
+        complete SubmitReviewRequest."
+      x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/review-draft
+    get:
+      tags:
+        - Peer Review
+      operationId: getReviewDraft
+      summary: Read the current reviewer draft
+      description: "Only the assigned, accepted reviewer may retrieve their own draft, including their
+        confidential comments. Return 404 when no draft exists; create it with If-None-Match: *. A draft
+        edit also changes the assignment aggregate ETag used by submitReview."
+      x-use-cases:
+        - UC-09
+      x-required-roles:
+        - reviewer
+      responses:
+        "200":
+          description: Read the current reviewer draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/submit-review:
     parameters:
@@ -4694,12 +5805,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Only the assigned reviewer of an accepted, eligible assignment may submit. Requires
+        complete scores, author comments, recommendation and conflict certification. Atomically finalize
+        the review, complete the assignment and queue editor notification. Validate If-Match against the
+        assignment aggregate, including its draft revisions.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/decision-summary:
     parameters:
@@ -4718,8 +5847,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionSummaryResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/editorial-decisions:
     parameters:
@@ -4746,10 +5884,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}:
     parameters:
@@ -4776,10 +5925,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}
+    get:
+      tags:
+        - Editorial Decisions
+      operationId: getEditorialDecision
+      summary: Read an internal editorial decision
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-12
+      x-required-roles:
+        - editor_in_chief
+        - journal_manager
+      responses:
+        "200":
+          description: Read an internal editorial decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}/send:
     parameters:
@@ -4802,10 +5999,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}
 
   /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}/override:
     parameters:
@@ -4833,12 +6046,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EditorialDecisionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/editorial-decisions/{decision_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/copyedits:
     parameters:
@@ -4866,10 +6093,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/submissions/{submission_id}
 
   /api/v1/journals/{journal_id}/copyedits/{copyedit_id}:
     parameters:
@@ -4896,12 +6139,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/copyedits/{copyedit_id}
+    get:
+      tags:
+        - Production
+      operationId: getCopyedit
+      summary: Read a copyediting round
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-13
+      x-required-roles:
+        - author
+        - copy_editor
+        - editor_in_chief
+      responses:
+        "200":
+          description: Read a copyediting round
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/copyedits/{copyedit_id}/request-author-approval:
     parameters:
@@ -4928,8 +6218,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/copyedits/{copyedit_id}
 
   /api/v1/journals/{journal_id}/copyedits/{copyedit_id}/author-approve:
     parameters:
@@ -4957,10 +6265,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/copyedits/{copyedit_id}
 
   /api/v1/journals/{journal_id}/copyedits/{copyedit_id}/author-request-changes:
     parameters:
@@ -4988,8 +6312,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CopyeditResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/copyedits/{copyedit_id}
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/galleys:
     parameters:
@@ -5016,10 +6358,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/galleys/{galley_id}/submit-for-proofreading:
     parameters:
@@ -5047,8 +6400,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/galleys/{galley_id}
 
   /api/v1/journals/{journal_id}/galleys/{galley_id}/proofreading-notes:
     parameters:
@@ -5075,10 +6446,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProofreadingNoteResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/galleys/{galley_id}/request-layout-revision:
     parameters:
@@ -5106,8 +6488,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/galleys/{galley_id}
 
   /api/v1/journals/{journal_id}/galleys/{galley_id}/approve-proof:
     parameters:
@@ -5135,8 +6535,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/galleys/{galley_id}
 
   /api/v1/journals/{journal_id}/galleys/{galley_id}/approve-final:
     parameters:
@@ -5164,8 +6582,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Requires author-approved copyediting and proofreading clearance for the predecessor
+        proof. Validate the exact final file/checksum and all unresolved corrections; a changed proof
+        requires new clearance. Atomically approve the final galley and create or update a stable
+        unpublished article record linked to submission_id. It becomes discoverable in listReadyArticles
+        only when ready.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/galleys/{galley_id}
 
   /api/v1/journals/{journal_id}/issues:
     parameters:
@@ -5190,6 +6631,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [Issues]
       operationId: createIssue
@@ -5211,10 +6663,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/issues/{issue_id}:
     parameters:
@@ -5232,12 +6695,20 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     patch:
       tags: [Issues]
       operationId: updateIssue
@@ -5259,10 +6730,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/issues/{issue_id}
 
   /api/v1/journals/{journal_id}/issues/{issue_id}/articles:
     parameters:
@@ -5289,10 +6776,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Replace the complete ordered table of contents for a draft issue. An empty list clears
+        the draft. Each article must be ready, belong to this journal and have no conflicting issue
+        assignment; article IDs and sequence values must each be unique. Publication/scheduling requires
+        at least one article.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/issues/{issue_id}
 
   /api/v1/journals/{journal_id}/issues/{issue_id}/schedule:
     parameters:
@@ -5320,10 +6827,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Require a future scheduled_at and a non-empty ready issue. Recheck all readiness rules
+        transactionally at execution time; do not publish stale/unapproved galleys. Queue notifications
+        and Crossref deposits only after publication commits.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/issues/{issue_id}
 
   /api/v1/journals/{journal_id}/issues/{issue_id}/publish:
     parameters:
@@ -5333,7 +6859,11 @@ paths:
       tags: [Issues]
       operationId: publishIssue
       summary: Publish an issue atomically
-      description: Publishes the public projection and queues author notifications and Crossref deposits through the outbox.
+      description: Require a non-empty issue of same-journal ready articles with approved final galleys.
+        Commit issue/article publication and durable outbox messages atomically. Crossref XML deposits and
+        author notifications run after commit with retry; a Crossref failure must never roll back or block
+        an already committed publication. Never expose drafts or pending proofs through public
+        projections.
       x-use-cases: [UC-15]
       x-required-roles: [editor_in_chief, journal_manager]
       parameters:
@@ -5346,10 +6876,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/issues/{issue_id}
 
   /api/v1/journals/{journal_id}/issues/{issue_id}/cancel-schedule:
     parameters:
@@ -5377,8 +6923,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IssueResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/issues/{issue_id}
 
   /api/v1/journals/{journal_id}/users:
     parameters:
@@ -5396,21 +6960,33 @@ paths:
         - name: role
           in: query
           schema:
-            $ref: "#/components/schemas/Role"
+            $ref: "#/components/schemas/JournalRole"
         - name: status
           in: query
           schema:
             type: string
-            enum: [active, inactive, pending]
+            enum:
+              - active
+              - inactive
+              - pending
       responses:
         "200":
           description: Journal users.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserListResponse"
+                $ref: "#/components/schemas/JournalUserListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [Users and Roles]
       operationId: createJournalUser
@@ -5431,11 +7007,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/JournalUserResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/users/{user_id}:
     parameters:
@@ -5461,11 +7048,61 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/JournalUserResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Edit only the user profile fields permitted by journal policy. The status field refers
+        exclusively to the membership in this journal, never the global account status. Reject
+        deactivation of the last active Editor in Chief; audit changes and notify the affected user.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/users/{user_id}
+    get:
+      tags:
+        - Users and Roles
+      operationId: getJournalUser
+      summary: Read a user and this journal membership
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-16
+      x-required-roles:
+        - journal_manager
+      responses:
+        "200":
+          description: Read a user and this journal membership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalUserResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/users/{user_id}/deactivate:
     parameters:
@@ -5492,9 +7129,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/JournalUserResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      description: Deactivate only this journal membership, preserving the global account and other
+        journals. Reject deactivation of the last active Editor in Chief. Re-evaluate access immediately,
+        retain submission/history records and record the reason in the audit log.
+      x-concurrency-resource: /api/v1/journals/{journal_id}/users/{user_id}
 
   /api/v1/journals/{journal_id}/users/{user_id}/roles:
     parameters:
@@ -5504,7 +7162,9 @@ paths:
       tags: [Users and Roles]
       operationId: replaceJournalUserRoles
       summary: Replace roles within a journal
-      description: Rejects removal of the only active Editor in Chief.
+      description: Replace only roles in this journal, never platform-wide roles. Reject removal of the
+        last active Editor in Chief, including via an empty list. Apply access changes immediately, record
+        the reason and notify the user.
       x-use-cases: [UC-16]
       x-required-roles: [journal_manager]
       parameters:
@@ -5521,13 +7181,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/JournalUserResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/users/{user_id}
 
-  /api/v1/journals/{journal_id}/users/imports:
+  /api/v1/journals/{journal_id}/user-imports:
     parameters:
       - $ref: "#/components/parameters/JournalId"
     post:
@@ -5551,10 +7227,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OperationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      description: Accept only a clean CSV/XLSX file uploaded by this journal manager for
+        purpose=user_import in this journal. Validate every row against JournalRole; reject platform roles
+        in both default_roles and file contents. Never mutate global roles or another journal membership.
 
-  /api/v1/journals/{journal_id}/users/imports/{import_id}:
+  /api/v1/journals/{journal_id}/user-imports/{import_id}:
     parameters:
       - $ref: "#/components/parameters/JournalId"
       - $ref: "#/components/parameters/ImportId"
@@ -5571,8 +7263,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OperationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/journals/{journal_id}/settings:
     parameters:
@@ -5589,10 +7290,20 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalSettingsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       tags: [Settings]
       operationId: updateJournalSettings
@@ -5614,10 +7325,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalSettingsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/journals/{journal_id}/settings
 
   /api/v1/system/settings:
     get:
@@ -5632,12 +7359,18 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemSettingsResponse"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     patch:
       tags: [Settings]
       operationId: updateSystemSettings
@@ -5659,12 +7392,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemSettingsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+      x-concurrency-resource: /api/v1/system/settings
 
   /api/v1/system/integrations/{provider}/test:
     parameters:
@@ -5695,10 +7440,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OperationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /api/v1/system/settings/versions/{version_id}/rollback:
     parameters:
@@ -5724,10 +7480,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemSettingsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/notifications:
     get:
@@ -5767,6 +7534,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/notifications/{notification_id}/read:
     parameters:
@@ -5783,8 +7559,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/notifications/read-all:
     post:
@@ -5797,6 +7582,12 @@ paths:
       responses:
         "204":
           $ref: "#/components/responses/NoContent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /api/v1/events/stream:
     get:
@@ -5819,6 +7610,8 @@ paths:
               schema:
                 type: string
                 const: no-cache
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
           content:
             text/event-stream:
               schema:
@@ -5829,6 +7622,8 @@ paths:
                 data: {"resource_id":"01K5SUBMISSION00000000001","status":"under_review"}
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/journals/{journal_id}/audit-logs:
     parameters:
@@ -5875,8 +7670,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditLogListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/operations/{operation_id}:
     parameters:
@@ -5893,10 +7697,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OperationResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/journals/{journal_id}/articles/{article_id}/crossref-deposits:
     parameters:
@@ -5922,12 +7733,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CrossrefDepositResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "503":
           $ref: "#/components/responses/Unavailable"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/journals/{journal_id}/crossref-deposits/{deposit_id}:
     parameters:
@@ -5946,8 +7768,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CrossrefDepositResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/journals/{journal_id}/crossref-deposits/{deposit_id}/retry:
     parameters:
@@ -5974,15 +7805,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CrossrefDepositResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
         "409":
           $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /oai:
     get:
       tags: [OAI-PMH]
       operationId: handleOaiPmhRequest
       summary: OAI-PMH 2.0 metadata harvesting endpoint
-      description: Supports Identify, ListMetadataFormats, ListSets, GetRecord, ListIdentifiers, and ListRecords with at least oai_dc.
+      description: Supports Identify, ListMetadataFormats, ListSets, GetRecord, ListIdentifiers, and
+        ListRecords with at least oai_dc. Supports both GET and form-encoded POST. Validate verb-specific
+        arguments, date granularity/range and exclusive resumptionToken use. Invalid
+        verbs/arguments/prefixes/tokens produce OAI-PMH XML error elements with HTTP 200, never JSON
+        validation errors. Only published metadata is harvested.
       security: []
       x-use-cases: [UC-15, UC-17]
       x-required-roles: [public]
@@ -6048,5 +7896,289 @@ paths:
                     <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
                   </Identify>
                 </OAI-PMH>
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
         "429":
           $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - OAI-PMH
+      operationId: handleOaiPmhPostRequest
+      summary: Harvest metadata using an OAI-PMH form POST
+      description: Supports Identify, ListMetadataFormats, ListSets, GetRecord, ListIdentifiers, and
+        ListRecords with at least oai_dc. Supports both GET and form-encoded POST. Validate
+        verb-specific arguments, date granularity/range and exclusive resumptionToken use. Invalid
+        verbs/arguments/prefixes/tokens produce OAI-PMH XML error elements with HTTP 200, never JSON
+        validation errors. Only published metadata is harvested.
+      security: []
+      x-use-cases:
+        - UC-15
+        - UC-17
+      x-required-roles:
+        - public
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/OaiPmhRequest"
+      responses:
+        "200":
+          description: OAI-PMH XML response, including protocol errors.
+          content:
+            application/xml:
+              schema:
+                type: string
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+                  <responseDate>2026-09-17T09:30:00Z</responseDate>
+                  <request verb="Identify">https://api.jurnal-brida.example/oai</request>
+                  <Identify>
+                    <repositoryName>BRIDA Scientific Journal Repository</repositoryName>
+                    <baseURL>https://api.jurnal-brida.example/oai</baseURL>
+                    <protocolVersion>2.0</protocolVersion>
+                    <adminEmail>journal@example.org</adminEmail>
+                    <earliestDatestamp>2026-01-01T00:00:00Z</earliestDatestamp>
+                    <deletedRecord>persistent</deletedRecord>
+                    <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
+                  </Identify>
+                </OAI-PMH>
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/v1/journals/{journal_id}/review-assignments:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+    get:
+      tags:
+        - Peer Review
+      operationId: listReviewAssignments
+      summary: List visible review invitations and assignments
+      description: Reviewers receive only their own invitations; editors receive only assignments in their
+        authorized journal/submissions. Return a privacy-safe preview before acceptance. Never include
+        manuscript access or author identities.
+      x-use-cases:
+        - UC-08
+        - UC-11
+      x-required-roles:
+        - reviewer
+        - section_editor
+        - editor_in_chief
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReviewAssignmentStatus"
+      responses:
+        "200":
+          description: Visible review invitations and assignments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewAssignmentListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/journals/{journal_id}/submissions/{submission_id}/author-decisions:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+      - $ref: "#/components/parameters/SubmissionId"
+    get:
+      tags:
+        - Editorial Decisions
+      operationId: listAuthorDecisions
+      summary: Read sent decisions and released reviewer feedback
+      description: Only the owning author may read sent decisions. Exclude draft decisions, internal
+        notes, confidential reviewer comments, reviewer/assignment identifiers and unreleased reviews.
+        Labels are anonymous per round; annotations must be released, scanned and anonymized before
+        their IDs appear.
+      x-use-cases:
+        - UC-06
+        - UC-07
+        - UC-12
+      x-required-roles:
+        - author
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Sent decisions with author-safe feedback.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorDecisionListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/journals/{journal_id}/articles/ready:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+    get:
+      tags:
+        - Issues
+      operationId: listReadyArticles
+      summary: List unpublished articles eligible for issue composition
+      description: Only articles in this journal with approved final galleys and no conflicting issue
+        assignment are returned. The article ID is stable and distinct from submission_id. No public
+        visibility is granted by readiness.
+      x-use-cases:
+        - UC-15
+      x-required-roles:
+        - editor_in_chief
+        - journal_manager
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Articles eligible for publication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyArticleListResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/journals/{journal_id}/submissions/{submission_id}/desk-reviews/{desk_review_id}:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+      - $ref: "#/components/parameters/SubmissionId"
+      - $ref: "#/components/parameters/DeskReviewId"
+    get:
+      tags:
+        - Desk Review
+      operationId: getDeskReview
+      summary: Read a desk-review assessment
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-10
+      x-required-roles:
+        - editor_in_chief
+      responses:
+        "200":
+          description: Read a desk-review assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeskReviewResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/journals/{journal_id}/review-assignments/{assignment_id}:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+      - $ref: "#/components/parameters/ReviewAssignmentId"
+    get:
+      tags:
+        - Peer Review
+      operationId: getReviewAssignment
+      summary: Read a privacy-safe review invitation
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-08
+        - UC-11
+      x-required-roles:
+        - reviewer
+        - section_editor
+        - editor_in_chief
+      responses:
+        "200":
+          description: Read a privacy-safe review invitation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewAssignmentResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/journals/{journal_id}/galleys/{galley_id}:
+    parameters:
+      - $ref: "#/components/parameters/JournalId"
+      - $ref: "#/components/parameters/GalleyId"
+    get:
+      tags:
+        - Production
+      operationId: getGalley
+      summary: Read a galley version and approvals
+      description: Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state.
+      x-use-cases:
+        - UC-14
+        - UC-18
+      x-required-roles:
+        - layout_editor
+        - proofreader
+        - editor_in_chief
+      responses:
+        "200":
+          description: Read a galley version and approvals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleyResponse"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
