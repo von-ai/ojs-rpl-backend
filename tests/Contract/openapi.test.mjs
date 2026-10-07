@@ -443,3 +443,64 @@ test('all documented JSON media examples validate against their schemas', () => 
     }
     walk(api);
 });
+
+test('deadline transitions and guards cannot reference missing states, fields or error responses', () => {
+    const policy = api['x-deadline-policy'];
+    assert.equal(policy.expires_when, 'now >= due_at');
+    assert.equal(policy.clock, 'database_utc_after_lock');
+    assert.equal(policy.write_enforcement, 'independent_of_scheduler');
+    const states = schemas.ReviewAssignmentStatus.enum;
+    const fields = schemas.ReviewAssignmentResource.properties.attributes.properties;
+    for (const transition of policy.transitions) {
+        assert.ok(states.includes(transition.from));
+        assert.ok(states.includes(transition.to));
+        assert.ok(!policy.terminal_states.includes(transition.from));
+        assert.equal(fields[transition.deadline_field].$ref, '#/components/schemas/Timestamp');
+        assert.ok(transition.recipients.includes('assigned_section_editor'));
+    }
+    for (const id of ['acceptReviewAssignment', 'declineReviewAssignment', 'saveReviewDraft', 'submitReview']) {
+        const operation = getOperation(id);
+        const guard = operation['x-deadline-guard'];
+        assert.equal(guard.comparison, 'now < due_at', id);
+        assert.equal(guard.clock, policy.clock, id);
+        assert.ok(fields[guard.field], id);
+        const code = api['x-error-codes'][guard.error_code];
+        assert.ok(operation.responses[String(code.status)], id);
+    }
+    for (const id of ['saveReviewDraft', 'submitReview']) {
+        assert.deepEqual(getOperation(id)['x-workflow'].allowed_states, ['accepted']);
+    }
+    assert.equal(policy.late_review_submission, 'approved_extension_required');
+});
+
+test('automatic withdrawal cannot be enabled on stored settings without an explicit integer grace', () => {
+    const settings = { name: 'Journal', language: 'id', timezone: 'Asia/Makassar', review_type: 'double_blind', minimum_completed_reviews: 2, access_model: 'diamond_open_access', version: 1 };
+    check('JournalSettings', settings);
+    check('JournalSettings', { ...settings, auto_withdraw_overdue_revisions: false, revision_grace_days: null });
+    check('JournalSettings', { ...settings, auto_withdraw_overdue_revisions: true }, false);
+    check('JournalSettings', { ...settings, auto_withdraw_overdue_revisions: true, revision_grace_days: null }, false);
+    check('JournalSettings', { ...settings, auto_withdraw_overdue_revisions: true, revision_grace_days: 0 });
+});
+
+test('integration guide request fixtures validate against the actual operation input schemas', () => {
+    const examples = JSON.parse(readFileSync('docs/request-examples.json', 'utf8'));
+    for (const { operationId, body } of examples) {
+        const request = resolve(getOperation(operationId).requestBody);
+        const schema = request.content['application/json'].schema;
+        assert.ok(schema.$ref, operationId);
+        check(schema.$ref.split('/').at(-1), body);
+    }
+});
+
+test('final baseline distinguishes planned implementation and links to existing guidance', () => {
+    const baseline = api['x-contract-status'];
+    assert.equal(api.info.version, baseline.version);
+    assert.equal(baseline.implementation, 'planned');
+    for (const file of baseline.documents) assert.ok(readFileSync(file, 'utf8').length > 0, file);
+    const guide = readFileSync('docs/use-cases.md', 'utf8');
+    for (let i = 1; i <= 18; i++) {
+        const uc = `UC-${String(i).padStart(2, '0')}`;
+        assert.ok(guide.includes(uc), uc);
+        assert.ok(operations.some(({ operation }) => operation['x-use-cases']?.includes(uc)), uc);
+    }
+});

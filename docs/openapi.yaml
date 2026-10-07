@@ -2,7 +2,7 @@ openapi: 3.1.1
 jsonSchemaDialect: https://spec.openapis.org/oas/3.1/dialect/base
 info:
   title: BRIDA Scientific Journal Management API
-  version: 1.0.0-draft.3
+  version: 1.0.0
   summary: REST API contract for the BRIDA journal editorial and publishing platform.
   description: |
     Contract-first API for a modular Laravel monolith covering authentication, RBAC,
@@ -19,7 +19,8 @@ info:
 
     Implementation status: planned contract. The Laravel application currently exposes
     only the scaffold routes; these domain endpoints are not implemented yet. See
-    docs/review-srs.md for traceability, unresolved decisions, and implementation gates.
+    docs/use-cases.md for acceptance scenarios and docs/architecture.md for the selected
+    stack, deployment prerequisites and explicit deviations from the original proposal.
 
     Journal authorization requires an active, verified account, journal membership
     and object ownership or assignment as well as the listed role. Every path/body/file
@@ -33,7 +34,7 @@ info:
     missing required validator returns 428; workflow conflicts return 409. Re-fetch
     the aggregate after a command. Never manufacture ETags from a version number.
 
-    Draft.3 closes contract-level workflow and administration gaps. All operations
+    Version 1.0.0 is the final implementation baseline, not a deployed API. All operations
     remain planned. Read docs/contract-decisions.md for normative lifecycle rules,
     configurable policy and deployment prerequisites. HTTP errors use Problem;
     OAI-PMH validation errors use the OAI XML protocol.
@@ -54,12 +55,11 @@ info:
   license:
     name: Proprietary
 servers:
-  - url: https://api.jurnal-brida.example
-    description: Production
-  - url: https://staging-api.jurnal-brida.example
-    description: Staging
+  - url: /
+    description: Same-origin deployment; replace with the actual HTTPS origin in client configuration.
+      No production hostname has been provisioned.
   - url: http://localhost:8000
-    description: Local development
+    description: Local development only
 tags:
   - name: Authentication
     description: Account registration, verification, sessions and password recovery.
@@ -2453,6 +2453,9 @@ components:
         invitation_message:
           type: string
           maxLength: 10000
+      description: Server validates database_now < response_due_at < review_due_at. Parse offsets as
+        instants, store UTC, display in the journal timezone. Default day settings only prefill the UI;
+        explicit per-invitation timestamps are authoritative.
     AssignReviewersRequest:
       type: object
       additionalProperties: false
@@ -2513,7 +2516,9 @@ components:
               $ref: "#/components/schemas/Identifier"
           description: Invitation preview visible only to its reviewer and authorized editors. No author
             names, affiliations, contact details, manuscript identifiers, source keys or other reviewers.
-            Title/abstract text must be screened for identifying content under double-blind review.
+            Title/abstract text must be screened for identifying content under double-blind review. Status is
+            reconciled against database time before every read. Deadline changes and draft saves increment
+            version. no_response/completed/cancelled/declined are terminal.
     ReviewAssignmentResponse:
       type: object
       additionalProperties: false
@@ -3425,8 +3430,33 @@ components:
             - type: "null"
         auto_withdraw_overdue_revisions:
           type: boolean
+          description: Baseline disabled. Enabling requires non-null grace days in the resulting stored
+            configuration; never infer a grace duration.
         author_similarity_check_enabled:
           type: boolean
+      description: Policy values are explicit deployment settings; day counts prefill future
+        invitations/revisions only and never move existing deadlines. Automatic revision withdrawal
+        defaults disabled and enabling it requires a non-null revision_grace_days. Validate full merged
+        settings on PATCH.
+      allOf:
+        - if:
+            type: object
+            properties:
+              auto_withdraw_overdue_revisions:
+                const: true
+            required:
+              - auto_withdraw_overdue_revisions
+            additionalProperties: true
+          then:
+            type: object
+            required:
+              - revision_grace_days
+            properties:
+              revision_grace_days:
+                type: integer
+                minimum: 0
+                maximum: 365
+            additionalProperties: true
     UpdateJournalSettingsRequest:
       type: object
       additionalProperties: false
@@ -3477,6 +3507,8 @@ components:
             - type: "null"
         auto_withdraw_overdue_revisions:
           type: boolean
+          description: Baseline disabled. Enabling requires non-null grace days in the resulting stored
+            configuration; never infer a grace duration.
         author_similarity_check_enabled:
           type: boolean
     JournalSettingsResponse:
@@ -9225,7 +9257,10 @@ paths:
       description: Atomically invite eligible active reviewers in this journal to the pinned round. Reject
         duplicate reviewers, self-review/co-author conflicts, duplicate live assignments and
         response_due_at >= review_due_at. Capture invitation and rubric versions, audit, and queue
-        delivery only after commit.
+        delivery only after commit. Require database_now < response_due_at < review_due_at; deadlines are
+        absolute instants with explicit offsets. Snapshot them per assignment. A terminal no_response
+        assignment may be replaced by a new eligible invitation with a new ID; never mutate its historical
+        outcome.
       x-non-functional-requirements:
         - NF-02
         - NF-07
@@ -9334,6 +9369,15 @@ paths:
         - NF-02
         - NF-07
         - NF-10
+      x-deadline-guard:
+        field: response_due_at
+        comparison: now < due_at
+        clock: database_utc_after_lock
+        error_code: REVIEW_INVITATION_EXPIRED
+      description: Accept a review invitation Require an open review round and database time strictly
+        before response_due_at after locking the assignment. At or after the deadline return 409
+        REVIEW_INVITATION_EXPIRED even if the scheduler has not materialized no_response yet. Never reopen
+        an expired invitation; the editor must issue a new eligible assignment.
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/decline:
     parameters:
@@ -9400,6 +9444,15 @@ paths:
         - NF-02
         - NF-07
         - NF-10
+      x-deadline-guard:
+        field: response_due_at
+        comparison: now < due_at
+        clock: database_utc_after_lock
+        error_code: REVIEW_INVITATION_EXPIRED
+      description: Decline a review invitation Require an open review round and database time strictly
+        before response_due_at after locking the assignment. At or after the deadline return 409
+        REVIEW_INVITATION_EXPIRED even if the scheduler has not materialized no_response yet. Never reopen
+        an expired invitation; the editor must issue a new eligible assignment.
 
   /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/extension-requests:
     parameters:
@@ -9457,7 +9510,9 @@ paths:
       x-implementation-status: planned
       description: Only the assigned accepted/overdue reviewer may request a future deadline; allow one
         pending extension per assignment. The request does not change the deadline until an editor
-        approves it.
+        approves it. The requested date must be later than database_now and the current deadline; the
+        round must be open. Submitting this request does not authorize late draft saves or late review
+        submission.
       x-non-functional-requirements:
         - NF-02
         - NF-07
@@ -9631,7 +9686,10 @@ paths:
       description: Only the assigned reviewer whose invitation has been accepted may open the workspace
         (including an overdue accepted assignment). Invited, declined, no_response and cancelled
         assignments have no manuscript access. Pin the anonymized manuscript to the review round; never
-        expose author identities, source object keys or other reviewers.
+        expose author identities, source object keys or other reviewers. After the review deadline the
+        retained draft and pinned manuscript are read-only until a future extension is approved. A
+        completed reviewer may read their own retained evaluation while the round remains accessible;
+        closed rounds expose no new signed download targets.
       x-use-cases: [UC-08, UC-09]
       x-required-roles: [reviewer]
       responses:
@@ -9719,13 +9777,28 @@ paths:
       description: "The assigned reviewer may save an incomplete evaluation after accepting. Use
         If-None-Match: * for first creation or If-Match from GET review-draft for replacement; supplying
         neither returns 428, both returns 400, and a failed condition returns 412. Submission requires the
-        complete SubmitReviewRequest."
+        complete SubmitReviewRequest. Require an open review round and database time strictly before
+        review_due_at after locking the assignment, regardless of scheduler delay. Late writes return 409
+        REVIEW_DEADLINE_EXCEEDED; preserve the saved draft and require an approved future extension before
+        editing or submitting. A draft save also increments the assignment aggregate version used by
+        submit-review."
       x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}/review-draft
       x-implementation-status: planned
       x-non-functional-requirements:
         - NF-02
         - NF-07
         - NF-10
+      x-deadline-guard:
+        field: review_due_at
+        comparison: now < due_at
+        clock: database_utc_after_lock
+        error_code: REVIEW_DEADLINE_EXCEEDED
+      x-workflow:
+        state_schema:
+          $ref: "#/components/schemas/ReviewAssignmentStatus"
+        allowed_states:
+          - accepted
+        resulting_state: accepted
     get:
       tags:
         - Peer Review
@@ -9823,7 +9896,11 @@ paths:
       description: Only the assigned reviewer of an accepted, eligible assignment may submit. Requires
         complete scores, author comments, recommendation and conflict certification. Atomically finalize
         the review, complete the assignment and queue editor notification. Validate If-Match against the
-        assignment aggregate, including its draft revisions.
+        assignment aggregate, including its draft revisions. Require an open review round and database
+        time strictly before review_due_at after locking the assignment, regardless of scheduler delay.
+        Late writes return 409 REVIEW_DEADLINE_EXCEEDED; preserve the saved draft and require an approved
+        future extension before editing or submitting. A draft save also increments the assignment
+        aggregate version used by submit-review.
       x-concurrency-resource: /api/v1/journals/{journal_id}/review-assignments/{assignment_id}
       x-implementation-status: planned
       x-workflow:
@@ -9831,12 +9908,16 @@ paths:
           $ref: "#/components/schemas/ReviewAssignmentStatus"
         allowed_states:
           - accepted
-          - overdue
         resulting_state: completed
       x-non-functional-requirements:
         - NF-02
         - NF-07
         - NF-10
+      x-deadline-guard:
+        field: review_due_at
+        comparison: now < due_at
+        clock: database_utc_after_lock
+        error_code: REVIEW_DEADLINE_EXCEEDED
 
   /api/v1/journals/{journal_id}/submissions/{submission_id}/decision-summary:
     parameters:
@@ -13158,8 +13239,11 @@ paths:
         - Peer Review
       operationId: getReviewAssignment
       summary: Read a privacy-safe review invitation
-      description: Return only to the owner or assigned staff authorized for this journal and workflow.
-        The ETag identifies this aggregate, including changes to its related workflow state.
+      description: "Return only to the owner or assigned staff authorized for this journal and workflow.
+        The ETag identifies this aggregate, including changes to its related workflow state. Before
+        serialization reconcile effective time-based status: invited at/after response_due_at is
+        no_response; accepted at/after review_due_at is overdue. Detail/list/workspace reads use the same
+        rule and aggregate version; materializing expiry records a deduplicated audit/outbox event."
       x-use-cases:
         - UC-08
         - UC-11
@@ -15471,7 +15555,12 @@ paths:
       summary: Decide a pending extension request
       description: Decide a pending extension request. Approval atomically sets review_due_at to the
         requested future deadline and clears overdue status when eligible. Do not reopen
-        completed/cancelled assignments; notify the reviewer and audit old/new deadlines.
+        completed/cancelled assignments; notify the reviewer and audit old/new deadlines. Lock the
+        extension and assignment together in a consistent order. The round must remain open and the
+        assignment must be accepted or overdue. Approval requires requested_due_at > database_now and >
+        the existing review_due_at; bump both resource versions. Declining preserves the existing deadline
+        and effective overdue state. An extension request alone never pauses expiry.
+        Completed/cancelled/declined/no_response assignments cannot be reopened.
       x-use-cases:
         - UC-08
       x-required-roles:
@@ -17014,3 +17103,64 @@ paths:
       x-non-functional-requirements:
         - NF-02
         - NF-07
+x-contract-status:
+  baseline: final
+  version: 1.0.0
+  implementation: planned
+  stakeholder_approval: pending-review
+  documents:
+    - docs/architecture.md
+    - docs/use-cases.md
+    - docs/integration-guide.md
+    - docs/contract-decisions.md
+    - docs/changelog.md
+x-deadline-policy:
+  clock: database_utc_after_lock
+  expires_when: now >= due_at
+  scheduler_interval_seconds: 60
+  write_enforcement: independent_of_scheduler
+  late_review_submission: approved_extension_required
+  outbox_deduplication_key:
+    - assignment_id
+    - event
+    - deadline_version
+  transitions:
+    - event: review_invitation_expired
+      from: invited
+      to: no_response
+      deadline_field: response_due_at
+      recipients:
+        - assigned_section_editor
+      fallback_recipient: editor_in_chief
+      use_case: UC-08
+    - event: review_evaluation_overdue
+      from: accepted
+      to: overdue
+      deadline_field: review_due_at
+      recipients:
+        - assigned_section_editor
+        - assigned_reviewer
+      fallback_recipient: editor_in_chief
+      use_case: UC-09
+  terminal_states:
+    - declined
+    - no_response
+    - completed
+    - cancelled
+x-error-codes:
+  REVIEW_INVITATION_EXPIRED:
+    status: 409
+  REVIEW_DEADLINE_EXCEEDED:
+    status: 409
+  REVIEW_ASSIGNMENT_NOT_ACTIVE:
+    status: 409
+  REVIEW_ROUND_CLOSED:
+    status: 409
+  IDEMPOTENCY_IN_PROGRESS:
+    status: 409
+  IDEMPOTENCY_KEY_REUSED:
+    status: 409
+  PRECONDITION_FAILED:
+    status: 412
+  PRECONDITION_REQUIRED:
+    status: 428

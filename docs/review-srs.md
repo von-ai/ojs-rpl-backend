@@ -1,5 +1,9 @@
 # SIRIDA backend and API contract review
 
+**Current baseline: 1.0.0.** See [architecture](architecture.md),
+[use cases](use-cases.md) and [changelog](changelog.md). The dated draft reviews
+below are historical; final design decisions do not imply stakeholder approval.
+
 **Follow-up, 7 October 2026:** draft.3 now defines 201 planned operations and closes
 the contract gaps below. See [current contract decisions and gap closure](contract-decisions.md)
 for the updated behavior, 37 contract regressions and remaining runtime/deployment

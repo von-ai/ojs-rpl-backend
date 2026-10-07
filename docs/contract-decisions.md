@@ -1,19 +1,24 @@
-# SIRIDA contract decisions — draft.3
+# SIRIDA contract decisions — 1.0.0
 
 Updated 7 October 2026. This document accompanies `docs/openapi.yaml` version
-`1.0.0-draft.3`. It completes the contract-level gaps identified in the
+`1.0.0`. It completes the contract-level gaps identified in the
 [SRS review](review-srs.md), with **201 planned operations**. It does not implement
 the application. All operations explicitly carry `x-implementation-status: planned`.
 
+The final stack, business decisions and source deviations are recorded in
+[architecture](architecture.md). See [use cases](use-cases.md),
+[integration guide](integration-guide.md) and [migration notes](changelog.md).
+Stakeholder approval remains subject to PR review; all operations remain planned.
+
 The SRS detailed UC-01–18 and its scope remain the requirements source. Where it
 does not settle an API detail, the choices below are explicit engineering decisions
-for this draft. Configurable values must be selected during deployment, not silently
+for this final implementation baseline. Configurable values must be selected during deployment, not silently
 invented by a background worker. No payment, APC processing, native app, internal
 plagiarism engine or AI layout feature is added.
 
 ## Contract gap closure
 
-| Area / SRS | Draft.3 contract |
+| Area / SRS | Version 1.0.0 contract |
 | --- | --- |
 | Registration, UC-01 | `joinJournalAsAuthor`; reviewer application create/list/read/update/decision/withdraw. Registration may create an incomplete pending application; the verified applicant completes it before approval. |
 | Login, UC-02 | `getActiveContext`/`setActiveContext`, self-profile updates, bounded access/session policies, explicit bearer/SSE transport, ORCID connection read and denial callback. |
@@ -108,6 +113,10 @@ submissions into review and must be atomic for the batch. Reject duplicate live
 assignments, self/co-author conflicts and invalid deadline order. Cancellation is
 limited to an unanswered invitation under the SRS rule; an accepted review is not
 silently reassigned. An extension request changes nothing until its editor decision.
+The final deadline policy is normative in [use cases](use-cases.md): expiry uses
+database UTC after locking, including equality; late draft/save/submit requires
+a future approved extension. Scheduler delay never authorizes a late write.
+Closed rounds block further review writes; deadline events use a durable deduplicated outbox.
 
 Revision requests require a due date. The Journal Manager must explicitly choose
 the grace period before enabling automatic withdrawal. Preserve the request's
@@ -221,7 +230,7 @@ raw provider responses or credentials. Paginated lists require totals and links.
 ## Validation and remaining release gates
 
 `npm run check:openapi` validates OpenAPI structure/references/examples and runs
-37 contract tests, including negative privilege, privacy, upload, state, pagination,
+contract tests, including negative privilege, privacy, upload, state, pagination,
 session, integration-candidate and content cases. All pass locally. The two Laravel
 scaffold tests, Composer validation and Pint remain separate baseline checks.
 
