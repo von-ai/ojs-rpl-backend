@@ -5041,6 +5041,12 @@ components:
     ContextResponse:
       type: object
       additionalProperties: false
+      example:
+        data:
+          journal_id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+          role: section_editor
+        meta:
+          request_id: req-7c28f10a
       required:
         - data
         - meta
@@ -14689,6 +14695,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContextResponse"
+              examples:
+                journalContext:
+                  summary: Active journal and section editor role
+                  value:
+                    data:
+                      journal_id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+                      role: section_editor
+                    meta:
+                      request_id: req-7c28f10a
+                systemContext:
+                  summary: Active system administrator role
+                  value:
+                    data:
+                      journal_id: null
+                      role: system_administrator
+                    meta:
+                      request_id: req-7c28f10b
+                noContext:
+                  summary: No context selected for the current session
+                  value:
+                    data: null
+                    meta:
+                      request_id: req-7c28f10c
           headers:
             X-Request-ID:
               $ref: "#/components/headers/XRequestId"
@@ -14727,6 +14756,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContextResponse"
+              examples:
+                journalContext:
+                  summary: Active journal and section editor role
+                  value:
+                    data:
+                      journal_id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+                      role: section_editor
+                    meta:
+                      request_id: req-7c28f10a
+                systemContext:
+                  summary: Active system administrator role
+                  value:
+                    data:
+                      journal_id: null
+                      role: system_administrator
+                    meta:
+                      request_id: req-7c28f10b
           headers:
             X-Request-ID:
               $ref: "#/components/headers/XRequestId"
