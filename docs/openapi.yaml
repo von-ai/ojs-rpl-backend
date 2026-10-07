@@ -339,12 +339,6 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/Identifier"
-    ApplicationId:
-      name: application_id
-      in: path
-      required: true
-      schema:
-        $ref: "#/components/schemas/Identifier"
     ExtensionId:
       name: extension_id
       in: path
@@ -818,32 +812,6 @@ components:
           type: string
           minLength: 2
           maxLength: 255
-        requested_role:
-          type: string
-          enum: [author, reviewer]
-          description: A reviewer request is pending until Journal Manager approval in the selected journal.
-            It never immediately grants reviewer privileges. Reader/Author is the default after verification.
-          default: author
-        journal_id:
-          $ref: "#/components/schemas/Identifier"
-          description: Journal receiving a reviewer application; required when requested_role is reviewer.
-      allOf:
-        - if:
-            properties:
-              requested_role:
-                const: reviewer
-            required:
-              - requested_role
-            type: object
-            additionalProperties: true
-          then:
-            required:
-              - journal_id
-            properties:
-              journal_id:
-                $ref: "#/components/schemas/Identifier"
-            type: object
-            additionalProperties: true
     TokenRequest:
       type: object
       additionalProperties: false
@@ -5035,154 +5003,6 @@ components:
         role:
           type: string
           const: author
-    ReviewerApplicationRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - expertise
-        - statement
-      properties:
-        expertise:
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 100
-          maxItems: 20
-          minItems: 1
-        statement:
-          type: string
-          minLength: 1
-          maxLength: 10000
-    ReviewerApplicationResource:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - type
-        - attributes
-      properties:
-        id:
-          $ref: "#/components/schemas/Identifier"
-        type:
-          type: string
-          const: reviewer_application
-        attributes:
-          type: object
-          additionalProperties: false
-          required:
-            - journal_id
-            - user_id
-            - expertise
-            - statement
-            - status
-            - reason
-            - version
-            - created_at
-            - decided_at
-          properties:
-            journal_id:
-              $ref: "#/components/schemas/Identifier"
-            user_id:
-              $ref: "#/components/schemas/Identifier"
-            expertise:
-              type: array
-              items:
-                type: string
-                minLength: 1
-                maxLength: 100
-              maxItems: 20
-            statement:
-              type: string
-              minLength: 0
-              maxLength: 10000
-            status:
-              type: string
-              enum:
-                - pending
-                - approved
-                - declined
-                - withdrawn
-            reason:
-              oneOf:
-                - type: string
-                  minLength: 0
-                  maxLength: 5000
-                - type: "null"
-            version:
-              type: integer
-              minimum: 1
-            created_at:
-              $ref: "#/components/schemas/Timestamp"
-            decided_at:
-              oneOf:
-                - $ref: "#/components/schemas/Timestamp"
-                - type: "null"
-          allOf:
-            - if:
-                type: object
-                properties:
-                  status:
-                    enum:
-                      - approved
-                required:
-                  - status
-                additionalProperties: true
-              then:
-                type: object
-                properties:
-                  expertise:
-                    type: array
-                    minItems: 1
-                  statement:
-                    type: string
-                    minLength: 1
-                required: []
-                additionalProperties: true
-    ReviewerApplicationResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - data
-        - meta
-      properties:
-        data:
-          $ref: "#/components/schemas/ReviewerApplicationResource"
-        meta:
-          $ref: "#/components/schemas/ResourceMeta"
-    ReviewerApplicationsListResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - data
-        - meta
-        - links
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/ReviewerApplicationResource"
-          maxItems: 100
-        meta:
-          $ref: "#/components/schemas/PaginatedMeta"
-        links:
-          $ref: "#/components/schemas/PaginationLinks"
-    ApplicationDecisionRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - decision
-        - reason
-      properties:
-        decision:
-          type: string
-          enum:
-            - approve
-            - decline
-        reason:
-          type: string
-          minLength: 3
-          maxLength: 5000
     UpdateProfileRequest:
       type: object
       additionalProperties: false
@@ -6384,24 +6204,6 @@ components:
           type: string
           minLength: 0
           maxLength: 5000
-    UpdateReviewerApplicationRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        expertise:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items:
-            type: string
-            minLength: 1
-            maxLength: 100
-        statement:
-          type: string
-          minLength: 1
-          maxLength: 10000
-      required: []
-      minProperties: 1
     SystemUserListResponse:
       type: object
       additionalProperties: false
@@ -6521,11 +6323,11 @@ paths:
       operationId: registerUser
       summary: Register a user account
       description: Creates a pending account and queues a single-use verification email valid for 24
-        hours. Verification activates default Reader/Author access. A reviewer application is pending
-        Journal Manager approval in journal_id and never grants privileged roles. When
-        requested_role=reviewer, create a pending application linked to journal_id; after verification the
-        applicant can discover it via listReviewerApplications and submit expertise/statement before a
-        manager decision.
+        hours. Verification activates default Reader/Author access; enrollment in additional journals
+        uses joinJournalAsAuthor. Registration accepts no role selection or reviewer application.
+        Editors invite eligible reviewers to a specific submission and review round through
+        assignReviewers. Reviewer directory membership alone never grants manuscript access;
+        access requires the matching accepted assignment.
       security: []
       x-use-cases: [UC-01]
       x-required-roles: [public]
@@ -6543,7 +6345,6 @@ paths:
                   username: benediktus
                   password: StrongPassword123!
                   affiliation: Universitas Hasanuddin
-                  requested_role: author
       responses:
         "201":
           description: Account created; email verification is pending.
@@ -9036,6 +8837,9 @@ paths:
       tags: [Peer Review]
       operationId: searchReviewers
       summary: Search eligible reviewers by expertise and availability
+      description: Search the journal reviewer directory maintained through journal user/role administration.
+        Directory membership only makes a user eligible for editor invitations; manuscript access is
+        restricted to matching accepted assignments for a specific submission and review round.
       x-use-cases: [UC-11]
       x-required-roles: [section_editor, editor_in_chief]
       parameters:
@@ -9254,7 +9058,11 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
       x-implementation-status: planned
-      description: Atomically invite eligible active reviewers in this journal to the pinned round. Reject
+      description: Atomically invite eligible active reviewers in this journal to the pinned round.
+        Journal Managers maintain reviewer directory membership through journal user/role administration;
+        registration does not request or grant reviewer membership. Each invitation is scoped to one
+        submission and review round. Only its assigned reviewer may respond, and manuscript access
+        requires acceptance. Directory membership never grants access to other submissions. Reject
         duplicate reviewers, self-review/co-author conflicts, duplicate live assignments and
         response_due_at >= review_due_at. Capture invitation and rubric versions, audit, and queue
         delivery only after commit. Require database_now < response_due_at < review_due_at; deadlines are
@@ -14713,344 +14521,6 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/JoinJournalRequest"
-      x-implementation-status: planned
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-        - NF-10
-  /api/v1/journals/{journal_id}/reviewer-applications:
-    parameters:
-      - $ref: "#/components/parameters/JournalId"
-    post:
-      tags:
-        - Users and Roles
-      operationId: applyAsReviewer
-      summary: Apply as a reviewer in this journal
-      description: Apply as a reviewer in this journal. The account must be verified; allow only one
-        pending application per user/journal. No reviewer privilege exists until manager approval.
-      x-use-cases:
-        - UC-01
-        - UC-16
-      x-required-roles:
-        - authenticated
-      responses:
-        "201":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-            Location:
-              description: Canonical URL of the created resource; contains no credentials.
-              schema:
-                type: string
-                format: uri-reference
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReviewerApplicationRequest"
-      x-implementation-status: planned
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-        - NF-10
-    get:
-      tags:
-        - Users and Roles
-      operationId: listReviewerApplications
-      summary: List reviewer applications
-      description: List reviewer applications. Ordinary users see only their own; journal managers see
-        pending applications in their journal.
-      x-use-cases:
-        - UC-01
-        - UC-16
-      x-required-roles:
-        - authenticated
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationsListResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/PerPage"
-      x-implementation-status: planned
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-  /api/v1/journals/{journal_id}/reviewer-applications/{application_id}:
-    parameters:
-      - $ref: "#/components/parameters/JournalId"
-      - $ref: "#/components/parameters/ApplicationId"
-    get:
-      tags:
-        - Users and Roles
-      operationId: getReviewerApplication
-      summary: Read an application
-      description: Read an application. Restrict to its applicant or the journal manager.
-      x-use-cases:
-        - UC-01
-        - UC-16
-      x-required-roles:
-        - authenticated
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-            ETag:
-              $ref: "#/components/headers/ETag"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      x-implementation-status: planned
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-    patch:
-      tags:
-        - Users and Roles
-      operationId: updateReviewerApplication
-      summary: Complete a pending reviewer application
-      description: Only the applicant may edit expertise and statement while pending. Registration may
-        create an incomplete request; approval requires non-empty expertise and statement.
-      x-use-cases:
-        - UC-01
-        - UC-16
-      x-required-roles:
-        - authenticated
-      x-implementation-status: planned
-      x-concurrency-resource: /api/v1/journals/{journal_id}/reviewer-applications/{application_id}
-      parameters:
-        - $ref: "#/components/parameters/IfMatch"
-      requestBody:
-        required: true
-        content:
-          application/merge-patch+json:
-            schema:
-              $ref: "#/components/schemas/UpdateReviewerApplicationRequest"
-      responses:
-        "200":
-          description: Pending application updated.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "412":
-          $ref: "#/components/responses/PreconditionFailed"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "428":
-          $ref: "#/components/responses/PreconditionRequired"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-        - NF-10
-  /api/v1/journals/{journal_id}/reviewer-applications/{application_id}/decision:
-    parameters:
-      - $ref: "#/components/parameters/JournalId"
-      - $ref: "#/components/parameters/ApplicationId"
-    post:
-      tags:
-        - Users and Roles
-      operationId: decideReviewerApplication
-      summary: Decide a pending reviewer application
-      description: Decide a pending reviewer application. On approval atomically grant only the reviewer
-        membership role; log and notify. Rejected or duplicate decisions return 409. Approval requires
-        completed expertise and statement; otherwise return 422.
-      x-use-cases:
-        - UC-16
-      x-required-roles:
-        - journal_manager
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "412":
-          $ref: "#/components/responses/PreconditionFailed"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "428":
-          $ref: "#/components/responses/PreconditionRequired"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      x-concurrency-resource: /api/v1/journals/{journal_id}/reviewer-applications/{application_id}
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - $ref: "#/components/parameters/IfMatch"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ApplicationDecisionRequest"
-      x-implementation-status: planned
-      x-non-functional-requirements:
-        - NF-02
-        - NF-07
-        - NF-10
-  /api/v1/journals/{journal_id}/reviewer-applications/{application_id}/withdraw:
-    parameters:
-      - $ref: "#/components/parameters/JournalId"
-      - $ref: "#/components/parameters/ApplicationId"
-    post:
-      tags:
-        - Users and Roles
-      operationId: withdrawReviewerApplication
-      summary: Withdraw the authenticated applicant's own pending application
-      description: Withdraw the authenticated applicant's own pending application. Managers cannot
-        impersonate the applicant.
-      x-use-cases:
-        - UC-01
-      x-required-roles:
-        - authenticated
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReviewerApplicationResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/XRequestId"
-            Cache-Control:
-              $ref: "#/components/headers/NoStore"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "412":
-          $ref: "#/components/responses/PreconditionFailed"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "428":
-          $ref: "#/components/responses/PreconditionRequired"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      x-concurrency-resource: /api/v1/journals/{journal_id}/reviewer-applications/{application_id}
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - $ref: "#/components/parameters/IfMatch"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReasonRequest"
       x-implementation-status: planned
       x-non-functional-requirements:
         - NF-02

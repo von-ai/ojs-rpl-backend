@@ -2,9 +2,16 @@
 
 ## 1.0.0 — 7 Oktober 2026
 
-Final baseline untuk implementasi, 201 operasi planned. Persetujuan stakeholder
+Final baseline untuk implementasi, 195 operasi planned. Persetujuan stakeholder
 mengikuti review PR; versi kontrak tidak berarti implementasi telah dirilis.
 
+- **Perubahan registrasi sebelum implementasi:** hapus `requested_role` dan `journal_id`
+  dari `RegisterRequest`; kedua field lama sekarang ditolak. `username` tetap wajib.
+  Hapus enam operasi reviewer application, schema terkait dan parameter `application_id`.
+  Reviewer direkrut melalui undangan editor per naskah/putaran; direktori reviewer tetap
+  dikelola melalui membership/role jurnal dan tidak memberi akses naskah secara otomatis.
+  Client harus menghapus pilihan role dari form register dan halaman pengajuan reviewer,
+  lalu memperbarui SDK/mock serta memakai alur assignment yang sudah tersedia.
 - Tetapkan stack, batas modul, keputusan bisnis dan acceptance gate dalam architecture.md.
 - Tambahkan skenario berhasil, alternatif/gagal dan kriteria penerimaan UC-01–18.
 - Tetapkan UTC database clock, expiry saat `now >= due_at`, worker per menit,

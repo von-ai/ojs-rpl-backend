@@ -102,6 +102,7 @@ status yang terlihat. `/up` scaffold tidak membuktikan readiness domain.
 
 | Keputusan final desain v1 | Asal / implikasi |
 | --- | --- |
+| Registrasi tanpa pilihan role; reviewer melalui undangan editor per naskah/putaran | Kesepakatan 7 Oktober 2026: hapus pengajuan reviewer mandiri. Direktori jurnal dikelola melalui membership/role, akses manuskrip memerlukan assignment yang diterima. Username tetap wajib. |
 | Double-blind; originality/metodologi wajib, skala integer 1–5 | Alur blind dan aspek penilaian berasal dari UC-09/11; skala 1–5 keputusan desain. Guideline versioned, round lama tetap memakai snapshot. |
 | Review terlambat read-only sampai extension disetujui | Pengetatan eksplisit UC-09 yang menyebut draft sebelum deadline; detail race/extension merupakan keputusan desain. |
 | PDF wajib saat publikasi; HTML/XML sebagai pendamping | Keputusan baseline kompatibilitas pembaca; proposal menyebut PDF/HTML/XML. Perbedaan ini perlu ditinjau saat PR. |

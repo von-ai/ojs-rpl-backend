@@ -1,6 +1,10 @@
 # SIRIDA backend and API contract review
 
-**Current baseline: 1.0.0.** See [architecture](architecture.md),
+**Current baseline: 1.0.0 (195 planned operations).** Registration no longer accepts
+role selection or creates reviewer applications. Reviewers are invited by editors
+for a specific submission/review round; directory membership alone grants no manuscript
+access. The historical reviewer-application recommendations below are superseded.
+See [architecture](architecture.md),
 [use cases](use-cases.md) and [changelog](changelog.md). The dated draft reviews
 below are historical; final design decisions do not imply stakeholder approval.
 
@@ -94,7 +98,7 @@ this corrective PR does not claim to close.
 
 | SRS use case | Contract coverage after correction | Remaining work or decision |
 | --- | --- | --- |
-| UC-01 Registration | Register, verify, resend; default Reader/Author and pending reviewer request | Implement verification delivery/expiry and journal membership provisioning; define reviewer-application approval UI/lifecycle. |
+| UC-01 Registration | Register, verify, resend; default Reader/Author; no registration role selection | Implement verification delivery/expiry and journal membership provisioning. Reviewer recruitment uses editor invitations scoped to a submission/review round; the former self-service application recommendation is superseded. |
 | UC-02 Login | Email/username login, logout, refresh, reset, current context | Implement hashing, account-keyed lockout across aliases, security email, JWT validation/revocation and role-context selection. Decide absolute session/refresh lifetime; SRS fixes access-token maximum at 24h. |
 | UC-03 Read/download | Public metadata, safe contributors, citations, galley downloads | Enforce published-only visibility and galley ownership, deduplicate download statistics, handle missing objects. Define reading-statistics behavior. |
 | UC-04 Search | Query, year/volume/issue/section/author/keyword filters and pagination | Implement indexing and failure handling; related-article/alternative-query response is still unspecified. |
@@ -109,7 +113,7 @@ this corrective PR does not claim to close.
 | UC-13 Copyediting | Start/read/update, request author approval, approve or request changes | Implement assignment and approved-file binding; add copyedit history/list and mediation/escalation workflow. |
 | UC-14 Layout | Version registration/read, final approval, ready-article creation | Add explicit Layout Editor assignment and galley history/list; validate predecessor proof/final checksums. |
 | UC-15 Publish issue | Ready articles, issue composition, schedule/publish/cancel, Crossref retry | Implement atomic publication/outbox and retry workers. Define current-issue selection, DOI ownership and uniqueness, schedule failure recovery. |
-| UC-16 Users/roles | Scoped membership create/read/update/deactivate/roles/import | Define and implement account deletion vs membership removal and active-submission retention. Add manager-initiated reset and reviewer approval lifecycle. All last-editor guards must run transactionally. |
+| UC-16 Users/roles | Scoped membership create/read/update/deactivate/roles/import | Define and implement account deletion vs membership removal and active-submission retention. Add manager-initiated reset and reviewer directory administration; manuscript access still requires an accepted assignment. All last-editor guards must run transactionally. |
 | UC-17 System settings | Read/update, integration test, rollback | Add settings version-list/read, tested-candidate binding before save, system-level audit reads. Validate secrets/provider configuration; never trust client-supplied arbitrary integration URLs. |
 | UC-18 Proofreading | Assignment via proof command, notes, approve/return and exact file checksum | Add notes/history reads, resolution and escalation back to Copyeditor; invalidate obsolete approval on replacement. |
 

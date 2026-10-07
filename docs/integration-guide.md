@@ -8,8 +8,9 @@ HTTPS origin lewat konfigurasi deployment, bukan hostname `.example`.
 
 ## Alur berhasil: penulis mengirim naskah
 
-1. `registerUser` → `verifyEmail` → `login`. Pendaftaran hanya memberikan peran yang
-   diizinkan; editorial role tidak dapat diminta sendiri. Untuk jurnal tambahan,
+1. `registerUser` → `verifyEmail` → `login`. Pendaftaran menerima data akun tanpa
+   `requested_role` atau `journal_id`; `username` tetap wajib. Verifikasi mengaktifkan
+   akses dasar Reader/Author, bukan akses reviewer atau editorial. Untuk jurnal tambahan,
    gunakan `joinJournalAsAuthor`. Simpan token hanya di tempat yang sesuai arsitektur
    browser/BFF pada [stack](architecture.md).
 2. `getCurrentUser` → `getActiveContext`/`setActiveContext`. Konteks memilih hak yang
@@ -52,10 +53,15 @@ Jangan membentuk ETag dari angka `version`. GET sumber validator ditunjukkan ole
 
 ## Alur berhasil: reviewer sampai publikasi
 
+Journal Manager mengelola direktori reviewer melalui administrasi membership/role jurnal.
+Keanggotaan direktori hanya menentukan kelayakan undangan, tidak membuka akses naskah.
+Pengguna tidak mengajukan role reviewer saat register dan tidak melalui reviewer application.
 Editor membuka round dengan file anonim dan rubric snapshot, kemudian `assignReviewers`
 dengan `now < response_due_at < review_due_at`. Reviewer membaca undangan melalui
 `listReviewAssignments`/`getReviewAssignment`, menerima sebelum tenggat, membaca
-workspace, menyimpan draft dan mengirim evaluasi lengkap sebelum review deadline.
+workspace hanya untuk assignment naskah/putaran tersebut, menyimpan draft dan mengirim
+evaluasi lengkap sebelum review deadline. Pengguna yang sama dapat menjadi author pada
+naskah lain; role reviewer tidak memberi akses ke seluruh submission jurnal.
 Atau ajukan extension dan tunggu keputusan editor; permohonan tidak menghentikan jam.
 
 EIC menilai ringkasan, membuat dan mengirim keputusan. Acceptance dilanjutkan dengan

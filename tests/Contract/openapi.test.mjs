@@ -88,12 +88,27 @@ test('global roles are represented separately from journal memberships', () => {
     assert.equal(schemas.JournalUserResource.properties.attributes.properties.membership.$ref, '#/components/schemas/Membership');
 });
 
-test('default registration needs no privileged role; reviewer application is journal-scoped', () => {
+test('registration accepts an account without role selection and rejects legacy role requests', () => {
     const registration = { full_name: 'Test Author', email: 'author@example.org', username: 'author', password: 'TestPassword123!', affiliation: 'University' };
     check('RegisterRequest', registration);
-    check('RegisterRequest', { ...registration, requested_role: 'reviewer' }, false);
-    check('RegisterRequest', { ...registration, requested_role: 'reviewer', journal_id: 'journal-1' });
-    check('RegisterRequest', { ...registration, requested_role: 'system_administrator' }, false);
+    for (const role of ['author', 'reviewer', 'system_administrator']) {
+        check('RegisterRequest', { ...registration, requested_role: role }, false);
+        check('RegisterRequest', { ...registration, requested_role: role, journal_id: 'journal-1' }, false);
+    }
+    check('RegisterRequest', { ...registration, journal_id: 'journal-1' }, false);
+    check('RegisterRequest', { ...registration, roles: ['reviewer'] }, false);
+    const { username, ...withoutUsername } = registration;
+    check('RegisterRequest', withoutUsername, false);
+});
+
+test('reviewer recruitment uses editorial assignments instead of self-service applications', () => {
+    assert.ok(!Object.keys(api.paths).some(path => path.includes('/reviewer-applications')));
+    assert.ok(!Object.keys(schemas).some(name => name.includes('ReviewerApplication')));
+    assert.equal(api.components.parameters.ApplicationId, undefined);
+    assert.equal(schemas.ApplicationDecisionRequest, undefined);
+    assert.deepEqual(getOperation('assignReviewers')['x-required-roles'], ['section_editor', 'editor_in_chief']);
+    assert.deepEqual(getOperation('acceptReviewAssignment')['x-workflow'].allowed_states, ['invited']);
+    assert.equal(getOperation('acceptReviewAssignment')['x-workflow'].resulting_state, 'accepted');
 });
 
 test('login and refresh return usable tokens without request-only annotations or cache storage', () => {
@@ -227,14 +242,9 @@ test('active context distinguishes global administrator from a journal role', ()
     check('ActiveContext', { journal_id: null, role: 'journal_manager' }, false);
 });
 
-test('reviewer application and extension decisions require a reason and restricted actors', () => {
-    check('ReviewerApplicationRequest', { expertise: ['Environment'], statement: 'Research experience.' });
-    check('ReviewerApplicationRequest', { expertise: [], statement: 'Research experience.' }, false);
-    check('ApplicationDecisionRequest', { decision: 'approve', reason: 'Expertise verified' });
-    check('ApplicationDecisionRequest', { decision: 'approve' }, false);
+test('extension decisions require a reason and restricted actors', () => {
     check('ExtensionDecisionRequest', { decision: 'decline', reason: 'Issue deadline' });
     check('ExtensionDecisionRequest', { decision: 'decline' }, false);
-    assert.deepEqual(getOperation('decideReviewerApplication')['x-required-roles'], ['journal_manager']);
     assert.ok(!getOperation('decideReviewExtension')['x-required-roles'].includes('reviewer'));
 });
 

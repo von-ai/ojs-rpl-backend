@@ -2,7 +2,7 @@
 
 Updated 7 October 2026. This document accompanies `docs/openapi.yaml` version
 `1.0.0`. It completes the contract-level gaps identified in the
-[SRS review](review-srs.md), with **201 planned operations**. It does not implement
+[SRS review](review-srs.md), with **195 planned operations**. It does not implement
 the application. All operations explicitly carry `x-implementation-status: planned`.
 
 The final stack, business decisions and source deviations are recorded in
@@ -20,7 +20,7 @@ plagiarism engine or AI layout feature is added.
 
 | Area / SRS | Version 1.0.0 contract |
 | --- | --- |
-| Registration, UC-01 | `joinJournalAsAuthor`; reviewer application create/list/read/update/decision/withdraw. Registration may create an incomplete pending application; the verified applicant completes it before approval. |
+| Registration, UC-01 | Account registration without role selection; verification enables default Reader/Author access, with `joinJournalAsAuthor` for additional journal enrollment. Reviewers are recruited through editor invitations scoped to a submission and review round. |
 | Login, UC-02 | `getActiveContext`/`setActiveContext`, self-profile updates, bounded access/session policies, explicit bearer/SSE transport, ORCID connection read and denial callback. |
 | Reading/search, UC-03/04 | Public-only issue schemas, explicit current issue, deduplicated view events, safe search suggestions and Dublin Core export. |
 | Submission, UC-05/06 | Partial drafts; public sections/guidelines/upload capabilities; completeness checks at submit; authorized file/version history; optional external similarity check create/list/read. |
@@ -32,7 +32,7 @@ plagiarism engine or AI layout feature is added.
 | Copyediting, UC-13 | History, EIC assignment, author approval of the entire locked output set, mediation/escalation lifecycle. |
 | Layout, UC-14 | Explicit Layout Editor assignment, version history, final/predecessor checks, creation of ready unpublished article identities. |
 | Publication, UC-15 | Explicit current issue selection, schedule failure metadata/recovery, stable DOI allocation and retry rules, public XML export. |
-| Users, UC-16 | Journal-scoped membership deletion/deactivation, manager-initiated reset email, reviewer approvals, self-managed shared identity and separate global account tombstoning. |
+| Users, UC-16 | Journal-scoped membership deletion/deactivation, manager-initiated reset email, reviewer directory administration, self-managed shared identity and separate global account tombstoning. |
 | Configuration, UC-17 | Redacted settings history, safe rollback, operator-provisioned integration profiles, immutable test candidates and guarded apply, global audit reads. |
 | Proofreading, UC-18 | Version-bound note discovery/read/resolution, production discrepancy escalation, approval invalidation on content changes. |
 | Journal administration, §1.3 | Section, page, announcement and journal email-template CRUD; public content projections and a safe template-event/placeholder catalog. |
@@ -48,7 +48,13 @@ already-held role; it does not mint a grant. A global context uses a null journa
 and `system_administrator`; a journal context must use a `JournalRole`.
 
 Reader/Author enrollment is self-service only for journals open to enrollment.
-Reviewer approval is manager-controlled. Privileged editorial roles remain assigned
+Journal Managers maintain reviewer directory membership through journal user/role
+administration; it only determines eligibility for invitations. Editors invite
+reviewers for a specific submission and review round, and acceptance grants access
+only to that assignment. There is no self-service reviewer application or registration
+role selector. One identity may be an author on one submission and a reviewer on
+another; ownership, assignment and conflict checks apply per submission.
+Privileged editorial roles remain assigned
 through journal membership administration. Initial/global administrator provisioning
 is an operator-controlled deployment process, not a public/journal API.
 

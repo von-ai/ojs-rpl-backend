@@ -7,7 +7,7 @@ This repository currently contains a Laravel scaffold and a **planned**
 registered or implemented. Do not use the contract as evidence that authentication,
 authorization, submission or publishing functionality is production-ready.
 
-The final implementation baseline **1.0.0** defines 201 planned operations.
+The final implementation baseline **1.0.0** defines 195 planned operations.
 Start with the [selected technology stack](docs/architecture.md),
 [UC-01–18 acceptance scenarios](docs/use-cases.md),
 [client integration guide](docs/integration-guide.md) and

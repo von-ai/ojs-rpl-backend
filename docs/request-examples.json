@@ -1,5 +1,15 @@
 [
   {
+    "operationId": "registerUser",
+    "body": {
+      "full_name": "Example Author",
+      "email": "author@example.org",
+      "username": "example.author",
+      "password": "Example-only-secret-42!",
+      "affiliation": "Example University"
+    }
+  },
+  {
     "operationId": "login",
     "body": {
       "login": "author@example.org",
