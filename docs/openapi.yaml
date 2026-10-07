@@ -4806,6 +4806,195 @@ components:
           $ref: "#/components/schemas/PaginatedMeta"
         links:
           $ref: "#/components/schemas/PaginationLinks"
+    DublinCoreMetadata:
+      type: object
+      description: XML serialization model for unqualified Dublin Core. Elements may repeat;
+        this endpoint returns application/xml, not a JSON object. Only published metadata is exported.
+      xml:
+        name: dc
+        prefix: oai_dc
+        namespace: http://www.openarchives.org/OAI/2.0/oai_dc/
+      properties:
+        title:
+          type: array
+          xml:
+            name: title
+            wrapped: false
+          items:
+            type: string
+            example: "Penerapan Sistem Informasi Jurnal"
+            xml:
+              name: title
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        creator:
+          type: array
+          xml:
+            name: creator
+            wrapped: false
+          items:
+            type: string
+            example: "Budi Santoso"
+            xml:
+              name: creator
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        subject:
+          type: array
+          xml:
+            name: subject
+            wrapped: false
+          items:
+            type: string
+            example: "Sistem informasi"
+            xml:
+              name: subject
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        description:
+          type: array
+          xml:
+            name: description
+            wrapped: false
+          items:
+            type: string
+            example: "Penelitian ini membahas pengelolaan jurnal digital."
+            xml:
+              name: description
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        publisher:
+          type: array
+          xml:
+            name: publisher
+            wrapped: false
+          items:
+            type: string
+            example: "Universitas Contoh"
+            xml:
+              name: publisher
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        contributor:
+          type: array
+          xml:
+            name: contributor
+            wrapped: false
+          items:
+            type: string
+            example: "Siti Rahma"
+            xml:
+              name: contributor
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        date:
+          type: array
+          xml:
+            name: date
+            wrapped: false
+          items:
+            type: string
+            example: "2026-10-07"
+            xml:
+              name: date
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        type:
+          type: array
+          xml:
+            name: type
+            wrapped: false
+          items:
+            type: string
+            example: "Text"
+            xml:
+              name: type
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        format:
+          type: array
+          xml:
+            name: format
+            wrapped: false
+          items:
+            type: string
+            example: "application/pdf"
+            xml:
+              name: format
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        identifier:
+          type: array
+          xml:
+            name: identifier
+            wrapped: false
+          items:
+            type: string
+            example: "https://sirida.example/journals/jurnal-informatika/articles/01ARZ3NDEKTSV4RRFFQ69G5FAV"
+            xml:
+              name: identifier
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        source:
+          type: array
+          xml:
+            name: source
+            wrapped: false
+          items:
+            type: string
+            example: "Jurnal Informatika"
+            xml:
+              name: source
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        language:
+          type: array
+          xml:
+            name: language
+            wrapped: false
+          items:
+            type: string
+            example: "id"
+            xml:
+              name: language
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        relation:
+          type: array
+          xml:
+            name: relation
+            wrapped: false
+          items:
+            type: string
+            example: "https://sirida.example/journals/jurnal-informatika"
+            xml:
+              name: relation
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        coverage:
+          type: array
+          xml:
+            name: coverage
+            wrapped: false
+          items:
+            type: string
+            example: "Indonesia"
+            xml:
+              name: coverage
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
+        rights:
+          type: array
+          xml:
+            name: rights
+            wrapped: false
+          items:
+            type: string
+            example: "https://creativecommons.org/licenses/by/4.0/"
+            xml:
+              name: rights
+              prefix: dc
+              namespace: http://purl.org/dc/elements/1.1/
     PublicAnnouncementResource:
       type: object
       additionalProperties: false
@@ -16618,7 +16807,19 @@ paths:
           content:
             application/xml:
               schema:
-                type: string
+                $ref: "#/components/schemas/DublinCoreMetadata"
+              example:
+                title: [Penerapan Sistem Informasi Jurnal]
+                creator: [Budi Santoso, Siti Rahma]
+                subject: [Sistem informasi, Penerbitan jurnal]
+                description: [Penelitian ini membahas pengelolaan jurnal digital.]
+                publisher: [Universitas Contoh]
+                date: ["2026-10-07"]
+                type: [Text]
+                identifier:
+                  - https://sirida.example/journals/jurnal-informatika/articles/01ARZ3NDEKTSV4RRFFQ69G5FAV
+                language: [id]
+                rights: [https://creativecommons.org/licenses/by/4.0/]
         "404":
           $ref: "#/components/responses/NotFound"
         "429":

@@ -29,6 +29,7 @@ const ajv = new Ajv2020({ allErrors: true, strictSchema: true, strictTypes: fals
 addFormats(ajv);
 // OAS annotations do not change JSON Schema validation.
 ajv.addKeyword('example');
+ajv.addKeyword('xml');
 ajv.addFormat('password', true);
 const schemaRoot = {
     $id: 'urn:sirida:contract',
@@ -316,6 +317,26 @@ test('public page navigation uses metadata and slug detail supplies published co
     const entry = operations.find(({ operation }) => operation.operationId === 'getPublicJournalPage');
     assert.equal(entry.path, '/api/v1/public/journals/{journal_slug}/pages/{page_slug}');
     assert.deepEqual(parameters(entry).filter(p => p.in === 'path').map(p => p.name).sort(), ['journal_slug', 'page_slug']);
+});
+
+test('article metadata defines a named XML root and repeatable Dublin Core elements', () => {
+    const media = getOperation('exportArticleDublinCore').responses['200'].content['application/xml'];
+    const schema = resolve(media.schema);
+    assert.equal(schema.type, 'object');
+    assert.deepEqual(schema.xml, {
+        name: 'dc', prefix: 'oai_dc', namespace: 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+    });
+    assert.equal(Object.keys(schema.properties).length, 15);
+    for (const [name, element] of Object.entries(schema.properties)) {
+        assert.equal(element.type, 'array');
+        assert.equal(element.xml.wrapped, false);
+        assert.deepEqual(element.items.xml, {
+            name, prefix: 'dc', namespace: 'http://purl.org/dc/elements/1.1/',
+        });
+    }
+    check('DublinCoreMetadata', media.example);
+    assert.equal(media.example.creator.length, 2);
+    assert.equal(media.example.title[0], 'Penerapan Sistem Informasi Jurnal');
 });
 
 test('all detailed SRS use cases have traceable operations and no endpoint claims implementation', () => {
