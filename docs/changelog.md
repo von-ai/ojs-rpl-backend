@@ -2,9 +2,13 @@
 
 ## 1.0.0 — 7 Oktober 2026
 
-Final baseline untuk implementasi, 195 operasi planned. Persetujuan stakeholder
+Final baseline untuk implementasi, 196 operasi planned. Persetujuan stakeholder
 mengikuti review PR; versi kontrak tidak berarti implementasi telah dirilis.
 
+- **Perubahan pages publik sebelum implementasi:** respons daftar hanya berisi metadata
+  `id`, `type`, `attributes.slug` dan `attributes.title`. Ambil `body_html` melalui endpoint
+  detail baru `GET /api/v1/public/journals/{journal_slug}/pages/{page_slug}`.
+  Client/SDK/mock harus memakai skema ringkasan untuk daftar dan mengambil detail saat halaman dibuka.
 - **Perubahan registrasi sebelum implementasi:** hapus `requested_role` dan `journal_id`
   dari `RegisterRequest`; kedua field lama sekarang ditolak. `username` tetap wajib.
   Hapus enam operasi reviewer application, schema terkait dan parameter `application_id`.

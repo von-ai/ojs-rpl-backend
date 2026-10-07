@@ -293,6 +293,31 @@ test('journal content CRUD is private and published projections reject draft con
     assert.ok(getOperation('getSubmissionPolicy').security.length === 0);
 });
 
+test('public page navigation uses metadata and slug detail supplies published content', () => {
+    const list = getOperation('listPublicJournalPages');
+    const detail = getOperation('getPublicJournalPage');
+    const listMedia = list.responses['200'].content['application/json'];
+    const detailMedia = detail.responses['200'].content['application/json'];
+    assert.deepEqual(list.security, []);
+    assert.deepEqual(detail.security, []);
+    check('PublicJournalPagesListResponse', listMedia.example);
+    check('PublicJournalPageResponse', detailMedia.example);
+    const summary = listMedia.example.data[0];
+    assert.deepEqual(Object.keys(summary.attributes).sort(), ['slug', 'title']);
+    check('PublicJournalPageSummaryResource', {
+        ...summary, attributes: { ...summary.attributes, body_html: '<p>Unexpected content</p>' },
+    }, false);
+    const page = detailMedia.example.data;
+    check('PublicJournalPageResponse', {
+        ...detailMedia.example, data: { ...page, attributes: { ...page.attributes, published: false } },
+    }, false);
+    check('PublicJournalPageResponse', { data: summary, meta: { request_id: 'test' } }, false);
+    assert.ok(detail.responses['404']);
+    const entry = operations.find(({ operation }) => operation.operationId === 'getPublicJournalPage');
+    assert.equal(entry.path, '/api/v1/public/journals/{journal_slug}/pages/{page_slug}');
+    assert.deepEqual(parameters(entry).filter(p => p.in === 'path').map(p => p.name).sort(), ['journal_slug', 'page_slug']);
+});
+
 test('all detailed SRS use cases have traceable operations and no endpoint claims implementation', () => {
     const covered = new Set(operations.flatMap(({ operation }) => operation['x-use-cases'] ?? []));
     for (let i = 1; i <= 18; i++) assert.ok(covered.has(`UC-${String(i).padStart(2, '0')}`));

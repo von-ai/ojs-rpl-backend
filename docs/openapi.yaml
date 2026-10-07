@@ -148,6 +148,15 @@ components:
       schema:
         type: string
         pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    PageSlug:
+      name: page_slug
+      in: path
+      required: true
+      description: Slug of a published page within the selected journal.
+      schema:
+        type: string
+        pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        example: panduan-penulis
     SubmissionId:
       name: submission_id
       in: path
@@ -4501,6 +4510,8 @@ components:
             slug:
               type: string
               pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+              description: Human-readable page URL segment using lowercase letters, numbers and hyphens.
+              example: panduan-penulis
             title:
               type: string
               minLength: 1
@@ -4541,6 +4552,8 @@ components:
         slug:
           type: string
           pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+          description: Human-readable page URL segment using lowercase letters, numbers and hyphens.
+          example: panduan-penulis
         title:
           type: string
           minLength: 1
@@ -4558,6 +4571,8 @@ components:
         slug:
           type: string
           pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+          description: Human-readable page URL segment using lowercase letters, numbers and hyphens.
+          example: panduan-penulis
         title:
           type: string
           minLength: 1
@@ -4611,6 +4626,8 @@ components:
             slug:
               type: string
               pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+              description: Human-readable page URL segment using lowercase letters, numbers and hyphens.
+              example: panduan-penulis
             title:
               type: string
               minLength: 1
@@ -4622,6 +4639,40 @@ components:
             published:
               type: boolean
               const: true
+    PublicJournalPageSummaryResource:
+      type: object
+      additionalProperties: false
+      required: [id, type, attributes]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          type: string
+          const: journal_page
+        attributes:
+          type: object
+          additionalProperties: false
+          required: [slug, title]
+          properties:
+            slug:
+              type: string
+              pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+              description: Human-readable page URL segment using lowercase letters, numbers and hyphens.
+              example: panduan-penulis
+            title:
+              type: string
+              minLength: 1
+              maxLength: 500
+              example: Panduan Penulis
+    PublicJournalPageResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicJournalPageResource"
+        meta:
+          $ref: "#/components/schemas/ResourceMeta"
     PublicJournalPagesListResponse:
       type: object
       additionalProperties: false
@@ -4633,7 +4684,7 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/PublicJournalPageResource"
+            $ref: "#/components/schemas/PublicJournalPageSummaryResource"
           maxItems: 100
         meta:
           $ref: "#/components/schemas/PaginatedMeta"
@@ -13868,9 +13919,10 @@ paths:
       tags:
         - Public Catalog
       operationId: listPublicJournalPages
-      summary: List public pages
-      description: List public pages. Return only published, non-expired content; sections must be active.
-        Exclude draft configuration.
+      summary: List published page metadata for journal navigation
+      description: List id, slug and title for published pages of an active journal. Omit body_html;
+        fetch page content through GET /api/v1/public/journals/{journal_slug}/pages/{page_slug}.
+        Follow pagination links to discover all pages. Exclude draft pages and inactive journals.
       x-use-cases:
         - UC-03
         - UC-17
@@ -13883,6 +13935,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicJournalPagesListResponse"
+              example:
+                data:
+                  - id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+                    type: journal_page
+                    attributes:
+                      slug: panduan-penulis
+                      title: Panduan Penulis
+                meta:
+                  request_id: req-pages-list
+                  pagination:
+                    page: 1
+                    per_page: 20
+                    total: 1
+                    last_page: 1
+                links:
+                  self: /api/v1/public/journals/jurnal-informatika/pages?page=1&per_page=20
+                  next: null
+                  prev: null
           headers:
             X-Request-ID:
               $ref: "#/components/headers/XRequestId"
@@ -13902,6 +13972,52 @@ paths:
       x-non-functional-requirements:
         - NF-02
         - NF-07
+  /api/v1/public/journals/{journal_slug}/pages/{page_slug}:
+    parameters:
+      - $ref: "#/components/parameters/JournalSlug"
+      - $ref: "#/components/parameters/PageSlug"
+    get:
+      tags: [Public Catalog]
+      operationId: getPublicJournalPage
+      summary: Read a published journal page by slug
+      description: Resolve page_slug within the active journal identified by journal_slug and return
+        the published page with sanitized body_html for frontend rendering. Return 404 when the
+        journal is inactive or missing, or the page is missing, unpublished or belongs to another
+        journal. Never expose draft content.
+      security: []
+      x-use-cases: [UC-03, UC-17]
+      x-required-roles: [public]
+      responses:
+        "200":
+          description: Published page content.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicJournalPageResponse"
+              example:
+                data:
+                  id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+                  type: journal_page
+                  attributes:
+                    slug: panduan-penulis
+                    title: Panduan Penulis
+                    body_html: "<h2>Persyaratan Naskah</h2><p>Naskah harus merupakan karya asli.</p>"
+                    published: true
+                meta:
+                  request_id: req-page-detail
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      x-implementation-status: planned
+      x-non-functional-requirements: [NF-02, NF-07]
   /api/v1/journals/{journal_id}/announcements:
     parameters:
       - $ref: "#/components/parameters/JournalId"

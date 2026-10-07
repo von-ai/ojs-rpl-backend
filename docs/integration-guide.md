@@ -71,6 +71,24 @@ galley; Proofreader memeriksa versi spesifik; EIC menyetujui final PDF. Daftar
 memeriksa ulang kesiapan, mempublikasikan atomik, lalu mengirim notifikasi/Crossref
 melalui outbox. Kegagalan Crossref tidak menghilangkan artikel yang sudah terbit.
 
+## Halaman informasi jurnal publik
+
+1. Panggil `listPublicJournalPages` tanpa login untuk mendapatkan metadata halaman
+   (`id`, `type`, `attributes.slug`, `attributes.title`). Ikuti `links.next` sampai
+   seluruh daftar didapat untuk membangun navigasi; daftar tidak memuat `body_html`.
+2. Bentuk tautan frontend dari slug jurnal dan slug halaman. Saat tautan dibuka,
+   panggil `getPublicJournalPage` melalui
+   `GET /api/v1/public/journals/{journal_slug}/pages/{page_slug}`.
+   Tautan langsung/bookmark dapat mengambil detail tanpa lebih dulu mengambil daftar.
+3. Render `attributes.title` dan `attributes.body_html` yang telah disanitasi server
+   dalam layout frontend. HTML adalah konten halaman, bukan kode yang dieksekusi.
+4. Tampilkan halaman tidak ditemukan untuk `404`, termasuk page yang dihapus atau
+   tidak lagi published dan jurnal yang inactive. Detail selalu memeriksa publikasi
+   terkini meskipun tautan berasal dari daftar sebelumnya.
+
+Penyimpanan tetap menggunakan `journal_pages`; daftar administratif tetap menyediakan
+konten lengkap bagi journal manager. API domain ini masih planned.
+
 ## Pemulihan dan error
 
 | Respons | Tindakan client |

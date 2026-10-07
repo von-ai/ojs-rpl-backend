@@ -2,7 +2,7 @@
 
 Updated 7 October 2026. This document accompanies `docs/openapi.yaml` version
 `1.0.0`. It completes the contract-level gaps identified in the
-[SRS review](review-srs.md), with **195 planned operations**. It does not implement
+[SRS review](review-srs.md), with **196 planned operations**. It does not implement
 the application. All operations explicitly carry `x-implementation-status: planned`.
 
 The final stack, business decisions and source deviations are recorded in

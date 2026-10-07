@@ -1,6 +1,6 @@
 # SIRIDA backend and API contract review
 
-**Current baseline: 1.0.0 (195 planned operations).** Registration no longer accepts
+**Current baseline: 1.0.0 (196 planned operations).** Registration no longer accepts
 role selection or creates reviewer applications. Reviewers are invited by editors
 for a specific submission/review round; directory membership alone grants no manuscript
 access. The historical reviewer-application recommendations below are superseded.
