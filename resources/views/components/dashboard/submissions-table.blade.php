@@ -32,21 +32,21 @@
     <!-- Table Responsive Container -->
     <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
-            <thead class="bg-gray-50/80 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+            <thead class="bg-gray-50/80 text-[10px] font-bold text-gray-500 border-b border-gray-200">
                 <tr>
-                    <th scope="col" class="py-3 px-4">ID NASKAH</th>
-                    <th scope="col" class="py-3 px-4">JUDUL ARTIKEL</th>
-                    <th scope="col" class="py-3 px-4">TANGGAL SUBMIT</th>
-                    <th scope="col" class="py-3 px-4">TAHAPAN ALUR</th>
-                    <th scope="col" class="py-3 px-4">STATUS</th>
-                    <th scope="col" class="py-3 px-4">PEMBARUAN</th>
-                    <th scope="col" class="py-3 px-4 text-center">AKSI</th>
+                    <th scope="col" class="py-3 px-4">ID Naskah</th>
+                    <th scope="col" class="py-3 px-4">Judul Artikel</th>
+                    <th scope="col" class="py-3 px-4">Tanggal Submit</th>
+                    <th scope="col" class="py-3 px-4">Tahapan Alur</th>
+                    <th scope="col" class="py-3 px-4">Status</th>
+                    <th scope="col" class="py-3 px-4">Pembaruan</th>
+                    <th scope="col" class="py-3 px-4 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse ($submissions as $sub)
                     <tr class="hover:bg-gray-50/60 transition-colors">
-                        <td class="py-3.5 px-4 font-mono font-bold text-red-700 whitespace-nowrap">
+                        <td class="py-3.5 px-4 font-mono text-xs font-semibold text-gray-700 whitespace-nowrap">
                             {{ $sub['id'] }}
                         </td>
                         <td class="py-3.5 px-4 max-w-xs sm:max-w-sm">
@@ -62,7 +62,7 @@
                             {{ $sub['stage'] }}
                         </td>
                         <td class="py-3.5 px-4 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border {{ $sub['status_class'] }}">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $sub['status_class'] }}">
                                 {{ $sub['status_label'] }}
                             </span>
                         </td>

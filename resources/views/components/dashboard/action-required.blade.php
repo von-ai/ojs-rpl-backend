@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-            <span>Perlu Tindakan Penulis (Action Required)</span>
+            <span>Perlu Tindakan Penulis</span>
         </h2>
         <span class="text-xs font-bold text-red-800 bg-red-100 border border-red-200 px-2.5 py-0.5 rounded-full">
             {{ count($tasks) }} Tugas Mendesak
@@ -16,11 +16,11 @@
         @forelse ($tasks as $task)
             @if ($task['type'] === 'revision')
                 <!-- Task 1: Minor Revision -->
-                <div class="bg-white rounded-xl border-2 border-red-300 p-5 sm:p-6 shadow-sm space-y-4">
+                <div class="bg-white rounded-xl border border-red-200 p-5 sm:p-6 shadow-xs space-y-4">
                     <!-- Top Meta Info -->
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-gray-100 pb-3">
                         <div class="flex items-center flex-wrap gap-2">
-                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-brand-maroon text-white uppercase tracking-wider">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-brand-maroon text-white">
                                 {{ $task['type_badge'] }}
                             </span>
                             <span class="text-gray-300">•</span>
@@ -31,7 +31,7 @@
                                 Batas Waktu: {{ $task['deadline'] }} ({{ $task['days_left'] }})
                             </span>
                         </div>
-                        <span class="font-mono text-xs font-bold text-gray-500">ID: {{ $task['id'] }}</span>
+                        <span class="font-mono text-xs font-semibold text-gray-600">ID: {{ $task['id'] }}</span>
                     </div>
 
                     <!-- Title & Categories -->
@@ -90,13 +90,13 @@
                 <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-2xs space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-gray-100 pb-3">
                         <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-white uppercase tracking-wider">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-white">
                                 {{ $task['type_badge'] }}
                             </span>
                             <span class="text-gray-300">•</span>
                             <span class="font-bold text-gray-700">Batas Waktu: {{ $task['deadline'] }}</span>
                         </div>
-                        <span class="font-mono text-xs font-bold text-gray-500">ID: {{ $task['id'] }}</span>
+                        <span class="font-mono text-xs font-semibold text-gray-600">ID: {{ $task['id'] }}</span>
                     </div>
 
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">

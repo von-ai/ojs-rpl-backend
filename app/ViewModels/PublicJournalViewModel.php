@@ -237,7 +237,7 @@ class PublicJournalViewModel
             'journal_code' => 'JRID-MKS',
             'peer_review_model' => 'Double-blind Peer Review',
             'frequency' => '2 Kali / Tahun (Juni & Des)',
-            'apc_status' => 'Gratis / Rp 0 (Subsidized)',
+            'apc_status' => 'Gratis / Rp 0',
             'publisher' => 'BRIDA Kota Makassar',
             'languages' => 'Indonesia & Inggris',
             'ethics_policy_url' => '#etika-publikasi',
