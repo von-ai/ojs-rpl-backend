@@ -24,13 +24,14 @@ class LoginPageTest extends TestCase
     }
 
     /**
-     * Halaman utama meredirect ke halaman login.
+     * Halaman utama langsung menampilkan halaman login.
      */
-    public function test_halaman_utama_meredirect_ke_login(): void
+    public function test_halaman_utama_langsung_menampilkan_login(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect('/login');
+        $response->assertStatus(200);
+        $response->assertSee('Masuk ke portal jurnal');
     }
 
     /**
@@ -101,6 +102,6 @@ class LoginPageTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('login'));
     }
 }
