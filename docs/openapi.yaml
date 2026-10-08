@@ -17,8 +17,8 @@ info:
     Payment and APC processing are intentionally excluded from version 1 because the
     approved SRS classifies them as out of scope.
 
-    Implementation status: planned contract. The Laravel application currently exposes
-    only the scaffold routes; these domain endpoints are not implemented yet. See
+    Implementation status: partial. Registration, email verification and resend are
+    implemented as an MVP; all other domain endpoints remain planned. See
     docs/use-cases.md for acceptance scenarios and docs/architecture.md for the selected
     stack, deployment prerequisites and explicit deviations from the original proposal.
 
@@ -6620,7 +6620,7 @@ paths:
           $ref: "#/components/responses/UnsupportedMediaType"
         "500":
           $ref: "#/components/responses/InternalError"
-      x-implementation-status: planned
+      x-implementation-status: implemented
       x-non-functional-requirements:
         - NF-02
         - NF-07
@@ -8220,7 +8220,7 @@ paths:
           $ref: "#/components/responses/RateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
-      x-implementation-status: planned
+      x-implementation-status: implemented
       x-non-functional-requirements:
         - NF-02
         - NF-07
@@ -8256,7 +8256,7 @@ paths:
       description: Always return the same 202 response for syntactically valid email input, including
         unknown accounts. Queue delivery only when eligible; rate-limit requests without disclosing
         account existence.
-      x-implementation-status: planned
+      x-implementation-status: implemented
       x-non-functional-requirements:
         - NF-02
         - NF-07
@@ -16939,7 +16939,7 @@ paths:
 x-contract-status:
   baseline: final
   version: 1.0.0
-  implementation: planned
+  implementation: partial
   stakeholder_approval: pending-review
   documents:
     - docs/architecture.md

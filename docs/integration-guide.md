@@ -1,5 +1,10 @@
 # Panduan integrasi kontrak SIRIDA 1.0.0
 
+**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
+sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
+planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
+login, membership dan workflow editorial belum dibangun.
+
 Gunakan [OpenAPI](openapi.yaml) untuk tipe dan path, [use case](use-cases.md) untuk
 skenario penerimaan, dan [keputusan kontrak](contract-decisions.md) untuk invariants.
 API domain masih planned. Contoh bukan instruksi untuk mengirim request ke server

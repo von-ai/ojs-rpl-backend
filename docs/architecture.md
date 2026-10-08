@@ -1,5 +1,10 @@
 # SIRIDA — baseline arsitektur dan teknologi 1.0.0
 
+**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
+sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
+planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
+login, membership dan workflow editorial belum dibangun.
+
 Tanggal: 7 Oktober 2026. Status: **kontrak final untuk implementasi**, diajukan
 melalui PR untuk review tim. Bukan pernyataan bahwa mitra sudah menyetujui setiap
 keputusan, server tersedia, atau endpoint telah selesai dibangun.

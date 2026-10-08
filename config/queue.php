@@ -31,6 +31,16 @@ return [
 
     'connections' => [
 
+        // Persist identity emails atomically on the application's own database.
+        'identity' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'identity',
+            'retry_after' => 90,
+            'after_commit' => false,
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],

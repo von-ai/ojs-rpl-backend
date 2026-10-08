@@ -1,5 +1,10 @@
 # SIRIDA backend and API contract review
 
+**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
+sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
+planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
+login, membership dan workflow editorial belum dibangun.
+
 **Current baseline: 1.0.0 (196 planned operations).** Registration no longer accepts
 role selection or creates reviewer applications. Reviewers are invited by editors
 for a specific submission/review round; directory membership alone grants no manuscript
