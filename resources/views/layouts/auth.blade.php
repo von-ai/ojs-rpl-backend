@@ -6,10 +6,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Masuk | Portal Jurnal BRIDA Makassar')</title>
 
-    <!-- Google Fonts: Instrument Sans -->
+    <!-- Favicon / Website Title Icon -->
+    <link rel="icon" type="image/png" href="{{ asset('images/brida-logo.png') }}">
+
+    <!-- Google Fonts: Inter (Akademis, Rapi & Seragam) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
