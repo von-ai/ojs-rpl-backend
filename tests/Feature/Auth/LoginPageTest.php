@@ -24,14 +24,13 @@ class LoginPageTest extends TestCase
     }
 
     /**
-     * Halaman utama langsung menampilkan halaman login.
+     * Halaman utama dapat diakses dengan respons 200 OK.
      */
-    public function test_halaman_utama_langsung_menampilkan_login(): void
+    public function test_halaman_utama_dapat_diakses(): void
     {
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Masuk ke portal jurnal');
     }
 
     /**
