@@ -1,5 +1,50 @@
 # OJS RPL Backend
 
+## Implementation status and API contract
+
+This repository currently contains a Laravel scaffold and a **planned**
+[OpenAPI contract](docs/openapi.yaml). The documented domain endpoints are not yet
+registered or implemented. Do not use the contract as evidence that authentication,
+authorization, submission or publishing functionality is production-ready.
+
+The final implementation baseline **1.0.0** defines 196 planned operations.
+Start with the [selected technology stack](docs/architecture.md),
+[UC-01–18 acceptance scenarios](docs/use-cases.md),
+[client integration guide](docs/integration-guide.md) and
+[compatibility notes](docs/changelog.md). Final contract status does not mean
+stakeholder approval or a deployed implementation. See the
+[contract decisions and gap closure](docs/contract-decisions.md) for workflow,
+privacy, upload, integration and configuration rules, and the
+[historical SIRIDA proposal review](docs/review-srs.md) for original findings.
+Changes from the drafts require regenerating client mocks and SDKs; upload-session
+routes now use `/api/v1/upload-sessions` and several response/request schemas changed.
+
+Validate the contract with Node.js 22.12+ (development/CI tooling only):
+
+```sh
+npm ci --ignore-scripts
+npm run check:openapi
+```
+
+Validate the Laravel scaffold with the PHP version required by `composer.lock`
+(currently PHP 8.4.1+):
+
+```sh
+composer install --no-interaction --prefer-dist
+composer validate --strict
+composer test
+vendor/bin/pint --test
+```
+
+Tests use an in-memory SQLite database and a test-only encryption key, so they do
+not require a personal `.env` or a running PostgreSQL service. Normal application
+setup still requires copying `.env.example`, generating a unique application key
+with `php artisan key:generate` and configuring/migrating the database. Never use
+the test key in a deployed environment.
+
+GitHub Actions runs contract checks and scaffold tests on pull requests. These
+checks do not yet measure coverage or validate unimplemented domain endpoints.
+
 ## PostgreSQL for Local Development
 
 The service uses PostgreSQL 18. Make sure Docker and Docker Compose are

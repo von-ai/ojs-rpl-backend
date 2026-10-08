@@ -1,0 +1,79 @@
+[
+  {
+    "operationId": "registerUser",
+    "body": {
+      "full_name": "Example Author",
+      "email": "author@example.org",
+      "username": "example.author",
+      "password": "Example-only-secret-42!",
+      "affiliation": "Example University"
+    }
+  },
+  {
+    "operationId": "login",
+    "body": {
+      "login": "author@example.org",
+      "password": "Example-only-secret-42!"
+    }
+  },
+  {
+    "operationId": "createSubmission",
+    "body": {
+      "title": "Riset Kebijakan Kota"
+    }
+  },
+  {
+    "operationId": "createUploadSession",
+    "body": {
+      "journal_id": "journal-example",
+      "resource_type": "submission",
+      "resource_id": "submission-example",
+      "purpose": "primary_manuscript",
+      "file_name": "manuscript.pdf",
+      "content_type": "application/pdf",
+      "size": 1024,
+      "checksum_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "mode": "single"
+    }
+  },
+  {
+    "operationId": "submitSubmission",
+    "body": {
+      "primary_manuscript_file_id": "file-example"
+    }
+  },
+  {
+    "operationId": "assignReviewers",
+    "body": {
+      "invitations": [
+        {
+          "reviewer_id": "reviewer-example",
+          "response_due_at": "2027-01-10T16:00:00Z",
+          "review_due_at": "2027-01-24T16:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "operationId": "saveReviewDraft",
+    "body": {
+      "scores": {
+        "originality": 4
+      },
+      "comments_for_author": "Penjelasan metode perlu diperluas."
+    }
+  },
+  {
+    "operationId": "submitReview",
+    "body": {
+      "scores": {
+        "originality": 4,
+        "methodology": 4
+      },
+      "comments_for_author": "Layak setelah revisi minor.",
+      "confidential_comments_for_editor": "",
+      "recommendation": "minor_revision",
+      "certify_no_conflict": true
+    }
+  }
+]
