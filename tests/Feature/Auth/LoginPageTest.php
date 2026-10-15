@@ -10,6 +10,13 @@ class LoginPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     /**
      * Halaman login dapat diakses dengan respons 200 OK.
      */
