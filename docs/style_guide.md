@@ -7,7 +7,7 @@ Dokumen ini berisi spesifikasi sistem desain, tokens CSS tersentralisasi, gaya v
 
 ## 1. Arsitektur Tokens & Variabel Desain
 
-Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas [`resources/css/app.css`](file:///D:/ASUS/Documents/code/RPL/ojs-rpl-backend/resources/css/app.css) memanfaatkan direktif `@theme` Tailwind CSS v4. Hal ini memungkinkan perubahan identitas visual dari 1 tempat (*Single Source of Truth*).
+Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas `resources/css/app.css` memanfaatkan direktif `@theme` Tailwind CSS v4. Hal ini memungkinkan perubahan identitas visual dari 1 tempat (*Single Source of Truth*).
 
 ### A. Palet Warna (Color Palette Tokens)
 
