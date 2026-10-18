@@ -1,21 +1,37 @@
 services:
-  postgres:
-    image: postgres:18
+  mysql:
+    image: mysql:8.0
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-ojs_rpl}
-      POSTGRES_USER: ${DB_USERNAME:-ojs_rpl}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-ojs_rpl_dev}
+      MYSQL_DATABASE: ${DB_DATABASE:-ojs_rpl}
+      MYSQL_USER: ${DB_USERNAME:-ojs_rpl}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ojs_rpl_dev}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_dev_password}
     ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u \"$$MYSQL_USER\" --password=\"$$MYSQL_PASSWORD\" --silent"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
+  mysql_data:
+  redis_data:

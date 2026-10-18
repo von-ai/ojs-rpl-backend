@@ -45,31 +45,31 @@ the test key in a deployed environment.
 GitHub Actions runs contract checks and scaffold tests on pull requests. These
 checks do not yet measure coverage or validate unimplemented domain endpoints.
 
-## PostgreSQL for Local Development
+## MySQL and Redis for Local Development
 
-The service uses PostgreSQL 18. Make sure Docker and Docker Compose are
+The service uses MySQL 8.0 and Redis 7 for local development. Make sure Docker and Docker Compose are
 available, then copy the example configuration:
 
 ```sh
 cp .env.example .env
 ```
 
-Start PostgreSQL:
+Start MySQL and Redis:
 
 ```sh
-docker compose up -d --wait postgres
+docker compose up -d --wait mysql redis
 ```
 
-The database is available at `127.0.0.1:5432`, with the database name and
-username `ojs_rpl` and the development password `ojs_rpl_dev`. You can
-customize these settings through the `DB_*` variables in `.env`.
-Applications running on the host can use these settings to connect to PostgreSQL.
+The database is available at `127.0.0.1:3306`, with the database name and
+username `ojs_rpl` and the development password `ojs_rpl_dev`. Redis is available at `127.0.0.1:6379`.
+You can customize these settings through the `DB_*` and `REDIS_*` variables in `.env`.
+Applications running on the host can use these settings to connect to MySQL and Redis.
 
-Check the service status or open the database console:
+Check the service status or open the MySQL console:
 
 ```sh
 docker compose ps
-docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+docker compose exec mysql sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
 ```
 
 Stop the service:
@@ -78,14 +78,10 @@ Stop the service:
 docker compose down
 ```
 
-Data is stored in the `postgres_data` volume and persists after the service
-stops. `docker compose down -v` deletes the volume and all its data.
+Data is stored in the `mysql_data` and `redis_data` volumes and persists after the service
+stops. `docker compose down -v` deletes the volumes and all their data.
 The database name, username, and password variables are only applied when
 the volume is first initialized; changing `.env` does not modify an existing database.
-
-If the volume already contains PostgreSQL 16 data, migrate it to PostgreSQL
-18 using dump/restore or `pg_upgrade` before using this configuration.
-Changing the image version does not automatically migrate existing data.
 
 ## Laravel
 
