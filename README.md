@@ -45,25 +45,25 @@ the test key in a deployed environment.
 GitHub Actions runs contract checks and scaffold tests on pull requests. These
 checks do not yet measure coverage or validate unimplemented domain endpoints.
 
-## MySQL and Redis for Local Development
+## MySQL, Redis, Mailpit, and Azurite for Local Development
 
-The service uses MySQL 8.0 and Redis 7 for local development. Make sure Docker and Docker Compose are
+The service uses MySQL 8.0, Redis 7, Mailpit, and Azurite for local development. Make sure Docker and Docker Compose are
 available, then copy the example configuration:
 
 ```sh
 cp .env.example .env
 ```
 
-Start MySQL and Redis:
+Start MySQL, Redis, Mailpit, and Azurite:
 
 ```sh
-docker compose up -d --wait mysql redis
+docker compose up -d --wait mysql redis mailpit azurite
 ```
 
-The database is available at `127.0.0.1:3306`, with the database name and
-username `ojs_rpl` and the development password `ojs_rpl_dev`. Redis is available at `127.0.0.1:6379`.
-You can customize these settings through the `DB_*` and `REDIS_*` variables in `.env`.
-Applications running on the host can use these settings to connect to MySQL and Redis.
+- **MySQL**: available at `127.0.0.1:3306`, database `ojs_rpl`, user `ojs_rpl`, password `ojs_rpl_dev`.
+- **Redis**: available at `127.0.0.1:6379`.
+- **Mailpit**: SMTP available at `127.0.0.1:1025`, Webmail UI available at `http://localhost:8025`.
+- **Azurite**: Azure Blob Storage emulator available at `127.0.0.1:10000`.
 
 Check the service status or open the MySQL console:
 
@@ -78,7 +78,7 @@ Stop the service:
 docker compose down
 ```
 
-Data is stored in the `mysql_data` and `redis_data` volumes and persists after the service
+Data is stored in the `mysql_data`, `redis_data`, and `azurite_data` volumes and persists after the service
 stops. `docker compose down -v` deletes the volumes and all their data.
 The database name, username, and password variables are only applied when
 the volume is first initialized; changing `.env` does not modify an existing database.

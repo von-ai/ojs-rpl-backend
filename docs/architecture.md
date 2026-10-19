@@ -21,11 +21,11 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment, belum terverifikasi. Document root hanya `public/`. |
 | Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Azure Cache for Redis (Basic C0) pada produksi untuk antrean dan locking. |
 | Session/cache/locks | Azure Cache for Redis (Basic C0) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review. |
-| Berkas | Cloudflare R2 (S3-compatible) melalui Laravel Filesystem/Flysystem | Adapter teruji S3-compatible, bucket privat, presigned PUT/GET, zero egress fee. |
-| Pemeriksaan berkas | Worker antivirus ClamAV, inspeksi MIME/checksum, sanitizer HTML/XML | Dipilih, belum terpasang; scanner tidak tersedia berarti berkas tetap karantina. |
+| Berkas | Azure Blob Storage melalui Laravel Filesystem/Flysystem | Adapter Azure Blob teruji, container privat, direct upload melalui SAS (Shared Access Signature) URL, enkripsi server-side bawaan. Azurite untuk dev lokal. |
+| Pemeriksaan berkas | Microsoft Defender for Storage (Malware Scanning), inspeksi MIME/checksum, sanitizer HTML/XML | Pemindaian malware otomatis near real-time oleh Microsoft Defender for Storage di cloud; mock scanner pada dev lokal; berkas berstatus karantina jika terdeteksi ancaman. |
 | Identitas API | JWT RS256 melalui library `lcobucci/jwt`; refresh opaque acak, hash disimpan server | Pilihan implementasi, belum dependency. Library bukan pengganti guard, revocation dan policy aplikasi. |
 | Pencarian | MySQL Full-Text Search (indeks `FULLTEXT`); konfigurasi boolean mode untuk teks Indonesia | Menggunakan query MATCH(...) AGAINST(...). Tidak perlu Elasticsearch pada baseline. |
-| Integrasi | SMTP (Azure Comm Services / Brevo), ORCID authorization code, Crossref deposit, OAI-PMH 2.0/Dublin Core | Kontrak tersedia, kredensial/adapter/sandbox belum diuji. Similarity provider opsional dan default nonaktif. |
+| Integrasi | SMTP (Azure Communication Services untuk produksi, Mailpit untuk pengembangan lokal), ORCID authorization code, Crossref deposit, OAI-PMH 2.0/Dublin Core | Kontrak tersedia, kredensial/adapter/sandbox belum diuji. Mailpit digunakan untuk inspeksi visual email lokal pada port 8025/1025. Similarity provider opsional dan default nonaktif. |
 | Notifikasi UI | REST polling; SSE opsional bila gateway/worker mendukung | Notifikasi persisten sebagai sumber utama. SSE tidak boleh menjadi satu-satunya cara membaca notifikasi. |
 | Pengujian | PHPUnit 12, Pint, Redocly/AJV, GitHub Actions | Pemeriksaan scaffold/kontrak tersedia. Integration test menggunakan MySQL/SQLite wajib ditambahkan saat domain dibangun. |
 
@@ -79,7 +79,7 @@ Session UI juga mengikuti batas absolut dan pencabutan, bukan memperpanjang tanp
 
 ## Deployment yang dapat diterima
 
-Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps, TiDB Serverless MySQL, Cloudflare R2/WAF/DNS, Azure Cache for Redis). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduled Job), storage privat (Cloudflare R2), scanner (ClamAV), SMTP (ACS/Brevo), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
+Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps, TiDB Serverless MySQL, Azure Blob Storage, Cloudflare WAF/DNS, Azure Cache for Redis). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduled Job), storage privat (Azure Blob Storage), scanner (Microsoft Defender for Storage), SMTP (Azure Communication Services untuk produksi, Mailpit untuk lokal dev), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
 
 Simpan secret di konfigurasi operator/secret store yang tidak berada di document
 root atau Git. Reference integrasi dipetakan server-side; jangan menerima arbitrary
@@ -123,6 +123,6 @@ menggunakan bandwidth memadai dan batas ukur jelas; catat koreksi ini di SRS.
 NF-03: uji 1.000 pengguna, degradasi <20% terhadap baseline yang sama; belum tercapai
 hanya karena memakai MySQL/Laravel. NF-04/06: uji browser, perangkat kecil,
 WCAG 2.1 AA dan proses submission <10 menit dengan pengguna representatif.
-NF-05: monitoring 99,5% availability; NF-07: ≥70% core-code coverage setelah core ada;
+NF-05: monitoring 99,5% availability via Azure Monitor Application Insights Web Test; NF-07: ≥70% core-code coverage setelah core ada;
 NF-08: bukti restore; NF-09: sandbox dan XML/XSD; NF-10: audit append-only dan redaksi.
 Semua ini acceptance gate implementasi, belum hasil pengukuran repository.
