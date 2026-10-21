@@ -14,7 +14,7 @@ class RegistrationUserResource extends JsonResource
             'id' => $this->id,
             'type' => 'user',
             'attributes' => [
-                'full_name' => $this->name,
+                'full_name' => $this->full_name ?? $this->name,
                 'email' => $this->email,
                 'username' => $this->username,
                 'affiliation' => DB::table('user_profiles')->where('user_id', $this->id)->value('affiliation') ?? '',
