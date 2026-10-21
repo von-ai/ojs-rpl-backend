@@ -2,12 +2,10 @@
 
 namespace App\Exceptions;
 
-use RuntimeException;
-
-class IdentityException extends RuntimeException
+class IdentityException extends ApiException
 {
-    public function __construct(public readonly int $status, public readonly string $errorCode, string $message)
+    public function __construct(int $status, string $errorCode, string $message, array $errors = [])
     {
-        parent::__construct($message);
+        parent::__construct($status, $errorCode, $message, $errors);
     }
 }

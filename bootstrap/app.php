@@ -1,6 +1,7 @@
 <?php
 
-use App\Exceptions\IdentityException;
+use App\Exceptions\ApiException;
+use App\Http\Middleware\ApiRequestId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,43 +19,78 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->api(prepend: [
+            ApiRequestId::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['password', 'password_confirmation', 'token']);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-        $exceptions->dontFlash(['password', 'password_confirmation', 'token']);
+
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if (! $request->is('api/v1/auth/register', 'api/v1/auth/email/verify', 'api/v1/auth/email/resend')) {
+            if (! $request->is('api/*')) {
                 return null;
             }
+
             $status = match (true) {
-                $exception instanceof IdentityException => $exception->status,
+                $exception instanceof ApiException => $exception->status,
                 $exception instanceof ValidationException => 422,
                 $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
                 default => 500,
             };
-            $id = $request->attributes->get('request_id') ?? (string) Str::uuid();
+
+            $requestId = $request->attributes->get('request_id') ?? (string) Str::ulid();
+
+            $code = match (true) {
+                $exception instanceof ApiException => $exception->errorCode,
+                $status === 422 => 'VALIDATION_ERROR',
+                $status === 401 => 'UNAUTHENTICATED',
+                $status === 423 => 'ACCOUNT_LOCKED',
+                $status === 429 => 'RATE_LIMITED',
+                $status === 404 => 'NOT_FOUND',
+                default => 'INTERNAL_SERVER_ERROR',
+            };
+
             $errors = [];
-            if ($exception instanceof ValidationException) {
+            if ($exception instanceof ApiException) {
+                $errors = $exception->getErrors();
+            } elseif ($exception instanceof ValidationException) {
                 foreach ($exception->errors() as $field => $messages) {
                     foreach ($messages as $message) {
-                        $errors[] = ['field' => $field, 'code' => 'INVALID_FIELD', 'message' => $message];
+                        $errors[] = [
+                            'field' => $field,
+                            'code' => 'INVALID_FIELD',
+                            'message' => $message,
+                        ];
                     }
                 }
             }
-            $headers = $exception instanceof HttpExceptionInterface ? $exception->getHeaders() : [];
+
+            $detail = match (true) {
+                $exception instanceof ApiException => $exception->getMessage(),
+                $exception instanceof ValidationException => 'Data masukan tidak valid.',
+                default => $exception->getMessage() ?: (Response::$statusTexts[$status] ?? 'An error occurred'),
+            };
+
+            $headers = $exception instanceof ApiException
+                ? $exception->getHeaders()
+                : ($exception instanceof HttpExceptionInterface ? $exception->getHeaders() : []);
 
             return response()->json([
-                'type' => 'about:blank', 'title' => Response::$statusTexts[$status] ?? 'Error',
+                'type' => 'about:blank',
+                'title' => Response::$statusTexts[$status] ?? 'Error',
                 'status' => $status,
-                'code' => $exception instanceof IdentityException ? $exception->errorCode : match ($status) {
-                    422 => 'VALIDATION_FAILED', 429 => 'RATE_LIMITED', default => 'REQUEST_FAILED',
-                },
-                'detail' => $exception instanceof IdentityException ? $exception->getMessage() : 'Permintaan tidak dapat diproses.',
-                'instance' => $request->getPathInfo(), 'request_id' => $id, 'errors' => $errors,
-            ], $status, $headers)->header('Content-Type', 'application/problem+json')
-                ->header('X-Request-ID', $id)->header('Cache-Control', 'no-store');
+                'code' => $code,
+                'detail' => $detail,
+                'instance' => $request->getPathInfo(),
+                'request_id' => $requestId,
+                'errors' => $errors,
+            ], $status, $headers)
+                ->header('Content-Type', 'application/problem+json')
+                ->header('X-Request-ID', $requestId)
+                ->header('Cache-Control', 'no-store');
         });
     })->create();

@@ -22,10 +22,10 @@ class RegistrationService
                 }
                 $user = new User;
                 $user->forceFill([
-                    'name' => $input['full_name'],
+                    'full_name' => $input['full_name'],
                     'email' => $input['email'],
                     'username' => $input['username'],
-                    'password' => Hash::make($input['password']),
+                    'password_hash' => Hash::make($input['password']),
                     'status' => 'pending',
                     'version' => 1,
                 ])->save();
@@ -110,11 +110,19 @@ class RegistrationService
 
     private function audit(User $user, string $action): void
     {
+        $now = $this->databaseNow();
         DB::table('audit_logs')->insert([
-            'id' => (string) Str::ulid(), 'actor_id' => $user->id, 'actor_type' => 'human',
-            'resource_type' => 'user', 'resource_id' => $user->id,
-            'action' => $action, 'occurred_at' => $this->databaseNow(),
+            'id' => (string) Str::ulid(),
+            'user_id' => $user->id,
+            'actor_id' => $user->id,
+            'actor_type' => 'user',
+            'resource_type' => 'user',
+            'resource_id' => $user->id,
+            'action' => $action,
+            'occurred_at' => $now,
             'request_id' => request()->attributes->get('request_id'),
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
     }
 
