@@ -44,47 +44,106 @@ the test key in a deployed environment.
 GitHub Actions runs contract checks and scaffold tests on pull requests. These
 checks include registration feature tests; they do not validate unimplemented domain endpoints.
 
-## PostgreSQL for Local Development
+## Menjalankan Proyek (Running the Project Locally)
 
-The service uses PostgreSQL 18. Make sure Docker and Docker Compose are
-available, then copy the example configuration:
+Terdapat dua cara untuk menjalankan aplikasi di lingkungan lokal:
+1. **Opsi 1 (Direkomendasikan): Full Docker Compose** — Menjalankan seluruh stack (Web Nginx + PHP 8.4-FPM, MySQL, Redis, Mailpit, Azurite) di dalam kontainer tanpa perlu menginstal PHP atau driver database di mesin lokal Anda.
+2. **Opsi 2: Hybrid Development** — Menjalankan layanan database dan storage di Docker, sedangkan aplikasi Laravel dan Vite dijalankan langsung di mesin lokal.
 
+---
+
+### Opsi 1: Menggunakan Docker Compose (Rekomendasi)
+
+#### 1. Salin Konfigurasi Environment
+Pastikan Anda berada di direktori `ojs-rpl-backend`:
 ```sh
 cp .env.example .env
 ```
 
-Start PostgreSQL:
-
+#### 2. Bangun (*Build*) dan Jalankan Seluruh Kontainer
+Jalankan seluruh service (`app`, `mysql`, `redis`, `mailpit`, dan `azurite`) di latar belakang:
 ```sh
-docker compose up -d --wait postgres
+docker compose up -d --build
 ```
 
-The database is available at `127.0.0.1:5432`, with the database name and
-username `ojs_rpl` and the development password `ojs_rpl_dev`. You can
-customize these settings through the `DB_*` variables in `.env`.
-Applications running on the host can use these settings to connect to PostgreSQL.
-
-Check the service status or open the database console:
-
+#### 3. Inisialisasi Kunci Aplikasi & Migrasi Database
+Jalankan perintah ini di dalam kontainer `app`:
 ```sh
-docker compose ps
-docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+# Generate application key (jika belum ada)
+docker compose exec app php artisan key:generate
+
+# Jalankan migrasi tabel database
+docker compose exec app php artisan migrate
 ```
 
-Stop the service:
+#### 4. Akses Layanan Aplikasi
+Setelah seluruh kontainer berstatus *healthy* dan aktif:
+- **Web App / REST API**: [`http://localhost:8000`](http://localhost:8000)
+- **Halaman Masuk (Login)**: [`http://localhost:8000/login`](http://localhost:8000/login)
+- **Mailpit Webmail UI**: [`http://localhost:8025`](http://localhost:8025) (SMTP pada port `1025`)
+- **MySQL 8.0**: `127.0.0.1:3306` (Database: `ojs_rpl`, User: `ojs_rpl`, Password: `ojs_rpl_dev`)
+- **Redis 7**: `127.0.0.1:6379`
+- **Azurite (Azure Blob Storage Emulator)**: `127.0.0.1:10000`
 
+#### Perintah Tambahan Docker:
 ```sh
+# Memantau log aplikasi secara real-time
+docker compose logs -f app
+
+# Masuk ke terminal shell di dalam kontainer aplikasi
+docker compose exec -it app sh
+
+# Menjalankan perintah artisan lainnya
+docker compose exec app php artisan <command>
+
+# Membuka konsol MySQL langsung
+docker compose exec mysql sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+
+# Menghentikan seluruh layanan
 docker compose down
+
+# Menghentikan layanan dan menghapus volume data (reset total)
+docker compose down -v
 ```
 
-Data is stored in the `postgres_data` volume and persists after the service
-stops. `docker compose down -v` deletes the volume and all its data.
-The database name, username, and password variables are only applied when
-the volume is first initialized; changing `.env` does not modify an existing database.
+---
 
-If the volume already contains PostgreSQL 16 data, migrate it to PostgreSQL
-18 using dump/restore or `pg_upgrade` before using this configuration.
-Changing the image version does not automatically migrate existing data.
+### Opsi 2: Menjalankan Secara Hybrid (Host PHP + Docker Services)
+
+Jika Anda lebih memilih menjalankan server Laravel langsung di terminal mesin lokal Anda:
+
+#### 1. Salin Konfigurasi Environment & Nyalakan Layanan Pendukung
+```sh
+cp .env.example .env
+docker compose up -d --wait mysql redis mailpit azurite
+```
+
+#### 2. Pasang Dependensi & Bangun Aset Frontend
+Pastikan mesin lokal Anda sudah terpasang PHP 8.4+ (beserta ekstensi `php-mysqlnd` / `pdo_mysql`) dan Node.js 22+:
+```sh
+# Pasang dependensi PHP
+composer install --no-interaction --prefer-dist
+
+# Pasang dependensi Node dan kompilasi aset Vite
+npm install
+npm run build
+```
+
+> **Catatan Frontend:**  
+> Jika sedang aktif mendesain antarmuka/Blade, jalankan `npm run dev` di terminal terpisah agar fitur *Hot Module Replacement* (HMR) aktif. Jika tidak menjalankan `npm run dev`, pastikan sudah menjalankan `npm run build` agar tidak terjadi error `ViteManifestNotFoundException`.
+
+#### 3. Inisialisasi Aplikasi & Migrasi Database
+```sh
+php artisan key:generate
+php artisan migrate
+```
+
+#### 4. Jalankan Server Pengembangan Laravel
+```sh
+php artisan serve
+```
+Aplikasi dapat diakses di [`http://127.0.0.1:8000`](http://127.0.0.1:8000).
+
 
 ## Laravel
 
