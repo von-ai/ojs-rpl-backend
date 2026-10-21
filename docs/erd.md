@@ -1,6 +1,6 @@
 # SIRIDA — Dokumentasi Skema Basis Data & ERD (Entity Relationship Diagram)
 
-**Baseline Arsitektur:** MySQL 8.4 (InnoDB) + Redis in-memory • Framework Laravel 13  
+**Baseline Arsitektur:** MySQL 8.0 / TiDB Cloud Serverless (InnoDB wire protocol) + Redis in-memory • Framework Laravel 13 (PHP 8.4)  
 **Revisi Desain:** 14 Oktober 2026 • **Acuan Kontrak API:** OpenAPI v1.0.0 (commit `5232821` / `87a13f3`)  
 **Metrik Desain:** 70 Tabel MySQL • 8 Modul Domain • 140 Relasi Foreign Key • Redis Key-Value Ledger
 
@@ -23,11 +23,11 @@ Dokumen ini merupakan spesifikasi lengkap struktur persistensi data sistem **SIR
     - Pada rekaman yang bersifat _immutable_ (seperti snapshot, catatan audit, putaran review tertutup), nilai `updated_at` bernilai sama persis dengan `created_at` dan dibekukan.
     - Kolom datetime pendukung lifecycle (`submitted_at`, `completed_at`, `published_at`, `revoked_at`, `resolved_at`, dll.) bernilai `NULL` sebelum kejadian dan menjadi `NOT NULL` setelah transisi selesai.
 4. **Generated Columns untuk Menggantikan Fitur Spesifik PostgreSQL:**
-    - **Uniqueness pada Status Aktif (`live_slot`):** MySQL tidak mendukung _partial unique index_ (`WHERE revoked_at IS NULL`). Skema mengatasinya dengan kolom generated `live_slot TINYINT GENERATED ALWAYS AS (IF(revoked_at IS NULL, 1, NULL)) STORED/VIRTUAL`, lalu dibuat index `UNIQUE(foreign_id, role, live_slot)`.
-    - **Handling NULLS NOT DISTINCT (`journal_scope` & `galley_scope`):** Dibuat kolom generated `COALESCE(journal_id, '')` atau `COALESCE(galley_id, '')` agar index komposit dapat mencegah duplikasi rekaman unik pada scope sistem/jurnal publik.
-    - **Normalisasi Identitas:** `email_normalized` dan `username_normalized` dibuat sebagai `VIRTUAL GENERATED ALWAYS AS (LOWER(TRIM(...)))` dengan index `UNIQUE`.
+    - **Uniqueness pada Status Aktif (`live_slot`):** MySQL tidak mendukung _partial unique index_ (`WHERE revoked_at IS NULL`). Skema mengatasinya dengan kolom generated `live_slot TINYINT GENERATED ALWAYS AS (IF(revoked_at IS NULL, 1, NULL)) STORED`, lalu dibuat index `UNIQUE(foreign_id, role, live_slot)`.
+    - **Handling NULLS NOT DISTINCT (`journal_scope` & `galley_scope`):** Dibuat kolom generated `COALESCE(journal_id, '')` atau `COALESCE(galley_id, '')` STORED agar index komposit dapat mencegah duplikasi rekaman unik pada scope sistem/jurnal publik.
+    - **Normalisasi Identitas:** `email_normalized` dan `username_normalized` dibuat sebagai `STORED GENERATED ALWAYS AS (LOWER(TRIM(...))) NOT NULL` dengan index `UNIQUE`. Penulisan asli kapitalisasi pengguna tetap dipreservasi di kolom `email` dan `username` untuk kebutuhan display profil dan sertifikat publikasi, sedangkan kolom normalized menjamin pencegahan celah account impersonation, collision, dan race condition (sesuai rekomendasi OWASP).
 5. **Collation & Karakter:**
-    - Menggunakan `utf8mb4_0900_as_ci` untuk menjaga integritas karakter internasional sekaligus mempertahankan pembedaan aksen saat dibutuhkan.
+    - Menggunakan character set `utf8mb4` dengan collation `utf8mb4_unicode_ci` (atau `utf8mb4_0900_ai_ci` pada MySQL 8.0 native) untuk menjamin kompatibilitas 100% antara Docker Compose lokal (`mysql:8.0`) dan TiDB Cloud Serverless. Karakter case-insensitive (`_ci`) memastikan pencarian dan validasi keunikan identitas (email/username) terlindungi dari kerentanan impersonasi dan duplikasi, sementara input asli pengguna tetap dipreservasi di kolom display.
 6. **Integritas Referensial & Penghapusan:**
     - Menggunakan aturan default `ON DELETE RESTRICT` pada semua relasi data riwayat, berkas, dan ledger transaksi. Akun yang dihapus menggunakan pola _tombstone/soft-delete_ (`deleted_at`), tanpa menjalankan cascade delete yang dapat menghancurkan rekam jejak naskah ilmiah.
 
@@ -1343,7 +1343,7 @@ Katalog induk berkas yang tersimpan aman pada sistem SIRIDA.
     - `content_type` TEXT NOT NULL — Tipe MIME.
     - `size` BIGINT NOT NULL — Ukuran dalam bytes.
     - `checksum_sha256` TEXT NOT NULL — Hash SHA-256 (64 hex characters).
-    - `status` VARCHAR(191) NOT NULL — Status pemindaian keamanan (`pending_upload`, `scanning`, `clean`, `quarantined`, `infected`).
+    - `status` VARCHAR(191) NOT NULL — Status pemindaian keamanan (`pending_upload`, `pending_scan`, `scanning`, `clean`, `quarantined`, `infected`).
     - `scan_error_code` TEXT NULL — Kode kesalahan jika scan malware gagal.
     - `version` INT NOT NULL DEFAULT 1.
     - `storage_backend` TEXT NOT NULL.
@@ -1644,7 +1644,7 @@ Tabel transactional outbox untuk menjamin konsistensi pengiriman event / pesan a
     - `event_type` VARCHAR(191) NOT NULL — Nama event domain (misal: `submission.accepted`, `email.send_invitation`).
     - `dedupe_key` VARCHAR(191) NOT NULL — Kunci deduplikasi unik untuk mencegah eksekusi ganda worker.
     - `payload` JSON NOT NULL — Snapshot data lengkap yang dibutuhkan worker (termasuk isi template pesan).
-    - `status` VARCHAR(191) NOT NULL — Status antrean (`pending`, `delivered`, `failed`).
+    - `status` VARCHAR(191) NOT NULL — Status antrean (`pending`, `processing`, `delivered`, `failed`).
     - `attempts` INT NOT NULL DEFAULT 0 — Jumlah percobaan pengiriman oleh worker.
     - `available_at` DATETIME(6) NOT NULL — Waktu tercepat event siap diproses (mendukung delayed delivery).
     - `delivered_at` DATETIME(6) NULL — Waktu tuntas terkirim.
@@ -1892,7 +1892,7 @@ Berikut adalah 15 aturan persistensi arsitektural yang wajib dipatuhi pada layer
 
 - Alur pengunggahan berkas: Lakukan reservasi ULID, insert ke tabel `files` dengan status `pending_upload`, kemudian insert ke `upload_sessions` (`file_id UNIQUE NOT NULL FK files.id`) dalam satu transaksi database tunggal. Jika langkah kedua gagal, seluruh transaksi di-rollback.
 - Kolom `files.upload_session_id` dihapus permanen guna mengeliminasi circular foreign key dependency; relasi balik dievaluasi melalui `upload_sessions.file_id`. Setiap sesi hanya untuk tepat satu berkas, dan satu berkas hanya memiliki maksimal satu sesi unggah aktif. Berkas turunan (_derivative/anonymized_) diperbolehkan dibuat tanpa sesi unggah.
-- Backend storage, nama bucket, dan storage key di-generate oleh server; storage key bersifat _immutable_. Server memverifikasi version_id, ETag, ukuran berkas, tipe MIME, dan hash SHA-256 terhadap objek fisik sebelum berkas diizinkan beralih ke status `clean`. Berkas hanya boleh digunakan oleh naskah setelah pemindaian antivirus menyatakan status `clean`. URL unduh/unggah langsung bertanda tangan (_Signed SAS URL_) bersifat sementara.
+- Backend storage, nama bucket, dan storage key di-generate oleh server; storage key bersifat _immutable_. Setelah sesi upload tuntas, berkas beralih ke `pending_scan`/`scanning`. Server memverifikasi version_id, ETag, ukuran berkas, tipe MIME, dan hash SHA-256 terhadap objek fisik, serta memproses hasil pemindaian Microsoft Defender for Storage sebelum berkas diizinkan beralih ke status `clean`. Berkas berstatus `quarantined` atau `infected` diblokir dari penggunaan naskah. URL unduh/unggah langsung bertanda tangan (_Signed SAS URL_) bersifat sementara.
 
 ### 11 • Snapshot Test Integrasi
 
@@ -1973,7 +1973,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
 ```mermaid
 flowchart TD
     App["Laravel Application Service"]
-    DB[("MySQL 8.4 InnoDB<br/>(Single Source of Truth)")]
+    DB[("MySQL 8.0 / TiDB Serverless InnoDB<br/>(Single Source of Truth)")]
     Redis[("Azure Cache for Redis<br/>(Cache / Session / Lease)")]
     Client["Client / Web Browser / API"]
 
@@ -2005,7 +2005,8 @@ Bagi pengembang yang membangun lapisan migrasi database Laravel (`database/migra
 
 1. **Urutan Pembuatan Tabel:** Wajib mengikuti hierarki dependensi Foreign Key (buat tabel modul identitas dan berkas dasar terlebih dahulu sebelum modul transaksi editorial dan publikasi).
 2. **Penggunaan Blueprint Laravel:**
-    - Gunakan `$table->char('id', 26)->primary();` untuk seluruh PK.
-    - Gunakan `$table->dateTime('created_at', 6);` dan `$table->dateTime('updated_at', 6);`.
-    - Definisikan kolom generated untuk `live_slot`, `journal_scope`, dan `galley_scope` menggunakan `$table->tinyInteger('live_slot')->virtualAs(...)` atau `storedAs(...)`.
+    - Gunakan `$table->char('id', 26)->primary();` untuk seluruh PK (tipe data ULID `CHAR(26)`).
+    - Gunakan `$table->dateTime('created_at', 6);` dan `$table->dateTime('updated_at', 6);` (presisi mikrodetik UTC).
+    - Gunakan collation `utf8mb4_unicode_ci` (atau `utf8mb4_0900_ai_ci` pada MySQL 8.0 native) untuk menjamin kompatibilitas tanpa deviasi antara dev lokal (`mysql:8.0`) dan TiDB Cloud Serverless.
+    - Definisikan seluruh kolom generated berindeks (`email_normalized`, `username_normalized`, `live_slot`, `journal_scope`, `galley_scope`) menggunakan `$table->storedAs(...)` untuk menjamin persistensi B-Tree indexing yang stabil dan deterministik lintas engine.
 3. **Penyelarasan Model Eloquent:** Model Eloquent wajib menonaktifkan `$incrementing = false;`, menggunakan `$keyType = 'string';`, serta mengimplementasikan trait otomatisasi pembuatan ULID pada event `creating`.
