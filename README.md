@@ -45,43 +45,106 @@ the test key in a deployed environment.
 GitHub Actions runs contract checks and scaffold tests on pull requests. These
 checks do not yet measure coverage or validate unimplemented domain endpoints.
 
-## MySQL, Redis, Mailpit, and Azurite for Local Development
+## Menjalankan Proyek (Running the Project Locally)
 
-The service uses MySQL 8.0, Redis 7, Mailpit, and Azurite for local development. Make sure Docker and Docker Compose are
-available, then copy the example configuration:
+Terdapat dua cara untuk menjalankan aplikasi di lingkungan lokal:
+1. **Opsi 1 (Direkomendasikan): Full Docker Compose** — Menjalankan seluruh stack (Web Nginx + PHP 8.4-FPM, MySQL, Redis, Mailpit, Azurite) di dalam kontainer tanpa perlu menginstal PHP atau driver database di mesin lokal Anda.
+2. **Opsi 2: Hybrid Development** — Menjalankan layanan database dan storage di Docker, sedangkan aplikasi Laravel dan Vite dijalankan langsung di mesin lokal.
 
+---
+
+### Opsi 1: Menggunakan Docker Compose (Rekomendasi)
+
+#### 1. Salin Konfigurasi Environment
+Pastikan Anda berada di direktori `ojs-rpl-backend`:
 ```sh
 cp .env.example .env
 ```
 
-Start MySQL, Redis, Mailpit, and Azurite:
-
+#### 2. Bangun (*Build*) dan Jalankan Seluruh Kontainer
+Jalankan seluruh service (`app`, `mysql`, `redis`, `mailpit`, dan `azurite`) di latar belakang:
 ```sh
+docker compose up -d --build
+```
+
+#### 3. Inisialisasi Kunci Aplikasi & Migrasi Database
+Jalankan perintah ini di dalam kontainer `app`:
+```sh
+# Generate application key (jika belum ada)
+docker compose exec app php artisan key:generate
+
+# Jalankan migrasi tabel database
+docker compose exec app php artisan migrate
+```
+
+#### 4. Akses Layanan Aplikasi
+Setelah seluruh kontainer berstatus *healthy* dan aktif:
+- **Web App / REST API**: [`http://localhost:8000`](http://localhost:8000)
+- **Halaman Masuk (Login)**: [`http://localhost:8000/login`](http://localhost:8000/login)
+- **Mailpit Webmail UI**: [`http://localhost:8025`](http://localhost:8025) (SMTP pada port `1025`)
+- **MySQL 8.0**: `127.0.0.1:3306` (Database: `ojs_rpl`, User: `ojs_rpl`, Password: `ojs_rpl_dev`)
+- **Redis 7**: `127.0.0.1:6379`
+- **Azurite (Azure Blob Storage Emulator)**: `127.0.0.1:10000`
+
+#### Perintah Tambahan Docker:
+```sh
+# Memantau log aplikasi secara real-time
+docker compose logs -f app
+
+# Masuk ke terminal shell di dalam kontainer aplikasi
+docker compose exec -it app sh
+
+# Menjalankan perintah artisan lainnya
+docker compose exec app php artisan <command>
+
+# Membuka konsol MySQL langsung
+docker compose exec mysql sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+
+# Menghentikan seluruh layanan
+docker compose down
+
+# Menghentikan layanan dan menghapus volume data (reset total)
+docker compose down -v
+```
+
+---
+
+### Opsi 2: Menjalankan Secara Hybrid (Host PHP + Docker Services)
+
+Jika Anda lebih memilih menjalankan server Laravel langsung di terminal mesin lokal Anda:
+
+#### 1. Salin Konfigurasi Environment & Nyalakan Layanan Pendukung
+```sh
+cp .env.example .env
 docker compose up -d --wait mysql redis mailpit azurite
 ```
 
-- **MySQL**: available at `127.0.0.1:3306`, database `ojs_rpl`, user `ojs_rpl`, password `ojs_rpl_dev`.
-- **Redis**: available at `127.0.0.1:6379`.
-- **Mailpit**: SMTP available at `127.0.0.1:1025`, Webmail UI available at `http://localhost:8025`.
-- **Azurite**: Azure Blob Storage emulator available at `127.0.0.1:10000`.
-
-Check the service status or open the MySQL console:
-
+#### 2. Pasang Dependensi & Bangun Aset Frontend
+Pastikan mesin lokal Anda sudah terpasang PHP 8.4+ (beserta ekstensi `php-mysqlnd` / `pdo_mysql`) dan Node.js 22+:
 ```sh
-docker compose ps
-docker compose exec mysql sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+# Pasang dependensi PHP
+composer install --no-interaction --prefer-dist
+
+# Pasang dependensi Node dan kompilasi aset Vite
+npm install
+npm run build
 ```
 
-Stop the service:
+> **Catatan Frontend:**  
+> Jika sedang aktif mendesain antarmuka/Blade, jalankan `npm run dev` di terminal terpisah agar fitur *Hot Module Replacement* (HMR) aktif. Jika tidak menjalankan `npm run dev`, pastikan sudah menjalankan `npm run build` agar tidak terjadi error `ViteManifestNotFoundException`.
 
+#### 3. Inisialisasi Aplikasi & Migrasi Database
 ```sh
-docker compose down
+php artisan key:generate
+php artisan migrate
 ```
 
-Data is stored in the `mysql_data`, `redis_data`, and `azurite_data` volumes and persists after the service
-stops. `docker compose down -v` deletes the volumes and all their data.
-The database name, username, and password variables are only applied when
-the volume is first initialized; changing `.env` does not modify an existing database.
+#### 4. Jalankan Server Pengembangan Laravel
+```sh
+php artisan serve
+```
+Aplikasi dapat diakses di [`http://127.0.0.1:8000`](http://127.0.0.1:8000).
+
 
 ## Laravel
 
