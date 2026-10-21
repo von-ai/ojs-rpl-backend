@@ -99,6 +99,89 @@ class LoginPageTest extends TestCase
     }
 
     /**
+     * Pengguna dapat login dengan username dan password yang valid.
+     */
+    public function test_pengguna_dapat_login_dengan_username_yang_valid(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'penulis_hebat',
+            'password' => 'password123',
+        ]);
+
+        $response = $this->post('/login', [
+            'login' => 'penulis_hebat',
+            'password' => 'password123',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect('/dashboard');
+    }
+
+    /**
+     * Pengguna gagal login jika email belum diverifikasi.
+     */
+    public function test_pengguna_gagal_login_jika_email_belum_diverifikasi(): void
+    {
+        $user = User::factory()->unverified()->create([
+            'password' => 'password123',
+        ]);
+
+        $response = $this->post('/login', [
+            'login' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('login');
+    }
+
+    /**
+     * Pengguna gagal login jika akun nonaktif atau disabled.
+     */
+    public function test_pengguna_gagal_login_jika_akun_dinonaktifkan(): void
+    {
+        $user = User::factory()->disabled()->create([
+            'password' => 'password123',
+        ]);
+
+        $response = $this->post('/login', [
+            'login' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('login');
+    }
+
+    /**
+     * Lima kegagalan login berturut-turut mencatat counter dan lockout pada tabel database users.
+     */
+    public function test_kegagalan_login_mencatat_counter_dan_lockout_di_database(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password123',
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', [
+                'login' => $user->email,
+                'password' => 'salah-terus',
+            ]);
+        }
+
+        $user->refresh();
+        $this->assertEquals(5, $user->failed_login_count);
+        $this->assertEquals('locked', $user->status);
+        $this->assertNotNull($user->locked_until);
+        $this->assertTrue($user->locked_until->isFuture());
+
+        // Memastikan outbox email keamanan terbit
+        $this->assertDatabaseHas('outbox_messages', [
+            'type' => 'security.account_locked_email',
+        ]);
+    }
+
+    /**
      * Pengguna dapat logout dari aplikasi.
      */
     public function test_pengguna_dapat_logout(): void
