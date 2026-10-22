@@ -1,5 +1,20 @@
 # Perubahan kontrak
 
+## Penyesuaian schema identity — 8 Oktober 2026
+
+Ikuti SIRIDA / ERD v1.0.0: users.id menjadi primary key ULID, hilangkan public_id
+terpisah, dan ubah seluruh FK pengguna menjadi ULID. ID API sekarang merupakan
+primary key users. Migrasi awal diubah karena database masih berisi dummy;
+checkout lama perlu migrate:fresh (hapus data development) sebelum dipakai.
+
+## Implementasi registrasi — 8 Oktober 2026
+
+Tiga operasi (`registerUser`, `verifyEmail`, `resendVerificationEmail`) kini
+implemented sebagai MVP; 193 operasi lainnya tetap planned. Wire contract tidak
+berubah. Tambahkan halaman Blade tanpa style, challenge 24 jam sekali pakai,
+email queue terenkripsi, audit dan validasi/rate limit. Lihat registration.md
+untuk migrasi, worker serta batas grant/membership/login.
+
 ## 1.0.0 — 7 Oktober 2026
 
 Final baseline untuk implementasi, 196 operasi planned. Persetujuan stakeholder

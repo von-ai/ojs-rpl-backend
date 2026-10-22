@@ -280,12 +280,18 @@ class AuthenticationService
         DB::table('audit_logs')->insert([
             'id' => (string) Str::ulid(),
             'user_id' => $userId,
+            'actor_id' => $userId,
+            'actor_type' => 'user',
+            'resource_type' => 'user',
+            'resource_id' => $userId,
             'action' => $action,
             'details' => json_encode($details),
             'ip_address' => $ip,
             'user_agent' => request()->userAgent(),
             'request_id' => $requestId,
+            'occurred_at' => now(),
             'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

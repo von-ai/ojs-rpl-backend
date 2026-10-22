@@ -2,22 +2,21 @@
 
 ## Implementation status and API contract
 
-This repository currently contains a Laravel scaffold and a **planned**
-[OpenAPI contract](docs/openapi.yaml). The documented domain endpoints are not yet
-registered or implemented. Do not use the contract as evidence that authentication,
-authorization, submission or publishing functionality is production-ready.
+Registration, email verification and verification resend now have working backend
+endpoints and an unstyled Blade MVP at `/register`. See the
+[registration guide](docs/registration.md) for migration, email-worker setup and
+current limitations. Authentication/login, journal memberships and editorial
+workflows remain unimplemented.
 
-The final implementation baseline **1.0.0** defines 196 planned operations.
-Start with the [selected technology stack](docs/architecture.md),
+The OpenAPI **1.0.0** contract defines 196 operations: three implemented registration
+operations and 193 planned operations. Start with the
+[selected technology stack](docs/architecture.md),
 [UC-01–18 acceptance scenarios](docs/use-cases.md),
 [client integration guide](docs/integration-guide.md) and
-[compatibility notes](docs/changelog.md). Final contract status does not mean
-stakeholder approval or a deployed implementation. See the
-[contract decisions and gap closure](docs/contract-decisions.md) for workflow,
-privacy, upload, integration and configuration rules, and the
-[historical SIRIDA proposal review](docs/review-srs.md) for original findings.
-Changes from the drafts require regenerating client mocks and SDKs; upload-session
-routes now use `/api/v1/upload-sessions` and several response/request schemas changed.
+[compatibility notes](docs/changelog.md). Contract status does not mean stakeholder
+approval or deployed production readiness. See the
+[contract decisions](docs/contract-decisions.md) and historical
+[SRS review](docs/review-srs.md).
 
 Validate the contract with Node.js 22.12+ (development/CI tooling only):
 
@@ -43,7 +42,7 @@ with `php artisan key:generate` and configuring/migrating the database. Never us
 the test key in a deployed environment.
 
 GitHub Actions runs contract checks and scaffold tests on pull requests. These
-checks do not yet measure coverage or validate unimplemented domain endpoints.
+checks include registration feature tests; they do not validate unimplemented domain endpoints.
 
 ## Menjalankan Proyek (Running the Project Locally)
 

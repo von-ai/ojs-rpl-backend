@@ -1,5 +1,10 @@
 # SIRIDA — use case dan penerimaan kontrak 1.0.0
 
+**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
+sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
+planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
+login, membership dan workflow editorial belum dibangun.
+
 Ini baseline final desain. Skenario di bawah adalah acceptance criteria yang harus
 lulus saat implementasi tersedia, **bukan hasil pengujian endpoint yang sudah berjalan**.
 Sumber UC adalah [proposal](https://docs.google.com/document/d/1bWldGLdB9Ek2bgmJtyupGi5yA7C1E409w6Gs65p__OM/)

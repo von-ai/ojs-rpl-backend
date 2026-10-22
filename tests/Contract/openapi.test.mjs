@@ -339,11 +339,11 @@ test('article metadata defines a named XML root and repeatable Dublin Core eleme
     assert.equal(media.example.title[0], 'Penerapan Sistem Informasi Jurnal');
 });
 
-test('all detailed SRS use cases have traceable operations and no endpoint claims implementation', () => {
+test('all detailed SRS use cases have traceable operations and implementation status is explicit', () => {
     const covered = new Set(operations.flatMap(({ operation }) => operation['x-use-cases'] ?? []));
     for (let i = 1; i <= 18; i++) assert.ok(covered.has(`UC-${String(i).padStart(2, '0')}`));
     for (const { operation } of operations) {
-        assert.equal(operation['x-implementation-status'], 'planned', operation.operationId);
+        assert.equal(operation['x-implementation-status'], ['registerUser', 'verifyEmail', 'resendVerificationEmail'].includes(operation.operationId) ? 'implemented' : 'planned', operation.operationId);
         assert.ok(operation['x-non-functional-requirements'].includes('NF-07'));
     }
 });
@@ -551,7 +551,7 @@ test('integration guide request fixtures validate against the actual operation i
 test('final baseline distinguishes planned implementation and links to existing guidance', () => {
     const baseline = api['x-contract-status'];
     assert.equal(api.info.version, baseline.version);
-    assert.equal(baseline.implementation, 'planned');
+    assert.equal(baseline.implementation, 'partial');
     for (const file of baseline.documents) assert.ok(readFileSync(file, 'utf8').length > 0, file);
     const guide = readFileSync('docs/use-cases.md', 'utf8');
     for (let i = 1; i <= 18; i++) {

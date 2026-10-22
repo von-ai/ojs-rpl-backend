@@ -25,6 +25,5 @@ return [
         'time' => 4,
         'verify' => true,
     ],
-
     'rehash_on_login' => true,
 ];
