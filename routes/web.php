@@ -38,6 +38,7 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::post('/submissions', [AuthorSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
 });
 
 Route::redirect('/submissions', '/author/submissions');

@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
 use App\Models\User;
+use Database\Seeders\SubmissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -59,13 +60,13 @@ class AuthorSubmissionDetailTest extends TestCase
         $response->assertSee('Perlu Revisi Penulis');
         $response->assertSee('Tahap 4 dari 6');
         $response->assertSee('Abstrak & Metadata Naskah', false);
-        $response->assertSee('font-serif');
+        $response->assertSee('Penelitian ini bertujuan untuk mengevaluasi efektivitas program Lorong Wisata', false);
         $response->assertSee('Penulis & Tim Kontributor', false);
         $response->assertSee('Dr. Andi Muhammad Ilyas, M.Si.');
         $response->assertSee('andi.ilyas@unhas.ac.id');
         $response->assertSee('Penulis Korespondensi');
         $response->assertSee('Berkas Manuskrip & Lampiran', false);
-        $response->assertSee('Pindai Bersih (ClamAV)');
+        $response->assertSee('Manuskrip-Evaluasi-Lorong-Wisata-v1.docx');
         $response->assertSee('Tahapan Alur Editorial');
         $response->assertSee('Linimasa Aktivitas');
         $response->assertSee('Perlu Tindakan Penulis');
@@ -179,7 +180,7 @@ class AuthorSubmissionDetailTest extends TestCase
     }
 
     /**
-     * Halaman detail menjamin privasi telaah sejawat tertutup (Double-Blind Privacy).
+     * Halaman detail menjamin privasi telaah tertutup (Double-Blind Privacy).
      */
     public function test_halaman_detail_menjaga_privasi_double_blind_tanpa_bocor_reviewer(): void
     {
@@ -192,5 +193,181 @@ class AuthorSubmissionDetailTest extends TestCase
         $response->assertDontSee('Mitra Bestari:');
         $response->assertDontSee('internal_note');
         $response->assertDontSee('confidential');
+    }
+
+    /**
+     * Seeder berhasil membuat seluruh 9 skenario dan setiap skenario tampil akurat di halaman detail.
+     */
+    public function test_seeder_membuat_seluruh_skenario_dan_dapat_diakses_di_halaman_detail(): void
+    {
+        $this->seed(SubmissionSeeder::class);
+
+        // 1. Skenario Draf
+        $respDraft = $this->get(route('author.submissions.show', 'SUB-2026-00101'));
+        $respDraft->assertStatus(200);
+        $respDraft->assertSee('SUB-2026-00101');
+        $respDraft->assertSee('Draf Belum Diajukan');
+        $respDraft->assertSee('Naskah Draf Parsial');
+        $respDraft->assertSee('Lanjutkan Pengisian Formulir');
+
+        // 2. Skenario Pemeriksaan Awal (Submitted / Desk Review)
+        $respSubmitted = $this->get(route('author.submissions.show', 'SUB-2026-00102'));
+        $respSubmitted->assertStatus(200);
+        $respSubmitted->assertSee('SUB-2026-00102');
+        $respSubmitted->assertSee('Pemeriksaan Awal Editor');
+        $respSubmitted->assertSee('Pemeriksaan Awal Sedang Berlangsung');
+        $respSubmitted->assertSee('Turnitin / iThenticate');
+
+        // 3. Skenario Proses Telaah (In Review)
+        $respReview = $this->get(route('author.submissions.show', 'SUB-2026-00103'));
+        $respReview->assertStatus(200);
+        $respReview->assertSee('SUB-2026-00103');
+        $respReview->assertSee('Proses Telaah');
+        $respReview->assertSee('Double-Blind');
+        $respReview->assertSee('Mitra Bestari Ditugaskan');
+
+        // 4. Skenario Perlu Revisi Minor
+        $respRevMinor = $this->get(route('author.submissions.show', 'SUB-2026-00104'));
+        $respRevMinor->assertStatus(200);
+        $respRevMinor->assertSee('SUB-2026-00104');
+        $respRevMinor->assertSee('Perlu Revisi Penulis');
+        $respRevMinor->assertSee('Perlu Tindakan Penulis');
+        $respRevMinor->assertSee('Unggah Revisi Naskah & Response Letter', false);
+
+        // 5. Skenario Perlu Revisi Mayor
+        $respRevMajor = $this->get(route('author.submissions.show', 'SUB-2026-00105'));
+        $respRevMajor->assertStatus(200);
+        $respRevMajor->assertSee('SUB-2026-00105');
+        $respRevMajor->assertSee('Perlu Revisi Penulis');
+        $respRevMajor->assertSee('Perlu Tindakan Penulis');
+
+        // 6. Skenario Produksi & Galai (In Production)
+        $respProd = $this->get(route('author.submissions.show', 'SUB-2026-00106'));
+        $respProd->assertStatus(200);
+        $respProd->assertSee('SUB-2026-00106');
+        $respProd->assertSee('Tahap Produksi &amp; Pemeriksaan Galai', false);
+        $respProd->assertSee('Penataan Tata Letak');
+
+        // 7. Skenario Telah Terbit Resmi (Published)
+        $respPub = $this->get(route('author.submissions.show', 'SUB-2026-00107'));
+        $respPub->assertStatus(200);
+        $respPub->assertSee('SUB-2026-00107');
+        $respPub->assertSee('Telah Terbit Resmi');
+        $respPub->assertSee('Open Access');
+        $respPub->assertSee('10.55981/brida.v2i2.88');
+        $respPub->assertSee('Kutipan Ilmiah (Sitasi APA 7th)');
+
+        // 8. Skenario Ditolak (Declined)
+        $respDec = $this->get(route('author.submissions.show', 'SUB-2026-00108'));
+        $respDec->assertStatus(200);
+        $respDec->assertSee('SUB-2026-00108');
+        $respDec->assertSee('Naskah Ditolak (Declined)');
+        $respDec->assertSee('Alur Terhenti (Ditolak)');
+        $respDec->assertSee('Keputusan Editorial: Naskah Tidak Diterima');
+
+        // 9. Skenario Diarsipkan (Archived - Sesuai status patokan erd.md)
+        $respArchived = $this->get(route('author.submissions.show', 'SUB-2026-00109'));
+        $respArchived->assertStatus(200);
+        $respArchived->assertSee('SUB-2026-00109');
+        $respArchived->assertSee('Naskah Diarsipkan (Archived)');
+        $respArchived->assertSee('Naskah Diarsipkan');
+        $respArchived->assertSee('Naskah Telah Diarsipkan Resmi (Archived)');
+    }
+
+    /**
+     * Naskah tahap awal (submitted) yang belum ditindaklanjuti menampilkan tombol Ajukan Penarikan Naskah.
+     */
+    public function test_naskah_tahap_awal_tanpa_tindak_lanjut_menampilkan_tombol_ajukan_penarikan(): void
+    {
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00142'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Ajukan Penarikan Naskah');
+        $response->assertDontSee('Ajukan Penarikan Naskah (Withdraw)');
+    }
+
+    /**
+     * Naskah yang sudah masuk tahap review atau memiliki tindak lanjut tidak dapat ditarik.
+     */
+    public function test_naskah_tahap_review_atau_ada_tindak_lanjut_tidak_dapat_ditarik(): void
+    {
+        // Naskah berstatus in_review (tahap 3)
+        $respReview = $this->get(route('author.submissions.show', 'SUB-2026-00103'));
+        $respReview->assertStatus(200);
+        $respReview->assertDontSee('Ajukan Penarikan Naskah');
+        $respReview->assertSee('Naskah Tidak Dapat Ditarik');
+
+        // Naskah berstatus revisions_requested (tahap 4)
+        $respRev = $this->get(route('author.submissions.show', 'SUB-2026-00124'));
+        $respRev->assertStatus(200);
+        $respRev->assertDontSee('Ajukan Penarikan Naskah');
+        $respRev->assertSee('Naskah Tidak Dapat Ditarik');
+    }
+
+    /**
+     * Penulis dapat melakukan POST pengajuan penarikan pada naskah tahap submitted di database.
+     */
+    public function test_penulis_dapat_menarik_naskah_tahap_awal_di_database(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-test-withdraw'],
+            ['name' => 'Jurnal Uji Withdraw', 'status' => 'active', 'version' => 1]
+        );
+
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-withdraw-test'],
+            ['name' => 'Seksi Uji Withdraw', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-W001',
+            'title' => 'Naskah Uji Coba Penarikan Tahap Awal',
+            'abstract' => 'Abstrak naskah uji coba penarikan.',
+            'status' => 'submitted',
+            'submitted_at' => now(),
+            'version' => 1,
+        ]);
+
+        $response = $this->post(route('author.submissions.withdraw', $submission->id));
+
+        $response->assertRedirect(route('author.submissions.show', $submission->id));
+        $this->assertEquals('withdrawn', $submission->fresh()->status);
+    }
+
+    /**
+     * Penulis ditolak saat mencoba menarik naskah yang sudah masuk tahap review di database.
+     */
+    public function test_penulis_tidak_bisa_menarik_naskah_yang_sudah_masuk_tahap_review_di_database(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-test-withdraw'],
+            ['name' => 'Jurnal Uji Withdraw', 'status' => 'active', 'version' => 1]
+        );
+
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-withdraw-test'],
+            ['name' => 'Seksi Uji Withdraw', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-W002',
+            'title' => 'Naskah Uji Coba Tolak Penarikan Review',
+            'abstract' => 'Abstrak naskah dalam tahap telaah.',
+            'status' => 'in_review',
+            'submitted_at' => now()->subDays(5),
+            'version' => 1,
+        ]);
+
+        $response = $this->post(route('author.submissions.withdraw', $submission->id));
+
+        $response->assertRedirect(route('author.submissions.show', $submission->id));
+        $response->assertSessionHas('error');
+        $this->assertEquals('in_review', $submission->fresh()->status);
     }
 }

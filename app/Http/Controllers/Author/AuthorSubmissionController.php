@@ -174,12 +174,14 @@ class AuthorSubmissionController extends Controller
             if (! empty($contributors)) {
                 foreach ($contributors as $index => $c) {
                     $isCorr = filter_var($c['corresponding'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                    $givenName = $c['given_name'] ?? ($c['name'] ?? 'Penulis');
+                    $familyName = $c['family_name'] ?? null;
 
                     SubmissionContributor::create([
                         'submission_id' => $submission->id,
                         'user_id' => ($isCorr && $authorId) ? $authorId : null,
-                        'given_name' => $c['given_name'] ?? null,
-                        'family_name' => $c['family_name'] ?? ($c['name'] ?? 'Penulis'),
+                        'given_name' => $givenName,
+                        'family_name' => $familyName,
                         'email' => $c['email'] ?? ($author?->email ?? 'author@makassar.go.id'),
                         'affiliation' => $c['affiliation'] ?? 'BRIDA Kota Makassar',
                         'orcid' => $c['orcid_id'] ?? null,
@@ -338,5 +340,68 @@ class AuthorSubmissionController extends Controller
         $viewModel = new AuthorSubmissionsViewModel;
 
         return view('author.submissions.show', compact('submission', 'viewModel'));
+    }
+
+    /**
+     * Memproses pengajuan penarikan naskah oleh penulis.
+     * Naskah hanya dapat ditarik jika masih dalam tahap awal (submitted) dan belum ada tindak lanjut dari peran lain.
+     */
+    public function withdraw(Request $request, string $id): RedirectResponse
+    {
+        $user = $request->user();
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })
+            ->when($user, fn ($q) => $q->where('author_id', $user->id))
+            ->first();
+
+        $detailViewModel = new AuthorSubmissionDetailViewModel;
+
+        if (! $submission) {
+            $mock = $detailViewModel->find($id, $user);
+            if ($mock) {
+                if (! ($mock['can_withdraw'] ?? false)) {
+                    return redirect()
+                        ->route('author.submissions.show', $id)
+                        ->with('error', $mock['cannot_withdraw_reason'] ?? 'Naskah tidak dapat ditarik kembali karena telah memasuki tahap telaah (review) atau telah ditindaklanjuti oleh dewan redaksi/mitra bestari.');
+                }
+
+                return redirect()
+                    ->route('author.submissions.show', $id)
+                    ->with('success', "Permohonan penarikan naskah {$id} telah berhasil diajukan ke dewan redaksi.");
+            }
+
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('error', 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');
+        }
+
+        $stageNumber = match ($submission->status) {
+            'draft' => 1,
+            'submitted' => 2,
+            'in_review' => 3,
+            'revisions_requested' => 4,
+            'in_production', 'accepted' => 5,
+            'published' => 6,
+            default => 2,
+        };
+
+        if (! $detailViewModel->canWithdrawSubmission($submission, $stageNumber)) {
+            $reason = $detailViewModel->cannotWithdrawReason($submission, $stageNumber);
+
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('error', $reason ?? 'Naskah tidak dapat ditarik kembali karena telah memasuki tahap telaah (review) atau telah ditindaklanjuti oleh dewan redaksi/mitra bestari.');
+        }
+
+        $submission->update([
+            'status' => 'withdrawn',
+        ]);
+
+        return redirect()
+            ->route('author.submissions.show', $submission->id)
+            ->with('success', 'Naskah ilmiah berhasil diajukan penarikannya dan status naskah telah diperbarui menjadi ditarik.');
     }
 }
