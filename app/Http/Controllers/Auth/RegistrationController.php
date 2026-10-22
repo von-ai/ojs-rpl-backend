@@ -5,77 +5,56 @@ namespace App\Http\Controllers\Auth;
 use App\Exceptions\IdentityException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\IdentityRequest;
-use App\Http\Resources\RegistrationUserResource;
 use App\Services\Identity\RegistrationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 
 class RegistrationController extends Controller
 {
-    public function form()
+    public function form(): View
     {
         return view('auth.register');
     }
 
-    public function notice()
+    public function notice(): View
     {
         return view('auth.verification-notice');
     }
 
-    public function verificationForm(Request $request)
+    public function verificationForm(Request $request): Response
     {
         return response()->view('auth.verify', ['token' => $request->query('token')])
             ->header('Cache-Control', 'no-store')->header('Referrer-Policy', 'no-referrer');
     }
 
-    public function register(IdentityRequest $request, RegistrationService $service)
+    public function register(IdentityRequest $request, RegistrationService $service): RedirectResponse
     {
         try {
-            $user = $service->register($request->validated());
+            $service->register($request->validated());
         } catch (IdentityException $exception) {
-            if ($request->is('api/*')) {
-                throw $exception;
-            }
-
             return back()->withErrors(['email' => $exception->getMessage()])
                 ->withInput($request->except(['password', 'password_confirmation', '_token']));
-        }
-        if ($request->is('api/*')) {
-            return response()->json([
-                'data' => (new RegistrationUserResource($user))->resolve($request),
-                'meta' => ['request_id' => $request->attributes->get('request_id')],
-            ], 201)->header('Location', '/register/check-email');
         }
 
         return redirect()->route('verification.notice')->with('registered', true);
     }
 
-    public function verify(IdentityRequest $request, RegistrationService $service)
+    public function verify(IdentityRequest $request, RegistrationService $service): RedirectResponse|Response
     {
         try {
-            $user = $service->verify($request->validated('token'));
+            $service->verify($request->validated('token'));
         } catch (IdentityException $exception) {
-            if ($request->is('api/*')) {
-                throw $exception;
-            }
-
             return response()->view('auth.verification-notice', ['verificationError' => $exception->getMessage()], $exception->status);
-        }
-        if ($request->is('api/*')) {
-            return response()->json([
-                'data' => (new RegistrationUserResource($user))->resolve($request),
-                'meta' => ['request_id' => $request->attributes->get('request_id')],
-            ]);
         }
 
         return redirect()->route('verification.notice')->with('verified', true);
     }
 
-    public function resend(IdentityRequest $request, RegistrationService $service)
+    public function resend(IdentityRequest $request, RegistrationService $service): RedirectResponse
     {
         $service->resend($request->validated('email'));
-        if ($request->is('api/*')) {
-            return response('', 202);
-        }
 
         return redirect()->route('verification.notice')->with('resent', true);
     }

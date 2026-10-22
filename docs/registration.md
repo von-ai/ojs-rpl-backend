@@ -1,10 +1,11 @@
 # Registrasi MVP
 
-Implementasi 8 Oktober 2026: register, verify email, resend email melalui API dan
-Blade tanpa CSS/JavaScript. Login/JWT, enrollment serta policy Reader/Author
-per jurnal merupakan pekerjaan berikutnya; registrasi tidak membuat role reviewer
-atau editorial. Akun terverifikasi menjadi `active`, tetapi status tersebut sendiri
-bukan grant akses ke naskah atau jurnal.
+Implementasi alur pendaftaran akun penulis: register, verify email, dan resend email
+melalui formulir web Blade. Autentikasi berbasis sesi stateful web (`auth:web`),
+sedangkan enrollment serta policy Reader/Author per jurnal merupakan otorisasi bertingkat;
+registrasi tidak membuat role reviewer atau editorial secara otomatis.
+Akun terverifikasi menjadi `active`, tetapi status tersebut sendiri bukan grant langsung
+ke naskah atau jurnal.
 
 ## Menjalankan lokal
 
@@ -40,40 +41,33 @@ Default `MAIL_MAILER=log` menyimpan email untuk development di
 Gunakan SMTP/SES yang dikonfigurasi untuk email sungguhan, bukan log mailer pada
 produksi. Log mailer development memuat tautan rahasia; jangan membagikan log.
 
-## API
+## Rute Web Registrasi & Alur
 
-- `POST /api/v1/auth/register`: `full_name`, `email`, `username`, `password`, `affiliation` → 201 UserResponse.
-- `POST /api/v1/auth/email/verify`: `token` → 200 UserResponse; unknown/expired/consumed → 410.
-- `POST /api/v1/auth/email/resend`: `email` → 202 body kosong untuk semua alamat valid.
+- `GET /register`: Menampilkan formulir pendaftaran akun penulis.
+- `POST /register`: Mengirim data pendaftaran (`full_name`, `email`, `username`, `password`, `password_confirmation`, `affiliation`). Jika berhasil, dialihkan ke `/register/check-email`.
+- `GET /email/verify?token=<token>`: Halaman konfirmasi aktivasi tautan email.
+- `POST /email/verify`: Memproses token aktivasi (`token`). Jika berhasil, mengaktifkan status akun menjadi `active`.
+- `POST /email/resend`: Mengirim ulang tautan verifikasi ke alamat email (`email`).
 
-Semua request API memakai `Content-Type: application/json`. Field tambahan ditolak,
-termasuk `requested_role`, `roles`, `journal_id` dan `status`. Form Blade juga
-memerlukan `password_confirmation` dan CSRF. Password tidak disimpan dalam old input.
-Email/username dinormalisasi ke huruf kecil; email maksimum 255 karakter sesuai
-storage. Username 3–50 karakter ASCII `[A-Za-z0-9_.-]`; password 12–128 karakter
-menggunakan Argon2id agar password panjang tidak terpotong oleh batas bcrypt.
-Nama lengkap dan afiliasi mengikuti kontrak. Duplikasi email/username → 409.
+Form Blade mewajibkan CSRF token dan `password_confirmation`. Password tidak disimpan dalam old input.
+Email/username dinormalisasi ke huruf kecil; email maksimum 255 karakter sesuai storage.
+Username 3–50 karakter ASCII `[A-Za-z0-9_.-]`; password 12–128 karakter menggunakan Argon2id.
+Duplikasi email/username akan mengembalikan error validasi pada field terkait.
 
-Challenge disimpan sebagai SHA-256, berlaku 24 jam, dikonsumsi sekali dengan lock
-user lalu challenge. PostgreSQL `clock_timestamp()` UTC diambil setelah lock;
-`now >= expires_at` ditolak. Kirim ulang memiliki cooldown 60 detik dan membatalkan
-challenge lama. Email worker melewati challenge yang sudah tidak valid. GET tautan
-email hanya membuka form konfirmasi, sehingga email-link scanner tidak mengaktifkan
-akun; perubahan state terjadi melalui POST dengan CSRF.
+Challenge disimpan sebagai SHA-256, berlaku 24 jam, dikonsumsi sekali dengan baris terkunci.
+Kirim ulang memiliki cooldown 60 detik dan membatalkan challenge lama. Email worker melewati challenge yang sudah tidak valid.
+GET tautan email hanya membuka form konfirmasi, sehingga bot/email-link scanner tidak mengaktifkan akun secara tidak sengaja;
+perubahan status akun terjadi melalui request POST dengan CSRF.
 
 Rate limit shared register/verify/resend: 10 request/menit dan 100/jam per IP,
-plus cooldown resend per akun. Error API mengikuti Problem, dengan correlation ID,
-Cache-Control no-store dan Retry-After untuk 429. Browser dan API memakai service
-yang sama; registrasi/verifikasi tidak membuat sesi login atau token API.
+plus cooldown resend per akun. Registrasi dan verifikasi tidak langsung membuat sesi login (pengguna diarahkan masuk via `/login`).
 
 ## Data dan batas implementasi
 
 `users.id` adalah primary key ULID char(26) sesuai SIRIDA / ERD v1.0.0.
-Tidak ada `public_id` terpisah. Eloquent HasUlids menghasilkan ID secara otomatis,
-dan API memakai primary key tersebut. Foreign key user_profiles.user_id,
-identity_challenges.user_id, audit_logs.actor_id dan sessions.user_id memakai ULID.
-Username wajib dan unik. Nama/password memakai kolom scaffold `name`/`password`;
-API memproyeksikan `full_name` tanpa mengekspos password.
+Tidak ada `public_id` terpisah. Eloquent HasUlids menghasilkan ID secara otomatis.
+Foreign key user_profiles.user_id, identity_challenges.user_id, audit_logs.actor_id dan sessions.user_id memakai ULID.
+Username wajib dan unik. Nama/password memakai kolom scaffold `name`/`password` tanpa mengekspos password.
 
 Migrasi awal telah disesuaikan untuk database development berisi dummy. Untuk
 checkout yang sudah menjalankan migrasi versi bigint, jalankan
@@ -81,21 +75,19 @@ checkout yang sudah menjalankan migrasi versi bigint, jalankan
 seluruh tabel/data pada schema terpilih. Jangan gunakan untuk data produksi.
 
 Tabel baru: user_profiles, identity_challenges, audit_logs. Audit identity bersifat
-append-only di application service, mencatat resource public ID, actor/action/time,
-tanpa password/token. Schema audit menyiapkan journal scope nullable; FK ke journals
-perlu ditambahkan saat tabel jurnal dibangun. Grant/membership dan audit workflow
-lain belum diimplementasikan. Belum ada halaman login; MVP menampilkan keberhasilan
-verifikasi dengan jelas.
+append-only di application service, mencatat actor/action/time tanpa password/token.
+Schema audit menyiapkan journal scope nullable; FK ke journals perlu ditambahkan
+saat tabel jurnal dibangun. Halaman login telah terintegrasi di `/login` (lihat [panduan login](login.md));
+alur pendaftaran menampilkan konfirmasi verifikasi dan mengarahkan pengguna untuk login.
 
 ## Validasi
 
 ```sh
-php artisan test
+composer test
 vendor/bin/pint --test
-npm run check:openapi
 ```
 
-Tes feature mencakup web/API, token single-use/expiry, normalisasi/duplikasi,
+Tes feature mencakup validasi form web, token single-use/expiry, normalisasi/duplikasi,
 privilege injection, password panjang Unicode, encrypted queue delivery,
 rollback bila enqueue gagal dan rate limiting. SQLite suite tidak membuktikan race
 lintas koneksi PostgreSQL; uji transaksi kompetitif tetap diperlukan sebelum rilis.

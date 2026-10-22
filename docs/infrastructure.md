@@ -55,7 +55,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
    │  • Web Application Firewall (WAF) & DDoS Shield                             │
    └──────────────────────┬───────────────────────────────┬──────────────────────┘
                           │                               │
-            Download/Upload SAS URL File                  │ Forward Request Web/API
+            Download/Upload SAS URL File                  │ Forward Request HTTP Web
                           │                               ▼ (Port 443 / HTTPS)
    ┌──────────────────────▼──────┐       ┌───────────────────────────────────────┐
    │  AZURE BLOB STORAGE ACCOUNT │       │     AZURE CONTAINER APPS (ACA)        │
@@ -94,12 +94,12 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
 
 ## 4. Aliran Data Jaringan (*Network & Traffic Flow*)
 
-### 4.1 Aliran Akses Aplikasi Web & API
+### 4.1 Aliran Akses Aplikasi Web
 1. Browser klien melakukan resolusi DNS ke domain publik melalui **Cloudflare DNS**.
 2. Request dikirimkan melalui protokol **HTTPS (TLS 1.3)** menuju Cloudflare Edge.
 3. **Cloudflare WAF** memeriksa request; lalu lintas mencurigakan (SQLi/XSS/bot) langsung diblokir.
 4. Jika request meminta aset statis yang ter-cache, Cloudflare CDN langsung merespons dari *edge cache*.
-5. Request dinamis (REST API) diteruskan (*proxied*) ke alamat Ingress publik **Azure Container Apps**.
+5. Request dinamis aplikasi web diteruskan (*proxied*) ke alamat Ingress publik **Azure Container Apps**.
 6. Envoy Proxy di ACA meneruskan request ke replika **Web App Container (Laravel)** yang sedang aktif.
 
 ### 4.2 Aliran Penyimpanan & Pengunduhan Berkas (*Direct Azure Blob SAS URL*)
@@ -200,7 +200,6 @@ Karena proyek ini berstatus *Proof of Concept* untuk pengujian dan expo berduras
 ### 8.3 Integrasi Berkelanjutan (CI via GitHub Actions)
 Deployment cloud dipicu secara manual dan terkontrol (agar infra tidak menyala tanpa sengaja), sedangkan proses **CI** berjalan otomatis di GitHub Actions pada setiap *Pull Request*:
 * Pemeriksaan linting dan standar PSR-12 (`vendor/bin/pint --test`).
-* Validasi kontrak antarmuka API (`npm run check:openapi`).
 * Pengujian unit dan fitur (`composer test`).
 * Otomasi *build* dan *push* Docker Image produksi bertag rilis (misal `v1.0.0-poc`) ke **GitHub Container Registry (GHCR)**.
 
