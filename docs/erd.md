@@ -2,7 +2,7 @@
 
 **Baseline Arsitektur:** MySQL 8.0 / TiDB Cloud Serverless (InnoDB wire protocol) + Redis in-memory • Framework Laravel 13 (PHP 8.4)  
 **Revisi Desain:** 22 Oktober 2026 • **Arsitektur:** Modular Monolith Laravel 13 (Blade + Livewire 4)  
-**Metrik Desain:** 70 Tabel MySQL • 8 Modul Domain • 140 Relasi Foreign Key • Redis Key-Value Ledger
+**Metrik Desain:** 58 Tabel MySQL • 8 Modul Domain • 94 Relasi Foreign Key • Redis Key-Value Ledger
 
 ---
 
@@ -44,7 +44,6 @@ erDiagram
     journal_memberships ||--o{ journal_role_grants : "assigned"
     users ||--o{ system_role_grants : "holds_system_role"
     users ||--o{ sessions : "has_sessions"
-    users ||--o{ oauth_states : "tracks"
     users ||--o{ identity_challenges : "receives"
     users ||--o| orcid_connections : "links"
 
@@ -109,38 +108,31 @@ erDiagram
     doi_registrations ||--o{ crossref_deposits : "deposits_to_crossref"
     articles ||--o{ article_metrics : "measures_views"
 
-    %% MODUL 07: Berkas dan Upload
-    journals ||--o{ file_scopes : "scopes_journal"
-    file_scopes ||--o{ upload_sessions : "initiates"
-    upload_sessions ||--o{ upload_parts : "chunks"
-    upload_sessions ||--o| files : "produces_file"
-    file_scopes ||--o{ files : "organizes"
+    %% MODUL 07: Berkas dan Penyimpanan
+    journals ||--o{ files : "stores_files"
+    users ||--o{ files : "uploaded_by"
     files ||--o{ scan_attempts : "security_scanned"
     submissions ||--o{ submission_files : "attaches"
     files ||--o{ submission_files : "attached_file"
 
-    %% MODUL 08: Operasional dan Integrasi
-    journals ||--o{ operations : "scoped_to"
-    operations ||--o{ user_imports : "executes_import"
+    %% MODUL 08: Operasional, Audit, dan Sistem
+    journals ||--o{ user_imports : "imports_users"
+    users ||--o{ user_imports : "created_by"
     users ||--o{ notifications : "notified"
     journals ||--o{ audit_logs : "audits"
     outbox_events ||--o{ notifications : "triggers"
-    users ||--o{ idempotency_records : "replays"
-    integration_profiles ||--o{ integration_candidates : "configures"
-    integration_candidates ||--o{ integration_tests : "validates"
-    integration_candidates ||--o{ integration_configurations : "activates"
-    system_settings_versions ||--o{ integration_configurations : "binds_version"
+    users ||--o{ system_settings : "manages_settings"
 ```
 
 ---
 
-## 3. Katalog Modul & Kamus Data 70 Tabel
+## 3. Katalog Modul & Kamus Data 58 Tabel
 
-Berikut rincian spesifikasi 70 tabel yang terbagi dalam 8 modul fungsional:
+Berikut rincian spesifikasi 58 tabel yang terbagi dalam 8 modul domain:
 
-### Modul 01: Identitas dan Akses (10 Tabel)
+### Modul 01: Identitas dan Akses (8 Tabel)
 
-Menangani autentikasi pengguna, profil, relasi multi-jurnal (_membership_), pemberian peran (_role grants_), sesi aktif ber-ETag, token refresh bertingkat, verifikasi akun, dan koneksi ORCID.
+Menangani autentikasi pengguna, profil, relasi multi-jurnal (_membership_), pemberian peran (_role grants_), sesi web stateful bawaan Laravel, verifikasi akun, dan koneksi ORCID.
 
 #### 1. `users`
 
@@ -255,25 +247,7 @@ Tabel sesi web bawaan Laravel (`sessions`) untuk menyimpan status autentikasi st
     - `INDEX idx_sessions_user_id (user_id)`
     - `INDEX idx_sessions_last_activity (last_activity)`
 
-#### 7. `oauth_states`
-
-Penyimpanan state sementara untuk alur OAuth2 / OIDC eksternal (ORCID).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `user_id` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `state_hash` VARCHAR(191) NOT NULL — Hash state parameter OAuth.
-    - `pkce_verifier_ciphertext` TEXT NOT NULL — Ciphertext terenkripsi dari PKCE code_verifier.
-    - `expires_at` DATETIME(6) NOT NULL — Waktu kedaluwarsa state.
-    - `consumed_at` DATETIME(6) NULL — Waktu state berhasil digunakan callback.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
-    - `UNIQUE KEY uq_oauth_states_hash (state_hash)`
-
-#### 8. `identity_challenges`
+#### 7. `identity_challenges`
 
 Token challenge untuk verifikasi email pendaftaran dan reset kata sandi.
 
@@ -291,7 +265,7 @@ Token challenge untuk verifikasi email pendaftaran dan reset kata sandi.
     - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_id_challenges_hash (token_hash)`
 
-#### 10. `orcid_connections`
+#### 8. `orcid_connections`
 
 Tautan identitas ORCID terverifikasi milik peneliti.
 
@@ -313,7 +287,7 @@ Tautan identitas ORCID terverifikasi milik peneliti.
 
 Mengatur identitas jurnal, fokus dan ruang lingkup (_sections_), pengaturan kebijakan, rubrik penilaian reviewer, halaman statis, pengumuman, dan template email notifikasi.
 
-#### 11. `journals`
+#### 9. `journals`
 
 Metadata utama instansi jurnal ilmiah yang dikelola.
 
@@ -333,7 +307,7 @@ Metadata utama instansi jurnal ilmiah yang dikelola.
     - `UNIQUE KEY uq_journals_slug (slug)`
     - `CHECK (version >= 1)`
 
-#### 12. `sections`
+#### 10. `sections`
 
 Bagian atau subjek bidang naskah pada jurnal (contoh: _Original Research_, _Review Article_, _Case Study_).
 
@@ -353,7 +327,7 @@ Bagian atau subjek bidang naskah pada jurnal (contoh: _Original Research_, _Revi
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_section_journal_slug (journal_id, slug)`
 
-#### 13. `journal_settings`
+#### 11. `journal_settings`
 
 Pengaturan kebijakan editorial, alur submission, format accepted guidelines, dan review timeline.
 
@@ -369,7 +343,7 @@ Pengaturan kebijakan editorial, alur submission, format accepted guidelines, dan
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 14. `review_rubric_versions`
+#### 12. `review_rubric_versions`
 
 Riwayat dan versi form rubrik penilaian yang diisi oleh peer reviewer.
 
@@ -386,7 +360,7 @@ Riwayat dan versi form rubrik penilaian yang diisi oleh peer reviewer.
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_rubric_journal_version (journal_id, version)`
 
-#### 15. `journal_pages`
+#### 13. `journal_pages`
 
 Halaman informasi statis publik (contoh: _Author Guidelines_, _Editorial Board_, _Peer Review Process_, _Indexing_).
 
@@ -405,7 +379,7 @@ Halaman informasi statis publik (contoh: _Author Guidelines_, _Editorial Board_,
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_page_journal_slug (journal_id, slug)`
 
-#### 16. `announcements`
+#### 14. `announcements`
 
 Warta berita atau panggilan pengajuan naskah (_Call for Papers_).
 
@@ -423,7 +397,7 @@ Warta berita atau panggilan pengajuan naskah (_Call for Papers_).
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
 
-#### 17. `email_templates`
+#### 15. `email_templates`
 
 Template pesan email transaksional per event (notifikasi revisi, undangan reviewer, keputusan akhir).
 
@@ -449,7 +423,7 @@ Template pesan email transaksional per event (notifikasi revisi, undangan review
 
 Mengelola naskah ilmiah yang diajukan oleh penulis, kontributor bersama (_co-authors_), penugasan editor, pemeriksaan awal (_desk review_), keputusan editorial, revisi naskah, cek kesamaan (_similarity_), dan investigasi etika publikasi.
 
-#### 18. `submissions`
+#### 16. `submissions`
 
 Tabel transaksi inti naskah ilmiah yang diajukan.
 
@@ -475,7 +449,7 @@ Tabel transaksi inti naskah ilmiah yang diajukan.
     - `FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 19. `submission_contributors`
+#### 17. `submission_contributors`
 
 Daftar penulis pertama dan rekan penulis (_co-authors_).
 
@@ -497,7 +471,7 @@ Daftar penulis pertama dan rekan penulis (_co-authors_).
     - `FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 20. `editor_assignments`
+#### 18. `editor_assignments`
 
 Penugasan Section Editor atau Editor in Chief untuk memimpin penanganan naskah.
 
@@ -518,7 +492,7 @@ Penugasan Section Editor atau Editor in Chief untuk memimpin penanganan naskah.
     - `FOREIGN KEY (editor_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_editor_assign_live (submission_id, role, live_slot)`
 
-#### 21. `desk_reviews`
+#### 19. `desk_reviews`
 
 Evaluasi awal kelayakan naskah oleh editor sebelum diteruskan ke peer-review.
 
@@ -540,7 +514,7 @@ Evaluasi awal kelayakan naskah oleh editor sebelum diteruskan ke peer-review.
     - `FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (assessed_by) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 22. `editorial_decisions`
+#### 20. `editorial_decisions`
 
 Keputusan resmi editor terhadap naskah (_Accept_, _Revisions Required_, _Resubmit for Review_, _Decline_).
 
@@ -568,7 +542,7 @@ Keputusan resmi editor terhadap naskah (_Accept_, _Revisions Required_, _Resubmi
     - `FOREIGN KEY (decided_by) REFERENCES users(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (corrects_decision_id) REFERENCES editorial_decisions(id) ON DELETE RESTRICT`
 
-#### 23. `decision_feedback`
+#### 21. `decision_feedback`
 
 Pemetaan feedback dan komentar reviewer yang dilampirkan editor ke dalam keputusan resmi.
 
@@ -584,7 +558,7 @@ Pemetaan feedback dan komentar reviewer yang dilampirkan editor ke dalam keputus
     - `FOREIGN KEY (decision_id) REFERENCES editorial_decisions(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE RESTRICT`
 
-#### 24. `revisions`
+#### 22. `revisions`
 
 Putaran revisi naskah yang dikirimkan oleh penulis berdasarkan keputusan editor.
 
@@ -610,7 +584,7 @@ Putaran revisi naskah yang dikirimkan oleh penulis berdasarkan keputusan editor.
     - `FOREIGN KEY (manuscript_file_id) REFERENCES files(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (response_letter_file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 25. `ethics_cases`
+#### 23. `ethics_cases`
 
 Pencatatan kasus dugaan pelanggaran etika publikasi (fabrikasi, falsifikasi, plagiarisme).
 
@@ -633,7 +607,7 @@ Pencatatan kasus dugaan pelanggaran etika publikasi (fabrikasi, falsifikasi, pla
     - `FOREIGN KEY (opened_by) REFERENCES users(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (investigator_id) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 26. `ethics_evidence`
+#### 24. `ethics_evidence`
 
 Berkas bukti-bukti investigasi kasus etika.
 
@@ -647,7 +621,7 @@ Berkas bukti-bukti investigasi kasus etika.
     - `FOREIGN KEY (case_id) REFERENCES ethics_cases(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 27. `similarity_checks`
+#### 25. `similarity_checks`
 
 Hasil uji kemiripan teks/plagiarisme melalui layanan pihak ketiga.
 
@@ -669,7 +643,7 @@ Hasil uji kemiripan teks/plagiarisme melalui layanan pihak ketiga.
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (report_file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 28. `submission_events`
+#### 26. `submission_events`
 
 Ledger audit jejak status dan siklus hidup manuskrip (append-only).
 
@@ -695,7 +669,7 @@ Ledger audit jejak status dan siklus hidup manuskrip (append-only).
 
 Mengatur putaran penelaahan sejawat (_review rounds_), undangan dan batas waktu penelaah, form penilaian rubric, anotasi naskah anonim, perpanjangan waktu, dan pengingat review.
 
-#### 29. `review_rounds`
+#### 27. `review_rounds`
 
 Putaran penelaahan ilmiah (_round 1_, _round 2_, dst.) yang membekukan naskah dan rubrik.
 
@@ -727,7 +701,7 @@ Putaran penelaahan ilmiah (_round 1_, _round 2_, dst.) yang membekukan naskah da
     - `FOREIGN KEY (rubric_version_id) REFERENCES review_rubric_versions(id) ON DELETE RESTRICT`
     - `CHECK (review_type = 'double_blind')`
 
-#### 30. `review_assignments`
+#### 28. `review_assignments`
 
 Undangan dan penugasan penelaah sejawat individual.
 
@@ -752,7 +726,7 @@ Undangan dan penugasan penelaah sejawat individual.
     - `FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_rev_assign_live (review_round_id, reviewer_id, live_slot)`
 
-#### 31. `reviews`
+#### 29. `reviews`
 
 Hasil evaluasi dan penilaian yang dikirimkan oleh reviewer.
 
@@ -775,7 +749,7 @@ Hasil evaluasi dan penilaian yang dikirimkan oleh reviewer.
     - `UNIQUE KEY uq_review_assignment (assignment_id)`
     - `CHECK (certify_no_conflict = TRUE)`
 
-#### 32. `review_annotations`
+#### 30. `review_annotations`
 
 Berkas naskah beranotasi atau catatan tambahan dari reviewer.
 
@@ -789,7 +763,7 @@ Berkas naskah beranotasi atau catatan tambahan dari reviewer.
     - `FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 33. `review_extensions`
+#### 31. `review_extensions`
 
 Permohonan dan persetujuan perpanjangan batas waktu penelaahan.
 
@@ -810,7 +784,7 @@ Permohonan dan persetujuan perpanjangan batas waktu penelaahan.
     - `FOREIGN KEY (assignment_id) REFERENCES review_assignments(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (decided_by) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 34. `review_reminders`
+#### 32. `review_reminders`
 
 Pencatatan pengiriman surat pengingat (_reminder_) otomatis atau manual kepada penelaah.
 
@@ -834,7 +808,7 @@ Pencatatan pengiriman surat pengingat (_reminder_) otomatis atau manual kepada p
 
 Menangani penugasan copyediting bahasa, berkas keluaran copyedit, persetujuan penulis, penugasan tata letak (_layout editor_), pembuatan galai publikasi (_PDF/HTML galleys_), koreksi proofreading bertahap, dan eskalasi teknis redaksi.
 
-#### 35. `copyedits`
+#### 33. `copyedits`
 
 Pekerjaan penyuntingan bahasa dan format teks manuskrip.
 
@@ -855,7 +829,7 @@ Pekerjaan penyuntingan bahasa dan format teks manuskrip.
     - `FOREIGN KEY (copy_editor_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (source_file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 36. `copyedit_outputs`
+#### 34. `copyedit_outputs`
 
 Daftar berkas hasil suntingan yang diunggah copyeditor.
 
@@ -870,7 +844,7 @@ Daftar berkas hasil suntingan yang diunggah copyeditor.
     - `FOREIGN KEY (copyedit_id) REFERENCES copyedits.id ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 37. `copyedit_approvals`
+#### 35. `copyedit_approvals`
 
 Persetujuan hasil suntingan copyedit oleh penulis naskah.
 
@@ -891,7 +865,7 @@ Persetujuan hasil suntingan copyedit oleh penulis naskah.
     - `FOREIGN KEY (copyedit_id) REFERENCES copyedits.id ON DELETE RESTRICT`
     - `FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 38. `copyedit_approved_files`
+#### 36. `copyedit_approved_files`
 
 Pembekuan daftar berkas dan checksum spesifik yang telah disetujui penulis.
 
@@ -906,7 +880,7 @@ Pembekuan daftar berkas dan checksum spesifik yang telah disetujui penulis.
     - `FOREIGN KEY (approval_id) REFERENCES copyedit_approvals.id ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 39. `layout_assignments`
+#### 37. `layout_assignments`
 
 Penugasan Layout Editor untuk merancang tata letak publikasi naskah ke format Galley.
 
@@ -930,7 +904,7 @@ Penugasan Layout Editor untuk merancang tata letak publikasi naskah ke format Ga
     - `FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_layout_assign_live (submission_id, live_slot)`
 
-#### 40. `galleys`
+#### 38. `galleys`
 
 Berkas galai publikasi final (PDF, XML, HTML) dari naskah.
 
@@ -954,7 +928,7 @@ Berkas galai publikasi final (PDF, XML, HTML) dari naskah.
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (supersedes_galley_id) REFERENCES galleys(id) ON DELETE RESTRICT`
 
-#### 41. `production_escalations`
+#### 39. `production_escalations`
 
 Pencatatan masalah atau hambatan teknis pada tahap produksi yang dieskalasi ke editor.
 
@@ -975,11 +949,11 @@ Pencatatan masalah atau hambatan teknis pada tahap produksi yang dieskalasi ke e
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (copyedit_id) REFERENCES copyedits.id ON DELETE RESTRICT`
-    - `FOREIGN KEY (galley_id) REFERENCES galleys.id ON DELETE RESTRICT`
+    - `FOREIGN KEY (galley_id) REFERENCES galleys(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (opened_by) REFERENCES users(id) ON DELETE RESTRICT`
     - `CHECK ((copyedit_id IS NOT NULL AND galley_id IS NULL) OR (copyedit_id IS NULL AND galley_id IS NOT NULL))`
 
-#### 42. `proof_assignments`
+#### 40. `proof_assignments`
 
 Penugasan proofreader dan penulis untuk memeriksa berkas galai sebelum terbit.
 
@@ -1001,7 +975,7 @@ Penugasan proofreader dan penulis untuk memeriksa berkas galai sebelum terbit.
     - `FOREIGN KEY (proofreader_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 43. `proofreading_notes`
+#### 41. `proofreading_notes`
 
 Catatan koreksi spesifik (tipografi, kesalahan format tabel/gambar) pada berkas galai.
 
@@ -1024,11 +998,11 @@ Catatan koreksi spesifik (tipografi, kesalahan format tabel/gambar) pada berkas 
 - **Constraints:**
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (proof_assignment_id) REFERENCES proof_assignments.id ON DELETE RESTRICT`
-    - `FOREIGN KEY (galley_id) REFERENCES galleys.id ON DELETE RESTRICT`
+    - `FOREIGN KEY (galley_id) REFERENCES galleys(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
     - `CHECK (page IS NULL OR page >= 1)`
 
-#### 44. `galley_approvals`
+#### 42. `galley_approvals`
 
 Persetujuan akhir (_sign-off_) terhadap berkas galai oleh penulis dan editor.
 
@@ -1056,7 +1030,7 @@ Persetujuan akhir (_sign-off_) terhadap berkas galai oleh penulis dan editor.
 
 Mengelola entitas artikel yang terbit (_published article_), edisi terbitan (_issues_), penempatan artikel pada edisi, registrasi nomor DOI, deposit metadata Crossref, dan statistik metrik sitasi/kunjungan.
 
-#### 45. `issues`
+#### 43. `issues`
 
 Edisi terbitan berkala jurnal ilmiah (Volume, Nomor, Tahun).
 
@@ -1081,7 +1055,7 @@ Edisi terbitan berkala jurnal ilmiah (Volume, Nomor, Tahun).
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
 
-#### 46. `issue_articles`
+#### 44. `issue_articles`
 
 Penempatan dan pengurutan artikel di dalam edisi terbitan.
 
@@ -1099,7 +1073,7 @@ Penempatan dan pengurutan artikel di dalam edisi terbitan.
     - `UNIQUE KEY uq_issue_articles_article (article_id)`
     - `UNIQUE KEY uq_issue_articles_pos (issue_id, position)`
 
-#### 47. `articles`
+#### 45. `articles`
 
 Rekaman resmi artikel ilmiah yang siap atau sudah diterbitkan.
 
@@ -1127,7 +1101,7 @@ Rekaman resmi artikel ilmiah yang siap atau sudah diterbitkan.
     - `UNIQUE KEY uq_articles_submission (submission_id)`
     - `UNIQUE KEY uq_articles_slug (journal_id, slug)`
 
-#### 48. `article_contributors`
+#### 46. `article_contributors`
 
 Kredit atribusi kepengarangan final yang dibekukan untuk publikasi publik.
 
@@ -1145,7 +1119,7 @@ Kredit atribusi kepengarangan final yang dibekukan untuk publikasi publik.
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE RESTRICT`
 
-#### 49. `article_galleys`
+#### 47. `article_galleys`
 
 Asosiasi berkas galai publikasi final yang ditautkan ke artikel.
 
@@ -1160,7 +1134,7 @@ Asosiasi berkas galai publikasi final yang ditautkan ke artikel.
     - `FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (galley_id) REFERENCES galleys(id) ON DELETE RESTRICT`
 
-#### 50. `article_metrics`
+#### 48. `article_metrics`
 
 Pencatatan metrik pembacaan abstrak dan pengunduhan galai (COUNTER compliant).
 
@@ -1181,7 +1155,7 @@ Pencatatan metrik pembacaan abstrak dan pengunduhan galai (COUNTER compliant).
     - `FOREIGN KEY (galley_id) REFERENCES galleys(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_metrics_window (article_id, galley_scope, event_type, visit_hash, window_start)`
 
-#### 51. `doi_registrations`
+#### 49. `doi_registrations`
 
 Pencatatan pengalokasian dan status registrasi nomor Digital Object Identifier (DOI).
 
@@ -1197,7 +1171,7 @@ Pencatatan pengalokasian dan status registrasi nomor Digital Object Identifier (
     - `FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_doi_string (doi)`
 
-#### 52. `crossref_deposits`
+#### 50. `crossref_deposits`
 
 Riwayat deposit metadata artikel ke Crossref XML API.
 
@@ -1221,120 +1195,44 @@ Riwayat deposit metadata artikel ke Crossref XML API.
 
 ---
 
-### Modul 07: Berkas dan Upload (6 Tabel)
+### Modul 07: Manajemen Berkas dan Penyimpanan (3 Tabel)
 
-Menangani sesi unggah berkas multi-part, verifikasi checksum SHA-256, cakupan kepemilikan berkas (_file scopes_), pemindaian malware keamanan, dan asosiasi berkas manuskrip.
+Menangani katalog induk berkas naskah dan publikasi, asosiasi berkas submission, verifikasi integritas checksum SHA-256, dan pemindaian keamanan malware.
 
-#### 53. `file_scopes`
-
-Entitas isolasi hak akses berkas berdasarkan entitas induk (_parent kind_).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `journal_id` CHAR(26) NOT NULL — FK ke `journals.id`.
-    - `submission_id` CHAR(26) NULL — FK ke `submissions.id`.
-    - `revision_id` CHAR(26) NULL — FK ke `revisions.id`.
-    - `review_assignment_id` CHAR(26) NULL — FK ke `review_assignments.id`.
-    - `copyedit_id` CHAR(26) NULL — FK ke `copyedits.id`.
-    - `parent_kind` VARCHAR(191) NOT NULL — Jenis induk (`journal`, `submission`, `revision`, `review_assignment`, `copyedit`).
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (review_assignment_id) REFERENCES review_assignments(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (copyedit_id) REFERENCES copyedits.id ON DELETE RESTRICT`
-
-#### 54. `upload_sessions`
-
-Sesi persiapan pengunggahan berkas ke Object Storage (Azure Blob / S3).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `scope_id` CHAR(26) NOT NULL — FK ke `file_scopes.id`.
-    - `created_by` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `purpose` VARCHAR(191) NOT NULL — Tujuan berkas (`manuscript`, `supplementary`, `review_report`, `galley`).
-    - `mode` VARCHAR(191) NOT NULL — Mode unggah (`single`, `chunked`).
-    - `status` VARCHAR(191) NOT NULL — Status sesi (`initiated`, `uploading`, `completed`, `expired`, `failed`).
-    - `file_name` TEXT NOT NULL — Nama asli berkas yang diunggah.
-    - `content_type` TEXT NOT NULL — MIME Type berkas.
-    - `size` BIGINT NOT NULL — Ukuran berkas dalam bytes (1 s/d 20.971.520 bytes / 20MB).
-    - `checksum_sha256` TEXT NOT NULL — Checksum SHA-256 target.
-    - `storage_upload_id` TEXT NULL — ID sesi multipart object storage.
-    - `expires_at` DATETIME(6) NOT NULL — Batas waktu validitas URL unggah.
-    - `version` INT NOT NULL DEFAULT 1.
-    - `file_id` CHAR(26) NOT NULL — FK & UK ke `files.id` (1:1 immutable association).
-    - `storage_backend` TEXT NOT NULL — Nama backend (`azure_blob`, `s3`).
-    - `storage_bucket` TEXT NOT NULL — Nama container/bucket penyimpanan.
-    - `storage_key` VARCHAR(191) NOT NULL — Path unik berkas di storage.
-    - `storage_version_id` TEXT NULL — Versi objek storage jika versioning aktif.
-    - `object_etag` TEXT NULL — ETag berkas dari storage.
-    - `verified_at` DATETIME(6) NULL — Waktu berkas diverifikasi oleh server.
-    - `completed_at` DATETIME(6) NULL — Waktu sesi selesai penuh.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (scope_id) REFERENCES file_scopes(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
-    - `UNIQUE KEY uq_upload_session_file (file_id)`
-    - `UNIQUE KEY uq_upload_session_storage_key (storage_key)`
-    - `CHECK (size BETWEEN 1 AND 20971520)`
-
-#### 55. `upload_parts`
-
-Pelacakan potongan bagian pengunggahan berkas besar (_chunked upload_).
-
-- **Kolom:**
-    - `upload_session_id` CHAR(26) NOT NULL — PK & FK ke `upload_sessions.id`.
-    - `part_number` INT NOT NULL — PK nomor bagian part (1 s/d 4).
-    - `size` BIGINT NOT NULL — Ukuran potongan dalam bytes.
-    - `checksum_sha256` TEXT NOT NULL — Checksum potongan.
-    - `etag` TEXT NOT NULL — ETag potongan dari storage.
-    - `completed_at` DATETIME(6) NULL — Waktu potongan tuntas diunggah.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (upload_session_id, part_number)`
-    - `FOREIGN KEY (upload_session_id) REFERENCES upload_sessions(id) ON DELETE RESTRICT`
-    - `CHECK (part_number BETWEEN 1 AND 4)`
-
-#### 56. `files`
+#### 51. `files`
 
 Katalog induk berkas yang tersimpan aman pada sistem SIRIDA.
 
 - **Kolom:**
     - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `scope_id` CHAR(26) NOT NULL — FK ke `file_scopes.id`.
+    - `journal_id` CHAR(26) NOT NULL — FK ke `journals.id`.
     - `uploaded_by` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `anonymized_file_id` CHAR(26) NULL — FK ke `files.id` (self-referencing jika ada versi anonim).
-    - `purpose` VARCHAR(191) NOT NULL — Tujuan penggunaan berkas.
-    - `file_name` TEXT NOT NULL — Nama berkas.
-    - `storage_key` VARCHAR(191) NOT NULL — Path unik penyimpanan di storage.
+    - `anonymized_file_id` CHAR(26) NULL — FK ke `files.id` (self-referencing jika ada versi anonim untuk double-blind review).
+    - `purpose` VARCHAR(191) NOT NULL — Tujuan penggunaan berkas (`manuscript`, `supplementary`, `review_report`, `galley`, `revision`).
+    - `file_name` TEXT NOT NULL — Nama asli berkas.
+    - `storage_key` VARCHAR(191) NOT NULL — Path unik penyimpanan di storage (Azure Blob).
     - `content_type` TEXT NOT NULL — Tipe MIME.
-    - `size` BIGINT NOT NULL — Ukuran dalam bytes.
+    - `size` BIGINT NOT NULL — Ukuran dalam bytes (1 s/d 20.971.520 bytes / 20 MiB).
     - `checksum_sha256` TEXT NOT NULL — Hash SHA-256 (64 hex characters).
-    - `status` VARCHAR(191) NOT NULL — Status pemindaian keamanan (`pending_upload`, `pending_scan`, `scanning`, `clean`, `quarantined`, `infected`).
+    - `status` VARCHAR(191) NOT NULL — Status pemindaian keamanan (`pending_scan`, `scanning`, `clean`, `quarantined`, `infected`).
     - `scan_error_code` TEXT NULL — Kode kesalahan jika scan malware gagal.
     - `version` INT NOT NULL DEFAULT 1.
-    - `storage_backend` TEXT NOT NULL.
-    - `storage_bucket` TEXT NOT NULL.
-    - `storage_version_id` TEXT NULL.
-    - `object_etag` TEXT NULL.
+    - `storage_backend` TEXT NOT NULL — Backend storage (`azure_blob`, `local`).
+    - `storage_bucket` TEXT NOT NULL — Nama container/bucket penyimpanan.
+    - `storage_version_id` TEXT NULL — Versi objek storage jika versioning aktif.
+    - `object_etag` TEXT NULL — ETag berkas dari storage.
     - `verified_at` DATETIME(6) NULL — Waktu berkas diverifikasi utuh.
     - `created_at` DATETIME(6) NOT NULL (UTC).
     - `updated_at` DATETIME(6) NOT NULL (UTC).
 - **Constraints & Indexes:**
     - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (scope_id) REFERENCES file_scopes(id) ON DELETE RESTRICT`
+    - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (anonymized_file_id) REFERENCES files(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_files_storage_key (storage_key)`
+    - `CHECK (size BETWEEN 1 AND 20971520)`
 
-#### 57. `submission_files`
+#### 52. `submission_files`
 
 Asosiasi relasional antara berkas dengan naskah pengajuan.
 
@@ -1350,7 +1248,7 @@ Asosiasi relasional antara berkas dengan naskah pengajuan.
     - `FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
 
-#### 58. `scan_attempts`
+#### 53. `scan_attempts`
 
 Catatan riwayat pemindaian malware (Microsoft Defender for Storage / Antivirus Engine).
 
@@ -1369,194 +1267,50 @@ Catatan riwayat pemindaian malware (Microsoft Defender for Storage / Antivirus E
 
 ---
 
-### Modul 08: Operasional dan Integrasi (12 Tabel)
+### Modul 08: Operasional, Audit, dan Sistem (5 Tabel)
 
-Menangani pekerjaan latar belakang (_async operations_), impor massal pengguna (_user imports_), profil konfigurasi integrasi eksternal, pengujian konektor, idempotensi mutasi data, notifikasi, audit trail, dan transactional outbox events.
+Menangani impor massal pengguna, pengaturan global sistem, notifikasi pengguna, audit trail, dan transactional outbox events.
 
-#### 59. `operations`
+#### 54. `user_imports`
 
-Pelacakan pekerjaan asinkron berdurasi panjang (_long-running background jobs_).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `journal_id` CHAR(26) NOT NULL — FK ke `journals.id`.
-    - `actor_id` CHAR(26) NOT NULL — FK ke `users.id` (inisiator pekerjaan).
-    - `kind` VARCHAR(191) NOT NULL — Jenis operasi (`user_import`, `batch_crossref_deposit`, `bulk_email`).
-    - `status` VARCHAR(191) NOT NULL — Status (`queued`, `running`, `completed`, `failed`, `cancelled`).
-    - `progress` INT NOT NULL DEFAULT 0 — Persentase progres (0 s/d 100).
-    - `processed` INT NOT NULL DEFAULT 0 — Jumlah item sukses diproses.
-    - `total` INT NOT NULL DEFAULT 0 — Total target item.
-    - `failed` INT NOT NULL DEFAULT 0 — Jumlah item gagal.
-    - `errors` JSON NULL — Array error aman per-item (tanpa stack trace atau rahasia).
-    - `completed_at` DATETIME(6) NULL — Waktu operasi selesai.
-    - `error_code` TEXT NULL — Kode kesalahan tingkat tinggi.
-    - `started_at` DATETIME(6) NULL — Waktu worker mulai mengeksekusi operasi.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE RESTRICT`
-
-#### 60. `user_imports`
-
-Operasi spesifik pengimporan daftar pengguna/reviewer secara massal melalui berkas CSV.
+Pencatatan operasi pengimporan daftar pengguna/reviewer secara massal melalui berkas CSV.
 
 - **Kolom:**
     - `id` CHAR(26) NOT NULL — Primary Key (ULID).
     - `journal_id` CHAR(26) NOT NULL — FK ke `journals.id`.
     - `file_id` CHAR(26) NOT NULL — FK ke `files.id` (berkas CSV sumber).
-    - `operation_id` CHAR(26) NOT NULL — FK & UK ke `operations.id`.
-    - `default_roles` JSON NOT NULL — Peran bawaan yang diberikan kepada pengguna yang diimpor.
     - `created_by` CHAR(26) NOT NULL — FK ke `users.id`.
+    - `default_roles` JSON NOT NULL — Peran bawaan yang diberikan kepada pengguna yang diimpor.
     - `send_invitation_email` BOOLEAN NOT NULL DEFAULT FALSE — Pilihan mengirim email notifikasi akun.
+    - `status` VARCHAR(191) NOT NULL — Status eksekusi (`pending`, `processing`, `completed`, `failed`).
+    - `total_rows` INT NOT NULL DEFAULT 0 — Total target baris CSV.
+    - `processed_rows` INT NOT NULL DEFAULT 0 — Jumlah baris sukses diproses.
+    - `failed_rows` INT NOT NULL DEFAULT 0 — Jumlah baris gagal.
+    - `errors` JSON NULL — Array error aman per-baris yang gagal.
+    - `completed_at` DATETIME(6) NULL — Waktu impor selesai.
     - `created_at` DATETIME(6) NOT NULL (UTC).
     - `updated_at` DATETIME(6) NOT NULL (UTC).
 - **Constraints & Indexes:**
     - `PRIMARY KEY (id)`
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (operation_id) REFERENCES operations(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT`
-    - `UNIQUE KEY uq_user_import_op (operation_id)`
-
-#### 61. `integration_profiles`
-
-Profil penyedia layanan integrasi eksternal (Crossref, ORCID, SMTP, Similarity Checker).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `provider` VARCHAR(191) NOT NULL — Nama penyedia (`crossref`, `orcid`, `azure_comm`, `turnitin`).
-    - `label` TEXT NOT NULL — Nama label konfigurasi.
-    - `environment` VARCHAR(191) NOT NULL — Lingkungan (`sandbox`, `production`).
-    - `enabled` BOOLEAN NOT NULL DEFAULT TRUE.
-    - `operator_binding_ref` TEXT NULL — Kredensial operator infrastruktur.
-    - `profile_checksum` CHAR(64) NOT NULL — Checksum SHA-256 profil setting & egress.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (id)`
-
-#### 62. `system_settings`
-
-Pointer singleton versi konfigurasi sistem tingkat global yang sedang aktif.
-
-- **Kolom:**
-    - `singleton_key` VARCHAR(191) NOT NULL — Primary Key nilai tetap (`current`).
-    - `current_version_id` CHAR(26) NOT NULL — FK ke `system_settings_versions.id`.
-    - `version` INT NOT NULL DEFAULT 1.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (singleton_key)`
-    - `FOREIGN KEY (current_version_id) REFERENCES system_settings_versions(id) ON DELETE RESTRICT`
-
-#### 63. `system_settings_versions`
-
-Riwayat versi konfigurasi sistem (immutable ledger) dengan dukungan rollback.
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `version` INT NOT NULL DEFAULT 1 — Nomor versi konfigurasi.
-    - `settings_without_secrets` JSON NOT NULL — Dokumen snapshot konfigurasi aman (tanpa rahasia/kunci).
-    - `created_by` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `rollback_of_id` CHAR(26) NULL — FK ke `system_settings_versions.id` jika versi ini merupakan hasil rollback.
-    - `reason` TEXT NOT NULL — Alasan perubahan atau rollback.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (rollback_of_id) REFERENCES system_settings_versions(id) ON DELETE RESTRICT`
-
-#### 64. `integration_candidates`
-
-Kandidat perubahan konfigurasi integrasi yang diusulkan dan harus lulus uji koneksi sebelum diterapkan.
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `profile_id` CHAR(26) NOT NULL — FK ke `integration_profiles.id`.
-    - `created_by` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `credential_ref` TEXT NOT NULL — Referensi penyimpanan kredensial rahasia (Key Vault / Secret Store).
-    - `credential_version` TEXT NOT NULL — Nomor versi secret yang digunakan.
-    - `config_checksum` CHAR(64) NOT NULL — Checksum snapshot konfigurasi usulan.
-    - `status` VARCHAR(191) NOT NULL — Status kandidat (`draft`, `testing`, `tested`, `applied`, `rejected`, `expired`).
-    - `tested_at` DATETIME(6) NULL — Waktu pengujian integrasi berhasil tuntas.
-    - `expires_at` DATETIME(6) NOT NULL — Batas waktu validitas kandidat.
-    - `error_code` TEXT NULL — Kode kesalahan pengujian jika gagal.
-    - `version` INT NOT NULL DEFAULT 1.
-    - `profile_checksum` CHAR(64) NOT NULL — Checksum profil saat kandidat disusun.
-    - `config_snapshot` JSON NOT NULL — Snapshot konfigurasi usulan.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (profile_id) REFERENCES integration_profiles(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 65. `integration_configurations`
+#### 55. `system_settings`
 
-Konfigurasi integrasi aktif per penyedia layanan yang telah terverifikasi.
+Tabel konfigurasi tingkat global platform jurnal SIRIDA (key-value store).
 
 - **Kolom:**
-    - `provider` VARCHAR(191) NOT NULL — Primary Key kode provider.
-    - `candidate_id` CHAR(26) NOT NULL — FK ke `integration_candidates.id`.
-    - `settings_version_id` CHAR(26) NOT NULL — FK ke `system_settings_versions.id`.
-    - `applied_at` DATETIME(6) NOT NULL — Waktu konfigurasi resmi diaktifkan.
+    - `key` VARCHAR(191) NOT NULL — Primary Key nama pengaturan (misal: `site_name`, `maintenance_mode`, `default_locale`).
+    - `value` JSON NOT NULL — Nilai konfigurasi terstruktur.
+    - `updated_by` CHAR(26) NOT NULL — FK ke `users.id` (administrator yang mengubah konfigurasi).
     - `created_at` DATETIME(6) NOT NULL (UTC).
     - `updated_at` DATETIME(6) NOT NULL (UTC).
 - **Constraints:**
-    - `PRIMARY KEY (provider)`
-    - `FOREIGN KEY (candidate_id) REFERENCES integration_candidates(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (settings_version_id) REFERENCES system_settings_versions(id) ON DELETE RESTRICT`
+    - `PRIMARY KEY (key)`
+    - `FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT`
 
-#### 66. `integration_tests`
-
-Rekaman pelaksanaan pengujian konektivitas kandidat integrasi eksternal.
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `candidate_id` CHAR(26) NOT NULL — FK ke `integration_candidates.id`.
-    - `status` VARCHAR(191) NOT NULL — Status hasil uji (`passed`, `failed`).
-    - `tested_checksum` CHAR(64) NOT NULL — Checksum konfigurasi yang diuji.
-    - `completed_at` DATETIME(6) NULL — Waktu uji selesai.
-    - `operation_id` CHAR(26) NOT NULL — FK & UK ke `operations.id` (pekerjaan uji asinkron).
-    - `tested_profile_checksum` CHAR(64) NOT NULL — Checksum profil yang diuji.
-    - `tested_credential_version` TEXT NOT NULL — Versi secret yang diuji langsung.
-    - `started_at` DATETIME(6) NULL — Waktu mulai uji.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (candidate_id) REFERENCES integration_candidates(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (operation_id) REFERENCES operations(id) ON DELETE RESTRICT`
-    - `UNIQUE KEY uq_integ_test_op (operation_id)`
-
-#### 67. `idempotency_records`
-
-Tabel ledger penjamin idempotensi eksekusi perintah mutasi/form (mencegah _double-submission_).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `actor_id` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `journal_id` CHAR(26) NULL — FK ke `journals.id` (NULL jika scope sistem).
-    - `operation_id` VARCHAR(128) NOT NULL — Identifier nama aksi/operasi formulir atau controller rute (misal: `submission.store`, `editorial.decision.render`).
-    - `key_hash` CHAR(64) NOT NULL — Hash SHA-256 dari header `Idempotency-Key` klien.
-    - `request_fingerprint` CHAR(64) NOT NULL — Hash SHA-256 dari payload request klien.
-    - `status` VARCHAR(191) NOT NULL — Status eksekusi (`in_progress`, `completed`, `failed`).
-    - `encrypted_response` LONGTEXT NULL — Envelope ciphertext terenkripsi dari status, header aman, dan body response.
-    - `expires_at` DATETIME(6) NOT NULL — Batas kedaluwarsa record (retensi minimal 24 jam).
-    - `encryption_key_version` TEXT NULL — Versi kunci enkripsi yang digunakan.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-    - `journal_scope` CHAR(26) GENERATED ALWAYS AS (COALESCE(journal_id, '')) STORED.
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
-    - `UNIQUE KEY uq_idempotency_key (actor_id, journal_scope, operation_id, key_hash)`
-
-#### 68. `notifications`
+#### 56. `notifications`
 
 Pemberitahuan persisten dalam aplikasi untuk setiap pengguna.
 
@@ -1579,7 +1333,7 @@ Pemberitahuan persisten dalam aplikasi untuk setiap pengguna.
     - `FOREIGN KEY (journal_id) REFERENCES journals(id) ON DELETE RESTRICT`
     - `FOREIGN KEY (outbox_event_id) REFERENCES outbox_events(id) ON DELETE RESTRICT`
 
-#### 69. `audit_logs`
+#### 57. `audit_logs`
 
 Catatan jejak audit komprehensif atas seluruh tindakan pengguna dan proses sistem (append-only).
 
@@ -1606,7 +1360,7 @@ Catatan jejak audit komprehensif atas seluruh tindakan pengguna dan proses siste
     - `CHECK (actor_type IN ('user', 'system'))`
     - `CHECK ((actor_type = 'user' AND actor_id IS NOT NULL AND system_actor IS NULL) OR (actor_type = 'system' AND actor_id IS NULL AND system_actor IS NOT NULL))`
 
-#### 70. `outbox_events`
+#### 58. `outbox_events`
 
 Tabel transactional outbox untuk menjamin konsistensi pengiriman event / pesan asinkron.
 
@@ -1630,11 +1384,11 @@ Tabel transactional outbox untuk menjamin konsistensi pengiriman event / pesan a
 
 ---
 
-## 4. Katalog Lengkap 140 Foreign Key
+## 4. Katalog Lengkap 114 Foreign Key
 
-Katalog berikut merinci seluruh 140 relasi _Foreign Key_ lintas modul yang didefinisikan secara resmi pada skema InnoDB:
+Katalog berikut merinci seluruh 114 relasi _Foreign Key_ lintas modul yang didefinisikan secara resmi pada skema InnoDB:
 
-### 01 Identitas dan Akses (12 FK)
+### 01 Identitas dan Akses (8 FK)
 
 1. `user_profiles.user_id` $\rightarrow$ `users.id`
 2. `journal_memberships.user_id` $\rightarrow$ `users.id`
@@ -1644,162 +1398,139 @@ Katalog berikut merinci seluruh 140 relasi _Foreign Key_ lintas modul yang didef
 6. `sessions.user_id` $\rightarrow$ `users.id`
 7. `identity_challenges.user_id` $\rightarrow$ `users.id`
 8. `orcid_connections.user_id` $\rightarrow$ `users.id`
-9. `oauth_states.user_id` $\rightarrow$ `users.id`
 
 ### 02 Jurnal dan Konten (8 FK)
 
-13. `journals.current_issue_id` $\rightarrow$ `issues.id`
-14. `sections.journal_id` $\rightarrow$ `journals.id`
-15. `journal_settings.journal_id` $\rightarrow$ `journals.id`
-16. `journal_settings.updated_by` $\rightarrow$ `users.id`
-17. `review_rubric_versions.journal_id` $\rightarrow$ `journals.id`
-18. `journal_pages.journal_id` $\rightarrow$ `journals.id`
-19. `announcements.journal_id` $\rightarrow$ `journals.id`
-20. `email_templates.journal_id` $\rightarrow$ `journals.id`
+9. `journals.current_issue_id` $\rightarrow$ `issues.id`
+10. `sections.journal_id` $\rightarrow$ `journals.id`
+11. `journal_settings.journal_id` $\rightarrow$ `journals.id`
+12. `journal_settings.updated_by` $\rightarrow$ `users.id`
+13. `review_rubric_versions.journal_id` $\rightarrow$ `journals.id`
+14. `journal_pages.journal_id` $\rightarrow$ `journals.id`
+15. `announcements.journal_id` $\rightarrow$ `journals.id`
+16. `email_templates.journal_id` $\rightarrow$ `journals.id`
 
 ### 03 Submission dan Editorial (29 FK)
 
-21. `submissions.journal_id` $\rightarrow$ `journals.id`
-22. `submissions.section_id` $\rightarrow$ `sections.id`
-23. `submissions.author_id` $\rightarrow$ `users.id`
-24. `submission_contributors.submission_id` $\rightarrow$ `submissions.id`
-25. `submission_contributors.user_id` $\rightarrow$ `users.id`
-26. `editor_assignments.submission_id` $\rightarrow$ `submissions.id`
-27. `editor_assignments.editor_id` $\rightarrow$ `users.id`
-28. `desk_reviews.submission_id` $\rightarrow$ `submissions.id`
-29. `desk_reviews.assessed_by` $\rightarrow$ `users.id`
-30. `editorial_decisions.submission_id` $\rightarrow$ `submissions.id`
-31. `editorial_decisions.review_round_id` $\rightarrow$ `review_rounds.id`
-32. `editorial_decisions.decided_by` $\rightarrow$ `users.id`
-33. `decision_feedback.decision_id` $\rightarrow$ `editorial_decisions.id`
-34. `decision_feedback.review_id` $\rightarrow$ `reviews.id`
-35. `revisions.submission_id` $\rightarrow$ `submissions.id`
-36. `revisions.decision_id` $\rightarrow$ `editorial_decisions.id`
-37. `revisions.manuscript_file_id` $\rightarrow$ `files.id`
-38. `revisions.response_letter_file_id` $\rightarrow$ `files.id`
-39. `ethics_cases.submission_id` $\rightarrow$ `submissions.id`
-40. `ethics_cases.opened_by` $\rightarrow$ `users.id`
-41. `ethics_cases.investigator_id` $\rightarrow$ `users.id`
-42. `ethics_evidence.case_id` $\rightarrow$ `ethics_cases.id`
-43. `ethics_evidence.file_id` $\rightarrow$ `files.id`
-44. `similarity_checks.submission_id` $\rightarrow$ `submissions.id`
-45. `similarity_checks.file_id` $\rightarrow$ `files.id`
-46. `similarity_checks.report_file_id` $\rightarrow$ `files.id`
-47. `submission_events.submission_id` $\rightarrow$ `submissions.id`
-48. `submission_events.actor_id` $\rightarrow$ `users.id`
-49. `editorial_decisions.corrects_decision_id` $\rightarrow$ `editorial_decisions.id`
+17. `submissions.journal_id` $\rightarrow$ `journals.id`
+18. `submissions.section_id` $\rightarrow$ `sections.id`
+19. `submissions.author_id` $\rightarrow$ `users.id`
+20. `submission_contributors.submission_id` $\rightarrow$ `submissions.id`
+21. `submission_contributors.user_id` $\rightarrow$ `users.id`
+22. `editor_assignments.submission_id` $\rightarrow$ `submissions.id`
+23. `editor_assignments.editor_id` $\rightarrow$ `users.id`
+24. `desk_reviews.submission_id` $\rightarrow$ `submissions.id`
+25. `desk_reviews.assessed_by` $\rightarrow$ `users.id`
+26. `editorial_decisions.submission_id` $\rightarrow$ `submissions.id`
+27. `editorial_decisions.review_round_id` $\rightarrow$ `review_rounds.id`
+28. `editorial_decisions.decided_by` $\rightarrow$ `users.id`
+29. `editorial_decisions.corrects_decision_id` $\rightarrow$ `editorial_decisions.id`
+30. `decision_feedback.decision_id` $\rightarrow$ `editorial_decisions.id`
+31. `decision_feedback.review_id` $\rightarrow$ `reviews.id`
+32. `revisions.submission_id` $\rightarrow$ `submissions.id`
+33. `revisions.decision_id` $\rightarrow$ `editorial_decisions.id`
+34. `revisions.manuscript_file_id` $\rightarrow$ `files.id`
+35. `revisions.response_letter_file_id` $\rightarrow$ `files.id`
+36. `ethics_cases.submission_id` $\rightarrow$ `submissions.id`
+37. `ethics_cases.opened_by` $\rightarrow$ `users.id`
+38. `ethics_cases.investigator_id` $\rightarrow$ `users.id`
+39. `ethics_evidence.case_id` $\rightarrow$ `ethics_cases.id`
+40. `ethics_evidence.file_id` $\rightarrow$ `files.id`
+41. `similarity_checks.submission_id` $\rightarrow$ `submissions.id`
+42. `similarity_checks.file_id` $\rightarrow$ `files.id`
+43. `similarity_checks.report_file_id` $\rightarrow$ `files.id`
+44. `submission_events.submission_id` $\rightarrow$ `submissions.id`
+45. `submission_events.actor_id` $\rightarrow$ `users.id`
 
 ### 04 Peer Review (13 FK)
 
-50. `review_rounds.submission_id` $\rightarrow$ `submissions.id`
-51. `review_rounds.manuscript_file_id` $\rightarrow$ `files.id`
-52. `review_rounds.anonymized_file_id` $\rightarrow$ `files.id`
-53. `review_rounds.rubric_version_id` $\rightarrow$ `review_rubric_versions.id`
-54. `review_assignments.review_round_id` $\rightarrow$ `review_rounds.id`
-55. `review_assignments.reviewer_id` $\rightarrow$ `users.id`
-56. `reviews.assignment_id` $\rightarrow$ `review_assignments.id`
-57. `review_annotations.review_id` $\rightarrow$ `reviews.id`
-58. `review_annotations.file_id` $\rightarrow$ `files.id`
-59. `review_extensions.assignment_id` $\rightarrow$ `review_assignments.id`
-60. `review_extensions.decided_by` $\rightarrow$ `users.id`
-61. `review_reminders.assignment_id` $\rightarrow$ `review_assignments.id`
-62. `review_reminders.sent_by` $\rightarrow$ `users.id`
+46. `review_rounds.submission_id` $\rightarrow$ `submissions.id`
+47. `review_rounds.manuscript_file_id` $\rightarrow$ `files.id`
+48. `review_rounds.anonymized_file_id` $\rightarrow$ `files.id`
+49. `review_rounds.rubric_version_id` $\rightarrow$ `review_rubric_versions.id`
+50. `review_assignments.review_round_id` $\rightarrow$ `review_rounds.id`
+51. `review_assignments.reviewer_id` $\rightarrow$ `users.id`
+52. `reviews.assignment_id` $\rightarrow$ `review_assignments.id`
+53. `review_annotations.review_id` $\rightarrow$ `reviews.id`
+54. `review_annotations.file_id` $\rightarrow$ `files.id`
+55. `review_extensions.assignment_id` $\rightarrow$ `review_assignments.id`
+56. `review_extensions.decided_by` $\rightarrow$ `users.id`
+57. `review_reminders.assignment_id` $\rightarrow$ `review_assignments.id`
+58. `review_reminders.sent_by` $\rightarrow$ `users.id`
 
 ### 05 Produksi dan Proofreading (28 FK)
 
-63. `copyedits.submission_id` $\rightarrow$ `submissions.id`
-64. `copyedits.copy_editor_id` $\rightarrow$ `users.id`
-65. `copyedits.source_file_id` $\rightarrow$ `files.id`
-66. `copyedit_outputs.copyedit_id` $\rightarrow$ `copyedits.id`
-67. `copyedit_outputs.file_id` $\rightarrow$ `files.id`
-68. `copyedit_approvals.copyedit_id` $\rightarrow$ `copyedits.id`
-69. `copyedit_approvals.author_id` $\rightarrow$ `users.id`
-70. `copyedit_approved_files.approval_id` $\rightarrow$ `copyedit_approvals.id`
-71. `copyedit_approved_files.file_id` $\rightarrow$ `files.id`
-72. `layout_assignments.submission_id` $\rightarrow$ `submissions.id`
-73. `layout_assignments.layout_editor_id` $\rightarrow$ `users.id`
-74. `layout_assignments.assigned_by` $\rightarrow$ `users.id`
-75. `galleys.submission_id` $\rightarrow$ `submissions.id`
-76. `galleys.file_id` $\rightarrow$ `files.id`
-77. `galleys.supersedes_galley_id` $\rightarrow$ `galleys.id`
-78. `proof_assignments.galley_id` $\rightarrow$ `galleys.id`
-79. `proof_assignments.proofreader_id` $\rightarrow$ `users.id`
-80. `proof_assignments.file_id` $\rightarrow$ `files.id`
-81. `proofreading_notes.proof_assignment_id` $\rightarrow$ `proof_assignments.id`
-82. `proofreading_notes.galley_id` $\rightarrow$ `galleys.id`
-83. `proofreading_notes.file_id` $\rightarrow$ `files.id`
-84. `galley_approvals.galley_id` $\rightarrow$ `galleys.id`
-85. `galley_approvals.approved_by` $\rightarrow$ `users.id`
-86. `galley_approvals.file_id` $\rightarrow$ `files.id`
-87. `production_escalations.submission_id` $\rightarrow$ `submissions.id`
-88. `production_escalations.copyedit_id` $\rightarrow$ `copyedits.id`
-89. `production_escalations.galley_id` $\rightarrow$ `galleys.id`
-90. `production_escalations.opened_by` $\rightarrow$ `users.id`
+59. `copyedits.submission_id` $\rightarrow$ `submissions.id`
+60. `copyedits.copy_editor_id` $\rightarrow$ `users.id`
+61. `copyedits.source_file_id` $\rightarrow$ `files.id`
+62. `copyedit_outputs.copyedit_id` $\rightarrow$ `copyedits.id`
+63. `copyedit_outputs.file_id` $\rightarrow$ `files.id`
+64. `copyedit_approvals.copyedit_id` $\rightarrow$ `copyedits.id`
+65. `copyedit_approvals.author_id` $\rightarrow$ `users.id`
+66. `copyedit_approved_files.approval_id` $\rightarrow$ `copyedit_approvals.id`
+67. `copyedit_approved_files.file_id` $\rightarrow$ `files.id`
+68. `layout_assignments.submission_id` $\rightarrow$ `submissions.id`
+69. `layout_assignments.layout_editor_id` $\rightarrow$ `users.id`
+70. `layout_assignments.assigned_by` $\rightarrow$ `users.id`
+71. `galleys.submission_id` $\rightarrow$ `submissions.id`
+72. `galleys.file_id` $\rightarrow$ `files.id`
+73. `galleys.supersedes_galley_id` $\rightarrow$ `galleys.id`
+74. `proof_assignments.galley_id` $\rightarrow$ `galleys.id`
+75. `proof_assignments.proofreader_id` $\rightarrow$ `users.id`
+76. `proof_assignments.file_id` $\rightarrow$ `files.id`
+77. `proofreading_notes.proof_assignment_id` $\rightarrow$ `proof_assignments.id`
+78. `proofreading_notes.galley_id` $\rightarrow$ `galleys.id`
+79. `proofreading_notes.file_id` $\rightarrow$ `files.id`
+80. `galley_approvals.galley_id` $\rightarrow$ `galleys.id`
+81. `galley_approvals.approved_by` $\rightarrow$ `users.id`
+82. `galley_approvals.file_id` $\rightarrow$ `files.id`
+83. `production_escalations.submission_id` $\rightarrow$ `submissions.id`
+84. `production_escalations.copyedit_id` $\rightarrow$ `copyedits.id`
+85. `production_escalations.galley_id` $\rightarrow$ `galleys.id`
+86. `production_escalations.opened_by` $\rightarrow$ `users.id`
 
 ### 06 Artikel dan Publikasi (13 FK)
 
-91. `articles.submission_id` $\rightarrow$ `submissions.id`
-92. `articles.journal_id` $\rightarrow$ `journals.id`
-93. `articles.section_id` $\rightarrow$ `sections.id`
-94. `article_contributors.article_id` $\rightarrow$ `articles.id`
-95. `article_galleys.article_id` $\rightarrow$ `articles.id`
-96. `article_galleys.galley_id` $\rightarrow$ `galleys.id`
-97. `issues.journal_id` $\rightarrow$ `journals.id`
-98. `issue_articles.issue_id` $\rightarrow$ `issues.id`
-99. `issue_articles.article_id` $\rightarrow$ `articles.id`
-100. `doi_registrations.article_id` $\rightarrow$ `articles.id`
-101. `crossref_deposits.article_id` $\rightarrow$ `doi_registrations.article_id`
-102. `article_metrics.article_id` $\rightarrow$ `articles.id`
-103. `article_metrics.galley_id` $\rightarrow$ `galleys.id`
+87. `articles.submission_id` $\rightarrow$ `submissions.id`
+88. `articles.journal_id` $\rightarrow$ `journals.id`
+89. `articles.section_id` $\rightarrow$ `sections.id`
+90. `article_contributors.article_id` $\rightarrow$ `articles.id`
+91. `article_galleys.article_id` $\rightarrow$ `articles.id`
+92. `article_galleys.galley_id` $\rightarrow$ `galleys.id`
+93. `issues.journal_id` $\rightarrow$ `journals.id`
+94. `issue_articles.issue_id` $\rightarrow$ `issues.id`
+95. `issue_articles.article_id` $\rightarrow$ `articles.id`
+96. `doi_registrations.article_id` $\rightarrow$ `articles.id`
+97. `crossref_deposits.article_id` $\rightarrow$ `doi_registrations.article_id`
+98. `article_metrics.article_id` $\rightarrow$ `articles.id`
+99. `article_metrics.galley_id` $\rightarrow$ `galleys.id`
 
-### 07 Berkas dan Upload (15 FK)
+### 07 Berkas dan Penyimpanan (6 FK)
 
-104. `file_scopes.journal_id` $\rightarrow$ `journals.id`
-105. `file_scopes.submission_id` $\rightarrow$ `submissions.id`
-106. `file_scopes.revision_id` $\rightarrow$ `revisions.id`
-107. `file_scopes.review_assignment_id` $\rightarrow$ `review_assignments.id`
-108. `file_scopes.copyedit_id` $\rightarrow$ `copyedits.id`
-109. `upload_sessions.scope_id` $\rightarrow$ `file_scopes.id`
-110. `upload_sessions.created_by` $\rightarrow$ `users.id`
-111. `upload_sessions.file_id` $\rightarrow$ `files.id`
-112. `upload_parts.upload_session_id` $\rightarrow$ `upload_sessions.id`
-113. `files.scope_id` $\rightarrow$ `file_scopes.id`
-114. `files.uploaded_by` $\rightarrow$ `users.id`
-115. `files.anonymized_file_id` $\rightarrow$ `files.id`
-116. `submission_files.submission_id` $\rightarrow$ `submissions.id`
-117. `submission_files.file_id` $\rightarrow$ `files.id`
-118. `scan_attempts.file_id` $\rightarrow$ `files.id`
+100. `files.journal_id` $\rightarrow$ `journals.id`
+101. `files.uploaded_by` $\rightarrow$ `users.id`
+102. `files.anonymized_file_id` $\rightarrow$ `files.id`
+103. `submission_files.submission_id` $\rightarrow$ `submissions.id`
+104. `submission_files.file_id` $\rightarrow$ `files.id`
+105. `scan_attempts.file_id` $\rightarrow$ `files.id`
 
-### 08 Operasional dan Integrasi (22 FK)
+### 08 Operasional, Audit, dan Sistem (9 FK)
 
-119. `operations.journal_id` $\rightarrow$ `journals.id`
-120. `operations.actor_id` $\rightarrow$ `users.id`
-121. `user_imports.journal_id` $\rightarrow$ `journals.id`
-122. `user_imports.file_id` $\rightarrow$ `files.id`
-123. `user_imports.operation_id` $\rightarrow$ `operations.id`
-124. `user_imports.created_by` $\rightarrow$ `users.id`
-125. `notifications.user_id` $\rightarrow$ `users.id`
-126. `notifications.journal_id` $\rightarrow$ `journals.id`
-127. `notifications.outbox_event_id` $\rightarrow$ `outbox_events.id`
-128. `audit_logs.journal_id` $\rightarrow$ `journals.id`
-129. `audit_logs.actor_id` $\rightarrow$ `users.id`
-130. `idempotency_records.actor_id` $\rightarrow$ `users.id`
-131. `idempotency_records.journal_id` $\rightarrow$ `journals.id`
-132. `system_settings_versions.created_by` $\rightarrow$ `users.id`
-133. `system_settings_versions.rollback_of_id` $\rightarrow$ `system_settings_versions.id`
-134. `system_settings.current_version_id` $\rightarrow$ `system_settings_versions.id`
-135. `integration_candidates.profile_id` $\rightarrow$ `integration_profiles.id`
-136. `integration_candidates.created_by` $\rightarrow$ `users.id`
-137. `integration_configurations.candidate_id` $\rightarrow$ `integration_candidates.id`
-138. `integration_configurations.settings_version_id` $\rightarrow$ `system_settings_versions.id`
-139. `integration_tests.candidate_id` $\rightarrow$ `integration_candidates.id`
-140. `integration_tests.operation_id` $\rightarrow$ `operations.id`
+106. `user_imports.journal_id` $\rightarrow$ `journals.id`
+107. `user_imports.file_id` $\rightarrow$ `files.id`
+108. `user_imports.created_by` $\rightarrow$ `users.id`
+109. `system_settings.updated_by` $\rightarrow$ `users.id`
+110. `notifications.user_id` $\rightarrow$ `users.id`
+111. `notifications.journal_id` $\rightarrow$ `journals.id`
+112. `notifications.outbox_event_id` $\rightarrow$ `outbox_events.id`
+113. `audit_logs.journal_id` $\rightarrow$ `journals.id`
+114. `audit_logs.actor_id` $\rightarrow$ `users.id`
 
 ---
 
-## 5. 15 Revisi & Aturan Persistensi Wajib Diimplementasikan
+## 5. 13 Aturan Persistensi Domain Wajib Diimplementasikan
 
-Berikut adalah 15 aturan persistensi arsitektural yang wajib dipatuhi pada layer service, repository, dan migration Laravel:
+Berikut adalah 13 aturan persistensi arsitektural yang wajib dipatuhi pada layer service, repository, dan migration Laravel:
 
 ### 01 • Users dan Lockout
 
@@ -1853,61 +1584,48 @@ Berikut adalah 15 aturan persistensi arsitektural yang wajib dipatuhi pada layer
 - `publication_date` bernilai `NOT NULL` saat issue berstatus `published`, dan `NULL` sebelum tanggal resmi ditetapkan. `scheduled_at` bernilai `NULL` jika tidak menggunakan publikasi terjadwal. Kolom `articles.published_at` wajib bernilai `NOT NULL` segera setelah issue terbit.
 - `crossref_deposits.completed_at` bernilai `NULL` selama status `queued`, `processing`, atau `retrying`, dan terisi `NOT NULL` saat sukses atau gagal terminal. `next_retry_at` hanya diisi saat retry dijadwalkan. Kegagalan deposit Crossref tidak membatalkan status publikasi artikel pada katalog jurnal lokal.
 
-### 09 • Operations dan Imports
+### 09 • Batch User Import Mandiri
 
-- `operations.error_code` bernilai `NULL` sebelum terjadi kegagalan; kode kesalahan aman wajib diisi jika terjadi kegagalan operasi. Kolom `errors` menyimpan rincian kesalahan per baris/item yang telah disanitasi dari stack trace maupun rahasia sistem.
-- Kolom `started_at` bernilai `NULL` saat berstatus `queued` dan terisi `NOT NULL` segera setelah worker mulai mengeksekusi tugas. `completed_at` bernilai `NULL` selama operasi non-terminal, dan terisi `NOT NULL` pada status akhir (`completed`, `failed`, `cancelled`).
-- `user_imports.send_invitation_email` bertipe `BOOLEAN NOT NULL` yang merekam keputusan eksplisit dari parameter request; worker dilarang menimpanya dengan konfigurasi bawaan terbaru saat eksekusi berjalan. `operation_id` merujuk ke tabel operations yang memvalidasi scope jurnal dan otorisasi aktor yang sama.
+- `user_imports.status` beralih dari `pending` $\rightarrow$ `processing` $\rightarrow$ `completed` / `failed` secara mandiri melalui Laravel Queue Job tanpa dependensi pada tabel operasi generik.
+- `user_imports.send_invitation_email` bertipe `BOOLEAN NOT NULL` merekam keputusan eksplisit admin saat berkas impor CSV diunggah; worker dilarang menimpanya dengan konfigurasi bawaan saat eksekusi berjalan.
+- Kolom `errors` menyimpan rincian kesalahan per baris CSV yang telah disanitasi dari stack trace maupun rahasia sistem.
+- `completed_at` bernilai `NULL` selama status `pending` atau `processing`, dan terisi `NOT NULL` pada status akhir (`completed`, `failed`).
 
-### 10 • Reservasi Upload dan Objek Tepat
+### 10 • Siklus Hidup Berkas dan Pemindaian Malware
 
-- Alur pengunggahan berkas: Lakukan reservasi ULID, insert ke tabel `files` dengan status `pending_upload`, kemudian insert ke `upload_sessions` (`file_id UNIQUE NOT NULL FK files.id`) dalam satu transaksi database tunggal. Jika langkah kedua gagal, seluruh transaksi di-rollback.
-- Kolom `files.upload_session_id` dihapus permanen guna mengeliminasi circular foreign key dependency; relasi balik dievaluasi melalui `upload_sessions.file_id`. Setiap sesi hanya untuk tepat satu berkas, dan satu berkas hanya memiliki maksimal satu sesi unggah aktif. Berkas turunan (_derivative/anonymized_) diperbolehkan dibuat tanpa sesi unggah.
-- Backend storage, nama bucket, dan storage key di-generate oleh server; storage key bersifat _immutable_. Setelah sesi upload tuntas, berkas beralih ke `pending_scan`/`scanning`. Server memverifikasi version_id, ETag, ukuran berkas, tipe MIME, dan hash SHA-256 terhadap objek fisik, serta memproses hasil pemindaian Microsoft Defender for Storage sebelum berkas diizinkan beralih ke status `clean`. Berkas berstatus `quarantined` atau `infected` diblokir dari penggunaan naskah. URL unduh/unggah langsung bertanda tangan (_Signed SAS URL_) bersifat sementara.
+- Alur pengunggahan berkas: Berkas diunggah melalui antarmuka web/Livewire berbatas ukuran maksimal 20 MiB. Berkas disimpan langsung ke storage (Azure Blob / local) dan dicatat pada tabel `files` dengan status `pending_scan` (atau `clean` pada lingkungan lokal).
+- Backend storage, path bucket, dan storage key di-generate oleh server secara unik menggunakan ULID; storage key bersifat _immutable_. Berkas turunan (_derivative/anonymized_) dicatat dengan mereferensikan `anonymized_file_id` ke `files.id` induknya tanpa memerlukan sesi terpisah.
+- Server memverifikasi tipe MIME, ukuran berkas (maksimal 20 MiB), dan hash SHA-256 terhadap objek fisik. Integrasi Microsoft Defender for Storage mencatat setiap riwayat pemindaian pada `scan_attempts`. Berkas berstatus `quarantined` atau `infected` diblokir total dari seluruh proses editorial. URL unduh bertanda tangan (_Signed SAS URL_) di-generate secara temporer sesuai otorisasi sesi pengguna.
 
-### 11 • Snapshot Test Integrasi
-
-- `integration_tests.operation_id` adalah FK `UNIQUE NOT NULL` yang menghubungkan satu kali pengujian ke operasi asinkron; satu kandidat integrasi dapat memiliki beberapa kali riwayat uji yang masing-masing bersifat immutable.
-- Kolom snapshot pada pengujian: `tested_checksum` (checksum config_snapshot), `tested_profile_checksum` (checksum profil termasuk egress/provider options), dan `tested_credential_version` (versi rahasia yang diuji). Ketiganya wajib bernilai `NOT NULL` sejak pengujian dibuat dan dilarang dimutasi oleh worker.
-- Kandidat integrasi menyimpan `config_snapshot` aman tanpa secret, `config_checksum`, `profile_checksum`, dan `credential_version`. `completed_at` bernilai `NULL` sebelum status terminal; `tested_at` pada kandidat bernilai `NULL` sebelum hasil uji sukses tersedia.
-- Penerapan konfigurasi (_Apply_) di bawah lock transaksi wajib memverifikasi bahwa pengujian berstatus `passed`, kandidat belum kedaluwarsa, provider cocok, dan ketiga snapshot identik dengan konfigurasi yang akan dipasang. Perubahan secret mewajibkan pembuatan kandidat dan pengujian baru.
-
-### 12 • Replay Idempotency Terenkripsi
-
-- Kolom `idempotency_records.encrypted_response` bertipe `LONGTEXT`, berisi envelope ciphertext hasil _authenticated encryption_ (AES-GCM / ChaCha20-Poly1305) atas payload status HTTP, body response, dan allowlist safe headers.
-- Nonce/IV, tag otentikasi, dan versi kunci enkripsi disimpan bersama envelope. Dilarang menyimpan respon plaintext ke dalam kolom basis data.
-- `encrypted_response` bernilai `NULL` selama status `in_progress`; saat status berubah menjadi `completed`, kolom ciphertext dan `encryption_key_version` wajib bernilai `NOT NULL` dan disimpan atomik bersama hasil transaksi domain/outbox.
-- Pengiriman ulang (_replay request_) mempertahankan status dan body yang sama setelah verifikasi otorisasi aktor terkini berhasil. Allowlist safe headers mengecualikan `Set-Cookie`, `Authorization`, atau data token sensitif lainnya. Masa retensi catatan idempotensi minimal 24 jam sebelum di-purge secara berkala. `operation_id` pada tabel ini adalah identifier nama rute/aksi operasi (contoh: `submission.store`), berbeda dari `integration_tests.operation_id` yang berupa ULID operations.
-
-### 13 • Audit Actor dan Retensi
+### 11 • Audit Actor dan Retensi
 
 - Validasi constraint: `CHECK (actor_type IN ('user', 'system'))`.
     - Untuk aktor bertipe `user`: `actor_id` wajib `NOT NULL`, `system_actor` wajib `NULL`, dan `effective_role` merekam peran aktif saat perintah dijalankan.
     - Untuk aktor bertipe `system`: `actor_id` dan `effective_role` wajib `NULL`, sedangkan `system_actor` wajib `NOT NULL` (contoh: `scheduler.worker`, `scanner.defender`).
 - Tabel `audit_logs` dan `submission_events` bersifat _append-only_. Kolom `occurred_at` (`NOT NULL`) mencatat waktu nyata terjadinya transaksi di dunia nyata, terpisah dari `created_at` yang mencatat waktu persistensi database. Nilai `updated_at` bernilai sama persis dengan `created_at`.
-- Data rahasia, password hash, refresh token, credential reference sensitif, dan PII yang tidak relevan dilarang masuk ke dalam payload audit.
+- Data rahasia, password hash, credential reference sensitif, dan PII yang tidak relevan dilarang masuk ke dalam payload audit.
 - Seluruh rekam jejak editorial, penugasan reviewer, keputusan, dan atribusi kepengarangan publik wajib dipertahankan; akun yang ditutup hanya diberi penanda _tombstone/soft-delete_ tanpa cascade deletion yang memutus relasi riwayat.
 
-### 14 • Timestamp dan Nullability
+### 12 • Timestamp dan Nullability
 
-- Seluruh 70 tabel wajib menyertakan kolom `created_at` dan `updated_at` bertipe `DATETIME(6)` dengan basis zona waktu UTC dari clock RDBMS. `created_at` bersifat _immutable_; `updated_at` dimutasi secara atomik hanya pada pembaruan data yang sah. Pada tabel snapshot/immutable, keduanya bernilai sama setelah dibekukan.
+- Seluruh 58 tabel wajib menyertakan kolom `created_at` dan `updated_at` bertipe `DATETIME(6)` dengan basis zona waktu UTC dari clock RDBMS. `created_at` bersifat _immutable_; `updated_at` dimutasi secara atomik hanya pada pembaruan data yang sah. Pada tabel snapshot/immutable, keduanya bernilai sama setelah dibekukan.
 - Kolom batas waktu (`expires_at`, `absolute_expires_at`, `response_due_at`, `review_due_at`) bersifat `NOT NULL` sejak rekaman dibuat. Kolom `due_at` wajib `NOT NULL` pada copyedit, layout, proof, dan revision yang telah terbentuk; `requested_due_at` `NOT NULL` pada permohonan extension; `revision_due_at` `NULL` kecuali pada keputusan editorial revisi.
-- Kolom timestamp event transisi (`email_verified_at`, `locked_until`, `deleted_at`, `consumed_at`, `used_at`, `revoked_at`, `responded_at`, `submitted_at`, `resolved_at`, `published_at`, `registered_at`, `delivered_at`, `read_at`, `tested_at`, `invalidated_at`) bernilai `NULL` sebelum event terjadi dan menjadi `NOT NULL` saat event selesai.
+- Kolom timestamp event transisi (`email_verified_at`, `locked_until`, `deleted_at`, `consumed_at`, `used_at`, `revoked_at`, `responded_at`, `submitted_at`, `resolved_at`, `published_at`, `registered_at`, `delivered_at`, `read_at`, `invalidated_at`) bernilai `NULL` sebelum event terjadi dan menjadi `NOT NULL` saat event selesai.
 - Kolom `completed_at` bernilai `NULL` saat non-terminal, dan terisi saat terminal; `verified_at` wajib diisi setelah objek storage atau identitas ORCID diverifikasi. Dilarang mengosongkan kembali kolom timestamp historis untuk menyamarkan status transaksi.
 
-### 15 • Constraint Scope dan Concurrency
+### 13 • Constraint Scope dan Concurrency
 
 - Normalisasi string email, username, slug, dan DOI yang dipadukan dengan indeks unik RDBMS menutup celah _race condition_.
 - Kolom virtual generated `live_slot` menggantikan parsial unik PostgreSQL; kolom `journal_scope` dan `galley_scope` (`COALESCE(..., '')`) menggantikan fungsi `NULLS NOT DISTINCT`.
 - Keberadaan Foreign Key ke ID saja tidak membuktikan kesamaan scope jurnal/submission. Integritas scope dijaga melalui Foreign Key komposit pada key unik (contoh: `UNIQUE(journal_id, id)`), atau melalui validasi transaksi ketat pada layer service yang dipadukan dengan _row-level locking_ pada entitas parent (`submissions` atau `journals`) serta trigger sinkronisasi.
-- Pemeriksaan XOR pada `file_scopes` dan `production_escalations` ditegakkan melalui local `CHECK constraint`, sedangkan validasi lintas tabel ditegakkan via transaksi database.
+- Pemeriksaan eksklusif XOR pada `production_escalations` (`copyedit_id` vs `galley_id`) ditegakkan melalui local `CHECK constraint`, sedangkan validasi integritas scope lintas tabel ditegakkan via transaksi database dan composite foreign keys.
 - MySQL InnoDB bertindak sebagai satu-satunya _source of truth_ (otoritas data). Redis hanya difungsikan untuk cache, sesi sementara, rate limiter, dan lease lock. Redis lock bukan pengganti row lock, versioning optimistik, atau unique constraint MySQL. Mutasi status domain, penulisan log audit, dan pencatatan outbox event wajib tereksekusi dalam satu transaksi atomik MySQL.
 
 ---
 
 ## 6. Spesifikasi Redis In-Memory & Arsitektur Kegagalan
 
-Redis difungsikan khusus sebagai lapisan akselerasi data sementara (_in-memory caching_), rate limiting, dan lease lock. Seluruh 70 tabel domain, audit trail, pembatalan sesi, transaksi outbox, dan catatan idempotensi tetap bertempat secara permanen di basis data relasional MySQL.
+Redis difungsikan khusus sebagai lapisan akselerasi data sementara (_in-memory caching_), rate limiting, dan lease lock. Seluruh 58 tabel domain, audit trail, sesi pengguna, dan transaksi outbox tetap bertempat secara permanen di basis data relasional MySQL.
 
 ### 6.1 Tabel Pola Key Redis
 
@@ -1921,7 +1639,6 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
 | `lock:{resource}:{id}`               | `STRING` (owner token unik)             | 30 detik (lease auto-expiry)                             | `SET key token NX PX 30000`. Pelepasan kunci hanya boleh dilakukan oleh token pemilik asli. Row lock MySQL tetap wajib pada transaksi penulisan. |
 | `cache:journal:{id}:v{version}`      | `STRING` (JSON proyeksi publik jurnal)  | 300 detik (5 menit)                                      | Sumber: `journals` & `journal_settings`. Terinvalidation segera setelah commit transaksi pembaruan data jurnal.                                  |
 | `cache:article:{id}:v{version}`      | `STRING` (JSON proyeksi artikel terbit) | 300 detik (5 menit)                                      | Sumber: `articles` & `article_galleys`. Cache wajib mengecek status unpublish/retraction sebelum melayani permintaan pembaca.                    |
-| `cache:operation:{id}:v{version}`    | `STRING` (progres status aman)          | 5 detik                                                  | Sumber: `operations`. Token `updated_at` digunakan untuk validasi progres; otorisasi akses progres tetap dievaluasi di MySQL.                    |
 
 ### 6.2 Kebijakan Konsistensi & Failure Policy
 
@@ -1937,7 +1654,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
     - Instance Redis gabungan (sesi, cache, rate limit) wajib dikonfigurasi dengan kebijakan `maxmemory-policy noeviction`. Sesi dan lease lock tidak boleh dibuang sembarangan oleh eviction acak.
     - Monitoring penggunaan memori RAM, AOF persistence, dan TTL aktif diterapkan untuk mencegah kehabisan kapasitas memori.
 5. **Antrean Pekerjaan Bisnis:**
-    - Seluruh antrean bisnis transaksi jurnal (_jobs_) tetap bersumber dari basis data MySQL / outbox pattern. Redis bukan tempat penyimpanan tunggal data pekerjaan bisnis, keputusan editorial, payload sesi, atau rekaman idempotensi.
+    - Seluruh antrean bisnis transaksi jurnal (_jobs_) tetap bersumber dari basis data MySQL / outbox pattern. Redis bukan tempat penyimpanan tunggal data pekerjaan bisnis, keputusan editorial, atau payload sesi.
 6. **Payload Key & Keamanan:**
     - Key Redis wajib mematuhi serializer driver Laravel dan prefix koneksi. Dilarang keras menyimpan password plaintext, raw token rahasia, kredensial provider eksternal, atau komentar rahasia reviewer di dalam Redis.
 
@@ -1970,7 +1687,7 @@ flowchart TD
 
 ## 7. Kesimpulan & Panduan Implementasi Migrasi
 
-Struktur 70 tabel ini mengunci integritas sistem jurnal SIRIDA dari risiko inkonsistensi konkurensi, kebocoran anonimitas review, serta duplikasi eksekusi integrasi eksternal.
+Struktur 58 tabel ini mengunci integritas sistem jurnal SIRIDA dari risiko inkonsistensi konkurensi, kebocoran anonimitas review, serta integritas berkas dan alur editorial.
 
 Bagi pengembang yang membangun lapisan migrasi database Laravel (`database/migrations/`):
 
