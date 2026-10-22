@@ -724,7 +724,7 @@ class AuthorSubmissionDetailViewModel
                 'number' => 3,
                 'title' => 'Proses Telaah',
                 'short' => 'Telaah',
-                'desc' => 'Proses penelaahan tertutup (*Double-Blind*) oleh minimal 2 mitra bestari.',
+                'desc' => 'Proses penelaahan tertutup (Double-Blind) oleh minimal 2 mitra bestari.',
             ],
             4 => [
                 'number' => 4,
@@ -867,7 +867,7 @@ class AuthorSubmissionDetailViewModel
                 'date' => $baseDate->copy()->addDays(5)->format('d M Y').', 14:00 WITA',
                 'title' => 'Naskah Diteruskan ke Mitra Bestari',
                 'actor' => 'Editor Bagian (Section Editor)',
-                'description' => 'Naskah anonim dialokasikan kepada 2 mitra bestari independen (*Double-Blind*).',
+                'description' => 'Naskah anonim dialokasikan kepada 2 mitra bestari independen (Double-Blind).',
                 'badge_class' => 'bg-purple-50 text-purple-700',
             ];
         }
@@ -962,7 +962,7 @@ class AuthorSubmissionDetailViewModel
                 'date' => $baseDate->copy()->addDays(5)->format('d M Y').', 14:00 WITA',
                 'title' => 'Naskah Diteruskan ke Mitra Bestari',
                 'actor' => 'Editor Bagian (Section Editor)',
-                'description' => 'Naskah anonim dialokasikan kepada 2 mitra bestari independen (*Double-Blind Review*).',
+                'description' => 'Naskah anonim dialokasikan kepada 2 mitra bestari independen (Double-Blind Review).',
                 'badge_class' => 'bg-purple-50 text-purple-700',
             ];
         }
