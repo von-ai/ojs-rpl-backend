@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\Author\AuthorSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
+// Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
@@ -24,8 +28,19 @@ Route::middleware('throttle:identity')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
-    Route::get('/dashboard', function () {
-        return response('Dashboard Portal Penulis BRIDA Makassar', 200);
-    })->name('dashboard');
 });
+
+// Portal Penulis (Author Submissions & Management) - Wajib Autentikasi
+Route::middleware('auth')->prefix('author')->name('author.')->group(function () {
+    Route::get('/submissions', [AuthorSubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/create', [AuthorSubmissionController::class, 'create'])->name('submissions.create');
+    Route::get('/submissions/sections', [AuthorSubmissionController::class, 'sectionsApi'])->name('submissions.sections');
+    Route::post('/submissions', [AuthorSubmissionController::class, 'store'])->name('submissions.store');
+    Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
+    Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
+});
+
+Route::redirect('/submissions', '/author/submissions');
+Route::get('/dashboard', function () {
+    return redirect()->route('author.submissions.index');
+})->middleware('auth')->name('dashboard');
