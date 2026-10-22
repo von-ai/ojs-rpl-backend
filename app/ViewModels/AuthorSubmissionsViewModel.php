@@ -284,13 +284,75 @@ class AuthorSubmissionsViewModel
                 foreach ($submissions as $sub) {
                     $sectionName = $sub->section?->name ?? 'Artikel Riset Orisinil';
                     $isDraft = $sub->status === 'draft';
-                    $tabs = $isDraft ? ['semua', 'draf'] : ['semua', 'aktif'];
+                    $tabs = match ($sub->status) {
+                        'draft' => ['semua', 'draf'],
+                        'submitted' => ['semua', 'aktif'],
+                        'in_review' => ['semua', 'aktif'],
+                        'revisions_requested' => ['semua', 'aktif', 'perlu-revisi'],
+                        'in_production', 'accepted' => ['semua', 'aktif', 'produksi'],
+                        'published' => ['semua', 'terbit'],
+                        'declined', 'archived', 'withdrawn' => ['semua', 'arsip'],
+                        default => ['semua', 'aktif'],
+                    };
+
+                    $statusLabel = match ($sub->status) {
+                        'draft' => 'Draf Belum Diajukan',
+                        'submitted' => 'Pemeriksaan Awal Editor',
+                        'in_review' => 'Proses Telaah',
+                        'revisions_requested' => 'Perlu Revisi',
+                        'in_production' => 'Pemeriksaan Galai',
+                        'accepted' => 'Naskah Diterima',
+                        'published' => 'Telah Terbit',
+                        'declined' => 'Naskah Ditolak',
+                        'archived' => 'Naskah Diarsipkan',
+                        'withdrawn' => 'Naskah Ditarik',
+                        default => 'Dalam Proses Editorial',
+                    };
+
+                    $statusBadgeClass = match ($sub->status) {
+                        'draft' => 'bg-gray-100 text-gray-700 border border-gray-200',
+                        'submitted' => 'bg-blue-50 text-blue-700 border border-blue-200',
+                        'in_review' => 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+                        'revisions_requested' => 'bg-red-50 text-red-700 border border-red-200',
+                        'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border border-amber-200',
+                        'published' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                        'declined' => 'bg-rose-50 text-rose-700 border border-rose-200',
+                        'archived', 'withdrawn' => 'bg-stone-100 text-stone-600 border border-stone-200',
+                        default => 'bg-gray-100 text-gray-700 border border-gray-200',
+                    };
+
+                    $statusSubtitle = match ($sub->status) {
+                        'revisions_requested' => 'Batas Waktu: 15 Nov 2026',
+                        'in_review' => 'Putaran 1 Review',
+                        'in_production', 'accepted' => 'Tata Letak & Galai',
+                        'published' => 'Terbit Resmi Open Access',
+                        'declined' => 'Keputusan Redaksi',
+                        'archived' => 'Arsip Naskah Resmi',
+                        'withdrawn' => 'Penarikan Disetujui',
+                        default => null,
+                    };
+
+                    $statusSubtitleClass = match ($sub->status) {
+                        'revisions_requested' => 'text-red-700 font-medium',
+                        'declined' => 'text-rose-700 font-medium',
+                        'published' => 'text-emerald-700 font-medium',
+                        default => 'text-slate-500 font-medium',
+                    };
+
+                    $isPublished = $sub->status === 'published';
+                    $doi = $isPublished ? '10.55981/brida.v2i2.'.substr($sub->id, -4) : null;
+                    $doiUrl = $doi ? 'https://doi.org/'.$doi : null;
+                    $doiStatus = match ($sub->status) {
+                        'published' => 'registered',
+                        'draft' => 'draft',
+                        default => 'pending',
+                    };
 
                     $dbItems[] = [
                         'id' => $sub->submission_number,
-                        'doi' => null,
-                        'doi_url' => null,
-                        'doi_status' => $isDraft ? 'draft' : 'pending',
+                        'doi' => $doi,
+                        'doi_url' => $doiUrl,
+                        'doi_status' => $doiStatus,
                         'section' => $sectionName,
                         'type' => $sectionName,
                         'type_badge_class' => 'bg-slate-50 text-slate-700 border-slate-200',
@@ -302,10 +364,10 @@ class AuthorSubmissionsViewModel
                         'updated_date' => $sub->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y'),
                         'created_at_raw' => $sub->created_at ? $sub->created_at->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
                         'updated_at_raw' => $sub->updated_at ? $sub->updated_at->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
-                        'status_label' => $isDraft ? 'Draf Belum Diajukan' : 'Pemeriksaan Awal Editor',
-                        'status_badge_class' => $isDraft ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-blue-50 text-blue-700 border border-blue-200',
-                        'status_subtitle' => null,
-                        'status_subtitle_class' => '',
+                        'status_label' => $statusLabel,
+                        'status_badge_class' => $statusBadgeClass,
+                        'status_subtitle' => $statusSubtitle,
+                        'status_subtitle_class' => $statusSubtitleClass,
                         'action_label' => 'Detail',
                         'action_class' => 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300',
                         'action_url' => route('author.submissions.show', $sub->submission_number ?: $sub->id),
@@ -469,7 +531,7 @@ class AuthorSubmissionsViewModel
             ],
             [
                 'step' => 3,
-                'title' => '3. Telaah Sejawat',
+                'title' => '3. Proses Telaah',
                 'description' => 'Proses penelaahan tertutup oleh minimal 2 mitra bestari independen.',
             ],
             [

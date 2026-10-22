@@ -95,7 +95,7 @@
                 <div>
                     <span class="text-gray-400 text-[11px] font-medium uppercase tracking-wider">Ringkasan Abstrak</span>
                     <div class="mt-1.5 p-3.5 bg-gray-50 rounded-lg border border-gray-100">
-                        <p id="review-abstract" class="text-gray-700 text-xs sm:text-sm line-clamp-4 leading-relaxed font-serif wrap-break-word overflow-wrap-anywhere">-</p>
+                        <p id="review-abstract" class="text-gray-700 text-xs sm:text-sm line-clamp-4 leading-relaxed font-sans wrap-break-word overflow-wrap-anywhere">-</p>
                     </div>
                 </div>
             </div>

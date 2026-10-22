@@ -42,6 +42,24 @@ class StoreSubmissionRequest extends FormRequest
             }
         }
 
+        if ($this->has('contributors') && is_array($this->input('contributors'))) {
+            $normalizedContributors = [];
+            foreach ($this->input('contributors') as $c) {
+                if (is_array($c)) {
+                    if (empty($c['given_name']) && ! empty($c['family_name'])) {
+                        $c['given_name'] = $c['family_name'];
+                        $c['family_name'] = null;
+                    } elseif (empty($c['given_name']) && ! empty($c['name'])) {
+                        $parts = explode(' ', trim((string) $c['name']), 2);
+                        $c['given_name'] = $parts[0];
+                        $c['family_name'] = $parts[1] ?? null;
+                    }
+                    $normalizedContributors[] = $c;
+                }
+            }
+            $this->merge(['contributors' => $normalizedContributors]);
+        }
+
         // Normalisasi action default
         if (! $this->has('action')) {
             $this->merge(['action' => 'submit']);
@@ -73,8 +91,8 @@ class StoreSubmissionRequest extends FormRequest
             $rules['author_guidelines_accepted'] = ['accepted'];
             $rules['manuscript_file'] = ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
             $rules['contributors'] = ['required', 'array', 'min:1', 'max:100'];
-            $rules['contributors.*.family_name'] = ['required', 'string', 'min:1', 'max:100'];
-            $rules['contributors.*.given_name'] = ['nullable', 'string', 'max:100'];
+            $rules['contributors.*.given_name'] = ['required', 'string', 'min:1', 'max:100'];
+            $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];
             $rules['contributors.*.email'] = ['required', 'email', 'max:255'];
             $rules['contributors.*.affiliation'] = ['required', 'string', 'min:1', 'max:255'];
             $rules['contributors.*.orcid_id'] = ['nullable', 'string', 'regex:/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/'];

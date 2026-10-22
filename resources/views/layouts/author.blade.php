@@ -34,11 +34,11 @@
         </main>
     </div>
 
-    <!-- Reusable Action Confirmation Modal -->
-    <x-author.action-modal />
+    <!-- Reusable Action Confirmation Modal (Global Component) -->
+    <x-action-modal />
 
-    <!-- Reusable Toast Notification System -->
-    <x-author.toast />
+    <!-- Reusable Toast Notification System (Global Component) -->
+    <x-toast />
 
     @stack('scripts')
     <script>

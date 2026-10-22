@@ -6,7 +6,7 @@
         <span class="text-xs font-bold uppercase tracking-wider text-brand-maroon">Langkah 2 dari 5</span>
         <h2 class="text-lg sm:text-xl font-bold text-gray-900 mt-1">Unggah Berkas Naskah</h2>
         <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Unggah dokumen naskah artikel ilmiah Anda untuk proses penelaahan sejawat.
+            Unggah dokumen naskah artikel ilmiah Anda untuk proses telaah.
         </p>
     </div>
 

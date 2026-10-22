@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Author;
 
 use App\Models\User;
+use Database\Seeders\SubmissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -108,7 +109,7 @@ class AuthorSubmissionsPageTest extends TestCase
         $response->assertSee('Panduan Alur Kerja Editorial');
         $response->assertSee('1. Draf Submisi');
         $response->assertSee('2. Pemeriksaan Awal');
-        $response->assertSee('3. Telaah Sejawat');
+        $response->assertSee('3. Proses Telaah');
         $response->assertSee('4. Perlu Revisi');
         $response->assertSee('6. Telah Terbit');
     }
@@ -289,5 +290,41 @@ class AuthorSubmissionsPageTest extends TestCase
         $this->assertStringContainsString('Model Prediksi Kualitas Udara', $responseData['table_html']);
         $this->assertStringNotContainsString('SUB-2026-00124', $responseData['table_html']);
         $this->assertStringContainsString('export-csv', $responseData['export_url']);
+    }
+
+    /**
+     * Memastikan naskah dari SubmissionSeeder terpetakan secara tepat ke seluruh tab kategori filter.
+     */
+    public function test_seeder_memetakan_naskah_ke_tab_filter_secara_tepat(): void
+    {
+        $this->seed(SubmissionSeeder::class);
+
+        // Tab Draf
+        $respDraft = $this->get(route('author.submissions.index', ['tab' => 'draf']));
+        $respDraft->assertStatus(200);
+        $respDraft->assertSee('SUB-2026-00101');
+        $respDraft->assertDontSee('SUB-2026-00102');
+
+        // Tab Perlu Revisi
+        $respRevisi = $this->get(route('author.submissions.index', ['tab' => 'perlu-revisi']));
+        $respRevisi->assertStatus(200);
+        $respRevisi->assertSee('SUB-2026-00104');
+        $respRevisi->assertSee('SUB-2026-00105');
+
+        // Tab Produksi
+        $respProd = $this->get(route('author.submissions.index', ['tab' => 'produksi']));
+        $respProd->assertStatus(200);
+        $respProd->assertSee('SUB-2026-00106');
+
+        // Tab Terbit
+        $respTerbit = $this->get(route('author.submissions.index', ['tab' => 'terbit']));
+        $respTerbit->assertStatus(200);
+        $respTerbit->assertSee('SUB-2026-00107');
+
+        // Tab Arsip & Ditolak
+        $respArsip = $this->get(route('author.submissions.index', ['tab' => 'arsip']));
+        $respArsip->assertStatus(200);
+        $respArsip->assertSee('SUB-2026-00108');
+        $respArsip->assertSee('SUB-2026-00109');
     }
 }

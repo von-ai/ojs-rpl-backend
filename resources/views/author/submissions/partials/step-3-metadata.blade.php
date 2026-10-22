@@ -46,7 +46,7 @@
             rows="6" 
             required
             placeholder="Tuliskan latar belakang singkat, tujuan riset, metode, temuan utama, dan kontribusi kebijakan..."
-            class="w-full p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition leading-relaxed font-serif"
+            class="w-full p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition leading-relaxed font-sans"
         >{{ old('abstract') }}</textarea>
     </div>
 
