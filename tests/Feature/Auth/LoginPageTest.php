@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class LoginPageTest extends TestCase
@@ -56,6 +57,46 @@ class LoginPageTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $response->assertRedirect('/dashboard');
+    }
+
+    /**
+     * Pengguna dapat login dengan opsi "Ingat Saya" dan menghasilkan remember cookie.
+     */
+    public function test_pengguna_dapat_login_dengan_opsi_ingat_saya(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+            'remember' => 'on',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect('/dashboard');
+        $response->assertCookie(Auth::guard()->getRecallerName());
+        $this->assertNotNull($user->fresh()->remember_token);
+    }
+
+    /**
+     * Pengguna login tanpa opsi "Ingat Saya" tidak menghasilkan remember cookie.
+     */
+    public function test_pengguna_login_tanpa_ingat_saya_tidak_menghasilkan_remember_cookie(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect('/dashboard');
+        $response->assertCookieMissing(Auth::guard()->getRecallerName());
     }
 
     /**
