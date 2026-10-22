@@ -4,8 +4,10 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Font Formal & Standar Institusi Akademis: Inter */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Lora', Cambria, Georgia, 'Times New Roman', serif;
 
     --color-brand-maroon: #6A020A;
     --color-brand-maroon-hover: #520208;
@@ -17,5 +19,98 @@
     /* Token Warna Latar Canvas & Panel */
     --color-canvas: #F8F9FA;
     --color-surface-subtle: #F7F7F8;
+}
+
+/* Optimasi Tipografi Akademis & Angka Tabular untuk Data Jurnal */
+@layer base {
+    body {
+        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.011em;
+    }
+}
+
+/* Scrollbar halus & minimalis untuk sidebar navigasi jika tinggi layar terbatas */
+.sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.35);
+    border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.6);
+}
+
+/* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) */
+@media (min-width: 1024px) {
+    #author-sidebar {
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #author-sidebar.sidebar-collapsed {
+        width: 4.25rem; /* 68px */
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-label,
+    #author-sidebar.sidebar-collapsed .sidebar-heading,
+    #author-sidebar.sidebar-collapsed .sidebar-brand-text,
+    #author-sidebar.sidebar-collapsed .sidebar-badge-full {
+        display: none !important;
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-header {
+        justify-content: center !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-brand-link {
+        display: none !important;
+    }
+
+    #author-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn {
+        display: flex !important;
+        width: 2.25rem !important;
+        height: 2.25rem !important;
+        margin: auto !important;
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-divider {
+        display: block !important;
+        width: 1.75rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-nav-item {
+        justify-content: center !important;
+        width: 2.5rem !important; /* 40px icon button */
+        height: 2.5rem !important;
+        padding: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        border-radius: 0.5rem !important;
+    }
+
+    #author-sidebar.sidebar-collapsed .sidebar-badge-dot {
+        display: block !important;
+    }
+}
+
+.sidebar-divider {
+    display: block;
+}
+
+.sidebar-badge-dot {
+    display: none;
 }
 

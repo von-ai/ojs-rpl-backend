@@ -27,10 +27,12 @@ Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas `r
 
 ## 2. Tipografi & Hierarki Teks (Typography)
 
-Aplikasi menggunakan font **Instrument Sans** dari Google Fonts yang diimpor pada layout utama [`resources/views/layouts/auth.blade.php`]:
+Aplikasi menggunakan font **Inter** sebagai tipografi utama (standar universal antarmuka publikasi ilmiah, jurnal OJS, dan portal institusi pemerintah) serta font serif **Lora** untuk elemen editorial akademis:
 
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 ```
 
 ### Skala Tipografi:
