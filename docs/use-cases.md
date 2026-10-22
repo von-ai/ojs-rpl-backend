@@ -5,11 +5,9 @@ sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyat
 planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
 login, membership dan workflow editorial belum dibangun.
 
-Ini baseline final desain. Skenario di bawah adalah acceptance criteria yang harus
-lulus saat implementasi tersedia, **bukan hasil pengujian endpoint yang sudah berjalan**.
+Ini baseline kriteria penerimaan (acceptance criteria) use case untuk implementasi Modular Monolith Laravel 13.
 Sumber UC adalah [proposal](https://docs.google.com/document/d/1bWldGLdB9Ek2bgmJtyupGi5yA7C1E409w6Gs65p__OM/)
-tab Proposal. Penomoran mengikuti judul use case, karena referensi silang sumber
-kadang berbeda. Detail schema/path tetap pada [OpenAPI](openapi.yaml).
+tab Proposal. Aturan bisnis domain mengacu pada [aturan domain](contract-decisions.md).
 
 Istilah: EIC = Editor in Chief, SE = Section Editor, JM = Journal Manager.
 Semua aktor privat harus memenuhi verifikasi, membership aktif dan object policy;
@@ -19,10 +17,10 @@ status tombol UI. Skenario gagal tidak boleh meninggalkan perubahan domain parsi
 
 | UC / aktor / prasyarat | Alur berhasil dan hasil | Alternatif/gagal yang harus diuji |
 | --- | --- | --- |
-| UC-01 Registrasi — calon pengguna, journal terbuka | `registerUser` tanpa pilihan role → verifikasi email → akses dasar Reader/Author; `joinJournalAsAuthor` untuk enrollment jurnal tambahan. Reviewer direkrut melalui undangan editor untuk naskah dan putaran tertentu. | Duplikasi tidak membuat dua identity; token verifikasi kedaluwarsa tidak aktif; pendaftaran menolak pemilihan role dan journal; role direktori reviewer tidak memberi akses naskah tanpa assignment yang diterima. |
-| UC-02 Login — identity terdaftar | `login` menghasilkan session/token; `getCurrentUser` dan `setActiveContext` memilih journal/role yang sudah dimiliki. Logout mencabut session. | Lima gagal mengunci akun 15 menit lintas alias email/username; reset/email aman; refresh replay mencabut family; context palsu ditolak; absolute session tidak diperpanjang refresh. |
+| UC-01 Registrasi — calon pengguna, journal terbuka | Form pendaftaran tanpa pilihan role → verifikasi email → akses dasar Reader/Author; gabung jurnal untuk enrollment jurnal tambahan. Reviewer direkrut melalui undangan editor untuk naskah dan putaran tertentu. | Duplikasi email/username ditolak; token verifikasi kedaluwarsa tidak aktif; pendaftaran menolak pemilihan role dan journal; role direktori reviewer tidak memberi akses naskah tanpa assignment yang diterima. |
+| UC-02 Login — identity terdaftar | Login web form menghasilkan sesi stateful pengguna; pemilihan konteks jurnal/role yang sudah dimiliki. Logout membatalkan sesi dan regenerasi token CSRF. | Lima kali kegagalan mengunci akun 15 menit lintas alias email/username dan menerbitkan outbox email keamanan; sesi kadaluwarsa diarahkan ke login; konteks jurnal palsu ditolak. |
 | UC-03 Membaca/mengunduh — pembaca | Daftar journal/current issue → artikel published → citation/galley, download/view dicatat dengan deduplication. | Draft/tidak berhak/missing file tidak bocor; DOI pending tetap menampilkan artikel terbit; file milik artikel lain ditolak. |
-| UC-04 Pencarian — pembaca | `searchPublicArticles` memfilter metadata published dengan pagination dan suggestion aman. | Hasil kosong menjadi array kosong, bukan error; filter invalid ditolak; query tidak membuka naskah privat atau menjalankan SQL mentah. |
+| UC-04 Pencarian — pembaca | Pencarian publik memfilter metadata artikel published dengan pagination dan pencarian aman. | Hasil kosong menampilkan pesan informatif, bukan error; query tidak membuka naskah privat atau menjalankan SQL mentah. |
 | UC-05 Submission baru — author aktif | Policy/section → draft parsial → contributors/metadata lengkap → upload clean → `submitSubmission`, status submitted dan notifikasi EIC. | Draft tetap tersimpan saat metadata belum lengkap; file terlalu besar/scan gagal/salah journal ditolak; author guidelines wajib; similarity opsional tidak menghalangi saat nonaktif. |
 | UC-06 Tracking — author pemilik | `listSubmissions`, detail, timeline dan file history menampilkan progres yang aman untuk author. | Author lain mendapat 404; timeline/notifikasi tidak memuat identitas reviewer atau catatan rahasia; pagination tidak mencampur journal. |
 | UC-07 Revisi — author dengan keputusan revisi terkirim | Baca `listAuthorDecisions`, buat revision, upload manuskrip/response letter, submit revisi yang terikat keputusan; editor menerima notifikasi. | Revision draft sebelum kirim boleh belum lengkap; deadline/grace sesuai snapshot; stale job tidak menarik revisi yang sudah masuk; major revision dapat membuka round baru. |
@@ -68,9 +66,8 @@ assignment status belum terminal; expired/no_response/declined/cancelled tidak
 memperoleh akses manuskrip baru. Tidak ada HTTP endpoint publik untuk menjalankan cron.
 
 Notifikasi durable dibuat satu kali; kegagalan SMTP diretry worker dan tidak
-membatalkan transisi. UI dapat membaca notifikasi REST selama email tertunda.
-Rincian `x-deadline-policy`/`x-deadline-guard` di OpenAPI adalah deklarasi kontrak,
-bukan kode scheduler yang sudah berjalan.
+membatalkan transisi. UI dapat membaca notifikasi melalui query database / Livewire selama email tertunda.
+Kebijakan deadline ditegakkan pada lapisan Application Service dan background worker scheduler.
 
 ## Tes penerimaan wajib saat backend dibangun
 
@@ -87,5 +84,5 @@ bukan kode scheduler yang sudah berjalan.
 - Integration: storage/scan/SMTP failure, ORCID denial/state replay, Crossref retry,
   OAI XML harvesting; setiap provider mempunyai sandbox/fixture.
 
-CI kontrak sekarang memeriksa bentuk schema, keterhubungan aturan dan contoh.
-Tes di atas merupakan pekerjaan implementasi berikutnya, bukan klaim CI sudah mengujinya.
+CI pipeline sekarang memvalidasi kualitas kode (Pint style checker) dan feature test suite PHPUnit.
+Tes integrasi penuh di atas merupakan pekerjaan implementasi berikutnya seiring pembangunan modul.

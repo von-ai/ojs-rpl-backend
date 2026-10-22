@@ -1,10 +1,11 @@
 # Registrasi MVP
 
-Implementasi 8 Oktober 2026: register, verify email, resend email melalui API dan
-Blade tanpa CSS/JavaScript. Login/JWT, enrollment serta policy Reader/Author
-per jurnal merupakan pekerjaan berikutnya; registrasi tidak membuat role reviewer
-atau editorial. Akun terverifikasi menjadi `active`, tetapi status tersebut sendiri
-bukan grant akses ke naskah atau jurnal.
+Implementasi alur pendaftaran akun penulis: register, verify email, dan resend email
+melalui formulir web Blade. Autentikasi berbasis sesi stateful web (`auth:web`),
+sedangkan enrollment serta policy Reader/Author per jurnal merupakan otorisasi bertingkat;
+registrasi tidak membuat role reviewer atau editorial secara otomatis.
+Akun terverifikasi menjadi `active`, tetapi status tersebut sendiri bukan grant langsung
+ke naskah atau jurnal.
 
 ## Menjalankan lokal
 
@@ -64,11 +65,9 @@ plus cooldown resend per akun. Registrasi dan verifikasi tidak langsung membuat 
 ## Data dan batas implementasi
 
 `users.id` adalah primary key ULID char(26) sesuai SIRIDA / ERD v1.0.0.
-Tidak ada `public_id` terpisah. Eloquent HasUlids menghasilkan ID secara otomatis,
-dan API memakai primary key tersebut. Foreign key user_profiles.user_id,
-identity_challenges.user_id, audit_logs.actor_id dan sessions.user_id memakai ULID.
-Username wajib dan unik. Nama/password memakai kolom scaffold `name`/`password`;
-API memproyeksikan `full_name` tanpa mengekspos password.
+Tidak ada `public_id` terpisah. Eloquent HasUlids menghasilkan ID secara otomatis.
+Foreign key user_profiles.user_id, identity_challenges.user_id, audit_logs.actor_id dan sessions.user_id memakai ULID.
+Username wajib dan unik. Nama/password memakai kolom scaffold `name`/`password` tanpa mengekspos password.
 
 Migrasi awal telah disesuaikan untuk database development berisi dummy. Untuk
 checkout yang sudah menjalankan migrasi versi bigint, jalankan
@@ -76,11 +75,10 @@ checkout yang sudah menjalankan migrasi versi bigint, jalankan
 seluruh tabel/data pada schema terpilih. Jangan gunakan untuk data produksi.
 
 Tabel baru: user_profiles, identity_challenges, audit_logs. Audit identity bersifat
-append-only di application service, mencatat resource public ID, actor/action/time,
-tanpa password/token. Schema audit menyiapkan journal scope nullable; FK ke journals
-perlu ditambahkan saat tabel jurnal dibangun. Grant/membership dan audit workflow
-lain belum diimplementasikan. Belum ada halaman login; MVP menampilkan keberhasilan
-verifikasi dengan jelas.
+append-only di application service, mencatat actor/action/time tanpa password/token.
+Schema audit menyiapkan journal scope nullable; FK ke journals perlu ditambahkan
+saat tabel jurnal dibangun. Halaman login telah terintegrasi di `/login` (lihat [panduan login](login.md));
+alur pendaftaran menampilkan konfirmasi verifikasi dan mengarahkan pengguna untuk login.
 
 ## Validasi
 

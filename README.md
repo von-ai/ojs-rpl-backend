@@ -51,7 +51,7 @@ docker compose exec app php artisan migrate
 
 #### 4. Akses Layanan Aplikasi
 Setelah seluruh kontainer berstatus *healthy* dan aktif:
-- **Web App / REST API**: [`http://localhost:8000`](http://localhost:8000)
+- **Web App (Aplikasi Web)**: [`http://localhost:8000`](http://localhost:8000)
 - **Halaman Masuk (Login)**: [`http://localhost:8000/login`](http://localhost:8000/login)
 - **Mailpit Webmail UI**: [`http://localhost:8025`](http://localhost:8025) (SMTP pada port `1025`)
 - **MySQL 8.0**: `127.0.0.1:3306` (Database: `ojs_rpl`, User: `ojs_rpl`, Password: `ojs_rpl_dev`)

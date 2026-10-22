@@ -1,7 +1,7 @@
 # SIRIDA — Dokumentasi Skema Basis Data & ERD (Entity Relationship Diagram)
 
 **Baseline Arsitektur:** MySQL 8.0 / TiDB Cloud Serverless (InnoDB wire protocol) + Redis in-memory • Framework Laravel 13 (PHP 8.4)  
-**Revisi Desain:** 14 Oktober 2026 • **Acuan Kontrak API:** OpenAPI v1.0.0 (commit `5232821` / `87a13f3`)  
+**Revisi Desain:** 22 Oktober 2026 • **Arsitektur:** Modular Monolith Laravel 13 (Blade + Livewire 4)  
 **Metrik Desain:** 70 Tabel MySQL • 8 Modul Domain • 140 Relasi Foreign Key • Redis Key-Value Ledger
 
 ---
@@ -43,11 +43,8 @@ erDiagram
     journals ||--o{ journal_memberships : "has_members"
     journal_memberships ||--o{ journal_role_grants : "assigned"
     users ||--o{ system_role_grants : "holds_system_role"
-    users ||--o{ auth_sessions : "creates"
-    journal_memberships ||--o{ auth_sessions : "active_context"
-    auth_sessions ||--o{ refresh_tokens : "issues"
-    refresh_tokens ||--o{ refresh_tokens : "replaces_parent"
-    auth_sessions ||--o{ oauth_states : "tracks"
+    users ||--o{ sessions : "has_sessions"
+    users ||--o{ oauth_states : "tracks"
     users ||--o{ identity_challenges : "receives"
     users ||--o| orcid_connections : "links"
 
@@ -241,53 +238,30 @@ Pemberian peran level sistem global (System Administrator).
     - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT`
     - `UNIQUE KEY uq_sysrole_live (user_id, role_code, live_slot)`
 
-#### 6. `auth_sessions`
+#### 6. `sessions`
 
-Sesi autentikasi aktif pengguna yang merekam konteks peran yang dipilih dan ETag.
+Tabel sesi web bawaan Laravel (`sessions`) untuk menyimpan status autentikasi stateful pengguna dan perlindungan CSRF.
+
+- **Kolom:**
+    - `id` VARCHAR(255) NOT NULL — Primary Key (Session ID string).
+    - `user_id` CHAR(26) NULL — FK ke `users.id` (NULL jika guest).
+    - `ip_address` VARCHAR(45) NULL — Alamat IP pengguna.
+    - `user_agent` TEXT NULL — Metadata peramban web klien.
+    - `payload` LONGTEXT NOT NULL — Data serialisasi sesi (termasuk pemilihan konteks jurnal dan peran aktif).
+    - `last_activity` INT NOT NULL — Timestamp UNIX waktu interaksi terakhir.
+- **Constraints & Indexes:**
+    - `PRIMARY KEY (id)`
+    - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
+    - `INDEX idx_sessions_user_id (user_id)`
+    - `INDEX idx_sessions_last_activity (last_activity)`
+
+#### 7. `oauth_states`
+
+Penyimpanan state sementara untuk alur OAuth2 / OIDC eksternal (ORCID).
 
 - **Kolom:**
     - `id` CHAR(26) NOT NULL — Primary Key (ULID).
     - `user_id` CHAR(26) NOT NULL — FK ke `users.id`.
-    - `active_membership_id` CHAR(26) NULL — FK ke `journal_memberships.id` (NULL jika context sistem/publik).
-    - `active_role` VARCHAR(191) NULL — Peran yang sedang aktif digunakan.
-    - `absolute_expires_at` DATETIME(6) NOT NULL — Batas absolut masa berlaku sesi (maks 24 jam).
-    - `revoked_at` DATETIME(6) NULL — Waktu pencabutan sesi secara eksplisit.
-    - `version` BIGINT NOT NULL DEFAULT 1 — Basis perhitungan ETag active-context.
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (active_membership_id) REFERENCES journal_memberships(id) ON DELETE RESTRICT`
-    - `CHECK (version >= 1)`
-
-#### 7. `refresh_tokens`
-
-Token refresh opaque bertingkat (_token family_) dengan perlindungan replay attack.
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `session_id` CHAR(26) NOT NULL — FK ke `auth_sessions.id`.
-    - `token_hash` VARCHAR(191) NOT NULL — Hash SHA-256 dari token refresh opaque.
-    - `parent_token_id` CHAR(26) NULL — FK ke `refresh_tokens.id` (token pendahulu sebelum rotasi).
-    - `used_at` DATETIME(6) NULL — Waktu token dikonsumsi untuk rotasi.
-    - `expires_at` DATETIME(6) NOT NULL — Waktu kedaluwarsa token.
-    - `revoked_at` DATETIME(6) NULL — Waktu token dicabut (misal jika replay terdeteksi).
-    - `created_at` DATETIME(6) NOT NULL (UTC).
-    - `updated_at` DATETIME(6) NOT NULL (UTC).
-- **Constraints & Indexes:**
-    - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (session_id) REFERENCES auth_sessions(id) ON DELETE RESTRICT`
-    - `FOREIGN KEY (parent_token_id) REFERENCES refresh_tokens(id) ON DELETE RESTRICT`
-    - `UNIQUE KEY uq_refresh_tokens_hash (token_hash)`
-
-#### 8. `oauth_states`
-
-Penyimpanan state sementara untuk alur OAuth2 / OIDC PKCE eksternal (ORCID).
-
-- **Kolom:**
-    - `id` CHAR(26) NOT NULL — Primary Key (ULID).
-    - `session_id` CHAR(26) NOT NULL — FK ke `auth_sessions.id`.
     - `state_hash` VARCHAR(191) NOT NULL — Hash state parameter OAuth.
     - `pkce_verifier_ciphertext` TEXT NOT NULL — Ciphertext terenkripsi dari PKCE code_verifier.
     - `expires_at` DATETIME(6) NOT NULL — Waktu kedaluwarsa state.
@@ -296,10 +270,10 @@ Penyimpanan state sementara untuk alur OAuth2 / OIDC PKCE eksternal (ORCID).
     - `updated_at` DATETIME(6) NOT NULL (UTC).
 - **Constraints & Indexes:**
     - `PRIMARY KEY (id)`
-    - `FOREIGN KEY (session_id) REFERENCES auth_sessions(id) ON DELETE RESTRICT`
+    - `FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
     - `UNIQUE KEY uq_oauth_states_hash (state_hash)`
 
-#### 9. `identity_challenges`
+#### 8. `identity_challenges`
 
 Token challenge untuk verifikasi email pendaftaran dan reset kata sandi.
 
@@ -1397,7 +1371,7 @@ Catatan riwayat pemindaian malware (Microsoft Defender for Storage / Antivirus E
 
 ### Modul 08: Operasional dan Integrasi (12 Tabel)
 
-Menangani pekerjaan latar belakang (_async operations_), impor massal pengguna (_user imports_), profil konfigurasi integrasi eksternal, pengujian konektor, idempotensi permintaan API, notifikasi, audit trail, dan transactional outbox events.
+Menangani pekerjaan latar belakang (_async operations_), impor massal pengguna (_user imports_), profil konfigurasi integrasi eksternal, pengujian konektor, idempotensi mutasi data, notifikasi, audit trail, dan transactional outbox events.
 
 #### 59. `operations`
 
@@ -1560,13 +1534,13 @@ Rekaman pelaksanaan pengujian konektivitas kandidat integrasi eksternal.
 
 #### 67. `idempotency_records`
 
-Tabel ledger penjamin idempotensi eksekusi perintah mutasi API (mencegah _double-submission_).
+Tabel ledger penjamin idempotensi eksekusi perintah mutasi/form (mencegah _double-submission_).
 
 - **Kolom:**
     - `id` CHAR(26) NOT NULL — Primary Key (ULID).
     - `actor_id` CHAR(26) NOT NULL — FK ke `users.id`.
     - `journal_id` CHAR(26) NULL — FK ke `journals.id` (NULL jika scope sistem).
-    - `operation_id` VARCHAR(128) NOT NULL — Nama endpoint/operasi OpenAPI (misal: `createSubmission`, `renderDecision`).
+    - `operation_id` VARCHAR(128) NOT NULL — Identifier nama aksi/operasi formulir atau controller rute (misal: `submission.store`, `editorial.decision.render`).
     - `key_hash` CHAR(64) NOT NULL — Hash SHA-256 dari header `Idempotency-Key` klien.
     - `request_fingerprint` CHAR(64) NOT NULL — Hash SHA-256 dari payload request klien.
     - `status` VARCHAR(191) NOT NULL — Status eksekusi (`in_progress`, `completed`, `failed`).
@@ -1667,13 +1641,10 @@ Katalog berikut merinci seluruh 140 relasi _Foreign Key_ lintas modul yang didef
 3. `journal_memberships.journal_id` $\rightarrow$ `journals.id`
 4. `journal_role_grants.membership_id` $\rightarrow$ `journal_memberships.id`
 5. `system_role_grants.user_id` $\rightarrow$ `users.id`
-6. `auth_sessions.user_id` $\rightarrow$ `users.id`
-7. `auth_sessions.active_membership_id` $\rightarrow$ `journal_memberships.id`
-8. `refresh_tokens.session_id` $\rightarrow$ `auth_sessions.id`
-9. `refresh_tokens.parent_token_id` $\rightarrow$ `refresh_tokens.id`
-10. `identity_challenges.user_id` $\rightarrow$ `users.id`
-11. `orcid_connections.user_id` $\rightarrow$ `users.id`
-12. `oauth_states.session_id` $\rightarrow$ `auth_sessions.id`
+6. `sessions.user_id` $\rightarrow$ `users.id`
+7. `identity_challenges.user_id` $\rightarrow$ `users.id`
+8. `orcid_connections.user_id` $\rightarrow$ `users.id`
+9. `oauth_states.user_id` $\rightarrow$ `users.id`
 
 ### 02 Jurnal dan Konten (8 FK)
 
@@ -1837,11 +1808,11 @@ Berikut adalah 15 aturan persistensi arsitektural yang wajib dipatuhi pada layer
 - Pada kegagalan ke-5 berturut-turut, sistem menetapkan `locked_until = waktu_DB + 15 menit` dan menerbitkan 1 event security-email pada tabel outbox.
 - Login yang berhasil mereset counter ke 0. Kolom `locked_until` dan `last_failed_login_at` bernilai `NULL` sebelum terjadi kegagalan; evaluasi kedaluwarsa lock dihitung berdasarkan waktu DB. Perubahan lock/status yang memengaruhi representasi pengguna wajib menaikkan `version`.
 
-### 02 • Active Context dan ETag
+### 02 • Active Context & Sesi Pengguna
 
-- `auth_sessions.version` bertipe `BIGINT >= 1` menjadi basis penentuan ETag untuk _active-context_. Aksi set konteks, ganti peran aktif, hapus konteks, maupun pencabutan (_revoke_) sesi wajib menaikkan `version` dalam transaksi database yang sama.
-- Perubahan status user, membership, atau role grant yang berdampak pada konteks harus menaikkan `version` seluruh sesi aktif terdampak dan menghapus pilihan peran yang tidak lagi sah.
-- Header `If-Match` diperiksa setelah otorisasi terkini dievaluasi di bawah lock transaksi. Sesi kedaluwarsa/tercabut langsung ditolak, dilarang dilayani dari cache. Konteks jurnal wajib merujuk membership milik user bersangkutan; konteks sistem tidak memiliki `active_membership_id`.
+- Konteks aktif pengguna (jurnal dan peran yang sedang dipilih) disimpan langsung di dalam sesi stateful Laravel (`session('active_journal_id')`, `session('active_role')`).
+- Setiap request yang memerlukan konteks jurnal memvalidasi hak akses terkini terhadap tabel `journal_memberships` dan `journal_role_grants`. Jika keanggotaan dinonaktifkan atau peran dicabut, konteks sesi secara otomatis dibersihkan.
+- Konteks jurnal wajib merujuk membership milik user bersangkutan; konteks sistem (`system_administrator`) tidak memerlukan `active_membership_id`.
 
 ### 03 • Keputusan Editorial Immutable
 
@@ -1906,7 +1877,7 @@ Berikut adalah 15 aturan persistensi arsitektural yang wajib dipatuhi pada layer
 - Kolom `idempotency_records.encrypted_response` bertipe `LONGTEXT`, berisi envelope ciphertext hasil _authenticated encryption_ (AES-GCM / ChaCha20-Poly1305) atas payload status HTTP, body response, dan allowlist safe headers.
 - Nonce/IV, tag otentikasi, dan versi kunci enkripsi disimpan bersama envelope. Dilarang menyimpan respon plaintext ke dalam kolom basis data.
 - `encrypted_response` bernilai `NULL` selama status `in_progress`; saat status berubah menjadi `completed`, kolom ciphertext dan `encryption_key_version` wajib bernilai `NOT NULL` dan disimpan atomik bersama hasil transaksi domain/outbox.
-- Pengiriman ulang (_replay request_) mempertahankan status dan body yang sama setelah verifikasi otorisasi aktor terkini berhasil. Allowlist safe headers mengecualikan `Set-Cookie`, `Authorization`, atau data token sensitif lainnya. Masa retensi catatan idempotensi minimal 24 jam sebelum di-purge secara berkala. `operation_id` pada tabel ini adalah nama operasi OpenAPI (contoh: `createSubmission`), berbeda dari `integration_tests.operation_id` yang berupa ULID operations.
+- Pengiriman ulang (_replay request_) mempertahankan status dan body yang sama setelah verifikasi otorisasi aktor terkini berhasil. Allowlist safe headers mengecualikan `Set-Cookie`, `Authorization`, atau data token sensitif lainnya. Masa retensi catatan idempotensi minimal 24 jam sebelum di-purge secara berkala. `operation_id` pada tabel ini adalah identifier nama rute/aksi operasi (contoh: `submission.store`), berbeda dari `integration_tests.operation_id` yang berupa ULID operations.
 
 ### 13 • Audit Actor dan Retensi
 
@@ -1944,7 +1915,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
 
 | Pola Key Logis                       | Tipe Data / Isi                         | Standar TTL                                              | Sumber Otoritas / Aturan Sinkronisasi                                                                                                            |
 | ------------------------------------ | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `session:{opaque_id}`                | `STRING` (data sesi terenkripsi)        | $\min(120\text{m idle},\text{sisa } 24\text{h absolut})$ | Sumber: `users` & `auth_sessions`. Server memeriksa revocation flag setiap request penting.                                                      |
+| `session:{opaque_id}`                | `STRING` (data sesi terenkripsi)        | $\min(120\text{m idle},\text{sisa } 24\text{h absolut})$ | Sumber: `users` & tabel `sessions` (Laravel Session Store). Server memeriksa status validitas pengguna pada setiap request.   |
 | `rate:login:account:{hmac}:{window}` | `STRING` (integer counter)              | 60 detik                                                 | Operasi `INCR` + `EXPIRE` atomik. Kunci lockout akun permanen tetap ditegakkan oleh MySQL.                                                       |
 | `rate:login:ip:{hmac}:{window}`      | `STRING` (integer counter)              | 60 detik                                                 | IP klien di-hash menggunakan HMAC. Endpoint sensitif menerapkan _fail-closed_ jika limiter tidak dapat dihubungi.                                |
 | `lock:{resource}:{id}`               | `STRING` (owner token unik)             | 30 detik (lease auto-expiry)                             | `SET key token NX PX 30000`. Pelepasan kunci hanya boleh dilakukan oleh token pemilik asli. Row lock MySQL tetap wajib pada transaksi penulisan. |
@@ -1958,7 +1929,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
     - Alur pembacaan: Ketika terjadi _cache miss_, sistem membaca rekaman langsung dari MySQL InnoDB.
     - Alur penulisan: Mutasi status, penaikan versi entitas (`version = version + 1`), penulisan audit log, dan outbox event dituliskan secara atomik dalam transaksi MySQL. Perintah invalidasi (_DEL / UNLINK_) pada Redis dijalankan tepat setelah transaksi database berhasil di-commit (_after-commit hook_).
 2. **Pemisahan Peran & Otorisasi:**
-    - Keberadaan data pada cache tidak memberikan hak akses langsung; setiap permintaan API wajib melewati pemeriksaan otorisasi policy Laravel berbasis status terkini database.
+    - Keberadaan data pada cache tidak memberikan hak akses langsung; setiap permintaan web/HTTP wajib melewati pemeriksaan otorisasi policy Laravel berbasis status terkini database.
 3. **Penanganan Kegagalan Layanan Redis (_Circuit Breaker_):**
     - **Lapisan Cache Publik:** Jika Redis mengalami kegagalan/mati, aplikasi diizinkan melakukan _bypass_ langsung ke MySQL (_fail-open_ untuk query publik) dengan pembatasan beban terkendali.
     - **Lapisan Sesi & Rate Limiting Sensitif:** Jika Redis tidak dapat dihubungi saat otentikasi login, permintaan dialihkan ke penanganan basis data atau ditolak dengan HTTP 503 / 429 (_fail-closed_) guna mencegah serangan brute-force tak terkendali.
@@ -1966,7 +1937,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
     - Instance Redis gabungan (sesi, cache, rate limit) wajib dikonfigurasi dengan kebijakan `maxmemory-policy noeviction`. Sesi dan lease lock tidak boleh dibuang sembarangan oleh eviction acak.
     - Monitoring penggunaan memori RAM, AOF persistence, dan TTL aktif diterapkan untuk mencegah kehabisan kapasitas memori.
 5. **Antrean Pekerjaan Bisnis:**
-    - Seluruh antrean bisnis transaksi jurnal (_jobs_) tetap bersumber dari basis data MySQL / outbox pattern. Redis bukan tempat penyimpanan tunggal data pekerjaan bisnis, keputusan editorial, hash token refresh, atau rekaman idempotensi.
+    - Seluruh antrean bisnis transaksi jurnal (_jobs_) tetap bersumber dari basis data MySQL / outbox pattern. Redis bukan tempat penyimpanan tunggal data pekerjaan bisnis, keputusan editorial, payload sesi, atau rekaman idempotensi.
 6. **Payload Key & Keamanan:**
     - Key Redis wajib mematuhi serializer driver Laravel dan prefix koneksi. Dilarang keras menyimpan password plaintext, raw token rahasia, kredensial provider eksternal, atau komentar rahasia reviewer di dalam Redis.
 
@@ -1975,7 +1946,7 @@ flowchart TD
     App["Laravel Application Service"]
     DB[("MySQL 8.0 / TiDB Serverless InnoDB<br/>(Single Source of Truth)")]
     Redis[("Azure Cache for Redis<br/>(Cache / Session / Lease)")]
-    Client["Client / Web Browser / API"]
+    Client["Web Browser / Client"]
 
     Client -->|"1. HTTP Request"| App
     App -->|"2. Check Session / Lease / Cache"| Redis
