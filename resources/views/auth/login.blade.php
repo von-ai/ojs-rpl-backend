@@ -108,24 +108,26 @@
                 <form method="POST" action="{{ route('login') }}" id="loginForm" class="space-y-4 sm:space-y-5" novalidate>
                     @csrf
 
-                    <!-- Input 1: Email -->
+                    <!-- Input 1: Email atau Username -->
                     <div>
-                        <x-label for="email" value="Email" />
+                        <x-label for="login" value="Email atau Username" />
                         <x-input 
-                            type="email" 
-                            name="email" 
-                            id="email" 
-                            :value="old('email')" 
-                            :error="$errors->has('email')"
+                            type="text" 
+                            name="login" 
+                            id="login" 
+                            :value="old('login', old('email'))" 
+                            :error="$errors->has('login') || $errors->has('email')"
                             required 
                             autofocus
-                            placeholder="Masukkan Email" 
-                            aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
-                            aria-describedby="{{ $errors->has('email') ? 'email-error' : '' }}"
+                            placeholder="Masukkan email atau username" 
+                            aria-invalid="{{ ($errors->has('login') || $errors->has('email')) ? 'true' : 'false' }}"
+                            aria-describedby="{{ ($errors->has('login') || $errors->has('email')) ? 'login-error' : '' }}"
                         />
-                        @error('email')
-                            <p id="email-error" class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
-                        @enderror
+                        @if ($errors->has('login'))
+                            <p id="login-error" class="mt-1.5 text-xs text-red-600 font-medium">{{ $errors->first('login') }}</p>
+                        @elseif ($errors->has('email'))
+                            <p id="login-error" class="mt-1.5 text-xs text-red-600 font-medium">{{ $errors->first('email') }}</p>
+                        @endif
                     </div>
 
                     <!-- Input 2: Password -->

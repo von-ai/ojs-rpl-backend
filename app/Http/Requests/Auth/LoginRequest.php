@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\Auth\AuthenticationService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,7 +51,7 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials with rate limiting.
+     * Attempt to authenticate the request's credentials with rate limiting and database persistence.
      *
      * @throws ValidationException
      */
@@ -62,18 +63,16 @@ class LoginRequest extends FormRequest
         $password = (string) $this->input('password');
         $remember = $this->boolean('remember');
 
-        $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $authService = app(AuthenticationService::class);
 
-        if (! Auth::attempt([$fieldType => $loginInput, 'password' => $password], $remember)) {
-            // Decay 900 seconds = 15 minutes lock as specified in SRS UC-02
+        try {
+            $user = $authService->authenticateWeb($loginInput, $password, $this->ip());
+            Auth::login($user, $remember);
+            RateLimiter::clear($this->throttleKey());
+        } catch (ValidationException $e) {
             RateLimiter::hit($this->throttleKey(), 900);
-
-            throw ValidationException::withMessages([
-                'email' => 'Kombinasi email/username dan kata sandi yang Anda masukkan tidak cocok.',
-            ]);
+            throw $e;
         }
-
-        RateLimiter::clear($this->throttleKey());
     }
 
     /**
@@ -91,11 +90,14 @@ class LoginRequest extends FormRequest
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
+        $message = trans('auth.throttle', [
+            'seconds' => $seconds,
+            'minutes' => ceil($seconds / 60),
+        ]);
+
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'login' => $message,
+            'email' => $message,
         ]);
     }
 

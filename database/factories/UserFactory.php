@@ -24,11 +24,20 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $fullName = fake()->name();
+        $username = fake()->unique()->userName();
+
         return [
-            'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'username' => $username,
+            'full_name' => $fullName,
             'password' => static::$password ??= Hash::make('password'),
+            'status' => 'active',
+            'email_verified_at' => now(),
+            'locked_until' => null,
+            'failed_login_count' => 0,
+            'last_failed_login_at' => null,
+            'version' => 1,
             'remember_token' => Str::random(10),
         ];
     }
@@ -40,6 +49,30 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+            'status' => 'pending_verification',
+        ]);
+    }
+
+    /**
+     * Indicate that the model's account is locked.
+     */
+    public function locked(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'locked',
+            'locked_until' => now()->addMinutes(15),
+            'failed_login_count' => 5,
+            'last_failed_login_at' => now(),
+        ]);
+    }
+
+    /**
+     * Indicate that the model's account is disabled.
+     */
+    public function disabled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'disabled',
         ]);
     }
 }
