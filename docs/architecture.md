@@ -14,43 +14,40 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 
 | Lapisan | Baseline | Bukti/status di repository |
 | --- | --- | --- |
-| Aplikasi | Modular monolith Laravel 13, PHP 8.4.1+ | Laravel `^13.17`, PHP `^8.4.1` pada Composer; domain belum dibangun. Ikuti lockfile, jangan upgrade otomatis saat deploy. |
-| UI | Blade, Livewire 4, Tailwind CSS 4 | Blade/Tailwind tersedia; Livewire dipilih, belum menjadi dependency. Tim frontend tetap memiliki implementasi halaman. |
-| Aset dan kontrak | Vite 8; Node 22.12+; Redocly CLI, AJV 2020, YAML | Dependency build/CI tersedia. Produksi hanya menerima hasil build, tanpa proses Node. |
-| Database | MySQL 8.0 / TiDB Cloud Serverless, Eloquent, migrations | TiDB Serverless untuk produksi/PoC; MySQL 8.0 Compose untuk pengembangan lokal; skema domain belum ada. |
-| Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment, belum terverifikasi. Document root hanya `public/`. |
+| Aplikasi | Modular monolith Laravel 13, PHP 8.4.1+ | Laravel `^13.17`, PHP `^8.4.1` pada Composer. Menggunakan arsitektur monolitik murni tanpa layer API service terpisah. |
+| UI | Blade, Livewire 4, Tailwind CSS 4 | Blade/Tailwind tersedia; Livewire dipilih untuk reaktivitas UI server-side terkelola. |
+| Aset dan build | Vite 8; Node 22+; Tailwind CSS 4 | Dependency build/asset bundling tersedia. Produksi hanya menerima hasil build aset, tanpa proses Node di runtime. |
+| Database | MySQL 8.0 / TiDB Cloud Serverless, Eloquent, migrations | TiDB Serverless untuk produksi/PoC; MySQL 8.0 Compose untuk pengembangan lokal. |
+| Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment. Document root hanya `public/`. |
 | Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Azure Cache for Redis (Basic C0) pada produksi untuk antrean dan locking. |
 | Session/cache/locks | Azure Cache for Redis (Basic C0) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review. |
 | Berkas | Azure Blob Storage melalui Laravel Filesystem/Flysystem | Adapter Azure Blob teruji, container privat, direct upload melalui SAS (Shared Access Signature) URL, enkripsi server-side bawaan. Azurite untuk dev lokal. |
 | Pemeriksaan berkas | Microsoft Defender for Storage (Malware Scanning), inspeksi MIME/checksum, sanitizer HTML/XML | Pemindaian malware otomatis near real-time oleh Microsoft Defender for Storage di cloud; mock scanner pada dev lokal; berkas berstatus karantina jika terdeteksi ancaman. |
-| Identitas API | JWT RS256 melalui library `lcobucci/jwt`; refresh opaque acak, hash disimpan server | Pilihan implementasi, belum dependency. Library bukan pengganti guard, revocation dan policy aplikasi. |
+| Autentikasi & Sesi | Stateful Session Cookie (`auth:web`), CSRF token, HttpOnly, SameSite=Lax | Menggunakan sistem session bawaan Laravel dengan proteksi lockout 15 menit dan audit log. Disederhanakan tanpa JWT/Bearer token. |
 | Pencarian | MySQL Full-Text Search (indeks `FULLTEXT`); konfigurasi boolean mode untuk teks Indonesia | Menggunakan query MATCH(...) AGAINST(...). Tidak perlu Elasticsearch pada baseline. |
-| Integrasi | SMTP (Azure Communication Services untuk produksi, Mailpit untuk pengembangan lokal), ORCID authorization code, Crossref deposit, OAI-PMH 2.0/Dublin Core | Kontrak tersedia, kredensial/adapter/sandbox belum diuji. Mailpit digunakan untuk inspeksi visual email lokal pada port 8025/1025. Similarity provider opsional dan default nonaktif. |
-| Notifikasi UI | REST polling; SSE opsional bila gateway/worker mendukung | Notifikasi persisten sebagai sumber utama. SSE tidak boleh menjadi satu-satunya cara membaca notifikasi. |
-| Pengujian | PHPUnit 12, Pint, Redocly/AJV, GitHub Actions | Pemeriksaan scaffold/kontrak tersedia. Integration test menggunakan MySQL/SQLite wajib ditambahkan saat domain dibangun. |
+| Integrasi | SMTP (Azure Communication Services untuk produksi, Mailpit untuk pengembangan lokal), ORCID authorization code callback, Crossref deposit (outbox worker), OAI-PMH 2.0/Dublin Core XML (`/oai`) | Layanan terintegrasi via worker backend dan rute web khusus OAI-PMH / OAuth callback. Mailpit digunakan untuk inspeksi visual email lokal. |
+| Notifikasi UI | Polling terkelola / Livewire refresh | Notifikasi persisten dari database sebagai sumber utama. |
+| Pengujian | PHPUnit 12, Pint, GitHub Actions | Feature test web, integration test, dan automated style checking tanpa overhead pengujian skema kontrak JSON API. |
 
 Referensi teknis: [deployment Laravel](https://laravel.com/docs/13.x/deployment),
 [queue](https://laravel.com/docs/13.x/queues),
 [scheduler](https://laravel.com/docs/13.x/scheduling),
 [filesystem](https://laravel.com/docs/13.x/filesystem),
 [Livewire](https://livewire.laravel.com/docs/4.x/installation),
-[JWT library](https://lcobucci-jwt.readthedocs.io/en/stable/),
 [MySQL FTS](https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html).
 Versi PHP minimum repository mengikuti dependency terkunci, bukan hanya minimum
-framework. Tidak ada instalasi dependency atau deployment yang dilakukan oleh
-perubahan kontrak ini.
+framework.
 
 ## Batas modul dan transaksi
 
 Modul: Identity & Membership, Journal Configuration, Submission & Files, Peer Review,
 Editorial Decision, Production, Publication, Notifications & Audit, Integrations.
-Controller REST dan aksi Livewire memanggil application service dan policy yang sama;
-jangan menggandakan aturan workflow dalam UI. Gunakan Form Requests/DTO untuk input,
-Policy untuk journal/ownership/assignment, API Resources untuk proyeksi private,
-author, reviewer dan public yang berbeda.
+Controller Web dan aksi Livewire memanggil application service dan policy yang sama;
+jangan menggandakan aturan workflow dalam UI. Gunakan Form Requests untuk input dan
+Policy untuk pemeriksaan hak akses journal/ownership/assignment.
 
 MySQL / TiDB menyimpan sumber kebenaran. Setiap transisi mengunci aggregate terkait,
-memeriksa ETag, akses, state dan waktu, lalu menulis state, audit dan outbox dalam
+memeriksa hak akses, state dan waktu, lalu menulis state, audit dan outbox dalam
 satu transaksi. Worker membaca outbox setelah commit. Konsumen harus idempotent:
 delivery boleh diulang, efek bisnis tidak. `afterCommit` saja tidak menggantikan
 outbox persisten ketika proses mati setelah commit tetapi sebelum enqueue.
@@ -62,20 +59,15 @@ Semua perbandingan deadline memakai jam database UTC setelah lock, bukan jam bro
 
 ## Browser dan autentikasi
 
-UI Blade/Livewire menggunakan session HttpOnly, Secure, SameSite=Lax dan CSRF.
-`/api/v1` tetap bearer-only; cookie tidak otomatis memberikan akses API. Aksi UI
-memanggil service yang sama dengan identitas terverifikasi, atau BFF meneruskan
-bearer server-side bila perlu. Tidak perlu HTTP loopback dari monolith ke dirinya.
-Token API tidak disimpan di localStorage dan tidak dimasukkan ke URL/SSE.
+UI Blade/Livewire menggunakan session HttpOnly, Secure, SameSite=Lax dan CSRF token.
+Aplikasi menggunakan sistem autentikasi sesi stateful Laravel (`auth:web`).
+Tidak ada perantara REST API atau Bearer JWT; seluruh pertukaran data antarmuka terjadi
+langsung antara browser dan komponen Livewire/Blade server-side.
 
-Baseline konfigurasi: access token 15 menit, absolute session 24 jam, password
-minimum 12 karakter; batas maksimum mengikuti schema. Rotasi refresh sekali pakai
-mengunci token family; reuse mencabut family. Client menyerialkan refresh, tidak
-melakukan retry paralel terhadap refresh lama. Logout/reset/deaktivasi mencabut
-session terkait. JWT memvalidasi signature, allowlist RS256, issuer, audience,
-subject, jti, expiry dan not-before; signing key/kid dikelola operator dan tidak
-berasal dari URL dalam token. Role JWT tidak menggantikan pemeriksaan membership terkini.
-Session UI juga mengikuti batas absolut dan pencabutan, bukan memperpanjang tanpa batas.
+Baseline konfigurasi: absolute session 24 jam, password minimum 12 karakter,
+proteksi lockout otomatis 15 menit setelah 5 kali kegagalan login berturut-turut
+(menerbitkan outbox email peringatan keamanan). Logout membatalkan sesi dan
+meregenerasi CSRF token secara otomatis.
 
 ## Deployment yang dapat diterima
 

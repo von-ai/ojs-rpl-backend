@@ -40,31 +40,26 @@ Default `MAIL_MAILER=log` menyimpan email untuk development di
 Gunakan SMTP/SES yang dikonfigurasi untuk email sungguhan, bukan log mailer pada
 produksi. Log mailer development memuat tautan rahasia; jangan membagikan log.
 
-## API
+## Rute Web Registrasi & Alur
 
-- `POST /api/v1/auth/register`: `full_name`, `email`, `username`, `password`, `affiliation` → 201 UserResponse.
-- `POST /api/v1/auth/email/verify`: `token` → 200 UserResponse; unknown/expired/consumed → 410.
-- `POST /api/v1/auth/email/resend`: `email` → 202 body kosong untuk semua alamat valid.
+- `GET /register`: Menampilkan formulir pendaftaran akun penulis.
+- `POST /register`: Mengirim data pendaftaran (`full_name`, `email`, `username`, `password`, `password_confirmation`, `affiliation`). Jika berhasil, dialihkan ke `/register/check-email`.
+- `GET /email/verify?token=<token>`: Halaman konfirmasi aktivasi tautan email.
+- `POST /email/verify`: Memproses token aktivasi (`token`). Jika berhasil, mengaktifkan status akun menjadi `active`.
+- `POST /email/resend`: Mengirim ulang tautan verifikasi ke alamat email (`email`).
 
-Semua request API memakai `Content-Type: application/json`. Field tambahan ditolak,
-termasuk `requested_role`, `roles`, `journal_id` dan `status`. Form Blade juga
-memerlukan `password_confirmation` dan CSRF. Password tidak disimpan dalam old input.
-Email/username dinormalisasi ke huruf kecil; email maksimum 255 karakter sesuai
-storage. Username 3–50 karakter ASCII `[A-Za-z0-9_.-]`; password 12–128 karakter
-menggunakan Argon2id agar password panjang tidak terpotong oleh batas bcrypt.
-Nama lengkap dan afiliasi mengikuti kontrak. Duplikasi email/username → 409.
+Form Blade mewajibkan CSRF token dan `password_confirmation`. Password tidak disimpan dalam old input.
+Email/username dinormalisasi ke huruf kecil; email maksimum 255 karakter sesuai storage.
+Username 3–50 karakter ASCII `[A-Za-z0-9_.-]`; password 12–128 karakter menggunakan Argon2id.
+Duplikasi email/username akan mengembalikan error validasi pada field terkait.
 
-Challenge disimpan sebagai SHA-256, berlaku 24 jam, dikonsumsi sekali dengan lock
-user lalu challenge. PostgreSQL `clock_timestamp()` UTC diambil setelah lock;
-`now >= expires_at` ditolak. Kirim ulang memiliki cooldown 60 detik dan membatalkan
-challenge lama. Email worker melewati challenge yang sudah tidak valid. GET tautan
-email hanya membuka form konfirmasi, sehingga email-link scanner tidak mengaktifkan
-akun; perubahan state terjadi melalui POST dengan CSRF.
+Challenge disimpan sebagai SHA-256, berlaku 24 jam, dikonsumsi sekali dengan baris terkunci.
+Kirim ulang memiliki cooldown 60 detik dan membatalkan challenge lama. Email worker melewati challenge yang sudah tidak valid.
+GET tautan email hanya membuka form konfirmasi, sehingga bot/email-link scanner tidak mengaktifkan akun secara tidak sengaja;
+perubahan status akun terjadi melalui request POST dengan CSRF.
 
 Rate limit shared register/verify/resend: 10 request/menit dan 100/jam per IP,
-plus cooldown resend per akun. Error API mengikuti Problem, dengan correlation ID,
-Cache-Control no-store dan Retry-After untuk 429. Browser dan API memakai service
-yang sama; registrasi/verifikasi tidak membuat sesi login atau token API.
+plus cooldown resend per akun. Registrasi dan verifikasi tidak langsung membuat sesi login (pengguna diarahkan masuk via `/login`).
 
 ## Data dan batas implementasi
 
@@ -90,12 +85,11 @@ verifikasi dengan jelas.
 ## Validasi
 
 ```sh
-php artisan test
+composer test
 vendor/bin/pint --test
-npm run check:openapi
 ```
 
-Tes feature mencakup web/API, token single-use/expiry, normalisasi/duplikasi,
+Tes feature mencakup validasi form web, token single-use/expiry, normalisasi/duplikasi,
 privilege injection, password panjang Unicode, encrypted queue delivery,
 rollback bila enqueue gagal dan rate limiting. SQLite suite tidak membuktikan race
 lintas koneksi PostgreSQL; uji transaksi kompetitif tetap diperlukan sebelum rilis.

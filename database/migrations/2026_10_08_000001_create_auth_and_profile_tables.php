@@ -18,28 +18,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('auth_sessions', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('active_membership_id', 26)->nullable();
-            $table->string('active_role', 191)->nullable();
-            $table->timestamp('absolute_expires_at');
-            $table->timestamp('revoked_at')->nullable();
-            $table->unsignedBigInteger('version')->default(1);
-            $table->timestamps();
-        });
-
-        Schema::create('refresh_tokens', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->foreignUlid('session_id')->constrained('auth_sessions')->cascadeOnDelete();
-            $table->string('token_hash', 191)->unique();
-            $table->string('parent_token_id', 26)->nullable();
-            $table->timestamp('used_at')->nullable();
-            $table->timestamp('expires_at');
-            $table->timestamp('revoked_at')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('journal_id', 26)->nullable();
@@ -77,8 +55,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('outbox_messages');
         Schema::dropIfExists('audit_logs');
-        Schema::dropIfExists('refresh_tokens');
-        Schema::dropIfExists('auth_sessions');
         Schema::dropIfExists('user_profiles');
     }
 };

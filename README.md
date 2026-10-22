@@ -1,32 +1,12 @@
-# OJS RPL Backend
+# SIRIDA — OJS RPL Backend (Laravel Monolith)
 
-## Implementation status and API contract
+## Status Implementasi & Arsitektur
 
-Registration, email verification and verification resend now have working backend
-endpoints and an unstyled Blade MVP at `/register`. See the
-[registration guide](docs/registration.md) for migration, email-worker setup and
-current limitations. Authentication/login, journal memberships and editorial
-workflows remain unimplemented.
+SIRIDA dikembangkan sebagai **Modular Monolith Laravel 13** menggunakan antarmuka **Blade, Livewire 4, dan Tailwind CSS 4**, dengan autentikasi berbasis sesi stateful bawaan Laravel (`auth:web`). Arsitektur ini menyederhanakan alur kerja tanpa memerlukan perantara REST API / JWT terpisah untuk antarmuka pengguna internal.
 
-The OpenAPI **1.0.0** contract defines 196 operations: three implemented registration
-operations and 193 planned operations. Start with the
-[selected technology stack](docs/architecture.md),
-[UC-01–18 acceptance scenarios](docs/use-cases.md),
-[client integration guide](docs/integration-guide.md) and
-[compatibility notes](docs/changelog.md). Contract status does not mean stakeholder
-approval or deployed production readiness. See the
-[contract decisions](docs/contract-decisions.md) and historical
-[SRS review](docs/review-srs.md).
+Fitur registrasi, verifikasi email, kirim ulang email, dan autentikasi login pengguna telah berfungsi penuh melalui rute web (`/register` dan `/login`). Lihat [panduan registrasi](docs/registration.md), [panduan login](docs/login.md), serta [arsitektur teknologi](docs/architecture.md).
 
-Validate the contract with Node.js 22.12+ (development/CI tooling only):
-
-```sh
-npm ci --ignore-scripts
-npm run check:openapi
-```
-
-Validate the Laravel scaffold with the PHP version required by `composer.lock`
-(currently PHP 8.4.1+):
+Validasi backend Laravel (PHP 8.4.1+):
 
 ```sh
 composer install --no-interaction --prefer-dist
@@ -35,14 +15,7 @@ composer test
 vendor/bin/pint --test
 ```
 
-Tests use an in-memory SQLite database and a test-only encryption key, so they do
-not require a personal `.env` or a running PostgreSQL service. Normal application
-setup still requires copying `.env.example`, generating a unique application key
-with `php artisan key:generate` and configuring/migrating the database. Never use
-the test key in a deployed environment.
-
-GitHub Actions runs contract checks and scaffold tests on pull requests. These
-checks include registration feature tests; they do not validate unimplemented domain endpoints.
+Pengujian otomatis dijalankan pada database SQLite *in-memory* dan kunci enkripsi test, sehingga tidak memerlukan `.env` khusus atau MySQL/PostgreSQL aktif untuk verifikasi lokal. Pengujian scaffold dan feature test dijalankan secara otomatis pada GitHub Actions di setiap pull request.
 
 ## Menjalankan Proyek (Running the Project Locally)
 

@@ -1,15 +1,12 @@
-# Panduan integrasi kontrak SIRIDA 1.0.0
+# Panduan Integrasi Sistem SIRIDA 1.0.0
 
-**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
-sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
-planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
-login, membership dan workflow editorial belum dibangun.
+**Pembaruan Arsitektur:** SIRIDA menggunakan arsitektur **Modular Monolith Laravel 13 (Blade + Livewire)** dengan autentikasi sesi stateful. Antarmuka internal tidak lagi menggunakan perantara REST API / Bearer token terpisah.
 
-Gunakan [OpenAPI](openapi.yaml) untuk tipe dan path, [use case](use-cases.md) untuk
-skenario penerimaan, dan [keputusan kontrak](contract-decisions.md) untuk invariants.
-API domain masih planned. Contoh bukan instruksi untuk mengirim request ke server
-produksi yang sudah tersedia. Origin default `/` berarti same-origin; isi actual
-HTTPS origin lewat konfigurasi deployment, bukan hostname `.example`.
+Panduan integrasi ini menjelaskan cara kerja interaksi aplikasi terhadap layanan eksternal:
+1. **OAI-PMH 2.0 (`/oai`)**: Untuk pemanenan metadata jurnal oleh pengindeks (Google Scholar, Garuda, SINTA).
+2. **ORCID OAuth Callback (`/auth/orcid/callback`)**: Untuk sinkronisasi akun peneliti.
+3. **Crossref Deposit Worker**: Antrean asinkron untuk registrasi DOI publikasi.
+4. **Azure Blob Storage Direct Upload**: Menggunakan SAS (Shared Access Signature) URL untuk upload berkas besar langsung ke cloud storage.
 
 ## Alur berhasil: penulis mengirim naskah
 

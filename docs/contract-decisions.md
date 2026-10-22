@@ -1,25 +1,9 @@
-# SIRIDA contract decisions — 1.0.0
+# SIRIDA Domain & Invariant Decisions — 1.0.0
 
-**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
-sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
-planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
-login, membership dan workflow editorial belum dibangun.
+**Catatan Arsitektur 22 Oktober 2026:**
+Sistem telah dirampingkan menjadi **Modular Monolith Laravel 13 murni (Blade + Livewire)** dengan autentikasi sesi stateful bawaan Laravel. Seluruh implementasi endpoint REST API eksternal (OpenAPI 196 endpoint) telah ditiadakan untuk efisiensi pengkodean dan pemeliharaan. Semua aturan bisnis (*business invariants*), batasan domain, alur kerja peer-review double-blind, dan model audit di bawah ini tetap menjadi panduan mutlak untuk logika implementasi model, Form Request, Policy, dan Action/Service di Laravel.
 
-Updated 7 October 2026. This document accompanies `docs/openapi.yaml` version
-`1.0.0`. It completes the contract-level gaps identified in the
-[SRS review](review-srs.md), with **196 planned operations**. It does not implement
-the application. All operations explicitly carry `x-implementation-status: planned`.
-
-The final stack, business decisions and source deviations are recorded in
-[architecture](architecture.md). See [use cases](use-cases.md),
-[integration guide](integration-guide.md) and [migration notes](changelog.md).
-Stakeholder approval remains subject to PR review; all operations remain planned.
-
-The SRS detailed UC-01–18 and its scope remain the requirements source. Where it
-does not settle an API detail, the choices below are explicit engineering decisions
-for this final implementation baseline. Configurable values must be selected during deployment, not silently
-invented by a background worker. No payment, APC processing, native app, internal
-plagiarism engine or AI layout feature is added.
+Dokumen ini mendefinisikan aturan domain yang melengkapi SRS UC-01–18. Logika bisnis di bawah ini diadopsi langsung ke dalam Laravel Services, Form Requests, dan Eloquent Models. Tidak ada fitur pembayaran, APC, native app, atau AI layout internal yang ditambahkan.
 
 ## Contract gap closure
 
