@@ -1,131 +1,69 @@
-# Panduan integrasi kontrak SIRIDA 1.0.0
+# Panduan Integrasi Eksternal SIRIDA 1.0.0
 
-**Update implementasi 8 Oktober 2026:** register, verifikasi email dan kirim ulang
-sudah tersedia sebagai MVP. Lihat [panduan registrasi](registration.md). Pernyataan
-planned/scaffold dalam baseline historis di bawah tetap berlaku untuk fitur lain;
-login, membership dan workflow editorial belum dibangun.
+Aplikasi SIRIDA mengadopsi arsitektur **Modular Monolith Laravel 13 (Blade + Livewire 4)**. Antarmuka pengguna internal (penyerahan naskah, review, copyedit, penerbitan) berkomunikasi langsung dengan server melalui sesi stateful web (`auth:web`) tanpa perantara REST API atau Bearer token.
 
-Gunakan [OpenAPI](openapi.yaml) untuk tipe dan path, [use case](use-cases.md) untuk
-skenario penerimaan, dan [keputusan kontrak](contract-decisions.md) untuk invariants.
-API domain masih planned. Contoh bukan instruksi untuk mengirim request ke server
-produksi yang sudah tersedia. Origin default `/` berarti same-origin; isi actual
-HTTPS origin lewat konfigurasi deployment, bukan hostname `.example`.
+Dokumen ini memuat panduan integrasi sistem terhadap antarmuka dan layanan eksternal:
 
-## Alur berhasil: penulis mengirim naskah
+---
 
-1. `registerUser` → `verifyEmail` → `login`. Pendaftaran menerima data akun tanpa
-   `requested_role` atau `journal_id`; `username` tetap wajib. Verifikasi mengaktifkan
-   akses dasar Reader/Author, bukan akses reviewer atau editorial. Untuk jurnal tambahan,
-   gunakan `joinJournalAsAuthor`. Simpan token hanya di tempat yang sesuai arsitektur
-   browser/BFF pada [stack](architecture.md).
-2. `getCurrentUser` → `getActiveContext`/`setActiveContext`. Konteks memilih hak yang
-   sudah dimiliki. Ambil `getSubmissionPolicy` dan `listPublicSections` sebelum form.
-3. `createSubmission` dengan metadata parsial, lalu simpan ID. `getSubmission`
-   mengembalikan ETag; kirim nilai persis termasuk tanda kutip saat `updateSubmission`
-   atau `replaceSubmissionContributors`. Minimal satu corresponding contributor,
-   section valid, metadata dan persetujuan guideline harus lengkap sebelum submit.
-4. Hitung SHA-256 byte berkas. `createUploadSession` mengikat file ke submission
-   yang sudah ada. PUT byte ke URL signed dengan `required_headers` persis; jangan
-   meneruskan bearer API ke host storage. Jika URL kedaluwarsa, baca/renew session
-   sesuai mode; jangan membuat versi berkas diam-diam berubah.
-5. `completeUploadSession` memakai payload single/multipart yang sesuai schema dan
-   ETag yang diwajibkan. Completion mengonfirmasi transfer, bukan scan bersih.
-   Poll `getFile` dengan backoff hingga `status=clean`; failure/karantina tidak boleh
-   dipakai dalam submission. Jangan menunggu koneksi HTTP terbuka selama scanning.
-6. Baca ulang submission untuk ETag terbaru. `submitSubmission` dengan file ID bersih,
-   `If-Match` dan `Idempotency-Key` baru. Simpan respons dan baca `getSubmissionTimeline`.
-7. Jika editor meminta revisi: `listAuthorDecisions` → `createRevision` → upload
-   manuskrip revisi/response letter → `updateRevision` → `submitRevision`. Jangan
-   membaca endpoint keputusan internal melalui role author.
+## 1. Protokol OAI-PMH 2.0 (`/oai`)
 
-[Contoh body JSON](request-examples.json) divalidasi oleh CI terhadap operation
-schema yang sebenarnya. ID, checksum dan tanggal contoh bersifat sintetis;
-ganti dengan resource, hash byte dan deadline nyata. Schema-valid tidak berarti
-lolos pemeriksaan ownership, timestamp atau file pada server.
+Untuk mendukung pengindeksan artikel ilmiah otomatis oleh mesin perayap dan agregator nasional/internasional (seperti Google Scholar, SINTA, Garuda, Moraref, dan DOAJ), SIRIDA menyediakan antarmuka OAI-PMH 2.0 berbasis XML.
 
-Contoh header untuk command yang memang mewajibkan keduanya:
+* **Format Transport:** HTTP GET dan form-encoded POST pada rute `/oai`.
+* **Format Metadata:** Dublin Core (`oai_dc`) berbasis XML.
+* **Kata Kerja (Verbs) Didukung:**
+  * `Identify`: Informasi identitas repositori jurnal.
+  * `ListMetadataFormats`: Mengembalikan format metadata yang didukung (`oai_dc`).
+  * `ListSets`: Daftar set (jurnal / kategori publikasi).
+  * `ListIdentifiers`: Daftar identifier naskah yang telah diterbitkan.
+  * `ListRecords`: Daftar rekaman metadata lengkap artikel yang telah terbit.
+  * `GetRecord`: Mengambil detail rekaman satu artikel berdasarkan identifier OAI.
+* **Perilaku Error:** Sesuai spesifikasi OAI-PMH 2.0, kegagalan parameter atau data tidak ditemukan mengembalikan dokumen XML dengan tag `<error code="...">` dan status HTTP 200.
 
-```http
-Authorization: Bearer <access-token>
-Content-Type: application/json
-If-Match: "<etag-dari-get>"
-Idempotency-Key: <uuid-baru-per-aksi>
-```
+---
 
-Jangan membentuk ETag dari angka `version`. GET sumber validator ditunjukkan oleh
-`x-concurrency-resource`. `saveReviewDraft` berbeda: pertama memakai
-`If-None-Match: *`; penggantian memakai `If-Match` dari GET draft, jangan keduanya.
+## 2. Autentikasi Eksternal ORCID (OAuth 2.0 Callback)
 
-## Alur berhasil: reviewer sampai publikasi
+SIRIDA mendukung penautan profil peneliti dengan akun ORCID iD resmi menggunakan alur OAuth 2.0 Authorization Code:
 
-Journal Manager mengelola direktori reviewer melalui administrasi membership/role jurnal.
-Keanggotaan direktori hanya menentukan kelayakan undangan, tidak membuka akses naskah.
-Pengguna tidak mengajukan role reviewer saat register dan tidak melalui reviewer application.
-Editor membuka round dengan file anonim dan rubric snapshot, kemudian `assignReviewers`
-dengan `now < response_due_at < review_due_at`. Reviewer membaca undangan melalui
-`listReviewAssignments`/`getReviewAssignment`, menerima sebelum tenggat, membaca
-workspace hanya untuk assignment naskah/putaran tersebut, menyimpan draft dan mengirim
-evaluasi lengkap sebelum review deadline. Pengguna yang sama dapat menjadi author pada
-naskah lain; role reviewer tidak memberi akses ke seluruh submission jurnal.
-Atau ajukan extension dan tunggu keputusan editor; permohonan tidak menghentikan jam.
+* **Inisiasi Penautan:** Pengguna mengklik tombol "Tautkan Akun ORCID" di profil.
+* **Redirect ke ORCID:** Sistem menghasilkan URL otorisasi ORCID dengan parameter `client_id`, `response_type=code`, `scope=/authenticate`, dan state CSRF acak yang disimpan di sesi pengguna.
+* **Callback URL:** `/auth/orcid/callback`
+  * Menerima parameter `code` dan `state`.
+  * Sistem memverifikasi kecocokan `state` di sesi web untuk mencegah serangan CSRF.
+  * Worker/controller menukarkan `code` ke server ORCID untuk memperoleh ORCID iD dan access token pengguna.
+  * Rekaman disimpan pada tabel `orcid_connections` dan ditautkan ke akun pengguna yang sedang aktif.
 
-EIC menilai ringkasan, membuat dan mengirim keputusan. Acceptance dilanjutkan dengan
-copyedit dan persetujuan author atas seluruh output checksum; Layout Editor membuat
-galley; Proofreader memeriksa versi spesifik; EIC menyetujui final PDF. Daftar
-`listReadyArticles` menyediakan ID untuk komposisi issue. `publishIssue` atau jadwal
-memeriksa ulang kesiapan, mempublikasikan atomik, lalu mengirim notifikasi/Crossref
-melalui outbox. Kegagalan Crossref tidak menghilangkan artikel yang sudah terbit.
+---
 
-## Halaman informasi jurnal publik
+## 3. Registrasi DOI Crossref (Transactional Outbox Worker)
 
-1. Panggil `listPublicJournalPages` tanpa login untuk mendapatkan metadata halaman
-   (`id`, `type`, `attributes.slug`, `attributes.title`). Ikuti `links.next` sampai
-   seluruh daftar didapat untuk membangun navigasi; daftar tidak memuat `body_html`.
-2. Bentuk tautan frontend dari slug jurnal dan slug halaman. Saat tautan dibuka,
-   panggil `getPublicJournalPage` melalui
-   `GET /api/v1/public/journals/{journal_slug}/pages/{page_slug}`.
-   Tautan langsung/bookmark dapat mengambil detail tanpa lebih dulu mengambil daftar.
-3. Render `attributes.title` dan `attributes.body_html` yang telah disanitasi server
-   dalam layout frontend. HTML adalah konten halaman, bukan kode yang dieksekusi.
-4. Tampilkan halaman tidak ditemukan untuk `404`, termasuk page yang dihapus atau
-   tidak lagi published dan jurnal yang inactive. Detail selalu memeriksa publikasi
-   terkini meskipun tautan berasal dari daftar sebelumnya.
+Pendaftaran Digital Object Identifier (DOI) untuk artikel yang telah resmi diterbitkan dijalankan secara asinkron agar tidak membebani proses penerbitan isu:
 
-Penyimpanan tetap menggunakan `journal_pages`; daftar administratif tetap menyediakan
-konten lengkap bagi journal manager. API domain ini masih planned.
+* **Pemicu:** Ketika Editor in Chief menyetujui penerbitan isu (`publishIssue`), sistem mencatat event ke tabel `outbox_messages` dengan tipe `crossref.deposit`.
+* **Worker Eksekusi:** ACA Dedicated Worker membaca outbox yang berstatus `pending` dan memformat data metadata artikel ke dalam XML skema Crossref.
+* **Pengiriman:** Mengirimkan payload XML ke Crossref Deposit API via HTTP POST dengan kredensial institusi.
+* **Idempotensi & Retry:** Jika server Crossref mengalami gangguan (timeout/5xx), worker melakukan *exponential backoff retry* dengan DOI yang tetap sama tanpa menduplikasi data. Kegagalan deposit Crossref tidak membatalkan status terbitnya artikel di portal.
 
-## Pemulihan dan error
+---
 
-| Respons | Tindakan client |
-| --- | --- |
-| 400 | Perbaiki request/header yang tidak valid; jangan retry tanpa perubahan. |
-| 401 | Refresh satu kali secara serial jika session masih berlaku; gagal/revoked berarti login ulang. Jangan loop. |
-| 403/404 | Jangan mencoba ID/journal lain untuk melewati batas akses. Tampilkan akses tidak tersedia. |
-| 409 `REVIEW_INVITATION_EXPIRED` | Undangan terminal; editor perlu mengirim assignment baru. |
-| 409 `REVIEW_DEADLINE_EXCEEDED` | Draft dipertahankan read-only; ajukan extension, lanjut setelah disetujui. |
-| 409 `IDEMPOTENCY_IN_PROGRESS` | Tunggu dan retry dengan key serta payload identik. |
-| 409 `IDEMPOTENCY_KEY_REUSED` | Key pernah dipakai untuk payload berbeda; jangan replay. Aksi baru harus memakai key baru. |
-| 409 state lain | Baca ulang aggregate dan tampilkan perubahan workflow; jangan retry buta. |
-| 412 | GET ulang; bandingkan perubahan dan minta pengguna menyelesaikan konflik, lalu command baru. |
-| 422 | Tampilkan `errors` per field; payload/relasi/policy harus diperbaiki. |
-| 428 | Ambil validator GET lalu kirim precondition yang diwajibkan. |
-| 429/503 | Hormati `Retry-After` bila tersedia; exponential backoff berjitter dan batas percobaan. |
-| Timeout/5xx setelah mutation | Hasil mungkin sudah committed. Untuk operasi idempotency, ulangi key/payload identik; jangan langsung membuat key baru. |
+## 4. Penyimpanan Berkas & Direct Upload Azure Blob Storage
 
-REST error menggunakan `Problem` dengan `request_id`, `code`, `errors`; tampilkan
-pesan aman dan correlation ID untuk bantuan, jangan raw stack trace. OAI-PMH adalah
-pengecualian: protocol error berupa XML dengan HTTP 200. Download/SSE juga memiliki
-media/transport berbeda; ikuti response schema per operation.
+Untuk efisiensi bandwidth server dan penanganan berkas manuskrip/galai hingga 20 MiB:
 
-Key idempotency disimpan minimal 24 jam, scoped actor/journal/operation. Fingerprint
-mencakup path target, payload dan precondition command asli. Replay yang telah
-selesai hanya diberikan setelah pemeriksaan akses terkini, sebelum memeriksa state
-versi yang sudah berubah; key dengan fingerprint berbeda ditolak. Jika hasil tidak
-jelas setelah masa retensi, baca resource/history dan rekonsiliasi sebelum mengirim
-aksi baru. Tidak ada jaminan retry unlimited.
+* **Generasi SAS URL:** Pengguna meminta izin upload untuk berkas naskah. Server memvalidasi hak akses dan menghasilkan Shared Access Signature (SAS) URL yang memiliki masa berlaku terbatas (15 menit) dan izin tulis privat (`sp=w`).
+* **Direct Upload:** Browser mengunggah byte berkas langsung ke Azure Blob Storage melalui protokol HTTPS PUT ke SAS URL.
+* **Validasi & Pemindaian:**
+  * Microsoft Defender for Storage memindai malware secara near real-time di lingkungan Azure.
+  * Server Laravel memverifikasi checksum SHA-256 dan ukuran berkas setelah unggahan selesai.
+  * Berkas dengan deteksi ancaman diberi status `quarantine` dan dilarang masuk ke alur review.
+* **Lingkungan Lokal:** Menggunakan emulator Azurite pada port 10000 dengan adapter Flysystem lokal.
 
-Untuk daftar: gunakan pagination metadata/links, filter dan sort hanya yang
-dideklarasikan. Untuk notifikasi: mulai polling 30 detik saat halaman aktif, hentikan
-saat tersembunyi dan backoff pada error. Ini interval client baseline, bukan SLA.
-SSE opsional memakai Authorization melalui fetch streaming/BFF; saat
-`resync_required`, muat ulang daftar REST. Jangan menaruh token di query string.
+---
+
+## 5. Email Transaksional (SMTP)
+
+* **Produksi:** Azure Communication Services (ACS) Email melalui protokol SMTP TLS Port 587.
+* **Lokal / Pengujian:** Mailpit Container pada port SMTP 1025 dan Web UI port 8025 untuk inspeksi email registrasi dan verifikasi.
+* **Ketahanan Antrean:** Email dimasukkan ke antrean database `identity` dalam satu transaksi pendaftaran (`beforeCommit`) sehingga kegagalan proses tidak menyebabkan data email hilang.

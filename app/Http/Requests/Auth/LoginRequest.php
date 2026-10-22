@@ -23,7 +23,7 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     * Compatible with both OpenAPI `login` field and Web form `email` field.
+     * Supports both `login` (email/username) and `email` field inputs.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */

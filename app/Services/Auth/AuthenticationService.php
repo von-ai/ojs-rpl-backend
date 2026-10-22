@@ -2,9 +2,6 @@
 
 namespace App\Services\Auth;
 
-use App\Exceptions\ApiException;
-use App\Models\AuthSession;
-use App\Models\RefreshToken;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -14,75 +11,6 @@ use Illuminate\Validation\ValidationException;
 
 class AuthenticationService
 {
-    public function __construct(
-        protected TokenService $tokenService
-    ) {}
-
-    /**
-     * Autentikasi untuk REST API Mode (mengembalikan array AuthTokenResponse).
-     *
-     * @throws ApiException
-     */
-    public function authenticateApi(string $login, string $password, ?string $ip = null, ?string $requestId = null): array
-    {
-        $user = $this->attemptLogin($login, $password, isApi: true);
-
-        // Buat AuthSession (ERD Modul 01 Tabel 6)
-        $session = AuthSession::create([
-            'user_id' => $user->id,
-            'active_membership_id' => null,
-            'active_role' => null,
-            'absolute_expires_at' => now()->addHours(24),
-            'revoked_at' => null,
-            'version' => 1,
-        ]);
-
-        // Buat Token Pasangan (JWT Access Token + Opaque Refresh Token)
-        $tokenData = $this->tokenService->createTokenPair($user, $session->id);
-
-        // Simpan Refresh Token (ERD Modul 01 Tabel 7)
-        RefreshToken::create([
-            'session_id' => $session->id,
-            'token_hash' => hash('sha256', $tokenData['refresh_token']),
-            'parent_token_id' => null,
-            'used_at' => null,
-            'expires_at' => $tokenData['refresh_token_expires_at'],
-            'revoked_at' => null,
-        ]);
-
-        // Catat Audit Log Login
-        $this->recordAudit($user->id, 'user.login.success', [
-            'transport' => 'bearer',
-            'session_id' => $session->id,
-        ], $ip, $requestId);
-
-        $user->loadMissing('profile');
-
-        return [
-            'data' => [
-                'tokens' => $tokenData,
-                'user' => [
-                    'id' => $user->id,
-                    'type' => 'user',
-                    'attributes' => [
-                        'full_name' => $user->full_name,
-                        'email' => $user->email,
-                        'username' => $user->username,
-                        'affiliation' => $user->profile?->affiliation ?? '',
-                        'status' => $user->status,
-                        'email_verified' => $user->email_verified_at !== null,
-                        'version' => (int) $user->version,
-                    ],
-                ],
-                'memberships' => [],
-                'system_roles' => [],
-            ],
-            'meta' => [
-                'request_id' => $requestId ?? (string) Str::ulid(),
-            ],
-        ];
-    }
-
     /**
      * Autentikasi untuk Web Session Mode (mengembalikan model User).
      *
@@ -90,7 +18,7 @@ class AuthenticationService
      */
     public function authenticateWeb(string $login, string $password, ?string $ip = null): User
     {
-        $user = $this->attemptLogin($login, $password, isApi: false);
+        $user = $this->attemptLogin($login, $password);
 
         $this->recordAudit($user->id, 'user.login.success', [
             'transport' => 'web_session',
@@ -102,7 +30,7 @@ class AuthenticationService
     /**
      * Inti verifikasi kredensial, row-lock database, dan penegakan aturan lockout SIRIDA.
      */
-    protected function attemptLogin(string $login, string $password, bool $isApi): User
+    protected function attemptLogin(string $login, string $password): User
     {
         $identifier = trim(strtolower($login));
 
@@ -177,7 +105,7 @@ class AuthenticationService
                 return ['status' => 'invalid_credentials'];
             }
 
-            // Syarat Akun: Hanya akun aktif & email terverifikasi yang boleh masuk (OpenAPI baris 8270)
+            // Syarat Akun: Hanya akun aktif & email terverifikasi yang boleh masuk
             if ($user->email_verified_at === null) {
                 return ['status' => 'not_verified'];
             }
@@ -199,59 +127,46 @@ class AuthenticationService
 
         // Tangani hasil evaluasi di luar transaksi database agar mutasi counter dan lockout tetap ter-commit
         match ($result['status']) {
-            'not_found', 'invalid_credentials' => $this->throwInvalidCredentials($isApi),
-            'locked' => $this->throwAccountLocked($isApi, $result['retry_after'], $result['locked_until']),
-            'not_verified' => $this->throwNotVerified($isApi),
-            'inactive' => $this->throwInactiveAccount($isApi),
+            'not_found', 'invalid_credentials' => $this->throwInvalidCredentials(),
+            'locked' => $this->throwAccountLocked($result['retry_after'], $result['locked_until']),
+            'not_verified' => $this->throwNotVerified(),
+            'inactive' => $this->throwInactiveAccount(),
             'success' => null,
         };
 
         return $result['user'];
     }
 
-    protected function throwInvalidCredentials(bool $isApi): never
+    protected function throwInvalidCredentials(): never
     {
         $message = 'Kombinasi email/username dan kata sandi yang Anda masukkan tidak cocok.';
-        if ($isApi) {
-            throw new ApiException(401, 'INVALID_CREDENTIALS', $message);
-        }
         throw ValidationException::withMessages([
             'login' => $message,
             'email' => $message,
         ]);
     }
 
-    protected function throwAccountLocked(bool $isApi, int $retryAfter, CarbonInterface $lockedUntil): never
+    protected function throwAccountLocked(int $retryAfter, CarbonInterface $lockedUntil): never
     {
         $message = "Akun Anda sementara terkunci karena 5 kali percobaan gagal berturut-turut. Silakan coba lagi dalam {$retryAfter} detik.";
-        if ($isApi) {
-            throw (new ApiException(423, 'ACCOUNT_LOCKED', $message))
-                ->withHeaders(['Retry-After' => (string) $retryAfter]);
-        }
         throw ValidationException::withMessages([
             'login' => $message,
             'email' => $message,
         ]);
     }
 
-    protected function throwNotVerified(bool $isApi): never
+    protected function throwNotVerified(): never
     {
         $message = 'Akun belum diverifikasi melalui email. Silakan periksa kotak masuk email Anda.';
-        if ($isApi) {
-            throw new ApiException(401, 'EMAIL_NOT_VERIFIED', $message);
-        }
         throw ValidationException::withMessages([
             'login' => $message,
             'email' => $message,
         ]);
     }
 
-    protected function throwInactiveAccount(bool $isApi): never
+    protected function throwInactiveAccount(): never
     {
         $message = 'Akun tidak aktif atau telah dinonaktifkan oleh administrator.';
-        if ($isApi) {
-            throw new ApiException(401, 'ACCOUNT_INACTIVE', $message);
-        }
         throw ValidationException::withMessages([
             'login' => $message,
             'email' => $message,

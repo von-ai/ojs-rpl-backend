@@ -29,6 +29,7 @@ class IdentityRequest extends FormRequest
                 'email' => ['required', 'string', 'email', 'max:255'],
                 'username' => ['required', 'string', 'regex:/^[a-z0-9_.-]{3,50}$/'],
                 'password' => ['required', 'string', 'min:12', 'max:128'],
+                'password_confirmation' => ['required', 'string'],
                 'affiliation' => ['required', 'string', 'min:2', 'max:255'],
             ],
             'verify' => ['token' => ['required', 'string', 'min:20', 'max:512']],
@@ -40,13 +41,10 @@ class IdentityRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $allowed = array_keys($this->rules());
-            if (! $this->is('api/*')) {
-                $allowed[] = '_token';
-                if ($this->route()->getActionMethod() === 'register') {
-                    $allowed[] = 'password_confirmation';
-                    if ($this->input('password') !== $this->input('password_confirmation')) {
-                        $validator->errors()->add('password', 'Konfirmasi password tidak sama.');
-                    }
+            $allowed[] = '_token';
+            if ($this->route()->getActionMethod() === 'register') {
+                if ($this->input('password') !== $this->input('password_confirmation')) {
+                    $validator->errors()->add('password', 'Konfirmasi password tidak sama.');
                 }
             }
             foreach (array_diff(array_keys($this->all()), $allowed) as $field) {
