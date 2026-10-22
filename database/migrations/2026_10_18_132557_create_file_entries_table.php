@@ -20,7 +20,7 @@ return new class extends Migration
             $table->bigInteger('byte_size');
             $table->char('checksum_sha256', 64)->nullable()->index();
             $table->string('virus_scan_status', 64)->default('clean');
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUlid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps(6);
         });
     }

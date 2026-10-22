@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'andi.ilyas@unhas.ac.id'],
             [
+                'username' => 'andi.ilyas',
                 'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
+                'full_name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
             ]
@@ -28,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             JournalSeeder::class,
             SectionSeeder::class,
+            SubmissionSeeder::class,
         ]);
     }
 }

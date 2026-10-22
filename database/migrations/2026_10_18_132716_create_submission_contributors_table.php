@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('submission_contributors', function (Blueprint $table) {
             $table->char('id', 26)->primary();
             $table->char('submission_id', 26)->index();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('given_name', 150)->nullable();
-            $table->string('family_name', 150);
+            $table->foreignUlid('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('given_name');
+            $table->text('family_name')->nullable();
             $table->string('email', 254);
             $table->text('affiliation');
             $table->string('orcid', 50)->nullable();

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('submission_number', 50)->index();
             $table->char('journal_id', 26)->index();
             $table->char('section_id', 26)->index();
-            $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUlid('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('title');
             $table->text('abstract');
             $table->json('keywords')->nullable();
