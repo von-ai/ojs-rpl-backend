@@ -1,25 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Default Author User (Dr. Andi Muhammad Ilyas)
+        User::firstOrCreate(
+            ['email' => 'andi.ilyas@unhas.ac.id'],
+            [
+                'username' => 'andi.ilyas',
+                'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
+                'full_name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            JournalSeeder::class,
+            SectionSeeder::class,
+            SubmissionSeeder::class,
         ]);
     }
 }
