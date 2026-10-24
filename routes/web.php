@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
+use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +72,34 @@ Route::prefix('layouteditor')->name('layouteditor.')->group(function () {
     Route::post('/request-proofread', [LayoutEditorSubmissionController::class, 'requestProofread'])->name('request-proofread');
     Route::post('/escalate', [LayoutEditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/request-final-approval', [LayoutEditorSubmissionController::class, 'requestFinalApproval'])->name('request-final-approval');
+});
+
+// Portal Journal Manager (Tata Kelola Edisi, Tim Redaksi & Kebijakan)
+Route::prefix('journalmanager')->name('journalmanager.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('journalmanager.issues.index');
+    })->name('dashboard');
+
+    // 1. Edisi & Terbitan (Issues)
+    Route::get('/issues', [JournalManagerController::class, 'issues'])->name('issues.index');
+    Route::post('/issues', [JournalManagerController::class, 'storeIssue'])->name('issues.store');
+    Route::get('/issues/{id}', [JournalManagerController::class, 'showIssue'])->name('issues.show');
+    Route::post('/issues/{id}/add-article', [JournalManagerController::class, 'addArticleToIssue'])->name('issues.add-article');
+    Route::post('/issues/{id}/publish', [JournalManagerController::class, 'publishIssue'])->name('issues.publish');
+    Route::post('/issues/{id}/set-current', [JournalManagerController::class, 'setCurrentIssue'])->name('issues.set-current');
+
+    // 2. Pengguna, Tim Redaksi & Direktori Reviewer
+    Route::get('/users', [JournalManagerController::class, 'users'])->name('users.index');
+    Route::post('/users/assign-role', [JournalManagerController::class, 'assignRole'])->name('users.assign-role');
+    Route::post('/users/reset-password', [JournalManagerController::class, 'resetPassword'])->name('users.reset-password');
+
+    // 3. Bidang Naskah (Sections)
+    Route::get('/sections', [JournalManagerController::class, 'sections'])->name('sections.index');
+    Route::post('/sections', [JournalManagerController::class, 'storeSection'])->name('sections.store');
+
+    // 4. Pengaturan Jurnal & Kebijakan
+    Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
+    Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
 });
 
 Route::redirect('/submissions', '/author/submissions');
