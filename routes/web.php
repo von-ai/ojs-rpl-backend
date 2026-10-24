@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
+use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -39,6 +40,21 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
+});
+
+// Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
+Route::prefix('copyeditor')->name('copyeditor.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('copyeditor.submissions.index');
+    })->name('dashboard');
+    Route::get('/submissions', [CopyeditorSubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/{id}', [CopyeditorSubmissionController::class, 'show'])->name('submissions.show');
+    Route::get('/guidelines', [CopyeditorSubmissionController::class, 'guidelines'])->name('guidelines');
+    Route::get('/catalog', [CopyeditorSubmissionController::class, 'catalog'])->name('catalog');
+    Route::post('/upload', [CopyeditorSubmissionController::class, 'uploadFile'])->name('upload');
+    Route::post('/request-approval', [CopyeditorSubmissionController::class, 'requestApproval'])->name('request-approval');
+    Route::post('/escalate', [CopyeditorSubmissionController::class, 'submitEscalation'])->name('escalate');
+    Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
 });
 
 Route::redirect('/submissions', '/author/submissions');
