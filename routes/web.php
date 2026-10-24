@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
+use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -55,6 +56,21 @@ Route::prefix('copyeditor')->name('copyeditor.')->group(function () {
     Route::post('/request-approval', [CopyeditorSubmissionController::class, 'requestApproval'])->name('request-approval');
     Route::post('/escalate', [CopyeditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
+});
+
+// Portal Layout Editor (Produksi Galai Publikasi & Proofreading)
+Route::prefix('layouteditor')->name('layouteditor.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('layouteditor.submissions.index');
+    })->name('dashboard');
+    Route::get('/submissions', [LayoutEditorSubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/{id}', [LayoutEditorSubmissionController::class, 'show'])->name('submissions.show');
+    Route::get('/guidelines', [LayoutEditorSubmissionController::class, 'guidelines'])->name('guidelines');
+    Route::post('/upload-galley', [LayoutEditorSubmissionController::class, 'uploadGalley'])->name('upload-galley');
+    Route::post('/resolve-note', [LayoutEditorSubmissionController::class, 'resolveNote'])->name('resolve-note');
+    Route::post('/request-proofread', [LayoutEditorSubmissionController::class, 'requestProofread'])->name('request-proofread');
+    Route::post('/escalate', [LayoutEditorSubmissionController::class, 'submitEscalation'])->name('escalate');
+    Route::post('/request-final-approval', [LayoutEditorSubmissionController::class, 'requestFinalApproval'])->name('request-final-approval');
 });
 
 Route::redirect('/submissions', '/author/submissions');
