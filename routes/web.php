@@ -9,6 +9,7 @@ use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
+use App\Http\Controllers\SysAdmin\SysAdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -117,6 +118,32 @@ Route::prefix('proofreader')->name('proofreader.')->group(function () {
     Route::post('/verify-note', [ProofreaderSubmissionController::class, 'verifyNote'])->name('verify-note');
     Route::post('/complete', [ProofreaderSubmissionController::class, 'completeProofread'])->name('complete');
     Route::post('/escalate', [ProofreaderSubmissionController::class, 'submitEscalation'])->name('escalate');
+});
+
+// Portal System Administrator (Tata Kelola Multi-Jurnal, Pengguna Global & Platform)
+Route::prefix('sysadmin')->name('sysadmin.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('sysadmin.journals.index');
+    })->name('dashboard');
+
+    // 1. Manajemen Jurnal Ilmiah (Multi-Tenancy)
+    Route::get('/journals', [SysAdminController::class, 'journals'])->name('journals.index');
+    Route::post('/journals', [SysAdminController::class, 'storeJournal'])->name('journals.store');
+    Route::post('/journals/{id}/status', [SysAdminController::class, 'updateJournalStatus'])->name('journals.update-status');
+
+    // 2. Direktori Pengguna & Hak Akses Global
+    Route::get('/users', [SysAdminController::class, 'users'])->name('users.index');
+    Route::post('/users/assign-sysadmin', [SysAdminController::class, 'assignSysAdminRole'])->name('users.assign-sysadmin');
+    Route::post('/users/revoke-sysadmin', [SysAdminController::class, 'revokeSysAdminRole'])->name('users.revoke-sysadmin');
+    Route::post('/users/import', [SysAdminController::class, 'importUsers'])->name('users.import');
+
+    // 3. Pengaturan Platform & Kesehatan Server
+    Route::get('/settings', [SysAdminController::class, 'settings'])->name('settings.index');
+    Route::post('/settings', [SysAdminController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/settings/clear-cache', [SysAdminController::class, 'clearCache'])->name('settings.clear-cache');
+
+    // 4. Jejak Audit & Pemantauan Sistem
+    Route::get('/audit-logs', [SysAdminController::class, 'auditLogs'])->name('audit-logs.index');
 });
 
 Route::redirect('/submissions', '/author/submissions');
