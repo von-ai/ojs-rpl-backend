@@ -1,0 +1,409 @@
+@extends('layouts.sysadmin')
+
+@section('title', 'Direktori Pengguna & Hak Akses Global — Portal System Administrator')
+
+@section('content')
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Flash Status Notification -->
+    @if (session('status'))
+        <x-alert type="success" title="Pemberitahuan">
+            {{ session('status') }}
+        </x-alert>
+    @endif
+
+    <!-- Header Halaman & Tombol Impor -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+                Direktori Pengguna &amp; Hak Akses Global
+            </h1>
+            <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
+                Kelola akun pengguna terdaftar, pemberian hak istimewa System Administrator, dan pemantauan impor pengguna massal.
+            </p>
+        </div>
+
+        <div class="shrink-0">
+            <button 
+                type="button" 
+                onclick="document.getElementById('modal-import-users').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 min-h-11 bg-brand-maroon hover:bg-brand-maroon-dark text-white text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
+                title="Impor Pengguna secara Massal melalui Berkas CSV"
+            >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Impor Pengguna CSV</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Metrik Ringkas Pengguna -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        @foreach ($viewModel->summaryMetrics() as $metric)
+            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums {{ $metric['color_class'] }}">
+                        {{ $metric['badge_text'] }}
+                    </span>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span class="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">
+                        {{ $metric['value'] }}
+                    </span>
+                    <span class="text-[11px] text-gray-400">pengguna</span>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Container Utama 1: Direktori Pengguna Global -->
+    <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
+        
+        <!-- Filter Tabs & Search Bar Terpadu -->
+        <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
+            <!-- Tabs Peran Pengguna -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none" aria-label="Filter Peran Pengguna">
+                @php
+                    $tabs = $viewModel->tabs();
+                @endphp
+                @foreach ($tabs['items'] as $tabKey => $tab)
+                    @php
+                        $isActive = $tabs['active'] === $tabKey;
+                    @endphp
+                    <a 
+                        href="{{ route('sysadmin.users.index', ['role' => $tabKey, 'q' => request('q')]) }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+                    >
+                        <span>{{ $tab['label'] }}</span>
+                        <span class="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] rounded-full tabular-nums {{ $isActive ? 'bg-white/20 text-white font-bold' : 'bg-gray-200/70 text-gray-600' }}">
+                            {{ $tab['count'] }}
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+
+            <!-- Form Pencarian Cepat -->
+            <form action="{{ route('sysadmin.users.index') }}" method="GET" class="relative w-full md:w-72">
+                <input type="hidden" name="role" value="{{ $tabs['active'] }}">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    type="search" 
+                    name="q" 
+                    value="{{ request('q') }}"
+                    placeholder="Cari nama, surel, atau afiliasi..."
+                    class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                @if(request('q'))
+                    <a 
+                        href="{{ route('sysadmin.users.index', ['role' => $tabs['active']]) }}" 
+                        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                        title="Hapus filter pencarian"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                @endif
+            </form>
+        </div>
+
+        <!-- Tabel Direktori Pengguna -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead>
+                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold text-[11px] uppercase tracking-wider">
+                        <th scope="col" class="py-3 px-4 sm:px-5">Informasi Pengguna</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5">Peran &amp; Keanggotaan</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 whitespace-nowrap">Hak Akses Sistem</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5">Status</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($viewModel->users() as $user)
+                        <tr class="hover:bg-gray-50/80 transition-colors group">
+                            <!-- Kolom Pengguna -->
+                            <td class="py-3.5 px-4 sm:px-5 max-w-sm sm:max-w-md">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-full bg-brand-maroon/10 text-brand-maroon font-bold text-xs flex items-center justify-center shrink-0">
+                                        {{ strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $user['name']) ?: 'U', 0, 2)) }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <span class="font-bold text-gray-900 group-hover:text-brand-maroon transition block leading-snug truncate" title="{{ $user['name'] }}">
+                                            {{ $user['name'] }}
+                                        </span>
+                                        <span class="text-[11px] text-gray-500 block truncate" title="{{ $user['email'] }}">
+                                            {{ $user['email'] }}
+                                        </span>
+                                        <span class="text-[10px] text-gray-400 block truncate" title="{{ $user['affiliation'] }}">
+                                            {{ $user['affiliation'] }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Kolom Peran & Keanggotaan -->
+                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                                <span class="text-xs font-semibold text-gray-800 block">
+                                    {{ $user['roles_formatted'] }}
+                                </span>
+                                <span class="text-[10px] text-gray-400 block">
+                                    {{ $user['journal_memberships_count'] }} Keanggotaan Jurnal
+                                </span>
+                            </td>
+
+                            <!-- Kolom Hak Akses Sistem -->
+                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                                @if($user['is_sysadmin'])
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                                        <svg class="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <span>System Admin</span>
+                                    </span>
+                                @else
+                                    <span class="text-xs text-gray-400 font-medium">
+                                        Standar (Non-Admin)
+                                    </span>
+                                @endif
+                            </td>
+
+                            <!-- Kolom Status -->
+                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border {{ $user['status_badge_class'] }}">
+                                    {{ $user['status_label'] }}
+                                </span>
+                            </td>
+
+                            <!-- Kolom Aksi -->
+                            <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
+                                @if($user['is_sysadmin'])
+                                    <form action="{{ route('sysadmin.users.revoke-sysadmin') }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="user_id" value="{{ $user['id'] }}">
+                                        <button 
+                                            type="submit" 
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200"
+                                            title="Cabut hak akses System Administrator"
+                                        >
+                                            <span>Cabut SysAdmin</span>
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('sysadmin.users.assign-sysadmin') }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="user_id" value="{{ $user['id'] }}">
+                                        <button 
+                                            type="submit" 
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition border border-purple-200"
+                                            title="Berikan hak akses System Administrator"
+                                        >
+                                            <span>Jadikan SysAdmin</span>
+                                        </button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-12 px-4 text-center">
+                                <div class="max-w-xs mx-auto flex flex-col items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
+                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-sm font-bold text-gray-800">Tidak ada pengguna</h3>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Tidak ditemukan akun pengguna yang cocok dengan filter atau kata kunci.
+                                    </p>
+                                    @if(request('q') || request('role') !== 'all')
+                                        <a href="{{ route('sysadmin.users.index') }}" class="mt-3 text-xs font-semibold text-brand-maroon hover:underline">
+                                            Reset Filter
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Simpel -->
+        @php
+            $pagination = $viewModel->pagination();
+        @endphp
+        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between text-xs text-gray-500">
+            <span>
+                Menampilkan <strong class="text-gray-800">{{ $pagination['from'] }}</strong> - <strong class="text-gray-800">{{ $pagination['to'] }}</strong> dari <strong class="text-gray-800">{{ $pagination['total'] }}</strong> pengguna
+            </span>
+
+            <div class="flex items-center gap-1">
+                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
+                    Sebelumnya
+                </button>
+                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
+                    Selanjutnya
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Utama 2: Riwayat Pengimporan Massal CSV (Tabel 54 user_imports) -->
+    <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
+        <div class="border-b border-gray-100 pb-3">
+            <h2 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+                Riwayat Pengimporan Massal Pengguna via CSV (user_imports)
+            </h2>
+            <p class="text-xs text-gray-500 mt-0.5">
+                Audit rekam jejak operasi impor akun massal, validasi baris, dan penanganan kegagalan format.
+            </p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
+                        <th class="py-2.5 px-3">ID &amp; Jurnal</th>
+                        <th class="py-2.5 px-3">Nama Berkas CSV</th>
+                        <th class="py-2.5 px-3">Total Baris</th>
+                        <th class="py-2.5 px-3">Hasil Proses</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3 text-right">Waktu Eksekusi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($viewModel->recentImports() as $import)
+                        <tr class="hover:bg-gray-50/50">
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span class="font-mono font-bold text-gray-800 block">{{ $import['id'] }}</span>
+                                <span class="text-gray-500 block">{{ $import['journal_name'] }}</span>
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap font-mono text-gray-700">
+                                {{ $import['file_name'] }}
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap font-bold text-gray-900">
+                                {{ $import['total_rows'] }} baris
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span class="text-emerald-700 font-semibold">{{ $import['processed_rows'] }} Sukses</span>
+                                @if($import['failed_rows'] > 0)
+                                    <span class="text-red-600 font-semibold ml-1">({{ $import['failed_rows'] }} Gagal)</span>
+                                @endif
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ $import['status_badge_class'] }}">
+                                    {{ $import['status_label'] }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap text-right text-gray-500">
+                                {{ $import['created_at'] }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-gray-400">
+                                Belum ada riwayat pengimporan CSV.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Dialog Impor Pengguna CSV -->
+<div id="modal-import-users" class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <h3 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+                Impor Pengguna secara Massal (CSV)
+            </h3>
+            <button 
+                type="button" 
+                onclick="document.getElementById('modal-import-users').classList.add('hidden')"
+                class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center"
+            >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form action="{{ route('sysadmin.users.import') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+
+            <div>
+                <label for="journal_id" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Jurnal Tujuan Alokasi Pengguna <span class="text-red-500">*</span>
+                </label>
+                <select 
+                    id="journal_id" 
+                    name="journal_id" 
+                    required 
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                    <option value="JOURNAL-01JARK-01">JTIIK Makassar</option>
+                    <option value="JOURNAL-01JARK-02">JIKPM Makassar</option>
+                    <option value="JOURNAL-01JARK-03">JRLMBP Makassar</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="csv_file" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Berkas CSV Sumber Pengguna <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="file" 
+                    id="csv_file" 
+                    name="file" 
+                    accept=".csv"
+                    required 
+                    class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-maroon/10 file:text-brand-maroon hover:file:bg-brand-maroon/20 cursor-pointer border border-gray-300 rounded-lg p-1.5"
+                >
+                <p class="text-[11px] text-gray-400 mt-1">
+                    Format kolom wajib: <code>name, email, affiliation, role</code>.
+                </p>
+            </div>
+
+            <div class="flex items-start gap-2 pt-1">
+                <input 
+                    type="checkbox" 
+                    id="send_invitation" 
+                    name="send_invitation_email" 
+                    value="1" 
+                    checked
+                    class="mt-0.5 rounded text-brand-maroon focus:ring-brand-maroon"
+                >
+                <label for="send_invitation" class="text-xs text-gray-600">
+                    Kirim email notifikasi akun dan instruksi pengaturan kata sandi baru kepada seluruh pengguna yang diimpor.
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button 
+                    type="button" 
+                    onclick="document.getElementById('modal-import-users').classList.add('hidden')"
+                    class="px-4 py-2 min-h-11 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="submit" 
+                    class="px-4 py-2 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition shadow-2xs"
+                >
+                    Unggah &amp; Proses Antrean CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\SysAdmin;
+
+use Tests\TestCase;
+
+class SysAdminJournalsTest extends TestCase
+{
+    /**
+     * Halaman manajemen jurnal memuat 4 ringkasan metrik statistik.
+     */
+    public function test_halaman_jurnal_memuat_ringkasan_metrik_multi_tenancy(): void
+    {
+        $response = $this->get('/sysadmin/journals');
+
+        $response->assertStatus(200);
+        $response->assertSee('Total Jurnal Ilmiah');
+        $response->assertSee('Jurnal Aktif');
+        $response->assertSee('Edisi Terbit Berjalan');
+        $response->assertSee('Jurnal Diarsipkan');
+        $response->assertSee('Fahri Azis, S.T.');
+    }
+
+    /**
+     * Filter tab status jurnal menyaring daftar instansi jurnal dengan benar.
+     */
+    public function test_filter_tab_status_jurnal_berfungsi(): void
+    {
+        // 1. Tab Aktif Publikasi
+        $responseActive = $this->get('/sysadmin/journals?status=active');
+        $responseActive->assertStatus(200);
+        $responseActive->assertSee('JTIIK');
+        $responseActive->assertSee('JIKPM');
+        $responseActive->assertDontSee('Buletin Riset Litbang Kota Makassar');
+
+        // 2. Tab Diarsipkan
+        $responseArchived = $this->get('/sysadmin/journals?status=archived');
+        $responseArchived->assertStatus(200);
+        $responseArchived->assertSee('Buletin Riset Litbang Kota Makassar');
+        $responseArchived->assertDontSee('JTIIK');
+    }
+
+    /**
+     * Pencarian jurnal berdasarkan nama atau slug berfungsi.
+     */
+    public function test_pencarian_jurnal_berfungsi_sesuai_kata_kunci(): void
+    {
+        // Pencarian spesifik
+        $responseSearch = $this->get('/sysadmin/journals?q=Pesisir');
+        $responseSearch->assertStatus(200);
+        $responseSearch->assertSee('JRLMBP');
+        $responseSearch->assertDontSee('JTIIK');
+
+        // Pencarian tanpa hasil menampilkan empty state
+        $responseEmpty = $this->get('/sysadmin/journals?q=JurnalYangTidakPernahAda123');
+        $responseEmpty->assertStatus(200);
+        $responseEmpty->assertSee('Tidak ada instansi jurnal');
+        $responseEmpty->assertSee('Reset Filter');
+    }
+
+    /**
+     * Pendaftaran jurnal baru dan pembaruan status berjalan sukses.
+     */
+    public function test_pendaftaran_jurnal_dan_pembaruan_status_berhasil(): void
+    {
+        // Simpan jurnal
+        $responseStore = $this->post('/sysadmin/journals', [
+            'name' => 'Jurnal Sains Terapan Makassar',
+            'slug' => 'jstm-makassar',
+            'primary_contact' => 'Dr. H. Rusdianto, M.Si.',
+        ]);
+        $responseStore->assertRedirect(route('sysadmin.journals.index'));
+        $responseStore->assertSessionHas('status');
+
+        // Ubah status jurnal
+        $responseStatus = $this->post('/sysadmin/journals/JOURNAL-01JARK-01/status', [
+            'status' => 'archived',
+        ]);
+        $responseStatus->assertRedirect(route('sysadmin.journals.index'));
+        $responseStatus->assertSessionHas('status');
+    }
+}
