@@ -8,6 +8,7 @@ use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
+use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -100,6 +101,22 @@ Route::prefix('journalmanager')->name('journalmanager.')->group(function () {
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
     Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
+});
+
+// Portal Proofreader (Verifikasi Bukti Baca Galai & Catatan Koreksi)
+Route::prefix('proofreader')->name('proofreader.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('proofreader.submissions.index');
+    })->name('dashboard');
+
+    Route::get('/submissions', [ProofreaderSubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/{id}', [ProofreaderSubmissionController::class, 'show'])->name('submissions.show');
+    Route::get('/guidelines', [ProofreaderSubmissionController::class, 'guidelines'])->name('guidelines');
+
+    Route::post('/add-note', [ProofreaderSubmissionController::class, 'addNote'])->name('add-note');
+    Route::post('/verify-note', [ProofreaderSubmissionController::class, 'verifyNote'])->name('verify-note');
+    Route::post('/complete', [ProofreaderSubmissionController::class, 'completeProofread'])->name('complete');
+    Route::post('/escalate', [ProofreaderSubmissionController::class, 'submitEscalation'])->name('escalate');
 });
 
 Route::redirect('/submissions', '/author/submissions');
