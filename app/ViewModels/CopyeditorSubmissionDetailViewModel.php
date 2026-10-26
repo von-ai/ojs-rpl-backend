@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Copyedit;
+
 class CopyeditorSubmissionDetailViewModel
 {
     private string $submissionId;
@@ -45,6 +47,11 @@ class CopyeditorSubmissionDetailViewModel
      */
     public function submission(): array
     {
+        $fromDb = $this->queryCopyedit();
+        if ($fromDb) {
+            return $this->formatCopyeditDetail($fromDb);
+        }
+
         $dataset = $this->registry();
 
         if (isset($dataset[$this->submissionId])) {
@@ -509,5 +516,224 @@ class CopyeditorSubmissionDetailViewModel
                 ],
             ],
         ];
+    }
+
+    private function queryCopyedit(): ?Copyedit
+    {
+        try {
+            if (! class_exists(Copyedit::class)) {
+                return null;
+            }
+
+            return Copyedit::with([
+                'submission.section',
+                'submission.journal',
+                'submission.author',
+                'submission.contributors',
+                'submission.activeLayoutAssignment.layoutEditor',
+                'sourceFile',
+                'outputs.file',
+                'approvals.approvedFiles',
+                'approvals.author',
+                'escalations.openedBy',
+            ])
+            ->where('id', $this->submissionId)
+            ->orWhereHas('submission', function ($q) {
+                $q->where('submission_number', $this->submissionId)
+                  ->orWhere('id', $this->submissionId);
+            })
+            ->first();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatCopyeditDetail(Copyedit $copyedit): array
+    {
+        $submission = $copyedit->submission;
+        $activeEscalation = $copyedit->escalations->first(fn ($e) => in_array($e->status, ['open', 'investigating'], true));
+        $resolvedEscalation = $copyedit->escalations->first(fn ($e) => $e->status === 'resolved');
+        $latestEscalation = $copyedit->escalations->first();
+
+        $latestApproval = $copyedit->approvals->first(fn ($a) => is_null($a->invalidated_at))
+            ?? $copyedit->approvals->first();
+
+        $approvalStatus = 'not_requested';
+        $approvalStatusLabel = 'Belum Diminta';
+
+        if ($latestApproval) {
+            if ($latestApproval->invalidated_at !== null) {
+                $approvalStatus = 'invalidated';
+                $approvalStatusLabel = 'Persetujuan Dibatalkan (Ada Berkas Baru)';
+            } elseif ($latestApproval->decision === 'approved') {
+                $approvalStatus = 'approved';
+                $approvalStatusLabel = 'Telah Disetujui Penulis';
+            } elseif ($latestApproval->decision === 'revisions_requested') {
+                $approvalStatus = 'changes_requested';
+                $approvalStatusLabel = 'Penulis Meminta Perbaikan';
+            } elseif ($latestApproval->decision === 'requested') {
+                $approvalStatus = 'requested';
+                $approvalStatusLabel = 'Menunggu Respon Penulis';
+            }
+        }
+
+        $isApproved = $approvalStatus === 'approved';
+        $isWaiting = $approvalStatus === 'requested';
+        $hasChangesRequested = $approvalStatus === 'changes_requested';
+
+        $outputFiles = [];
+        foreach ($copyedit->outputs as $output) {
+            $file = $output->file;
+            if (! $file) {
+                continue;
+            }
+            $isSupplementary = str_contains(mb_strtolower($file->original_name), 'lampiran')
+                || str_contains(mb_strtolower($file->original_name), 'supplementary');
+
+            $outputFiles[] = [
+                'id' => $file->id,
+                'name' => $file->original_name,
+                'type' => $isSupplementary ? 'Lampiran Data' : 'Naskah Utama',
+                'size_formatted' => $this->formatBytes((int) $file->byte_size),
+                'sha256' => $file->checksum_sha256 ?? '',
+                'uploaded_at' => $file->created_at ? $file->created_at->format('d M Y H:i \W\I\T\A') : now()->format('d M Y H:i \W\I\T\A'),
+                'download_url' => '#unduh-file-suntingan',
+            ];
+        }
+
+        $handoffReady = $isApproved && ! $activeEscalation && count($outputFiles) > 0;
+
+        $status = 'in_progress';
+        $statusLabel = 'Tahap Copyediting Aktif';
+        $statusBadgeClass = 'bg-sky-50 text-sky-800 border-sky-200';
+
+        if ($copyedit->status === 'completed') {
+            $status = 'completed';
+            $statusLabel = 'Selesai — Telah Diserahkan ke Layout';
+            $statusBadgeClass = 'bg-gray-100 text-gray-800 border-gray-300';
+        } elseif ($activeEscalation) {
+            $status = 'escalated';
+            $statusLabel = 'Dalam Mediasi Redaksi';
+            $statusBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+        } elseif ($isApproved) {
+            $status = 'approved';
+            $statusLabel = 'Disetujui Penulis';
+            $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+        } elseif ($isWaiting) {
+            $status = 'awaiting_author_approval';
+            $statusLabel = 'Menunggu Persetujuan Penulis';
+            $statusBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+        }
+
+        $corresponding = $submission?->contributors?->firstWhere('is_corresponding', true);
+        $authorName = $corresponding?->full_name ?? $submission?->author?->name ?? 'Dr. Nurfadillah Bahar, M.Kes.';
+        $authorEmail = $corresponding?->email ?? $submission?->author?->email ?? 'author@journal.org';
+        $authorAffiliation = $corresponding?->affiliation ?? 'Universitas Hasanuddin';
+
+        $layoutEditorName = $submission?->activeLayoutAssignment?->layoutEditor?->name ?? 'Rahmat Hidayat, S.Kom.';
+
+        $timeline = [];
+        if ($copyedit->status === 'completed') {
+            $timeline[] = [
+                'title' => 'Serah Terima Selesai',
+                'actor' => $copyedit->copyEditor?->name ?? 'Copy Editor',
+                'date' => $copyedit->updated_at ? $copyedit->updated_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => "Naskah resmi diserahkan ke Layout Editor {$layoutEditorName}.",
+                'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ];
+        }
+        if ($isApproved) {
+            $timeline[] = [
+                'title' => 'Persetujuan Penulis Diterima',
+                'actor' => $authorName,
+                'date' => $latestApproval?->approved_at ? $latestApproval->approved_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => 'Penulis menyetujui seluruh berkas hasil suntingan dan checksum SHA-256 dibekukan.',
+                'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ];
+        }
+        if (count($outputFiles) > 0) {
+            $timeline[] = [
+                'title' => 'Berkas Suntingan Diunggah',
+                'actor' => $copyedit->copyEditor?->name ?? 'Copy Editor',
+                'date' => $copyedit->created_at ? $copyedit->created_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => 'Mengunggah naskah hasil perbaikan tata bahasa dan sitasi.',
+                'badge_class' => 'bg-sky-50 text-sky-700 border-sky-200',
+            ];
+        }
+
+        return [
+            'id' => $submission?->submission_number ?: $copyedit->id,
+            'number' => $submission?->submission_number ?: $copyedit->id,
+            'assignment_code' => '#CE-'.strtoupper(substr($copyedit->id, 0, 10)),
+            'title' => $submission?->title ?? 'Naskah Ilmiah',
+            'section_title' => $submission?->section?->name ?? 'Inovasi Daerah & Kebijakan Publik',
+            'corresponding_author' => [
+                'name' => $authorName,
+                'email' => $authorEmail,
+                'affiliation' => $authorAffiliation,
+            ],
+            'section_editor' => 'Prof. Hamka, Ph.D.',
+            'layout_editor' => $layoutEditorName,
+            'assigned_at' => $copyedit->created_at ? $copyedit->created_at->format('d M Y') : now()->format('d M Y'),
+            'due_at' => $copyedit->due_at ? $copyedit->due_at->format('d M Y 23:59 \W\I\T\A') : now()->format('d M Y 23:59 \W\I\T\A'),
+            'is_urgent' => $copyedit->due_at ? $copyedit->due_at->diffInDays(now()) <= 3 && $copyedit->status !== 'completed' : false,
+            'is_completed' => $copyedit->status === 'completed',
+            'status' => $status,
+            'status_label' => $statusLabel,
+            'status_badge_class' => $statusBadgeClass,
+            'source_file' => [
+                'id' => $copyedit->sourceFile?->id ?? 'FILE-SRC-DEFAULT',
+                'name' => $copyedit->sourceFile?->original_name ?? 'Source_Accepted.docx',
+                'size_formatted' => $this->formatBytes((int) ($copyedit->sourceFile?->byte_size ?? 0)),
+                'download_url' => '#unduh-naskah-asli',
+            ],
+            'output_files' => $outputFiles,
+            'approval' => [
+                'status' => $approvalStatus,
+                'status_label' => $approvalStatusLabel,
+                'is_approved' => $isApproved,
+                'is_waiting' => $isWaiting,
+                'has_changes_requested' => $hasChangesRequested,
+                'author_note' => $latestApproval?->reason ?? $latestApproval?->note,
+                'approved_at' => $latestApproval?->approved_at ? $latestApproval->approved_at->format('d M Y H:i \W\I\T\A') : null,
+                'invalidated_at' => $latestApproval?->invalidated_at ? $latestApproval->invalidated_at->format('d M Y H:i \W\I\T\A') : null,
+            ],
+            'escalation' => [
+                'has_active' => $activeEscalation !== null,
+                'is_resolved' => $resolvedEscalation !== null,
+                'ticket_id' => $latestEscalation ? 'ESC-'.strtoupper(substr($latestEscalation->id, 0, 8)) : null,
+                'category' => $latestEscalation ? 'Mediasi Sengketa Redaksi' : null,
+                'reason' => $latestEscalation?->reason,
+                'status' => $latestEscalation ? ($activeEscalation ? 'Menunggu Mediasi Section Editor' : 'Selesai Diputuskan') : null,
+                'resolution' => $resolvedEscalation?->resolution,
+                'resolved_at' => $resolvedEscalation?->updated_at ? $resolvedEscalation->updated_at->format('d M Y') : null,
+                'created_at' => $latestEscalation?->created_at ? $latestEscalation->created_at->format('d M Y H:i \W\I\T\A') : null,
+            ],
+            'handoff' => [
+                'is_ready' => $handoffReady,
+                'is_completed' => $copyedit->status === 'completed',
+                'assigned_layout_editor' => $layoutEditorName,
+                'notes_placeholder' => 'Catatan khusus gaya selingkung atau instruksi penataan untuk Layout Editor...',
+                'submitted_notes' => $copyedit->notes,
+                'completed_at' => $copyedit->status === 'completed' && $copyedit->updated_at ? $copyedit->updated_at->format('d M Y, H:i \W\I\T\A') : null,
+            ],
+            'notes' => $copyedit->notes,
+            'activity_timeline' => $timeline,
+        ];
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = (int) floor(log($bytes, 1024));
+        $i = min($i, count($units) - 1);
+
+        return round($bytes / pow(1024, $i), 2).' '.$units[$i];
     }
 }
