@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Copyeditor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Copyedit;
+use App\Models\FileEntry;
 use App\Models\User;
 use App\Services\Copyeditor\CopyeditorService;
 use App\ViewModels\CopyeditorSubmissionDetailViewModel;
@@ -14,7 +15,9 @@ use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CopyeditorSubmissionController extends Controller
 {
@@ -63,10 +66,29 @@ class CopyeditorSubmissionController extends Controller
     }
 
     /**
+     * Mengunduh berkas fisik (naskah acuan atau berkas hasil copyediting).
+     */
+    public function downloadFile(string $id): StreamedResponse
+    {
+        $file = FileEntry::findOrFail($id);
+
+        if (! Storage::disk($file->storage_disk)->exists($file->storage_path)) {
+            abort(404, 'Berkas fisik tidak ditemukan di penyimpanan server.');
+        }
+
+        return Storage::disk($file->storage_disk)->download($file->storage_path, $file->original_name);
+    }
+
+    /**
      * Aksi unggah berkas baru ke Output Set naskah.
      */
     public function uploadFile(Request $request): RedirectResponse
     {
+        $request->validate([
+            'submission_id' => 'required|string',
+            'copyedit_file' => 'nullable|file|mimes:docx,doc,pdf|max:20480',
+        ]);
+
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $copyedit = $this->findCopyedit($submissionId);
 

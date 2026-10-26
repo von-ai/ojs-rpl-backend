@@ -600,7 +600,7 @@ class CopyeditorSubmissionDetailViewModel
                 'size_formatted' => $this->formatBytes((int) $file->byte_size),
                 'sha256' => $file->checksum_sha256 ?? '',
                 'uploaded_at' => $file->created_at ? $file->created_at->format('d M Y H:i \W\I\T\A') : now()->format('d M Y H:i \W\I\T\A'),
-                'download_url' => '#unduh-file-suntingan',
+                'download_url' => route('copyeditor.files.download', $file->id),
             ];
         }
 
@@ -688,7 +688,7 @@ class CopyeditorSubmissionDetailViewModel
                 'id' => $copyedit->sourceFile?->id ?? 'FILE-SRC-DEFAULT',
                 'name' => $copyedit->sourceFile?->original_name ?? 'Source_Accepted.docx',
                 'size_formatted' => $this->formatBytes((int) ($copyedit->sourceFile?->byte_size ?? 0)),
-                'download_url' => '#unduh-naskah-asli',
+                'download_url' => $copyedit->sourceFile ? route('copyeditor.files.download', $copyedit->sourceFile->id) : '#unduh-naskah-asli',
             ],
             'output_files' => $outputFiles,
             'approval' => [

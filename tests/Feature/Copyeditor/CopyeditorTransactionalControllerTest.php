@@ -212,4 +212,56 @@ class CopyeditorTransactionalControllerTest extends TestCase
             'submission_id' => $this->submission->id,
         ]);
     }
+
+    public function test_controller_download_file_returns_streamed_download(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        $fakeFile = UploadedFile::fake()->create('manuscript_to_download.docx', 300);
+        $path = $fakeFile->store('copyedits/test', 'local');
+
+        $fileEntry = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => $path,
+            'original_name' => 'manuscript_to_download.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 300 * 1024,
+            'checksum_sha256' => hash('sha256', 'dummy'),
+            'created_by' => $this->copyEditor->id,
+        ]);
+
+        $response = $this->get(route('copyeditor.files.download', $fileEntry->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-disposition', 'attachment; filename=manuscript_to_download.docx');
+    }
+
+    public function test_controller_upload_file_validation_rejects_disallowed_mime(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        $exeFile = UploadedFile::fake()->create('malicious.exe', 100);
+
+        $response = $this->post('/copyeditor/upload', [
+            'submission_id' => 'SUB-2026-00555',
+            'copyedit_file' => $exeFile,
+        ]);
+
+        $response->assertSessionHasErrors(['copyedit_file']);
+    }
+
+    public function test_controller_complete_handoff_fails_when_not_ready(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        // Handoff before author approval must fail with error message
+        $response = $this->post('/copyeditor/complete-handoff', [
+            'submission_id' => 'SUB-2026-00555',
+        ]);
+
+        $response->assertRedirect('/copyeditor/submissions/SUB-2026-00555');
+        $response->assertSessionHas('error');
+        $this->assertNotEquals('completed', $this->copyedit->fresh()->status);
+    }
 }
+
