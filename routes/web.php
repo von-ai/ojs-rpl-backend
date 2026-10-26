@@ -59,6 +59,8 @@ Route::prefix('copyeditor')->name('copyeditor.')->group(function () {
     Route::post('/request-approval', [CopyeditorSubmissionController::class, 'requestApproval'])->name('request-approval');
     Route::post('/escalate', [CopyeditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
+    Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->name('author-decision');
+    Route::post('/resolve-escalation', [CopyeditorSubmissionController::class, 'resolveEscalation'])->name('resolve-escalation');
 });
 
 // Portal Layout Editor (Produksi Galai Publikasi & Proofreading)

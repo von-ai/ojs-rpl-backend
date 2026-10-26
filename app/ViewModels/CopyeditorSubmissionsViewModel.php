@@ -339,7 +339,9 @@ class CopyeditorSubmissionsViewModel
     private function hasDatabaseRecords(): bool
     {
         try {
-            return class_exists(Copyedit::class) && Copyedit::query()->exists();
+            return class_exists(Copyedit::class)
+                && \Illuminate\Support\Facades\Schema::hasTable('copyedits')
+                && Copyedit::query()->exists();
         } catch (\Throwable) {
             return false;
         }

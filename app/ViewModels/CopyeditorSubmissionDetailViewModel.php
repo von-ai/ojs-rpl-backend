@@ -521,7 +521,7 @@ class CopyeditorSubmissionDetailViewModel
     private function queryCopyedit(): ?Copyedit
     {
         try {
-            if (! class_exists(Copyedit::class)) {
+            if (! class_exists(Copyedit::class) || ! \Illuminate\Support\Facades\Schema::hasTable('copyedits')) {
                 return null;
             }
 
