@@ -17,6 +17,7 @@ use App\Models\User;
 use App\ViewModels\CopyeditorSubmissionDetailViewModel;
 use App\ViewModels\CopyeditorSubmissionsViewModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -301,5 +302,51 @@ class CopyeditorViewModelsTest extends TestCase
         // Output file must fallback to disk size and format as 2.05 MB
         $this->assertCount(1, $detail['output_files']);
         $this->assertSame('2.05 MB', $detail['output_files'][0]['size_formatted']);
+    }
+
+    public function test_submissions_view_model_assigned_count_and_sidebar_badge_count(): void
+    {
+        $author = User::factory()->create();
+        $copyEditor = User::factory()->create();
+        $journal = Journal::create(['slug' => 'jurnal-badge', 'name' => 'Jurnal Badge', 'issn' => '6666-7777', 'status' => 'active']);
+        $section = Section::create(['journal_id' => $journal->id, 'name' => 'Badge Sec', 'slug' => 'badge-sec', 'position' => 1, 'accepting_submissions' => true]);
+
+        $sourceFile = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'submissions/badge_test.docx',
+            'original_name' => 'badge_test.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'content'),
+            'created_by' => $author->id,
+        ]);
+
+        $subA = Submission::create(['submission_number' => 'SUB-BADGE-1', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Judul 1', 'abstract' => 'A', 'status' => 'in_progress']);
+        $subB = Submission::create(['submission_number' => 'SUB-BADGE-2', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Judul 2', 'abstract' => 'B', 'status' => 'in_progress']);
+        $subC = Submission::create(['submission_number' => 'SUB-BADGE-3', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Judul 3', 'abstract' => 'C', 'status' => 'completed']);
+
+        Copyedit::create(['submission_id' => $subA->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+        Copyedit::create(['submission_id' => $subB->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+        Copyedit::create(['submission_id' => $subC->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'completed', 'due_at' => now()->addDays(5)]);
+
+        $vm = new CopyeditorSubmissionsViewModel;
+
+        // Total assignments count is 3
+        $this->assertSame(3, $vm->assignedCount());
+        $this->assertSame(3, CopyeditorSubmissionsViewModel::getSidebarBadgeCount());
+    }
+
+    public function test_copyeditor_sidebar_component_renders_dynamic_assigned_count(): void
+    {
+        // 1. When explicit count is passed, it renders the provided number
+        $customRendered = Blade::render('<x-copyeditor.sidebar :assigned-count="42" />');
+        $this->assertStringContainsString('sidebar-badge-full', $customRendered);
+        $this->assertStringContainsString('42', $customRendered);
+
+        // 2. When omitted, it resolves automatically via ViewModel
+        $autoRendered = Blade::render('<x-copyeditor.sidebar />');
+        $this->assertStringContainsString('sidebar-badge-full', $autoRendered);
+        $expectedCount = (string) CopyeditorSubmissionsViewModel::getSidebarBadgeCount();
+        $this->assertStringContainsString($expectedCount, $autoRendered);
     }
 }

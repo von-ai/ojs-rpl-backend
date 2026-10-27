@@ -271,6 +271,38 @@ class CopyeditorSubmissionsViewModel
     }
 
     /**
+     * Jumlah total penugasan naskah untuk badge counter navigasi sidebar.
+     */
+    public function assignedCount(): int
+    {
+        return $this->tabs()['items']['all']['count'] ?? 0;
+    }
+
+    /**
+     * Helper statis untuk mengambil badge count penugasan naskah Copy Editor secara aman dan ringan.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(Copyedit::class) && Schema::hasTable('copyedits') && Copyedit::query()->exists()) {
+                $query = Copyedit::query();
+                if (Auth::check()) {
+                    $userCount = (clone $query)->where('copy_editor_id', Auth::id())->count();
+                    if ($userCount > 0) {
+                        return $userCount;
+                    }
+                }
+
+                return $query->count();
+            }
+
+            return (new self)->assignedCount();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * Kumpulan data naskah penugasan copyediting.
      *
      * @return array<int, array{

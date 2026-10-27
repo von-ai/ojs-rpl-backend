@@ -1,3 +1,7 @@
+@props([
+    'assignedCount' => null,
+])
+
 <aside id="copyeditor-sidebar" class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
     <!-- Header Brand & Tombol Kontrol -->
     <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
@@ -33,6 +37,7 @@
         @php
             $isSubmissionsActive = request()->routeIs('copyeditor.submissions.*') || request()->routeIs('copyeditor.catalog') || request()->routeIs('copyeditor.dashboard');
             $isGuidelinesActive = request()->routeIs('copyeditor.guidelines');
+            $badgeCount = $assignedCount ?? \App\ViewModels\CopyeditorSubmissionsViewModel::getSidebarBadgeCount();
         @endphp
 
         <!-- 1. Penugasan Naskah (Menu Utama) -->
@@ -48,7 +53,7 @@
                 <span class="truncate sidebar-label">Penugasan Naskah</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isSubmissionsActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                12
+                {{ $badgeCount }}
             </span>
         </a>
 
