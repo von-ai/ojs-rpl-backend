@@ -410,6 +410,84 @@ class SubmissionSeeder extends Seeder
                     ],
                 ],
             ],
+
+            // Skenario 10: Selesai Copyediting & Telah Diserahkan ke Layout Editor (Mode Arsip)
+            [
+                'number' => 'SUB-2026-00110',
+                'status' => 'in_production',
+                'section_id' => $secInovasi->id,
+                'title' => 'Strategi Pengelolaan Sampah Berbasis Komunitas di Kawasan Pesisir Tallo',
+                'abstract' => 'Pemberdayaan kelompok swadaya masyarakat dalam pemilahan sampah organik dan anorganik di pesisir muara Sungai Tallo untuk mereduksi beban timbulan sampah TPA Tamangapa.',
+                'keywords' => ['Sampah Pesisir', 'Ekonomi Sirkular', 'Pesisir Tallo', 'Pemberdayaan Masyarakat'],
+                'subject_area' => 'Lingkungan Hidup & Ketahanan Kota',
+                'references' => "1. KLHK RI. (2024). Pengelolaan Sampah Terpadu Pesisir.\n2. Dinas Lingkungan Hidup Makassar. (2025). Laporan Timbulan Sampah.",
+                'comments_for_editor' => 'Naskah telah selesai melalui tahap copyediting dan diserahkan ke tim tata letak.',
+                'submitted_at' => now()->subDays(60),
+                'contributors' => [
+                    [
+                        'given_name' => 'Dr. Muh.',
+                        'family_name' => 'Ridwan, S.Kel., M.Si.',
+                        'email' => 'm.ridwan@unhas.ac.id',
+                        'affiliation' => 'Pusat Riset Kebencanaan BRIDA Makassar',
+                        'orcid' => '0000-0003-2211-9988',
+                        'is_corresponding' => true,
+                        'position' => 1,
+                    ],
+                ],
+                'files' => [
+                    [
+                        'name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx',
+                        'genre' => 'manuscript',
+                        'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'size' => 2621440,
+                    ],
+                    [
+                        'name' => 'SUB2026-00110_Copyedit_Final_Approved.docx',
+                        'genre' => 'manuscript',
+                        'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'size' => 2537553,
+                    ],
+                ],
+            ],
+
+            // Skenario 11: Tahap Copyediting — Penulis Mengajukan Catatan Revisi (Revisions Requested / Siap Mediasi)
+            [
+                'number' => 'SUB-2026-00111',
+                'status' => 'in_production',
+                'section_id' => $secRiset->id,
+                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
+                'abstract' => 'Penelitian ini mengembangkan formulasi Integer Linear Programming untuk optimasi jadwal dan rute kapal perintis logistik sembako di gugusan Kepulauan Sangkarrang Makassar guna memangkas disparitas harga pangan antarpulau.',
+                'keywords' => ['Logistik Maritim', 'Kepulauan Sangkarrang', 'Optimasi Rute', 'Transportasi Laut', 'Disparitas Pangan'],
+                'subject_area' => 'Teknologi & Infrastruktur Berkelanjutan',
+                'references' => "1. Kementerian Perhubungan. (2024). Standar Pelayanan Minimal Angkutan Laut Perintis.\n2. Bappeda Kota Makassar. (2025). Rencana Induk Konektivitas Kepulauan Spermonde.",
+                'comments_for_editor' => 'Naskah dalam tahap penyuntingan bahasa dan format selingkung.',
+                'submitted_at' => now()->subDays(35),
+                'contributors' => [
+                    [
+                        'given_name' => 'Dr. Eng. Ir.',
+                        'family_name' => 'Faisal Syarif, S.T., M.Eng.',
+                        'email' => 'faisal.syarif@unhas.ac.id',
+                        'affiliation' => 'Fakultas Teknik Universitas Hasanuddin',
+                        'orcid' => '0000-0002-3344-5566',
+                        'is_corresponding' => true,
+                        'position' => 1,
+                    ],
+                ],
+                'files' => [
+                    [
+                        'name' => 'SUB2026-00111_Source_Accepted.docx',
+                        'genre' => 'manuscript',
+                        'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'size' => 2450000,
+                    ],
+                    [
+                        'name' => 'SUB2026-00111_Copyedit_Draft1.docx',
+                        'genre' => 'manuscript',
+                        'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'size' => 2380000,
+                    ],
+                ],
+            ],
         ];
 
         // 5. Eksekusi Penyimpanan Idempoten ke Database

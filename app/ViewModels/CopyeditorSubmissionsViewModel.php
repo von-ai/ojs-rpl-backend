@@ -614,6 +614,29 @@ class CopyeditorSubmissionsViewModel
                 'has_active_escalation' => false,
                 'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00110'),
             ],
+            [
+                'id' => '01JARK948X0011100000000006',
+                'number' => 'SUB-2026-00111',
+                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
+                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
+                'corresponding_author' => [
+                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
+                    'email' => 'faisal.syarif@unhas.ac.id',
+                    'affiliation' => 'Universitas Hasanuddin',
+                ],
+                'section_editor' => 'Prof. Hamka, Ph.D.',
+                'assigned_at' => '22 Okt 2026',
+                'due_at' => '04 Nov 2026 23:59 WITA',
+                'is_urgent' => false,
+                'is_overdue' => false,
+                'status' => 'in_progress',
+                'status_label' => 'Permintaan Revisi Penulis',
+                'status_badge_class' => 'bg-orange-50 text-orange-800 border-orange-200',
+                'output_set_version' => 'Output Set v1',
+                'files_count' => 1,
+                'has_active_escalation' => false,
+                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00111'),
+            ],
         ];
     }
 }

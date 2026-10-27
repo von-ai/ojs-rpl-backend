@@ -155,8 +155,26 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertSee('Sedang Disunting');
         $response->assertSee('SUB-2026-00106');
         $response->assertSee('SUB-2026-00109');
+        $response->assertSee('SUB-2026-00111');
         $response->assertDontSee('SUB-2026-00107');
         $response->assertDontSee('SUB-2026-00108');
         $response->assertDontSee('SUB-2026-00110');
+    }
+
+    /**
+     * Halaman ruang kerja naskah dengan status catatan revisi penulis / revision requested (SUB-2026-00111).
+     * Memastikan banner peringatan revisi penulis dan tombol Minta Mediasi Editor tampil dengan benar.
+     */
+    public function test_halaman_ruang_kerja_naskah_dengan_catatan_revisi_penulis(): void
+    {
+        $response = $this->get('/copyeditor/submissions/SUB-2026-00111');
+
+        $response->assertStatus(200);
+        $response->assertSee('Model Optimasi Rute Distribusi Logistik Maritim');
+        $response->assertSee('Permintaan Revisi Penulis');
+        $response->assertSee('Penulis Mengajukan Catatan Revisi');
+        $response->assertSee('Minta Mediasi Editor');
+        $response->assertSee('Hub-and-Spoke Maritim');
+        $response->assertSee('openEscalateModal()');
     }
 }

@@ -9,6 +9,7 @@ use App\Models\CopyeditApproval;
 use App\Models\CopyeditApprovedFile;
 use App\Models\CopyeditOutput;
 use App\Models\FileEntry;
+use App\Models\LayoutAssignment;
 use App\Models\ProductionEscalation;
 use App\Models\Submission;
 use App\Models\User;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 class CopyeditSeeder extends Seeder
 {
     /**
-     * Seed penugasan copyediting realistis untuk 5 skenario siklus hidup OJS.
+     * Seed penugasan copyediting realistis untuk 6 skenario siklus hidup OJS.
      */
     public function run(): void
     {
@@ -66,6 +67,7 @@ class CopyeditSeeder extends Seeder
             'SUB-2026-00108',
             'SUB-2026-00109',
             'SUB-2026-00110',
+            'SUB-2026-00111',
         ])->get()->keyBy('submission_number');
 
         // Skenario 1: SUB-2026-00106 — Aktif & Menunggu Respon Penulis
@@ -267,6 +269,130 @@ class CopyeditSeeder extends Seeder
             );
         }
 
+        // Skenario 5: SUB-2026-00110 — Selesai Diserahterimakan (Mode Arsip / Completed)
+        if ($sub110 = $submissions->get('SUB-2026-00110')) {
+            $srcFile110 = FileEntry::updateOrCreate(
+                ['original_name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx'],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => 'submissions/SUB2026-00110_Accepted_Sampah_Tallo.docx',
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => 2621440,
+                    'checksum_sha256' => hash('sha256', 'source_110'),
+                    'created_by' => $sub110->author_id,
+                ]
+            );
+
+            $copyedit110 = Copyedit::firstOrCreate(
+                ['submission_id' => $sub110->id],
+                [
+                    'copy_editor_id' => $copyEditor->id,
+                    'source_file_id' => $srcFile110->id,
+                    'status' => 'completed',
+                    'due_at' => now()->subDays(5),
+                    'notes' => 'Telah diserahkan ke tim tata letak dengan instruksi template 2 kolom.',
+                ]
+            );
+
+            $outFile110 = FileEntry::updateOrCreate(
+                ['original_name' => 'SUB2026-00110_Copyedit_Final_Approved.docx'],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => 'copyedits/SUB2026-00110_Copyedit_Final_Approved.docx',
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => 2537553,
+                    'checksum_sha256' => hash('sha256', 'output_110'),
+                    'created_by' => $copyEditor->id,
+                ]
+            );
+
+            CopyeditOutput::firstOrCreate(
+                ['copyedit_id' => $copyedit110->id, 'file_id' => $outFile110->id],
+                ['position' => 1]
+            );
+
+            $approval110 = CopyeditApproval::firstOrCreate(
+                ['copyedit_id' => $copyedit110->id, 'output_version' => 1],
+                [
+                    'author_id' => $sub110->author_id ?? $copyEditor->id,
+                    'decision' => 'approved',
+                    'approved_at' => now()->subDays(4),
+                    'note' => 'Disetujui untuk diteruskan ke tata letak.',
+                ]
+            );
+
+            CopyeditApprovedFile::firstOrCreate(
+                ['approval_id' => $approval110->id, 'file_id' => $outFile110->id],
+                ['checksum_sha256' => $outFile110->checksum_sha256]
+            );
+
+            LayoutAssignment::firstOrCreate(
+                ['submission_id' => $sub110->id],
+                [
+                    'layout_editor_id' => $layoutEditor->id,
+                    'assigned_by' => $copyEditor->id,
+                    'assigned_at' => now()->subDays(3),
+                    'due_at' => now()->addDays(7),
+                    'reason' => 'Tahap copyediting selesai, siap untuk drafting layout.',
+                    'version' => 1,
+                ]
+            );
+        }
+
+        // Skenario 6: SUB-2026-00111 — Penulis Mengajukan Catatan Revisi (Revisions Requested / Siap Mediasi)
+        if ($sub111 = $submissions->get('SUB-2026-00111')) {
+            $srcFile111 = FileEntry::updateOrCreate(
+                ['original_name' => 'SUB2026-00111_Source_Accepted.docx'],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => 'submissions/SUB2026-00111_Source_Accepted.docx',
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => 2450000,
+                    'checksum_sha256' => hash('sha256', 'source_111'),
+                    'created_by' => $sub111->author_id,
+                ]
+            );
+
+            $copyedit111 = Copyedit::firstOrCreate(
+                ['submission_id' => $sub111->id],
+                [
+                    'copy_editor_id' => $copyEditor->id,
+                    'source_file_id' => $srcFile111->id,
+                    'status' => 'in_progress',
+                    'due_at' => now()->addDays(4),
+                    'notes' => 'Telah dilakukan perapian sitasi artikel teknik kepulauan.',
+                ]
+            );
+
+            $outFile111 = FileEntry::updateOrCreate(
+                ['original_name' => 'SUB2026-00111_Copyedit_Draft1.docx'],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => 'copyedits/SUB2026-00111_Copyedit_Draft1.docx',
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => 2380000,
+                    'checksum_sha256' => hash('sha256', 'output_111'),
+                    'created_by' => $copyEditor->id,
+                ]
+            );
+
+            CopyeditOutput::firstOrCreate(
+                ['copyedit_id' => $copyedit111->id, 'file_id' => $outFile111->id],
+                ['position' => 1]
+            );
+
+            CopyeditApproval::firstOrCreate(
+                ['copyedit_id' => $copyedit111->id, 'output_version' => 1],
+                [
+                    'author_id' => $sub111->author_id ?? $copyEditor->id,
+                    'decision' => 'revisions_requested',
+                    'approved_at' => now()->subDay(),
+                    'reason' => 'Penulis meminta terminologi "Hub-and-Spoke Maritim" pada Gambar 4 dan Bab 3 tetap dipertahankan sesuai standar internasional IMO tanpa diterjemahkan secara harfiah.',
+                    'note' => 'Penulis meminta terminologi "Hub-and-Spoke Maritim" pada Gambar 4 dan Bab 3 tetap dipertahankan sesuai standar internasional IMO tanpa diterjemahkan secara harfiah.',
+                ]
+            );
+        }
+
         // Daftarkan berkas pendukung dan berkas fallback demo jika belum ada
         $additionalDemoFiles = [
             [
@@ -308,6 +434,16 @@ class CopyeditSeeder extends Seeder
                 'original_name' => 'SUB2026-00110_Copyedit_Final_Approved.docx',
                 'storage_path' => 'copyedits/SUB2026-00110_Copyedit_Final_Approved.docx',
                 'byte_size' => 2537553,
+            ],
+            [
+                'original_name' => 'SUB2026-00111_Source_Accepted.docx',
+                'storage_path' => 'submissions/SUB2026-00111_Source_Accepted.docx',
+                'byte_size' => 2450000,
+            ],
+            [
+                'original_name' => 'SUB2026-00111_Copyedit_Draft1.docx',
+                'storage_path' => 'copyedits/SUB2026-00111_Copyedit_Draft1.docx',
+                'byte_size' => 2380000,
             ],
         ];
 

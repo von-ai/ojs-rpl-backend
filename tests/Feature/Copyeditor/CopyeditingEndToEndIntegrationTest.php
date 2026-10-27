@@ -40,10 +40,12 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00107');
         $indexResponse->assertSee('SUB-2026-00108');
         $indexResponse->assertSee('SUB-2026-00109');
+        $indexResponse->assertSee('SUB-2026-00110');
+        $indexResponse->assertSee('SUB-2026-00111');
 
-        // Pastikan sidebar badge menampilkan jumlah penugasan naskah secara dinamis (4)
+        // Pastikan sidebar badge menampilkan jumlah penugasan naskah secara dinamis (6)
         $indexResponse->assertSee('sidebar-badge-full', false);
-        $indexResponse->assertSee('4');
+        $indexResponse->assertSee('6');
 
         // Akses naskah 106
         $detailResponse = $this->get('/copyeditor/submissions/SUB-2026-00106');
@@ -139,5 +141,41 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $finalShowResp->assertStatus(200);
         $finalShowResp->assertSee('Mode Arsip');
         $finalShowResp->assertSee('Serah Terima Selesai');
+    }
+
+    /**
+     * Menguji alur permintaan mediasi dari naskah berstatus revisions_requested (SUB-2026-00111):
+     * Copyeditor melihat catatan revisi penulis -> tombol minta mediasi -> kirim tiket mediasi -> status menjadi escalated & handoff terkunci.
+     */
+    public function test_copyeditor_can_request_mediation_for_revisions_requested_submission(): void
+    {
+        $copyEditor = User::where('email', 'andi.kurniawan@brida.makassar.go.id')->firstOrFail();
+        $this->actingAs($copyEditor);
+
+        // 1. Buka naskah 111 yang berstatus revisions_requested
+        $detailResp = $this->get('/copyeditor/submissions/SUB-2026-00111');
+        $detailResp->assertStatus(200);
+        $detailResp->assertSee('Penulis Mengajukan Catatan Revisi');
+        $detailResp->assertSee('Minta Mediasi Editor');
+        $detailResp->assertSee('Hub-and-Spoke Maritim');
+
+        // 2. Kirim formulir permohonan mediasi
+        $escalateResp = $this->post('/copyeditor/escalate', [
+            'submission_id' => 'SUB-2026-00111',
+            'category' => 'Ketidaksesuaian Terminologi Teknis',
+            'reason' => 'Perbedaan istilah teknis maritim IMO dengan pedoman baku.',
+        ]);
+        $escalateResp->assertRedirect('/copyeditor/submissions/SUB-2026-00111');
+        $escalateResp->assertSessionHas('status');
+
+        // 3. Verifikasi tiket eskalasi aktif di database
+        $copyedit = Copyedit::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00111'))->firstOrFail();
+        $this->assertTrue($copyedit->escalations()->where('status', 'open')->exists());
+
+        // 4. Buka kembali halaman naskah dan pastikan status telah berubah ke mediasi aktif
+        $afterResp = $this->get('/copyeditor/submissions/SUB-2026-00111');
+        $afterResp->assertStatus(200);
+        $afterResp->assertSee('Tiket Mediasi Redaksi Aktif');
+        $afterResp->assertDontSee('Minta Mediasi Editor');
     }
 }

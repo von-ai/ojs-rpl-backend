@@ -517,6 +517,92 @@ class CopyeditorSubmissionDetailViewModel
                     ],
                 ],
             ],
+
+            // 6. Skenario Penulis Mengajukan Catatan Revisi (Revisions Requested — Siap Mediasi)
+            'SUB-2026-00111' => [
+                'id' => 'SUB-2026-00111',
+                'number' => 'SUB-2026-00111',
+                'assignment_code' => '#CE-01JARK948U',
+                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
+                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
+                'corresponding_author' => [
+                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
+                    'email' => 'faisal.syarif@unhas.ac.id',
+                    'affiliation' => 'Universitas Hasanuddin',
+                ],
+                'section_editor' => 'Prof. Hamka, Ph.D.',
+                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
+                'assigned_at' => '22 Okt 2026',
+                'due_at' => '04 Nov 2026 23:59 WITA',
+                'is_urgent' => false,
+                'is_completed' => false,
+                'status' => 'in_progress',
+                'status_label' => 'Permintaan Revisi Penulis',
+                'status_badge_class' => 'bg-orange-50 text-orange-800 border-orange-200',
+                'source_file' => [
+                    'id' => 'FILE-SRC-00111',
+                    'name' => 'SUB2026-00111_Source_Accepted.docx',
+                    'size_formatted' => '2.45 MB',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00111_Source_Accepted.docx'),
+                ],
+                'output_files' => [
+                    [
+                        'id' => 'FILE-01JARK948U-01',
+                        'name' => 'SUB2026-00111_Copyedit_Draft1.docx',
+                        'type' => 'Naskah Utama',
+                        'size_formatted' => '2.38 MB',
+                        'sha256' => 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+                        'uploaded_at' => '25 Okt 2026 10:00 WITA',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00111_Copyedit_Draft1.docx'),
+                    ],
+                ],
+                'approval' => [
+                    'status' => 'changes_requested',
+                    'status_label' => 'Penulis Meminta Perbaikan',
+                    'is_approved' => false,
+                    'is_waiting' => false,
+                    'has_changes_requested' => true,
+                    'author_note' => 'Penulis meminta terminologi "Hub-and-Spoke Maritim" pada Gambar 4 dan Bab 3 tetap dipertahankan sesuai standar internasional IMO tanpa diterjemahkan secara harfiah.',
+                    'approved_at' => null,
+                    'invalidated_at' => null,
+                ],
+                'escalation' => [
+                    'has_active' => false,
+                    'is_resolved' => false,
+                    'ticket_id' => null,
+                    'category' => null,
+                    'reason' => null,
+                    'status' => null,
+                    'resolution' => null,
+                    'resolved_at' => null,
+                    'created_at' => null,
+                ],
+                'handoff' => [
+                    'is_ready' => false,
+                    'is_completed' => false,
+                    'assigned_layout_editor' => 'Rahmat Hidayat, S.Kom.',
+                    'notes_placeholder' => 'Contoh: Gunakan template 2 kolom, perhatikan gambar bagan alur rute pelayaran.',
+                    'submitted_notes' => null,
+                    'completed_at' => null,
+                ],
+                'notes' => 'Menunggu tindak lanjut Copy Editor atas catatan keberatan istilah dari penulis.',
+                'activity_timeline' => [
+                    [
+                        'title' => 'Catatan Revisi dari Penulis',
+                        'actor' => 'Dr. Eng. Ir. Faisal Syarif',
+                        'date' => '26 Okt 2026, 14:15 WITA',
+                        'description' => 'Penulis menyampaikan keberatan terhadap penerjemahan istilah Hub-and-Spoke Maritim.',
+                        'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
+                    ],
+                    [
+                        'title' => 'Permintaan Persetujuan Dikirim',
+                        'actor' => 'Andi Kurniawan (Copy Editor)',
+                        'date' => '25 Okt 2026, 10:30 WITA',
+                        'description' => 'Mengirim berkas suntingan pertama ke penulis korespondensi.',
+                        'badge_class' => 'bg-blue-50 text-blue-700 border-blue-200',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -631,6 +717,10 @@ class CopyeditorSubmissionDetailViewModel
             $status = 'escalated';
             $statusLabel = 'Dalam Mediasi Redaksi';
             $statusBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+        } elseif ($resolvedEscalation) {
+            $status = 'in_progress';
+            $statusLabel = 'Mediasi Selesai — Butuh Penyesuaian';
+            $statusBadgeClass = 'bg-indigo-50 text-indigo-800 border-indigo-200';
         } elseif ($isApproved) {
             $status = 'approved';
             $statusLabel = 'Disetujui Penulis';
@@ -639,6 +729,10 @@ class CopyeditorSubmissionDetailViewModel
             $status = 'awaiting_author_approval';
             $statusLabel = 'Menunggu Persetujuan Penulis';
             $statusBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+        } elseif ($hasChangesRequested) {
+            $status = 'in_progress';
+            $statusLabel = 'Permintaan Revisi Penulis';
+            $statusBadgeClass = 'bg-orange-50 text-orange-800 border-orange-200';
         }
 
         $corresponding = $submission?->contributors?->firstWhere('is_corresponding', true);
