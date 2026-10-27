@@ -110,6 +110,23 @@ class CopyeditSeeder extends Seeder
                 ['position' => 1]
             );
 
+            $outFile2 = FileEntry::firstOrCreate(
+                ['original_name' => 'SUB2026-00106_Supplementary_Data.docx'],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => 'copyedits/SUB2026-00106_Supplementary_Data.docx',
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => 1120000,
+                    'checksum_sha256' => hash('sha256', 'output_106_2'),
+                    'created_by' => $copyEditor->id,
+                ]
+            );
+
+            CopyeditOutput::firstOrCreate(
+                ['copyedit_id' => $copyedit106->id, 'file_id' => $outFile2->id],
+                ['position' => 2]
+            );
+
             CopyeditApproval::firstOrCreate(
                 ['copyedit_id' => $copyedit106->id, 'output_version' => 1],
                 [
@@ -250,15 +267,68 @@ class CopyeditSeeder extends Seeder
             );
         }
 
+        // Daftarkan berkas pendukung dan berkas fallback demo jika belum ada
+        $additionalDemoFiles = [
+            [
+                'original_name' => 'SUB2026-00107_Source_Digital_Service.docx',
+                'storage_path' => 'submissions/SUB2026-00107_Source_Digital_Service.docx',
+                'byte_size' => 1800000,
+            ],
+            [
+                'original_name' => 'SUB2026-00107_Copyedit_Draft1.docx',
+                'storage_path' => 'copyedits/SUB2026-00107_Copyedit_Draft1.docx',
+                'byte_size' => 1750000,
+            ],
+            [
+                'original_name' => 'SUB2026-00108_Accepted_Geoteknik.docx',
+                'storage_path' => 'submissions/SUB2026-00108_Accepted_Geoteknik.docx',
+                'byte_size' => 1950000,
+            ],
+            [
+                'original_name' => 'SUB2026-00108_Copyedit_Geoteknik_v1.docx',
+                'storage_path' => 'copyedits/SUB2026-00108_Copyedit_Geoteknik_v1.docx',
+                'byte_size' => 1910000,
+            ],
+            [
+                'original_name' => 'SUB2026-00109_Source_Ekonomi.docx',
+                'storage_path' => 'submissions/SUB2026-00109_Source_Ekonomi.docx',
+                'byte_size' => 1800000,
+            ],
+            [
+                'original_name' => 'SUB2026-00109_Copyedit_Final.docx',
+                'storage_path' => 'copyedits/SUB2026-00109_Copyedit_Final.docx',
+                'byte_size' => 1750000,
+            ],
+            [
+                'original_name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx',
+                'storage_path' => 'submissions/SUB2026-00110_Accepted_Sampah_Tallo.docx',
+                'byte_size' => 1950000,
+            ],
+            [
+                'original_name' => 'SUB2026-00110_Copyedit_Final_Approved.docx',
+                'storage_path' => 'copyedits/SUB2026-00110_Copyedit_Final_Approved.docx',
+                'byte_size' => 1920000,
+            ],
+        ];
+
+        foreach ($additionalDemoFiles as $demoFile) {
+            FileEntry::firstOrCreate(
+                ['original_name' => $demoFile['original_name']],
+                [
+                    'storage_disk' => 'local',
+                    'storage_path' => $demoFile['storage_path'],
+                    'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'byte_size' => $demoFile['byte_size'],
+                    'checksum_sha256' => hash('sha256', $demoFile['original_name']),
+                    'created_by' => $copyEditor->id,
+                ]
+            );
+        }
+
         // Pastikan seluruh berkas fisik untuk demo naskah tersedia di storage lokal
-        $seededFiles = FileEntry::whereIn('original_name', [
-            'SUB2026-00106_Source_Accepted.docx',
-            'SUB2026-00106_Copyedit_Final_Clean.docx',
-            'SUB2026-00107_Source.docx',
-            'SUB2026-00108_Source.docx',
-            'SUB2026-00109_Source.docx',
-            'SUB2026-00109_Copyedit_Approved.docx',
-        ])->get();
+        $seededFiles = FileEntry::where('storage_path', 'like', 'submissions/%')
+            ->orWhere('storage_path', 'like', 'copyedits/%')
+            ->get();
 
         foreach ($seededFiles as $file) {
             $this->ensureFileOnDisk($file);
@@ -278,7 +348,7 @@ class CopyeditSeeder extends Seeder
     {
         if (class_exists(\ZipArchive::class)) {
             $temp = tempnam(sys_get_temp_dir(), 'docx_seeder');
-            $zip = new \ZipArchive();
+            $zip = new \ZipArchive;
             if ($zip->open($temp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                     .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'

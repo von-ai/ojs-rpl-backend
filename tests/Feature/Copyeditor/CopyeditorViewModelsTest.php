@@ -10,6 +10,7 @@ use App\Models\CopyeditApprovedFile;
 use App\Models\CopyeditOutput;
 use App\Models\FileEntry;
 use App\Models\Journal;
+use App\Models\ProductionEscalation;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -146,7 +147,7 @@ class CopyeditorViewModelsTest extends TestCase
             $this->assertCount(
                 $tabCount,
                 $submissionsList,
-                "Tab [{$tabKey}] count ({$tabCount}) does not match submissions count (".count($submissionsList).") in fallback mode."
+                "Tab [{$tabKey}] count ({$tabCount}) does not match submissions count (".count($submissionsList).') in fallback mode.'
             );
         }
     }
@@ -198,7 +199,7 @@ class CopyeditorViewModelsTest extends TestCase
         // 4. Escalated
         $sub4 = Submission::create(['submission_number' => 'SUB-TEST-4', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Escalated', 'abstract' => 'Abstrak 4', 'status' => 'in_progress']);
         $ce4 = Copyedit::create(['submission_id' => $sub4->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
-        \App\Models\ProductionEscalation::create(['submission_id' => $sub4->id, 'copyedit_id' => $ce4->id, 'opened_by' => $copyEditor->id, 'reason' => 'Sengketa', 'status' => 'open']);
+        ProductionEscalation::create(['submission_id' => $sub4->id, 'copyedit_id' => $ce4->id, 'opened_by' => $copyEditor->id, 'reason' => 'Sengketa', 'status' => 'open']);
 
         // 5. Completed
         $sub5 = Submission::create(['submission_number' => 'SUB-TEST-5', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Completed', 'abstract' => 'Abstrak 5', 'status' => 'completed']);
@@ -214,7 +215,7 @@ class CopyeditorViewModelsTest extends TestCase
             $this->assertCount(
                 $tabCount,
                 $submissionsList,
-                "Tab [{$tabKey}] badge count ({$tabCount}) does not match list count (".count($submissionsList).") in database mode."
+                "Tab [{$tabKey}] badge count ({$tabCount}) does not match list count (".count($submissionsList).') in database mode.'
             );
         }
 

@@ -236,7 +236,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $response->assertHeader('content-disposition', 'attachment; filename=manuscript_to_download.docx');
     }
 
-    public function test_controller_download_file_auto_generates_when_missing_on_disk(): void
+    public function test_controller_download_file_aborts_404_when_missing_on_disk(): void
     {
         $this->actingAs($this->copyEditor);
 
@@ -252,14 +252,35 @@ class CopyeditorTransactionalControllerTest extends TestCase
 
         $response = $this->get(route('copyeditor.files.download', $fileEntry->id));
 
-        $response->assertStatus(200);
-        $response->assertHeader('content-disposition', 'attachment; filename=missing_file_on_disk.docx');
-        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('local')->exists('submissions/missing_file_on_disk.docx'));
+        $response->assertStatus(404);
+        $this->assertFalse(Storage::disk('local')->exists('submissions/missing_file_on_disk.docx'));
     }
 
-    public function test_controller_download_file_supports_filename_or_mock_identifier(): void
+    public function test_controller_download_file_aborts_404_when_not_in_database(): void
     {
         $this->actingAs($this->copyEditor);
+
+        $response = $this->get(route('copyeditor.files.download', 'non_existent_file_id_or_name.docx'));
+
+        $response->assertStatus(404);
+    }
+
+    public function test_controller_download_file_supports_lookup_by_original_name_when_exists_on_disk(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        $fakeFile = UploadedFile::fake()->create('SUB2026-00106_Source_Accepted.docx', 200);
+        $path = $fakeFile->storeAs('submissions', 'SUB2026-00106_Source_Accepted.docx', 'local');
+
+        FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => $path,
+            'original_name' => 'SUB2026-00106_Source_Accepted.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 200 * 1024,
+            'checksum_sha256' => hash('sha256', 'source_accepted'),
+            'created_by' => $this->copyEditor->id,
+        ]);
 
         $response = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'));
 
