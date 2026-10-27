@@ -48,4 +48,20 @@ class FileEntry extends Model
     {
         return $this->hasMany(SubmissionFile::class, 'file_id');
     }
+
+    /**
+     * @return HasMany<CopyeditOutput, $this>
+     */
+    public function copyeditOutputs(): HasMany
+    {
+        return $this->hasMany(CopyeditOutput::class, 'file_id');
+    }
+
+    /**
+     * @return HasMany<CopyeditApprovedFile, $this>
+     */
+    public function copyeditApprovedFiles(): HasMany
+    {
+        return $this->hasMany(CopyeditApprovedFile::class, 'file_id');
+    }
 }

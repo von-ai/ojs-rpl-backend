@@ -12,6 +12,12 @@
         </x-alert>
     @endif
 
+    @if (session('error'))
+        <x-alert type="error" title="Kendala Alur Kerja">
+            {{ session('error') }}
+        </x-alert>
+    @endif
+
     <!-- 1. Header Naskah & Tombol Navigasi -->
     @include('copyeditor.submissions.partials.header-card')
 

@@ -98,4 +98,46 @@ class Submission extends Model
     {
         return $this->hasOne(SubmissionFile::class)->where('genre', 'manuscript');
     }
+
+    /**
+     * @return HasMany<Copyedit, $this>
+     */
+    public function copyedits(): HasMany
+    {
+        return $this->hasMany(Copyedit::class);
+    }
+
+    /**
+     * Latest copyedit assignment
+     *
+     * @return HasOne<Copyedit, $this>
+     */
+    public function copyedit(): HasOne
+    {
+        return $this->hasOne(Copyedit::class)->latestOfMany('created_at');
+    }
+
+    /**
+     * @return HasMany<ProductionEscalation, $this>
+     */
+    public function escalations(): HasMany
+    {
+        return $this->hasMany(ProductionEscalation::class);
+    }
+
+    /**
+     * @return HasMany<LayoutAssignment, $this>
+     */
+    public function layoutAssignments(): HasMany
+    {
+        return $this->hasMany(LayoutAssignment::class);
+    }
+
+    /**
+     * @return HasOne<LayoutAssignment, $this>
+     */
+    public function activeLayoutAssignment(): HasOne
+    {
+        return $this->hasOne(LayoutAssignment::class)->whereNull('revoked_at')->latestOfMany('created_at');
+    }
 }

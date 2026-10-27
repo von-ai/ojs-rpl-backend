@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Copyedit;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+
 class CopyeditorSubmissionDetailViewModel
 {
     private string $submissionId;
@@ -45,6 +49,11 @@ class CopyeditorSubmissionDetailViewModel
      */
     public function submission(): array
     {
+        $fromDb = $this->queryCopyedit();
+        if ($fromDb) {
+            return $this->formatCopyeditDetail($fromDb);
+        }
+
         $dataset = $this->registry();
 
         if (isset($dataset[$this->submissionId])) {
@@ -88,7 +97,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00106',
                     'name' => 'SUB2026-00106_Source_Accepted.docx',
                     'size_formatted' => '2.14 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'),
                 ],
                 'output_files' => [
                     [
@@ -98,7 +107,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '2.05 MB',
                         'sha256' => 'a93b48f95c80dbb5a452ef32dc0e6e7890efcd12f451486791b40285a210b4f8',
                         'uploaded_at' => '24 Okt 2026 14:20 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Copyedit_Final_Clean.docx'),
                     ],
                     [
                         'id' => 'FILE-01JARK948X-02',
@@ -107,7 +116,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.12 MB',
                         'sha256' => '7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
                         'uploaded_at' => '24 Okt 2026 14:22 WITA',
-                        'download_url' => '#unduh-lampiran',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Supplementary_Data.docx'),
                     ],
                 ],
                 'approval' => [
@@ -190,7 +199,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00107',
                     'name' => 'SUB2026-00107_Source_Digital_Service.docx',
                     'size_formatted' => '1.95 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00107_Source_Digital_Service.docx'),
                 ],
                 'output_files' => [
                     [
@@ -200,7 +209,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.90 MB',
                         'sha256' => '99887766554433221100aabbccddeeff99887766554433221100aabbccddeeff',
                         'uploaded_at' => '22 Okt 2026 11:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00107_Copyedit_Draft1.docx'),
                     ],
                 ],
                 'approval' => [
@@ -276,7 +285,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00108',
                     'name' => 'SUB2026-00108_Accepted_Geoteknik.docx',
                     'size_formatted' => '3.40 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00108_Accepted_Geoteknik.docx'),
                 ],
                 'output_files' => [
                     [
@@ -286,7 +295,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '3.25 MB',
                         'sha256' => 'b1a2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
                         'uploaded_at' => '23 Okt 2026 10:15 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00108_Copyedit_Geoteknik_v1.docx'),
                     ],
                 ],
                 'approval' => [
@@ -362,7 +371,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00109',
                     'name' => 'SUB2026-00109_Source_Ekonomi.docx',
                     'size_formatted' => '1.80 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00109_Source_Ekonomi.docx'),
                 ],
                 'output_files' => [
                     [
@@ -372,7 +381,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.75 MB',
                         'sha256' => 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
                         'uploaded_at' => '23 Okt 2026 09:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00109_Copyedit_Final.docx'),
                     ],
                 ],
                 'approval' => [
@@ -448,7 +457,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00110',
                     'name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx',
                     'size_formatted' => '2.50 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00110_Accepted_Sampah_Tallo.docx'),
                 ],
                 'output_files' => [
                     [
@@ -458,7 +467,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '2.42 MB',
                         'sha256' => 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899',
                         'uploaded_at' => '21 Okt 2026 14:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00110_Copyedit_Final_Approved.docx'),
                     ],
                 ],
                 'approval' => [
@@ -508,6 +517,341 @@ class CopyeditorSubmissionDetailViewModel
                     ],
                 ],
             ],
+
+            // 6. Skenario Penulis Mengajukan Catatan Revisi (Revisions Requested — Siap Mediasi)
+            'SUB-2026-00111' => [
+                'id' => 'SUB-2026-00111',
+                'number' => 'SUB-2026-00111',
+                'assignment_code' => '#CE-01JARK948U',
+                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
+                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
+                'corresponding_author' => [
+                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
+                    'email' => 'faisal.syarif@unhas.ac.id',
+                    'affiliation' => 'Universitas Hasanuddin',
+                ],
+                'section_editor' => 'Prof. Hamka, Ph.D.',
+                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
+                'assigned_at' => '22 Okt 2026',
+                'due_at' => '04 Nov 2026 23:59 WITA',
+                'is_urgent' => false,
+                'is_completed' => false,
+                'status' => 'in_progress',
+                'status_label' => 'Permintaan Revisi Penulis',
+                'status_badge_class' => 'bg-orange-50 text-orange-800 border-orange-200',
+                'source_file' => [
+                    'id' => 'FILE-SRC-00111',
+                    'name' => 'SUB2026-00111_Source_Accepted.docx',
+                    'size_formatted' => '2.45 MB',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00111_Source_Accepted.docx'),
+                ],
+                'output_files' => [
+                    [
+                        'id' => 'FILE-01JARK948U-01',
+                        'name' => 'SUB2026-00111_Copyedit_Draft1.docx',
+                        'type' => 'Naskah Utama',
+                        'size_formatted' => '2.38 MB',
+                        'sha256' => 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+                        'uploaded_at' => '25 Okt 2026 10:00 WITA',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00111_Copyedit_Draft1.docx'),
+                    ],
+                ],
+                'approval' => [
+                    'status' => 'changes_requested',
+                    'status_label' => 'Penulis Meminta Perbaikan',
+                    'is_approved' => false,
+                    'is_waiting' => false,
+                    'has_changes_requested' => true,
+                    'author_note' => 'Penulis meminta terminologi "Hub-and-Spoke Maritim" pada Gambar 4 dan Bab 3 tetap dipertahankan sesuai standar internasional IMO tanpa diterjemahkan secara harfiah.',
+                    'approved_at' => null,
+                    'invalidated_at' => null,
+                ],
+                'escalation' => [
+                    'has_active' => false,
+                    'is_resolved' => false,
+                    'ticket_id' => null,
+                    'category' => null,
+                    'reason' => null,
+                    'status' => null,
+                    'resolution' => null,
+                    'resolved_at' => null,
+                    'created_at' => null,
+                ],
+                'handoff' => [
+                    'is_ready' => false,
+                    'is_completed' => false,
+                    'assigned_layout_editor' => 'Rahmat Hidayat, S.Kom.',
+                    'notes_placeholder' => 'Contoh: Gunakan template 2 kolom, perhatikan gambar bagan alur rute pelayaran.',
+                    'submitted_notes' => null,
+                    'completed_at' => null,
+                ],
+                'notes' => 'Menunggu tindak lanjut Copy Editor atas catatan keberatan istilah dari penulis.',
+                'activity_timeline' => [
+                    [
+                        'title' => 'Catatan Revisi dari Penulis',
+                        'actor' => 'Dr. Eng. Ir. Faisal Syarif',
+                        'date' => '26 Okt 2026, 14:15 WITA',
+                        'description' => 'Penulis menyampaikan keberatan terhadap penerjemahan istilah Hub-and-Spoke Maritim.',
+                        'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
+                    ],
+                    [
+                        'title' => 'Permintaan Persetujuan Dikirim',
+                        'actor' => 'Andi Kurniawan (Copy Editor)',
+                        'date' => '25 Okt 2026, 10:30 WITA',
+                        'description' => 'Mengirim berkas suntingan pertama ke penulis korespondensi.',
+                        'badge_class' => 'bg-blue-50 text-blue-700 border-blue-200',
+                    ],
+                ],
+            ],
         ];
+    }
+
+    private function queryCopyedit(): ?Copyedit
+    {
+        try {
+            if (! class_exists(Copyedit::class) || ! Schema::hasTable('copyedits')) {
+                return null;
+            }
+
+            return Copyedit::with([
+                'submission.section',
+                'submission.journal',
+                'submission.author',
+                'submission.contributors',
+                'submission.activeLayoutAssignment.layoutEditor',
+                'sourceFile',
+                'outputs.file',
+                'approvals.approvedFiles',
+                'approvals.author',
+                'escalations.openedBy',
+            ])
+                ->where('id', $this->submissionId)
+                ->orWhereHas('submission', function ($q) {
+                    $q->where('submission_number', $this->submissionId)
+                        ->orWhere('id', $this->submissionId);
+                })
+                ->first();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatCopyeditDetail(Copyedit $copyedit): array
+    {
+        $submission = $copyedit->submission;
+        $activeEscalation = $copyedit->escalations->first(fn ($e) => in_array($e->status, ['open', 'investigating'], true));
+        $resolvedEscalation = $copyedit->escalations->first(fn ($e) => $e->status === 'resolved');
+        $latestEscalation = $copyedit->escalations->first();
+
+        $latestApproval = $copyedit->approvals->first(fn ($a) => is_null($a->invalidated_at))
+            ?? $copyedit->approvals->first();
+
+        $approvalStatus = 'not_requested';
+        $approvalStatusLabel = 'Belum Diminta';
+
+        if ($latestApproval) {
+            if ($latestApproval->invalidated_at !== null) {
+                $approvalStatus = 'invalidated';
+                $approvalStatusLabel = 'Persetujuan Dibatalkan (Ada Berkas Baru)';
+            } elseif ($latestApproval->decision === 'approved') {
+                $approvalStatus = 'approved';
+                $approvalStatusLabel = 'Telah Disetujui Penulis';
+            } elseif ($latestApproval->decision === 'revisions_requested') {
+                $approvalStatus = 'changes_requested';
+                $approvalStatusLabel = 'Penulis Meminta Perbaikan';
+            } elseif ($latestApproval->decision === 'requested') {
+                $approvalStatus = 'requested';
+                $approvalStatusLabel = 'Menunggu Respon Penulis';
+            }
+        }
+
+        $isApproved = $approvalStatus === 'approved';
+        $isWaiting = $approvalStatus === 'requested';
+        $hasChangesRequested = $approvalStatus === 'changes_requested';
+
+        $outputFiles = [];
+        foreach ($copyedit->outputs as $output) {
+            $file = $output->file;
+            if (! $file) {
+                continue;
+            }
+            $isSupplementary = str_contains(mb_strtolower($file->original_name), 'lampiran')
+                || str_contains(mb_strtolower($file->original_name), 'supplementary');
+
+            $byteSize = (int) ($file->byte_size ?? 0);
+            if ($byteSize <= 0 && $file->storage_path) {
+                try {
+                    $disk = Storage::disk($file->storage_disk ?: 'local');
+                    if ($disk->exists($file->storage_path)) {
+                        $byteSize = (int) $disk->size($file->storage_path);
+                    }
+                } catch (\Throwable) {
+                }
+            }
+
+            $outputFiles[] = [
+                'id' => $file->id,
+                'name' => $file->original_name,
+                'type' => $isSupplementary ? 'Lampiran Data' : 'Naskah Utama',
+                'size_formatted' => $this->formatBytes($byteSize),
+                'sha256' => $file->checksum_sha256 ?? '',
+                'uploaded_at' => $file->created_at ? $file->created_at->format('d M Y H:i \W\I\T\A') : now()->format('d M Y H:i \W\I\T\A'),
+                'download_url' => route('copyeditor.files.download', $file->id),
+            ];
+        }
+
+        $handoffReady = $isApproved && ! $activeEscalation && count($outputFiles) > 0;
+
+        $status = 'in_progress';
+        $statusLabel = 'Tahap Copyediting Aktif';
+        $statusBadgeClass = 'bg-sky-50 text-sky-800 border-sky-200';
+
+        if ($copyedit->status === 'completed') {
+            $status = 'completed';
+            $statusLabel = 'Selesai — Telah Diserahkan ke Layout';
+            $statusBadgeClass = 'bg-gray-100 text-gray-800 border-gray-300';
+        } elseif ($activeEscalation) {
+            $status = 'escalated';
+            $statusLabel = 'Dalam Mediasi Redaksi';
+            $statusBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+        } elseif ($resolvedEscalation) {
+            $status = 'in_progress';
+            $statusLabel = 'Mediasi Selesai — Butuh Penyesuaian';
+            $statusBadgeClass = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+        } elseif ($isApproved) {
+            $status = 'approved';
+            $statusLabel = 'Disetujui Penulis';
+            $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+        } elseif ($isWaiting) {
+            $status = 'awaiting_author_approval';
+            $statusLabel = 'Menunggu Persetujuan Penulis';
+            $statusBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+        } elseif ($hasChangesRequested) {
+            $status = 'in_progress';
+            $statusLabel = 'Permintaan Revisi Penulis';
+            $statusBadgeClass = 'bg-orange-50 text-orange-800 border-orange-200';
+        }
+
+        $corresponding = $submission?->contributors?->firstWhere('is_corresponding', true);
+        $authorName = $corresponding?->full_name ?? $submission?->author?->name ?? 'Dr. Nurfadillah Bahar, M.Kes.';
+        $authorEmail = $corresponding?->email ?? $submission?->author?->email ?? 'author@journal.org';
+        $authorAffiliation = $corresponding?->affiliation ?? 'Universitas Hasanuddin';
+
+        $layoutEditorName = $submission?->activeLayoutAssignment?->layoutEditor?->name ?? 'Rahmat Hidayat, S.Kom.';
+
+        $timeline = [];
+        if ($copyedit->status === 'completed') {
+            $timeline[] = [
+                'title' => 'Serah Terima Selesai',
+                'actor' => $copyedit->copyEditor?->name ?? 'Copy Editor',
+                'date' => $copyedit->updated_at ? $copyedit->updated_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => "Naskah resmi diserahkan ke Layout Editor {$layoutEditorName}.",
+                'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ];
+        }
+        if ($isApproved) {
+            $timeline[] = [
+                'title' => 'Persetujuan Penulis Diterima',
+                'actor' => $authorName,
+                'date' => $latestApproval?->approved_at ? $latestApproval->approved_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => 'Penulis menyetujui seluruh berkas hasil suntingan dan checksum SHA-256 dibekukan.',
+                'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ];
+        }
+        if (count($outputFiles) > 0) {
+            $timeline[] = [
+                'title' => 'Berkas Suntingan Diunggah',
+                'actor' => $copyedit->copyEditor?->name ?? 'Copy Editor',
+                'date' => $copyedit->created_at ? $copyedit->created_at->format('d M Y, H:i \W\I\T\A') : now()->format('d M Y, H:i \W\I\T\A'),
+                'description' => 'Mengunggah naskah hasil perbaikan tata bahasa dan sitasi.',
+                'badge_class' => 'bg-sky-50 text-sky-700 border-sky-200',
+            ];
+        }
+
+        $sourceByteSize = (int) ($copyedit->sourceFile?->byte_size ?? 0);
+        if ($sourceByteSize <= 0 && $copyedit->sourceFile?->storage_path) {
+            try {
+                $disk = Storage::disk($copyedit->sourceFile->storage_disk ?: 'local');
+                if ($disk->exists($copyedit->sourceFile->storage_path)) {
+                    $sourceByteSize = (int) $disk->size($copyedit->sourceFile->storage_path);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return [
+            'id' => $submission?->submission_number ?: $copyedit->id,
+            'number' => $submission?->submission_number ?: $copyedit->id,
+            'assignment_code' => '#CE-'.strtoupper(substr($copyedit->id, 0, 10)),
+            'title' => $submission?->title ?? 'Naskah Ilmiah',
+            'section_title' => $submission?->section?->name ?? 'Inovasi Daerah & Kebijakan Publik',
+            'corresponding_author' => [
+                'name' => $authorName,
+                'email' => $authorEmail,
+                'affiliation' => $authorAffiliation,
+            ],
+            'section_editor' => 'Prof. Hamka, Ph.D.',
+            'layout_editor' => $layoutEditorName,
+            'assigned_at' => $copyedit->created_at ? $copyedit->created_at->format('d M Y') : now()->format('d M Y'),
+            'due_at' => $copyedit->due_at ? $copyedit->due_at->format('d M Y 23:59 \W\I\T\A') : now()->format('d M Y 23:59 \W\I\T\A'),
+            'is_urgent' => $copyedit->due_at ? $copyedit->due_at->diffInDays(now()) <= 3 && $copyedit->status !== 'completed' : false,
+            'is_completed' => $copyedit->status === 'completed',
+            'status' => $status,
+            'status_label' => $statusLabel,
+            'status_badge_class' => $statusBadgeClass,
+            'source_file' => [
+                'id' => $copyedit->sourceFile?->id ?? 'FILE-SRC-DEFAULT',
+                'name' => $copyedit->sourceFile?->original_name ?? 'Source_Accepted.docx',
+                'size_formatted' => $this->formatBytes($sourceByteSize),
+                'download_url' => $copyedit->sourceFile ? route('copyeditor.files.download', $copyedit->sourceFile->id) : route('copyeditor.files.download', 'Source_Accepted.docx'),
+            ],
+            'output_files' => $outputFiles,
+            'approval' => [
+                'status' => $approvalStatus,
+                'status_label' => $approvalStatusLabel,
+                'is_approved' => $isApproved,
+                'is_waiting' => $isWaiting,
+                'has_changes_requested' => $hasChangesRequested,
+                'author_note' => $latestApproval?->reason ?? $latestApproval?->note,
+                'approved_at' => $latestApproval?->approved_at ? $latestApproval->approved_at->format('d M Y H:i \W\I\T\A') : null,
+                'invalidated_at' => $latestApproval?->invalidated_at ? $latestApproval->invalidated_at->format('d M Y H:i \W\I\T\A') : null,
+            ],
+            'escalation' => [
+                'has_active' => $activeEscalation !== null,
+                'is_resolved' => $resolvedEscalation !== null,
+                'ticket_id' => $latestEscalation ? 'ESC-'.strtoupper(substr($latestEscalation->id, 0, 8)) : null,
+                'category' => $latestEscalation ? 'Mediasi Sengketa Redaksi' : null,
+                'reason' => $latestEscalation?->reason,
+                'status' => $latestEscalation ? ($activeEscalation ? 'Menunggu Mediasi Section Editor' : 'Selesai Diputuskan') : null,
+                'resolution' => $resolvedEscalation?->resolution,
+                'resolved_at' => $resolvedEscalation?->updated_at ? $resolvedEscalation->updated_at->format('d M Y') : null,
+                'created_at' => $latestEscalation?->created_at ? $latestEscalation->created_at->format('d M Y H:i \W\I\T\A') : null,
+            ],
+            'handoff' => [
+                'is_ready' => $handoffReady,
+                'is_completed' => $copyedit->status === 'completed',
+                'assigned_layout_editor' => $layoutEditorName,
+                'notes_placeholder' => 'Catatan khusus gaya selingkung atau instruksi penataan untuk Layout Editor...',
+                'submitted_notes' => $copyedit->notes,
+                'completed_at' => $copyedit->status === 'completed' && $copyedit->updated_at ? $copyedit->updated_at->format('d M Y, H:i \W\I\T\A') : null,
+            ],
+            'notes' => $copyedit->notes,
+            'activity_timeline' => $timeline,
+        ];
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = (int) floor(log($bytes, 1024));
+        $i = min($i, count($units) - 1);
+
+        return round($bytes / pow(1024, $i), 2).' '.$units[$i];
     }
 }

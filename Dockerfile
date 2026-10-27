@@ -32,29 +32,23 @@ LABEL description="SIRIDA Backend Production Container (Nginx + PHP 8.4 FPM) for
 
 WORKDIR /var/www/html
 
-# Install package sistem dan dependensi build untuk ekstensi PHP
+# Salin helper script untuk instalasi ekstensi PHP yang andal dan bebas timeout PECL
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# Install package sistem dan ekstensi PHP
 RUN apk add --no-cache \
     nginx \
     supervisor \
     curl \
-    libzip-dev \
-    libpng-dev \
-    icu-dev \
-    oniguruma-dev \
-    linux-headers \
-    $PHPIZE_DEPS \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install -j$(nproc) \
+    && install-php-extensions \
         pdo_mysql \
         bcmath \
         pcntl \
         opcache \
         zip \
         intl \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apk del $PHPIZE_DEPS linux-headers \
-    && rm -rf /tmp/pear /var/cache/apk/*
+        redis \
+    && rm -rf /var/cache/apk/*
 
 # Salin binary composer untuk kemudahan operasional / artisan CLI di dalam container
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
