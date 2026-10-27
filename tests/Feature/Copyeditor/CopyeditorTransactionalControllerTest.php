@@ -264,4 +264,3 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $this->assertNotEquals('completed', $this->copyedit->fresh()->status);
     }
 }
-

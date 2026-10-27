@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\ViewModels;
 
 use App\Models\Copyedit;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class CopyeditorSubmissionsViewModel
 {
@@ -122,18 +124,24 @@ class CopyeditorSubmissionsViewModel
             ];
         }
 
+        $mock = $this->fallbackMockSubmissions();
+        $totalActive = count(array_filter($mock, fn ($i) => $i['status'] !== 'completed'));
+        $awaitingApproval = count(array_filter($mock, fn ($i) => $i['status'] === 'awaiting_author_approval'));
+        $escalated = count(array_filter($mock, fn ($i) => $i['status'] === 'escalated'));
+        $completed = count(array_filter($mock, fn ($i) => $i['status'] === 'completed'));
+
         return [
             [
                 'title' => 'Total Penugasan Aktif',
-                'value' => 12,
+                'value' => $totalActive,
                 'description' => 'Naskah dalam tanggung jawab Anda',
-                'badge_text' => '12 Naskah',
+                'badge_text' => "{$totalActive} Naskah",
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
                 'icon' => 'document-text',
             ],
             [
                 'title' => 'Menunggu Persetujuan',
-                'value' => 4,
+                'value' => $awaitingApproval,
                 'description' => 'Output set dikirim ke penulis',
                 'badge_text' => 'Perlu Pantauan',
                 'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
@@ -141,7 +149,7 @@ class CopyeditorSubmissionsViewModel
             ],
             [
                 'title' => 'Eskalasi Produksi',
-                'value' => 2,
+                'value' => $escalated,
                 'description' => 'Dalam mediasi Section Editor',
                 'badge_text' => 'Perlu Mediasi',
                 'color_class' => 'text-red-700 bg-red-50 border-red-200',
@@ -149,7 +157,7 @@ class CopyeditorSubmissionsViewModel
             ],
             [
                 'title' => 'Riwayat Selesai',
-                'value' => 18,
+                'value' => $completed,
                 'description' => 'Telah diserahkan ke Galley Layout',
                 'badge_text' => 'Rampung',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -223,33 +231,40 @@ class CopyeditorSubmissionsViewModel
             ];
         }
 
+        $mock = $this->fallbackMockSubmissions();
+        $totalAll = count($mock);
+        $editingCount = count(array_filter($mock, fn ($i) => in_array($i['status'], ['in_progress', 'approved'], true)));
+        $awaitingCount = count(array_filter($mock, fn ($i) => $i['status'] === 'awaiting_author_approval'));
+        $escalatedCount = count(array_filter($mock, fn ($i) => $i['status'] === 'escalated'));
+        $completedCount = count(array_filter($mock, fn ($i) => $i['status'] === 'completed'));
+
         return [
             'active' => $this->activeTab,
             'items' => [
                 'all' => [
                     'key' => 'all',
                     'label' => 'Semua Penugasan',
-                    'count' => 12,
+                    'count' => $totalAll,
                 ],
                 'editing' => [
                     'key' => 'editing',
                     'label' => 'Sedang Disunting',
-                    'count' => 6,
+                    'count' => $editingCount,
                 ],
                 'awaiting_approval' => [
                     'key' => 'awaiting_approval',
                     'label' => 'Menunggu Penulis',
-                    'count' => 4,
+                    'count' => $awaitingCount,
                 ],
                 'escalated' => [
                     'key' => 'escalated',
                     'label' => 'Eskalasi Mediasi',
-                    'count' => 2,
+                    'count' => $escalatedCount,
                 ],
                 'completed' => [
                     'key' => 'completed',
                     'label' => 'Selesai Serah Terima',
-                    'count' => 18,
+                    'count' => $completedCount,
                 ],
             ],
         ];
@@ -287,7 +302,7 @@ class CopyeditorSubmissionsViewModel
         // Filter berdasarkan tab
         $filtered = array_filter($all, function ($item) {
             if ($this->activeTab === 'editing') {
-                return $item['status'] === 'in_progress';
+                return in_array($item['status'], ['in_progress', 'approved'], true);
             }
             if ($this->activeTab === 'awaiting_approval') {
                 return $item['status'] === 'awaiting_author_approval';
@@ -340,7 +355,7 @@ class CopyeditorSubmissionsViewModel
     {
         try {
             return class_exists(Copyedit::class)
-                && \Illuminate\Support\Facades\Schema::hasTable('copyedits')
+                && Schema::hasTable('copyedits')
                 && Copyedit::query()->exists();
         } catch (\Throwable) {
             return false;
@@ -348,7 +363,7 @@ class CopyeditorSubmissionsViewModel
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Copyedit>
+     * @return Collection<int, Copyedit>
      */
     private function loadDatabaseCopyedits()
     {
@@ -403,6 +418,10 @@ class CopyeditorSubmissionsViewModel
                 $status = 'awaiting_author_approval';
                 $statusLabel = 'Menunggu Persetujuan Penulis';
                 $statusBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+            } elseif ($latestApproval && $latestApproval->decision === 'revisions_requested') {
+                $status = 'in_progress';
+                $statusLabel = 'Permintaan Revisi Penulis';
+                $statusBadgeClass = 'bg-orange-50 text-orange-800 border-orange-200';
             }
 
             $outputVersion = $copyedit->outputs->count() > 0

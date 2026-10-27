@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\ViewModels;
 
 use App\Models\Copyedit;
+use Illuminate\Support\Facades\Schema;
 
 class CopyeditorSubmissionDetailViewModel
 {
@@ -521,7 +522,7 @@ class CopyeditorSubmissionDetailViewModel
     private function queryCopyedit(): ?Copyedit
     {
         try {
-            if (! class_exists(Copyedit::class) || ! \Illuminate\Support\Facades\Schema::hasTable('copyedits')) {
+            if (! class_exists(Copyedit::class) || ! Schema::hasTable('copyedits')) {
                 return null;
             }
 
@@ -537,12 +538,12 @@ class CopyeditorSubmissionDetailViewModel
                 'approvals.author',
                 'escalations.openedBy',
             ])
-            ->where('id', $this->submissionId)
-            ->orWhereHas('submission', function ($q) {
-                $q->where('submission_number', $this->submissionId)
-                  ->orWhere('id', $this->submissionId);
-            })
-            ->first();
+                ->where('id', $this->submissionId)
+                ->orWhereHas('submission', function ($q) {
+                    $q->where('submission_number', $this->submissionId)
+                        ->orWhere('id', $this->submissionId);
+                })
+                ->first();
         } catch (\Throwable) {
             return null;
         }

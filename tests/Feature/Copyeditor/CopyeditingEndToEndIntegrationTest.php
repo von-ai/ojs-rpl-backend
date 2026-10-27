@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Copyeditor;
 
 use App\Models\Copyedit;
-use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

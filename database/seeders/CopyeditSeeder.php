@@ -9,7 +9,6 @@ use App\Models\CopyeditApproval;
 use App\Models\CopyeditApprovedFile;
 use App\Models\CopyeditOutput;
 use App\Models\FileEntry;
-use App\Models\LayoutAssignment;
 use App\Models\ProductionEscalation;
 use App\Models\Submission;
 use App\Models\User;

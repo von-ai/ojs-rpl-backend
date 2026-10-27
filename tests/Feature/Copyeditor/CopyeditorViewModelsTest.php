@@ -10,7 +10,6 @@ use App\Models\CopyeditApprovedFile;
 use App\Models\CopyeditOutput;
 use App\Models\FileEntry;
 use App\Models\Journal;
-use App\Models\ProductionEscalation;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -137,5 +136,95 @@ class CopyeditorViewModelsTest extends TestCase
 
         $this->assertEquals('SUB-2026-00106', $detail['number']);
         $this->assertNotEmpty($detail['output_files']);
+
+        // Tab count parity on fallback mock
+        $tabs = ['all', 'editing', 'awaiting_approval', 'escalated', 'completed'];
+        foreach ($tabs as $tabKey) {
+            $tabVm = new CopyeditorSubmissionsViewModel($tabKey);
+            $tabCount = $tabVm->tabs()['items'][$tabKey]['count'];
+            $submissionsList = $tabVm->submissions();
+            $this->assertCount(
+                $tabCount,
+                $submissionsList,
+                "Tab [{$tabKey}] count ({$tabCount}) does not match submissions count (".count($submissionsList).") in fallback mode."
+            );
+        }
+    }
+
+    public function test_tab_counts_and_submissions_list_have_strict_parity_with_database(): void
+    {
+        $author = User::factory()->create(['name' => 'Penulis Uji']);
+        $copyEditor = User::factory()->create(['name' => 'Editor Uji']);
+
+        $journal = Journal::create([
+            'slug' => 'jurnal-uji',
+            'name' => 'Jurnal Uji',
+            'issn' => '1111-2222',
+            'status' => 'active',
+        ]);
+
+        $section = Section::create([
+            'journal_id' => $journal->id,
+            'name' => 'Seksi Uji',
+            'slug' => 'seksi-uji',
+            'position' => 1,
+            'accepting_submissions' => true,
+        ]);
+
+        $sourceFile = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'submissions/src.docx',
+            'original_name' => 'src.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'src'),
+            'created_by' => $author->id,
+        ]);
+
+        // 1. In Progress
+        $sub1 = Submission::create(['submission_number' => 'SUB-TEST-1', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah In Progress', 'abstract' => 'Abstrak 1', 'status' => 'in_progress']);
+        Copyedit::create(['submission_id' => $sub1->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+
+        // 2. Approved (belongs to editing tab)
+        $sub2 = Submission::create(['submission_number' => 'SUB-TEST-2', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Approved', 'abstract' => 'Abstrak 2', 'status' => 'in_progress']);
+        $ce2 = Copyedit::create(['submission_id' => $sub2->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+        CopyeditApproval::create(['copyedit_id' => $ce2->id, 'author_id' => $author->id, 'decision' => 'approved', 'output_version' => 1, 'approved_at' => now()]);
+
+        // 3. Awaiting Approval
+        $sub3 = Submission::create(['submission_number' => 'SUB-TEST-3', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Awaiting', 'abstract' => 'Abstrak 3', 'status' => 'in_progress']);
+        $ce3 = Copyedit::create(['submission_id' => $sub3->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+        CopyeditApproval::create(['copyedit_id' => $ce3->id, 'author_id' => $author->id, 'decision' => 'requested', 'output_version' => 1, 'approved_at' => now()]);
+
+        // 4. Escalated
+        $sub4 = Submission::create(['submission_number' => 'SUB-TEST-4', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Escalated', 'abstract' => 'Abstrak 4', 'status' => 'in_progress']);
+        $ce4 = Copyedit::create(['submission_id' => $sub4->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'in_progress', 'due_at' => now()->addDays(5)]);
+        \App\Models\ProductionEscalation::create(['submission_id' => $sub4->id, 'copyedit_id' => $ce4->id, 'opened_by' => $copyEditor->id, 'reason' => 'Sengketa', 'status' => 'open']);
+
+        // 5. Completed
+        $sub5 = Submission::create(['submission_number' => 'SUB-TEST-5', 'journal_id' => $journal->id, 'section_id' => $section->id, 'author_id' => $author->id, 'title' => 'Naskah Completed', 'abstract' => 'Abstrak 5', 'status' => 'completed']);
+        Copyedit::create(['submission_id' => $sub5->id, 'copy_editor_id' => $copyEditor->id, 'source_file_id' => $sourceFile->id, 'status' => 'completed', 'due_at' => now()->addDays(5)]);
+
+        // Test each tab: count must strictly equal count($submissions)
+        $tabs = ['all', 'editing', 'awaiting_approval', 'escalated', 'completed'];
+        foreach ($tabs as $tabKey) {
+            $tabVm = new CopyeditorSubmissionsViewModel($tabKey);
+            $tabCount = $tabVm->tabs()['items'][$tabKey]['count'];
+            $submissionsList = $tabVm->submissions();
+
+            $this->assertCount(
+                $tabCount,
+                $submissionsList,
+                "Tab [{$tabKey}] badge count ({$tabCount}) does not match list count (".count($submissionsList).") in database mode."
+            );
+        }
+
+        // Specifically check 'editing' tab: should have 2 items (in_progress + approved)
+        $editingVm = new CopyeditorSubmissionsViewModel('editing');
+        $this->assertEquals(2, $editingVm->tabs()['items']['editing']['count']);
+        $editingSubmissions = $editingVm->submissions();
+        $this->assertCount(2, $editingSubmissions);
+        $numbers = array_column($editingSubmissions, 'number');
+        $this->assertContains('SUB-TEST-1', $numbers);
+        $this->assertContains('SUB-TEST-2', $numbers);
     }
 }

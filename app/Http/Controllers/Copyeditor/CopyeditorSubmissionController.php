@@ -15,6 +15,7 @@ use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -233,7 +234,7 @@ class CopyeditorSubmissionController extends Controller
     private function findCopyedit(string $identifier): ?Copyedit
     {
         try {
-            if (! \Illuminate\Support\Facades\Schema::hasTable('copyedits')) {
+            if (! Schema::hasTable('copyedits')) {
                 return null;
             }
 
@@ -241,7 +242,7 @@ class CopyeditorSubmissionController extends Controller
                 ->where('id', $identifier)
                 ->orWhereHas('submission', function ($q) use ($identifier) {
                     $q->where('submission_number', $identifier)
-                      ->orWhere('id', $identifier);
+                        ->orWhere('id', $identifier);
                 })
                 ->first();
         } catch (\Throwable) {
