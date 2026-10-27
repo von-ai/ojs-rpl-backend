@@ -96,7 +96,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00106',
                     'name' => 'SUB2026-00106_Source_Accepted.docx',
                     'size_formatted' => '2.14 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'),
                 ],
                 'output_files' => [
                     [
@@ -106,7 +106,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '2.05 MB',
                         'sha256' => 'a93b48f95c80dbb5a452ef32dc0e6e7890efcd12f451486791b40285a210b4f8',
                         'uploaded_at' => '24 Okt 2026 14:20 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Copyedit_Final_Clean.docx'),
                     ],
                     [
                         'id' => 'FILE-01JARK948X-02',
@@ -115,7 +115,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.12 MB',
                         'sha256' => '7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
                         'uploaded_at' => '24 Okt 2026 14:22 WITA',
-                        'download_url' => '#unduh-lampiran',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00106_Supplementary_Data.docx'),
                     ],
                 ],
                 'approval' => [
@@ -198,7 +198,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00107',
                     'name' => 'SUB2026-00107_Source_Digital_Service.docx',
                     'size_formatted' => '1.95 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00107_Source_Digital_Service.docx'),
                 ],
                 'output_files' => [
                     [
@@ -208,7 +208,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.90 MB',
                         'sha256' => '99887766554433221100aabbccddeeff99887766554433221100aabbccddeeff',
                         'uploaded_at' => '22 Okt 2026 11:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00107_Copyedit_Draft1.docx'),
                     ],
                 ],
                 'approval' => [
@@ -284,7 +284,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00108',
                     'name' => 'SUB2026-00108_Accepted_Geoteknik.docx',
                     'size_formatted' => '3.40 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00108_Accepted_Geoteknik.docx'),
                 ],
                 'output_files' => [
                     [
@@ -294,7 +294,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '3.25 MB',
                         'sha256' => 'b1a2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
                         'uploaded_at' => '23 Okt 2026 10:15 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00108_Copyedit_Geoteknik_v1.docx'),
                     ],
                 ],
                 'approval' => [
@@ -370,7 +370,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00109',
                     'name' => 'SUB2026-00109_Source_Ekonomi.docx',
                     'size_formatted' => '1.80 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00109_Source_Ekonomi.docx'),
                 ],
                 'output_files' => [
                     [
@@ -380,7 +380,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '1.75 MB',
                         'sha256' => 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
                         'uploaded_at' => '23 Okt 2026 09:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00109_Copyedit_Final.docx'),
                     ],
                 ],
                 'approval' => [
@@ -456,7 +456,7 @@ class CopyeditorSubmissionDetailViewModel
                     'id' => 'FILE-SRC-00110',
                     'name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx',
                     'size_formatted' => '2.50 MB',
-                    'download_url' => '#unduh-naskah-asli',
+                    'download_url' => route('copyeditor.files.download', 'SUB2026-00110_Accepted_Sampah_Tallo.docx'),
                 ],
                 'output_files' => [
                     [
@@ -466,7 +466,7 @@ class CopyeditorSubmissionDetailViewModel
                         'size_formatted' => '2.42 MB',
                         'sha256' => 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899',
                         'uploaded_at' => '21 Okt 2026 14:00 WITA',
-                        'download_url' => '#unduh-file-suntingan',
+                        'download_url' => route('copyeditor.files.download', 'SUB2026-00110_Copyedit_Final_Approved.docx'),
                     ],
                 ],
                 'approval' => [
@@ -689,7 +689,7 @@ class CopyeditorSubmissionDetailViewModel
                 'id' => $copyedit->sourceFile?->id ?? 'FILE-SRC-DEFAULT',
                 'name' => $copyedit->sourceFile?->original_name ?? 'Source_Accepted.docx',
                 'size_formatted' => $this->formatBytes((int) ($copyedit->sourceFile?->byte_size ?? 0)),
-                'download_url' => $copyedit->sourceFile ? route('copyeditor.files.download', $copyedit->sourceFile->id) : '#unduh-naskah-asli',
+                'download_url' => $copyedit->sourceFile ? route('copyeditor.files.download', $copyedit->sourceFile->id) : route('copyeditor.files.download', 'Source_Accepted.docx'),
             ],
             'output_files' => $outputFiles,
             'approval' => [

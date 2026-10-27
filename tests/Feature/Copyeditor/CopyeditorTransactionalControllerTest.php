@@ -236,6 +236,37 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $response->assertHeader('content-disposition', 'attachment; filename=manuscript_to_download.docx');
     }
 
+    public function test_controller_download_file_auto_generates_when_missing_on_disk(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        $fileEntry = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'submissions/missing_file_on_disk.docx',
+            'original_name' => 'missing_file_on_disk.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'missing'),
+            'created_by' => $this->copyEditor->id,
+        ]);
+
+        $response = $this->get(route('copyeditor.files.download', $fileEntry->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-disposition', 'attachment; filename=missing_file_on_disk.docx');
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('local')->exists('submissions/missing_file_on_disk.docx'));
+    }
+
+    public function test_controller_download_file_supports_filename_or_mock_identifier(): void
+    {
+        $this->actingAs($this->copyEditor);
+
+        $response = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-disposition', 'attachment; filename=SUB2026-00106_Source_Accepted.docx');
+    }
+
     public function test_controller_upload_file_validation_rejects_disallowed_mime(): void
     {
         $this->actingAs($this->copyEditor);

@@ -14,6 +14,7 @@ use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class CopyeditSeeder extends Seeder
 {
@@ -248,5 +249,67 @@ class CopyeditSeeder extends Seeder
                 ['checksum_sha256' => $outFile109->checksum_sha256]
             );
         }
+
+        // Pastikan seluruh berkas fisik untuk demo naskah tersedia di storage lokal
+        $seededFiles = FileEntry::whereIn('original_name', [
+            'SUB2026-00106_Source_Accepted.docx',
+            'SUB2026-00106_Copyedit_Final_Clean.docx',
+            'SUB2026-00107_Source.docx',
+            'SUB2026-00108_Source.docx',
+            'SUB2026-00109_Source.docx',
+            'SUB2026-00109_Copyedit_Approved.docx',
+        ])->get();
+
+        foreach ($seededFiles as $file) {
+            $this->ensureFileOnDisk($file);
+        }
+    }
+
+    private function ensureFileOnDisk(FileEntry $file): void
+    {
+        $disk = Storage::disk($file->storage_disk ?: 'local');
+        if (! $disk->exists($file->storage_path)) {
+            $content = $this->generateSampleDocx($file->original_name);
+            $disk->put($file->storage_path, $content);
+        }
+    }
+
+    private function generateSampleDocx(string $filename): string
+    {
+        if (class_exists(\ZipArchive::class)) {
+            $temp = tempnam(sys_get_temp_dir(), 'docx_seeder');
+            $zip = new \ZipArchive();
+            if ($zip->open($temp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                    .'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                    .'<Default Extension="xml" ContentType="application/xml"/>'
+                    .'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+                    .'</Types>';
+                $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+                    .'</Relationships>';
+                $document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                    .'<w:body>'
+                    .'<w:p><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>Jurnal Penelitian BRIDA Makassar</w:t></w:r></w:p>'
+                    .'<w:p><w:r><w:t>Dokumen Naskah: '.htmlspecialchars($filename, ENT_XML1).'</w:t></w:r></w:p>'
+                    .'</w:body>'
+                    .'</w:document>';
+
+                $zip->addFromString('[Content_Types].xml', $contentTypes);
+                $zip->addFromString('_rels/.rels', $rels);
+                $zip->addFromString('word/document.xml', $document);
+                $zip->close();
+
+                $binary = (string) file_get_contents($temp);
+                @unlink($temp);
+
+                return $binary;
+            }
+        }
+
+        return "Dokumen Naskah Jurnal BRIDA Makassar: {$filename}\n";
     }
 }
