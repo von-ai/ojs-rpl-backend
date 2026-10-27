@@ -17,6 +17,7 @@ use App\Models\User;
 use App\ViewModels\CopyeditorSubmissionDetailViewModel;
 use App\ViewModels\CopyeditorSubmissionsViewModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CopyeditorViewModelsTest extends TestCase
@@ -227,5 +228,78 @@ class CopyeditorViewModelsTest extends TestCase
         $numbers = array_column($editingSubmissions, 'number');
         $this->assertContains('SUB-TEST-1', $numbers);
         $this->assertContains('SUB-TEST-2', $numbers);
+    }
+
+    public function test_detail_view_model_falls_back_to_disk_size_when_byte_size_is_zero_or_missing(): void
+    {
+        Storage::fake('local');
+        $disk = Storage::disk('local');
+
+        $author = User::factory()->create();
+        $copyEditor = User::factory()->create();
+        $journal = Journal::create(['slug' => 'jurnal-disk', 'name' => 'Jurnal Disk', 'issn' => '4444-5555', 'status' => 'active']);
+        $section = Section::create(['journal_id' => $journal->id, 'name' => 'Disk Section', 'slug' => 'disk-sec', 'position' => 1, 'accepting_submissions' => true]);
+
+        // Create physical file with 2,244,000 bytes (2.14 MB)
+        $diskPath = 'submissions/source_zero_byte.docx';
+        $disk->put($diskPath, str_repeat('A', 2244000));
+
+        $sourceFile = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => $diskPath,
+            'original_name' => 'source_zero_byte.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 0, // In DB it is 0
+            'checksum_sha256' => hash('sha256', 'content'),
+            'created_by' => $author->id,
+        ]);
+
+        $submission = Submission::create([
+            'submission_number' => 'SUB-2026-00999',
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $author->id,
+            'title' => 'Uji Coba Fallback Ukuran Berkas',
+            'abstract' => 'Abstrak',
+            'status' => 'accepted',
+        ]);
+
+        $copyedit = Copyedit::create([
+            'submission_id' => $submission->id,
+            'copy_editor_id' => $copyEditor->id,
+            'source_file_id' => $sourceFile->id,
+            'status' => 'in_progress',
+            'due_at' => now()->addDays(3),
+        ]);
+
+        // Output file with 2,149,580 bytes (2.05 MB)
+        $outputPath = 'copyedits/output_zero_byte.docx';
+        $disk->put($outputPath, str_repeat('B', 2149580));
+
+        $outputFile = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => $outputPath,
+            'original_name' => 'output_zero_byte.docx',
+            'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'byte_size' => 0, // In DB it is 0
+            'checksum_sha256' => hash('sha256', 'output'),
+            'created_by' => $copyEditor->id,
+        ]);
+
+        CopyeditOutput::create([
+            'copyedit_id' => $copyedit->id,
+            'file_id' => $outputFile->id,
+            'position' => 1,
+        ]);
+
+        $vm = new CopyeditorSubmissionDetailViewModel('SUB-2026-00999');
+        $detail = $vm->submission();
+
+        // Source file must fallback to disk size and format as 2.14 MB
+        $this->assertSame('2.14 MB', $detail['source_file']['size_formatted']);
+
+        // Output file must fallback to disk size and format as 2.05 MB
+        $this->assertCount(1, $detail['output_files']);
+        $this->assertSame('2.05 MB', $detail['output_files'][0]['size_formatted']);
     }
 }

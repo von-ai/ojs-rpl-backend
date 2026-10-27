@@ -105,6 +105,8 @@ class CopyeditorServiceTest extends TestCase
 
         $this->assertEquals('in_progress', $this->copyedit->fresh()->status);
         $this->assertNotEmpty($fileEntry->checksum_sha256);
+        $this->assertSame((int) Storage::disk('local')->size($fileEntry->storage_path), $fileEntry->byte_size);
+        $this->assertSame(hash('sha256', (string) Storage::disk('local')->get($fileEntry->storage_path)), $fileEntry->checksum_sha256);
     }
 
     public function test_invalidation_guard_triggers_when_new_output_is_uploaded(): void

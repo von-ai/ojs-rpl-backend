@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Copyeditor;
 
 use App\Models\Copyedit;
+use App\Models\FileEntry;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,6 +46,16 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $detailResponse->assertStatus(200);
         $detailResponse->assertSee('Unduh Naskah Asli (.docx)');
         $detailResponse->assertSee('SUB2026-00106_Copyedit_Final_Clean.docx');
+
+        // Uji unduh naskah sumber dan pastikan Content-Length cocok dengan byte_size database & disk
+        $downloadSrc = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'));
+        $downloadSrc->assertStatus(200);
+        $downloadSrc->assertHeader('Content-Length', '2244000');
+
+        // Uji unduh naskah hasil suntingan dan pastikan Content-Length cocok
+        $downloadClean = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Copyedit_Final_Clean.docx'));
+        $downloadClean->assertStatus(200);
+        $downloadClean->assertHeader('Content-Length', '2149580');
     }
 
     /**
@@ -66,8 +77,16 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         ]);
         $uploadResp->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
 
-        // Pastikan file baru tercatat di database
-        $this->assertDatabaseHas('files', ['original_name' => 'SUB2026-00106_Copyedit_v2.docx']);
+        // Pastikan file baru tercatat di database dengan byte_size dan SHA-256 yang presisi sesuai disk
+        $newFileEntry = FileEntry::where('original_name', 'SUB2026-00106_Copyedit_v2.docx')->firstOrFail();
+        $disk = Storage::disk('local');
+        $this->assertSame((int) $disk->size($newFileEntry->storage_path), $newFileEntry->byte_size);
+        $this->assertSame(hash('sha256', (string) $disk->get($newFileEntry->storage_path)), $newFileEntry->checksum_sha256);
+
+        // Pastikan berkas hasil unggahan dapat diunduh dengan Content-Length yang cocok persis
+        $downloadUploaded = $this->get(route('copyeditor.files.download', $newFileEntry->id));
+        $downloadUploaded->assertStatus(200);
+        $downloadUploaded->assertHeader('Content-Length', (string) $newFileEntry->byte_size);
 
         // Pastikan approval lama berstatus invalidated (Invalidation Guard)
         $invalidatedApprovals = $copyedit->fresh()->approvals()->whereNotNull('invalidated_at')->count();

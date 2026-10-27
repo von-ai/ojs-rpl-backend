@@ -27,15 +27,16 @@ class CopyeditorService
     {
         return DB::transaction(function () use ($copyedit, $file, $uploader): FileEntry {
             $path = $file->store("copyedits/{$copyedit->id}", 'local');
-            $realPath = Storage::disk('local')->path($path);
-            $sha256 = hash_file('sha256', $realPath) ?: hash('sha256', (string) file_get_contents($realPath));
+            $disk = Storage::disk('local');
+            $byteSize = (int) $disk->size($path);
+            $sha256 = hash('sha256', (string) $disk->get($path));
 
             $fileEntry = FileEntry::create([
                 'storage_disk' => 'local',
                 'storage_path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',
-                'byte_size' => $file->getSize() ?: (int) filesize($realPath),
+                'byte_size' => $byteSize,
                 'checksum_sha256' => $sha256,
                 'virus_scan_status' => 'clean',
                 'created_by' => $uploader->id,

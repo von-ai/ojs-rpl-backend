@@ -70,7 +70,7 @@ class CopyeditSeeder extends Seeder
 
         // Skenario 1: SUB-2026-00106 — Aktif & Menunggu Respon Penulis
         if ($sub106 = $submissions->get('SUB-2026-00106')) {
-            $srcFile = FileEntry::firstOrCreate(
+            $srcFile = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Source_Accepted.docx'],
                 [
                     'storage_disk' => 'local',
@@ -93,7 +93,7 @@ class CopyeditSeeder extends Seeder
                 ]
             );
 
-            $outFile1 = FileEntry::firstOrCreate(
+            $outFile1 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Copyedit_Final_Clean.docx'],
                 [
                     'storage_disk' => 'local',
@@ -110,13 +110,13 @@ class CopyeditSeeder extends Seeder
                 ['position' => 1]
             );
 
-            $outFile2 = FileEntry::firstOrCreate(
+            $outFile2 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Supplementary_Data.docx'],
                 [
                     'storage_disk' => 'local',
                     'storage_path' => 'copyedits/SUB2026-00106_Supplementary_Data.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'byte_size' => 1120000,
+                    'byte_size' => 1174405,
                     'checksum_sha256' => hash('sha256', 'output_106_2'),
                     'created_by' => $copyEditor->id,
                 ]
@@ -140,13 +140,13 @@ class CopyeditSeeder extends Seeder
 
         // Skenario 2: SUB-2026-00107 — Resolusi Mediasi Selesai Diputuskan
         if ($sub107 = $submissions->get('SUB-2026-00107')) {
-            $srcFile107 = FileEntry::firstOrCreate(
+            $srcFile107 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00107_Source.docx'],
                 [
                     'storage_disk' => 'local',
                     'storage_path' => 'submissions/SUB2026-00107_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'byte_size' => 1800000,
+                    'byte_size' => 2044723,
                     'checksum_sha256' => hash('sha256', 'source_107'),
                     'created_by' => $sub107->author_id,
                 ]
@@ -177,13 +177,13 @@ class CopyeditSeeder extends Seeder
 
         // Skenario 3: SUB-2026-00108 — Eskalasi Mediasi Redaksi Aktif
         if ($sub108 = $submissions->get('SUB-2026-00108')) {
-            $srcFile108 = FileEntry::firstOrCreate(
+            $srcFile108 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00108_Source.docx'],
                 [
                     'storage_disk' => 'local',
                     'storage_path' => 'submissions/SUB2026-00108_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'byte_size' => 1950000,
+                    'byte_size' => 3565158,
                     'checksum_sha256' => hash('sha256', 'source_108'),
                     'created_by' => $sub108->author_id,
                 ]
@@ -212,13 +212,13 @@ class CopyeditSeeder extends Seeder
 
         // Skenario 4: SUB-2026-00109 — Disetujui Penulis & Siap Serah Terima
         if ($sub109 = $submissions->get('SUB-2026-00109')) {
-            $srcFile109 = FileEntry::firstOrCreate(
+            $srcFile109 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00109_Source.docx'],
                 [
                     'storage_disk' => 'local',
                     'storage_path' => 'submissions/SUB2026-00109_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'byte_size' => 2050000,
+                    'byte_size' => 1887436,
                     'checksum_sha256' => hash('sha256', 'source_109'),
                     'created_by' => $sub109->author_id,
                 ]
@@ -234,13 +234,13 @@ class CopyeditSeeder extends Seeder
                 ]
             );
 
-            $outFile109 = FileEntry::firstOrCreate(
+            $outFile109 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00109_Copyedit_Approved.docx'],
                 [
                     'storage_disk' => 'local',
                     'storage_path' => 'copyedits/SUB2026-00109_Copyedit_Approved.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'byte_size' => 2010000,
+                    'byte_size' => 1835008,
                     'checksum_sha256' => hash('sha256', 'output_109'),
                     'created_by' => $copyEditor->id,
                 ]
@@ -272,47 +272,47 @@ class CopyeditSeeder extends Seeder
             [
                 'original_name' => 'SUB2026-00107_Source_Digital_Service.docx',
                 'storage_path' => 'submissions/SUB2026-00107_Source_Digital_Service.docx',
-                'byte_size' => 1800000,
+                'byte_size' => 2044723,
             ],
             [
                 'original_name' => 'SUB2026-00107_Copyedit_Draft1.docx',
                 'storage_path' => 'copyedits/SUB2026-00107_Copyedit_Draft1.docx',
-                'byte_size' => 1750000,
+                'byte_size' => 1992294,
             ],
             [
                 'original_name' => 'SUB2026-00108_Accepted_Geoteknik.docx',
                 'storage_path' => 'submissions/SUB2026-00108_Accepted_Geoteknik.docx',
-                'byte_size' => 1950000,
+                'byte_size' => 3565158,
             ],
             [
                 'original_name' => 'SUB2026-00108_Copyedit_Geoteknik_v1.docx',
                 'storage_path' => 'copyedits/SUB2026-00108_Copyedit_Geoteknik_v1.docx',
-                'byte_size' => 1910000,
+                'byte_size' => 3407872,
             ],
             [
                 'original_name' => 'SUB2026-00109_Source_Ekonomi.docx',
                 'storage_path' => 'submissions/SUB2026-00109_Source_Ekonomi.docx',
-                'byte_size' => 1800000,
+                'byte_size' => 1887436,
             ],
             [
                 'original_name' => 'SUB2026-00109_Copyedit_Final.docx',
                 'storage_path' => 'copyedits/SUB2026-00109_Copyedit_Final.docx',
-                'byte_size' => 1750000,
+                'byte_size' => 1835008,
             ],
             [
                 'original_name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx',
                 'storage_path' => 'submissions/SUB2026-00110_Accepted_Sampah_Tallo.docx',
-                'byte_size' => 1950000,
+                'byte_size' => 2621440,
             ],
             [
                 'original_name' => 'SUB2026-00110_Copyedit_Final_Approved.docx',
                 'storage_path' => 'copyedits/SUB2026-00110_Copyedit_Final_Approved.docx',
-                'byte_size' => 1920000,
+                'byte_size' => 2537553,
             ],
         ];
 
         foreach ($additionalDemoFiles as $demoFile) {
-            FileEntry::firstOrCreate(
+            FileEntry::updateOrCreate(
                 ['original_name' => $demoFile['original_name']],
                 [
                     'storage_disk' => 'local',
@@ -338,13 +338,27 @@ class CopyeditSeeder extends Seeder
     private function ensureFileOnDisk(FileEntry $file): void
     {
         $disk = Storage::disk($file->storage_disk ?: 'local');
-        if (! $disk->exists($file->storage_path)) {
-            $content = $this->generateSampleDocx($file->original_name);
+        $targetBytes = (int) ($file->byte_size ?: 1024);
+
+        if (! $disk->exists($file->storage_path) || (int) $disk->size($file->storage_path) !== $targetBytes) {
+            $content = $this->generateSampleDocx($file->original_name, $targetBytes);
             $disk->put($file->storage_path, $content);
+        }
+
+        $actualBytes = (int) $disk->size($file->storage_path);
+        $actualSha256 = hash('sha256', (string) $disk->get($file->storage_path));
+
+        if ($file->byte_size !== $actualBytes || $file->checksum_sha256 !== $actualSha256) {
+            $file->byte_size = $actualBytes;
+            $file->checksum_sha256 = $actualSha256;
+            $file->save();
+
+            CopyeditApprovedFile::where('file_id', $file->id)
+                ->update(['checksum_sha256' => $actualSha256]);
         }
     }
 
-    private function generateSampleDocx(string $filename): string
+    private function generateSampleDocx(string $filename, int $targetBytes = 0): string
     {
         if (class_exists(\ZipArchive::class)) {
             $temp = tempnam(sys_get_temp_dir(), 'docx_seeder');
@@ -365,6 +379,7 @@ class CopyeditSeeder extends Seeder
                     .'<w:body>'
                     .'<w:p><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>Jurnal Penelitian BRIDA Makassar</w:t></w:r></w:p>'
                     .'<w:p><w:r><w:t>Dokumen Naskah: '.htmlspecialchars($filename, ENT_XML1).'</w:t></w:r></w:p>'
+                    .'<w:p><w:r><w:t>Naskah ini telah melalui proses penyuntingan bahasa dan format selingkung jurnal sesuai kaidah EYD V dan APA Style 7th Edition.</w:t></w:r></w:p>'
                     .'</w:body>'
                     .'</w:document>';
 
@@ -373,11 +388,31 @@ class CopyeditSeeder extends Seeder
                 $zip->addFromString('word/document.xml', $document);
                 $zip->close();
 
+                $baseSize = filesize($temp);
+                if ($targetBytes > $baseSize) {
+                    $overhead = 118;
+                    $neededPayload = max(0, $targetBytes - $baseSize - $overhead);
+                    if ($neededPayload > 0) {
+                        $zip = new \ZipArchive;
+                        $zip->open($temp);
+                        $zip->addFromString('word/media/filler.bin', str_repeat('X', $neededPayload));
+                        $zip->setCompressionName('word/media/filler.bin', \ZipArchive::CM_STORE);
+                        $zip->close();
+                    }
+                }
+
                 $binary = (string) file_get_contents($temp);
                 @unlink($temp);
 
                 return $binary;
             }
+        }
+
+        if ($targetBytes > 0) {
+            $header = "Dokumen Naskah Jurnal BRIDA Makassar: {$filename}\n";
+            $padding = max(0, $targetBytes - strlen($header));
+
+            return $header.str_repeat(' ', $padding);
         }
 
         return "Dokumen Naskah Jurnal BRIDA Makassar: {$filename}\n";
