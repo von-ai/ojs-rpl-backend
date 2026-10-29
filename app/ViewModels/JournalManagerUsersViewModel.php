@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\User;
+use App\Models\UserRole;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class JournalManagerUsersViewModel
 {
     private string $activeFilter;
@@ -23,11 +28,18 @@ class JournalManagerUsersViewModel
      */
     public function userProfile(): array
     {
+        $user = Auth::user();
+        $name = $user?->name ?? 'Andi Muhammad Yusuf, M.Si.';
+        $affiliation = $user?->profile?->affiliation ?? 'BRIDA Kota Makassar';
+
+        $cleanName = preg_replace('/[^a-zA-Z]/', '', $name) ?: 'AY';
+        $initials = strtoupper(substr($cleanName, 0, 2));
+
         return [
-            'name' => 'Andi Muhammad Yusuf, M.Si.',
+            'name' => $name,
             'role_label' => 'Journal Manager',
-            'affiliation' => 'BRIDA Kota Makassar',
-            'initials' => 'AY',
+            'affiliation' => $affiliation,
+            'initials' => $initials,
         ];
     }
 
@@ -38,6 +50,46 @@ class JournalManagerUsersViewModel
      */
     public function summaryMetrics(): array
     {
+        if (Schema::hasTable('users') && User::count() > 0) {
+            $all = $this->allUsers();
+            $total = count($all);
+
+            $editorialCount = count(array_filter($all, fn ($u) => count(array_intersect($u['role_codes'], ['manager', 'editor_in_chief', 'section_editor'])) > 0));
+            $reviewersCount = count(array_filter($all, fn ($u) => in_array('reviewer', $u['role_codes'], true)));
+            $authorsCount = count(array_filter($all, fn ($u) => in_array('author', $u['role_codes'], true)));
+
+            return [
+                [
+                    'title' => 'Total Pengguna Jurnal',
+                    'value' => $total,
+                    'description' => 'Akun terdaftar dalam lingkup jurnal',
+                    'badge_text' => "{$total} Anggota",
+                    'color_class' => 'text-gray-900 bg-gray-50 border-gray-200',
+                ],
+                [
+                    'title' => 'Dewan Redaksi (Editorial)',
+                    'value' => $editorialCount,
+                    'description' => 'EIC, Section Editor, dan Tim Produksi',
+                    'badge_text' => 'Editorial Board',
+                    'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
+                ],
+                [
+                    'title' => 'Direktori Penelaah',
+                    'value' => $reviewersCount,
+                    'description' => 'Peer Reviewer dengan kepakaran terverifikasi',
+                    'badge_text' => 'Penelaah Aktif',
+                    'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
+                ],
+                [
+                    'title' => 'Penulis & Pembaca',
+                    'value' => $authorsCount,
+                    'description' => 'Author aktif dan kontributor naskah',
+                    'badge_text' => 'Kontributor',
+                    'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
+                ],
+            ];
+        }
+
         return [
             [
                 'title' => 'Total Pengguna Jurnal',
@@ -198,7 +250,7 @@ class JournalManagerUsersViewModel
     }
 
     /**
-     * Dataset keanggotaan pengguna dan peran jurnal BRIDA.
+     * Dataset keanggotaan pengguna dan peran jurnal dari basis data.
      *
      * @return array<int, array{
      *     id: string,
@@ -218,6 +270,80 @@ class JournalManagerUsersViewModel
      * }>
      */
     private function allUsers(): array
+    {
+        if (Schema::hasTable('users')) {
+            $query = User::with(['profile', 'userRoles']);
+
+            if (Schema::hasTable('copyedits')) {
+                $query->withCount('copyedits');
+            }
+            if (Schema::hasTable('layout_assignments')) {
+                $query->withCount('layoutAssignments');
+            }
+
+            $users = $query->get();
+
+            if ($users->isNotEmpty()) {
+                // Hitung total manager dan EIC untuk perlindungan last admin / last eic
+                $managerCount = UserRole::where('role_code', 'manager')->count();
+                $eicCount = UserRole::where('role_code', 'editor_in_chief')->count();
+
+                return $users->map(function (User $u) use ($managerCount, $eicCount) {
+                    $roles = $u->userRoles;
+                    $roleCodes = $roles->pluck('role_code')->all();
+
+                    // Fallback peran jika belum ada record eksplisit di user_roles
+                    if (empty($roleCodes)) {
+                        $roleCodes = ['author'];
+                    }
+
+                    $formattedRoles = array_map(function ($code) {
+                        return [
+                            'code' => $code,
+                            'label' => UserRole::roleLabel($code),
+                            'badge_class' => UserRole::roleBadgeClass($code),
+                        ];
+                    }, $roleCodes);
+
+                    // Gabungkan kata kunci kepakaran dari peran reviewer
+                    $expertise = [];
+                    foreach ($roles as $r) {
+                        if (! empty($r->expertise_keywords) && is_array($r->expertise_keywords)) {
+                            $expertise = array_merge($expertise, $r->expertise_keywords);
+                        }
+                    }
+
+                    $assignmentsCount = (int) ($u->copyedits_count ?? 0) + (int) ($u->layout_assignments_count ?? 0);
+
+                    $isLastAdmin = in_array('manager', $roleCodes, true) && $managerCount <= 1;
+                    $isLastEic = in_array('editor_in_chief', $roleCodes, true) && $eicCount <= 1;
+
+                    return [
+                        'id' => (string) $u->id,
+                        'name' => (string) ($u->name ?: $u->full_name),
+                        'email' => (string) $u->email,
+                        'affiliation' => (string) ($u->profile?->affiliation ?? 'Pemerintah Kota Makassar'),
+                        'role_codes' => $roleCodes,
+                        'roles' => $formattedRoles,
+                        'status' => (string) ($u->status ?? 'active'),
+                        'status_label' => ($u->status === 'active' || empty($u->status)) ? 'Aktif' : ucfirst($u->status),
+                        'status_badge_class' => ($u->status === 'active' || empty($u->status))
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-blue-50 text-blue-800 border-blue-200',
+                        'expertise' => array_values(array_unique($expertise)),
+                        'active_assignments_count' => $assignmentsCount,
+                        'is_last_admin' => $isLastAdmin,
+                        'is_last_eic' => $isLastEic,
+                        'joined_at' => $u->created_at ? $u->created_at->translatedFormat('d M Y') : '12 Jan 2024',
+                    ];
+                })->all();
+            }
+        }
+
+        return $this->registryUsers();
+    }
+
+    private function registryUsers(): array
     {
         return [
             [

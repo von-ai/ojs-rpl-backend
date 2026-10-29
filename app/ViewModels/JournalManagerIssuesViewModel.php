@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Issue;
+use App\Models\IssueArticle;
+use App\Models\Submission;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class JournalManagerIssuesViewModel
 {
     private string $activeTab;
@@ -23,11 +29,18 @@ class JournalManagerIssuesViewModel
      */
     public function userProfile(): array
     {
+        $user = Auth::user();
+        $name = $user?->name ?? 'Andi Muhammad Yusuf, M.Si.';
+        $affiliation = $user?->profile?->affiliation ?? 'BRIDA Kota Makassar';
+
+        $cleanName = preg_replace('/[^a-zA-Z]/', '', $name) ?: 'AY';
+        $initials = strtoupper(substr($cleanName, 0, 2));
+
         return [
-            'name' => 'Andi Muhammad Yusuf, M.Si.',
+            'name' => $name,
             'role_label' => 'Journal Manager',
-            'affiliation' => 'BRIDA Kota Makassar',
-            'initials' => 'AY',
+            'affiliation' => $affiliation,
+            'initials' => $initials,
         ];
     }
 
@@ -38,36 +51,60 @@ class JournalManagerIssuesViewModel
      */
     public function summaryMetrics(): array
     {
-        return [
-            [
-                'title' => 'Edisi Terbit Resmi',
-                'value' => 12,
-                'description' => 'Tersedia di katalog publik & terindeks',
-                'badge_text' => 'Publik',
-                'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
-            ],
-            [
-                'title' => 'Draf & Terjadwal',
-                'value' => 2,
-                'description' => 'Dalam proses kurasi daftar isi',
-                'badge_text' => 'Produksi',
-                'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
-            ],
-            [
-                'title' => 'Artikel Siap Terbit',
-                'value' => 5,
-                'description' => 'Galai disetujui EIC siap masuk edisi',
-                'badge_text' => 'Antrean EIC',
-                'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
-            ],
-            [
-                'title' => 'Total Artikel Terbit',
-                'value' => 84,
-                'description' => 'Akumulasi publikasi Volume 1 hingga 6',
-                'badge_text' => 'Volume 1-6',
-                'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
-            ],
-        ];
+        if (Schema::hasTable('issues') && Issue::count() > 0) {
+            $publishedCount = Issue::where('status', 'published')->count();
+            $futureCount = Issue::whereIn('status', ['draft', 'scheduled'])->count();
+
+            // Artikel siap terbit: Naskah tahap produksi yang belum masuk ke dalam edisi apapun
+            $readyCount = 0;
+            if (Schema::hasTable('submissions')) {
+                $readyCount = Submission::where(function ($query) {
+                    $query->whereIn('status', ['in_production', 'approved', 'ready_for_issue'])
+                        ->orWhereHas('galleys', fn ($g) => $g->where('status', 'active'));
+                })
+                    ->whereDoesntHave('issueArticle')
+                    ->count();
+            }
+
+            // Total artikel terbit: Akumulasi artikel dalam seluruh edisi terbit
+            $totalPublishedArticles = 0;
+            if (Schema::hasTable('issue_articles')) {
+                $totalPublishedArticles = IssueArticle::whereHas('issue', fn ($q) => $q->where('status', 'published'))->count();
+            }
+
+            return [
+                [
+                    'title' => 'Edisi Terbit Resmi',
+                    'value' => $publishedCount,
+                    'description' => 'Tersedia di katalog publik & terindeks',
+                    'badge_text' => 'Publik',
+                    'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
+                ],
+                [
+                    'title' => 'Draf & Terjadwal',
+                    'value' => $futureCount,
+                    'description' => 'Dalam proses kurasi daftar isi',
+                    'badge_text' => 'Produksi',
+                    'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
+                ],
+                [
+                    'title' => 'Artikel Siap Terbit',
+                    'value' => $readyCount,
+                    'description' => 'Galai disetujui EIC siap masuk edisi',
+                    'badge_text' => 'Antrean EIC',
+                    'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
+                ],
+                [
+                    'title' => 'Total Artikel Terbit',
+                    'value' => $totalPublishedArticles,
+                    'description' => 'Akumulasi publikasi naskah resmi jurnal',
+                    'badge_text' => 'Publikasi',
+                    'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
+                ],
+            ];
+        }
+
+        return $this->fallbackMetrics();
     }
 
     /**
@@ -174,26 +211,77 @@ class JournalManagerIssuesViewModel
     }
 
     /**
-     * Dataset naskah edisi terbitan jurnal BRIDA.
-     *
-     * @return array<int, array{
-     *     id: string,
-     *     volume: string,
-     *     number: string,
-     *     year: int,
-     *     title: string,
-     *     description: ?string,
-     *     status: string,
-     *     status_label: string,
-     *     status_badge_class: string,
-     *     is_current: bool,
-     *     articles_count: int,
-     *     published_at: ?string,
-     *     scheduled_at: ?string,
-     *     url_workspace: string
-     * }>
+     * Dataset naskah edisi terbitan jurnal BRIDA dari basis data atau fallback.
      */
     private function allIssues(): array
+    {
+        if (Schema::hasTable('issues')) {
+            $issues = Issue::withCount('issueArticles')
+                ->orderByDesc('year')
+                ->orderByDesc('volume')
+                ->orderByDesc('number')
+                ->get();
+
+            if ($issues->isNotEmpty()) {
+                return $issues->map(function (Issue $issue) {
+                    return [
+                        'id' => (string) $issue->id,
+                        'volume' => (string) $issue->volume,
+                        'number' => (string) $issue->number,
+                        'year' => (int) $issue->year,
+                        'title' => (string) $issue->title,
+                        'description' => $issue->description,
+                        'status' => (string) $issue->status,
+                        'status_label' => $issue->status_label,
+                        'status_badge_class' => $issue->status_badge_class,
+                        'is_current' => (bool) $issue->is_current,
+                        'articles_count' => (int) $issue->issue_articles_count,
+                        'published_at' => $issue->published_at ? $issue->published_at->translatedFormat('d M Y') : null,
+                        'scheduled_at' => $issue->scheduled_at ? $issue->scheduled_at->translatedFormat('d M Y') : null,
+                        'url_workspace' => route('journalmanager.issues.show', $issue->id),
+                    ];
+                })->all();
+            }
+        }
+
+        return $this->registryIssues();
+    }
+
+    private function fallbackMetrics(): array
+    {
+        return [
+            [
+                'title' => 'Edisi Terbit Resmi',
+                'value' => 12,
+                'description' => 'Tersedia di katalog publik & terindeks',
+                'badge_text' => 'Publik',
+                'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
+            ],
+            [
+                'title' => 'Draf & Terjadwal',
+                'value' => 2,
+                'description' => 'Dalam proses kurasi daftar isi',
+                'badge_text' => 'Produksi',
+                'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
+            ],
+            [
+                'title' => 'Artikel Siap Terbit',
+                'value' => 5,
+                'description' => 'Galai disetujui EIC siap masuk edisi',
+                'badge_text' => 'Antrean EIC',
+                'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
+            ],
+            [
+                'title' => 'Total Artikel Terbit',
+                'value' => 84,
+                'description' => 'Akumulasi publikasi Volume 1 hingga 6',
+                'badge_text' => 'Volume 1-6',
+                'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
+            ],
+        ];
+    }
+
+    private function registryIssues(): array
     {
         return [
             [

@@ -117,6 +117,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<UserRole, $this>
+     */
+    public function userRoles(): HasMany
+    {
+        return $this->hasMany(UserRole::class, 'user_id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

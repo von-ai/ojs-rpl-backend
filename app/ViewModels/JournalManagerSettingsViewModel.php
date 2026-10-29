@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Announcement;
+use App\Models\Journal;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class JournalManagerSettingsViewModel
 {
     /**
@@ -13,11 +18,18 @@ class JournalManagerSettingsViewModel
      */
     public function userProfile(): array
     {
+        $user = Auth::user();
+        $name = $user?->name ?? 'Andi Muhammad Yusuf, M.Si.';
+        $affiliation = $user?->profile?->affiliation ?? 'BRIDA Kota Makassar';
+
+        $cleanName = preg_replace('/[^a-zA-Z]/', '', $name) ?: 'AY';
+        $initials = strtoupper(substr($cleanName, 0, 2));
+
         return [
-            'name' => 'Andi Muhammad Yusuf, M.Si.',
+            'name' => $name,
             'role_label' => 'Journal Manager',
-            'affiliation' => 'BRIDA Kota Makassar',
-            'initials' => 'AY',
+            'affiliation' => $affiliation,
+            'initials' => $initials,
         ];
     }
 
@@ -39,17 +51,19 @@ class JournalManagerSettingsViewModel
      */
     public function journalIdentity(): array
     {
+        $journal = $this->resolveJournal();
+
         return [
-            'name' => 'Jurnal Riset dan Inovasi Daerah Kota Makassar (SIRIDA)',
-            'initials' => 'SIRIDA',
-            'slug' => 'sirida',
-            'issn_print' => '2746-8194',
-            'issn_online' => '2746-8208',
-            'publisher' => 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar',
-            'editorial_email' => 'jurnal.brida@makassar.go.id',
-            'contact_phone' => '+62 411 873-456',
-            'status' => 'active',
-            'status_label' => 'Aktif & Terdaftar',
+            'name' => (string) ($journal?->name ?? 'Jurnal Riset dan Inovasi Daerah Kota Makassar (SIRIDA)'),
+            'initials' => (string) ($journal?->initials ?? 'SIRIDA'),
+            'slug' => (string) ($journal?->slug ?? 'sirida'),
+            'issn_print' => (string) ($journal?->issn ?? '2746-8194'),
+            'issn_online' => (string) ($journal?->eissn ?? '2746-8208'),
+            'publisher' => (string) ($journal?->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar'),
+            'editorial_email' => (string) ($journal?->editorial_email ?? 'jurnal.brida@makassar.go.id'),
+            'contact_phone' => (string) ($journal?->contact_phone ?? '+62 411 873-456'),
+            'status' => (string) ($journal?->status ?? 'active'),
+            'status_label' => ($journal?->status === 'active') ? 'Aktif & Terdaftar' : 'Dalam Pemeliharaan',
         ];
     }
 
@@ -67,18 +81,20 @@ class JournalManagerSettingsViewModel
      */
     public function editorialPolicies(): array
     {
+        $journal = $this->resolveJournal();
+
         return [
-            'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
-            'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-            'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
-            'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
-            'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
-            'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+            'focus_scope' => (string) ($journal?->focus_scope ?? 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.'),
+            'frequency' => (string) ($journal?->frequency ?? '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)'),
+            'open_access_policy' => (string) ($journal?->open_access_policy ?? 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.'),
+            'apc_fee' => (string) ($journal?->apc_fee ?? 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)'),
+            'peer_review_policy' => (string) ($journal?->peer_review_policy ?? 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).'),
+            'license' => (string) ($journal?->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)'),
         ];
     }
 
     /**
-     * Daftar warta pengumuman publik (announcements) jurnal.
+     * Daftar warta pengumuman publik (announcements) jurnal dari basis data.
      *
      * @return array<int, array{
      *     id: string,
@@ -90,6 +106,26 @@ class JournalManagerSettingsViewModel
      */
     public function announcements(): array
     {
+        $journal = $this->resolveJournal();
+
+        if ($journal && Schema::hasTable('announcements')) {
+            $announcements = Announcement::where('journal_id', $journal->id)
+                ->orderByDesc('published_at')
+                ->get();
+
+            if ($announcements->isNotEmpty()) {
+                return $announcements->map(function (Announcement $ann) {
+                    return [
+                        'id' => (string) $ann->id,
+                        'title' => (string) $ann->title,
+                        'body' => (string) $ann->body,
+                        'published_at' => $ann->published_at ? $ann->published_at->translatedFormat('d M Y') : 'Baru saja',
+                        'is_published' => (bool) $ann->is_published,
+                    ];
+                })->all();
+            }
+        }
+
         return [
             [
                 'id' => 'ANN-01JARK-01',
@@ -100,11 +136,20 @@ class JournalManagerSettingsViewModel
             ],
             [
                 'id' => 'ANN-01JARK-02',
-                'title' => 'Pembaruan Panduan Gaya Selingkung Mengacu pada EYD Edisi V dan Format Sitasi APA 7th Edition',
-                'body' => 'Mulai terbitan Volume 6 Tahun 2026, seluruh naskah yang diajukan wajib mengikuti format acuan bibliografi APA Style 7th Edition dan tata bahasa EYD Edisi V.',
-                'published_at' => '15 Agu 2026',
+                'title' => 'Pembaruan Panduan Gaya Selingkung (Author Guidelines) Tahun 2026',
+                'body' => 'Mulai Volume 6, seluruh rujukan wajib menggunakan standar sitasi APA Edisi ke-7 dengan minimal 80% rujukan bersumber dari artikel jurnal terindeks bereputasi 5 tahun terakhir.',
+                'published_at' => '15 Sep 2026',
                 'is_published' => true,
             ],
         ];
+    }
+
+    private function resolveJournal(): ?Journal
+    {
+        if (Schema::hasTable('journals')) {
+            return Journal::first();
+        }
+
+        return null;
     }
 }

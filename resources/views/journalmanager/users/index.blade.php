@@ -301,9 +301,10 @@
 
             <form action="{{ route('journalmanager.users.assign-role') }}" method="POST" class="mt-4 space-y-4">
                 @csrf
+                <input type="hidden" name="user_id" id="assign_user_id" value="">
                 <div>
                     <label for="assign_user_name" class="block text-xs font-semibold text-gray-700 mb-1">Target Pengguna</label>
-                    <input type="text" id="assign_user_name" placeholder="Pilih pengguna..." class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" value="Dr. Nurfadillah Bahar, M.Kes.">
+                    <input type="text" name="user_name" id="assign_user_name" placeholder="Pilih pengguna..." class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" value="">
                 </div>
 
                 <div>
@@ -396,8 +397,10 @@
 <script>
     function openAssignRoleModal(userId = '', userName = '') {
         const modal = document.getElementById('modal-assign-role');
+        const idInput = document.getElementById('assign_user_id');
         const nameInput = document.getElementById('assign_user_name');
-        if (nameInput && userName) nameInput.value = userName;
+        if (idInput) idInput.value = userId;
+        if (nameInput) nameInput.value = userName;
         if (modal) modal.classList.remove('hidden');
     }
     function closeAssignRoleModal() {

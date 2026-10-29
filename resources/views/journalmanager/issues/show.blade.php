@@ -170,6 +170,7 @@
 
                                 <form action="{{ route('journalmanager.issues.add-article', $issue['id']) }}" method="POST" class="shrink-0">
                                     @csrf
+                                    <input type="hidden" name="article_id" value="{{ $ready['id'] }}">
                                     <input type="hidden" name="article_title" value="{{ $ready['title'] }}">
                                     <button 
                                         type="submit" 
