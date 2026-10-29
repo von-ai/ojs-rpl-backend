@@ -16,7 +16,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response = $this->get('/layouteditor/submissions/SUB-2026-00106');
 
         $response->assertStatus(200);
-        $response->assertSee('Analisis Spasial Ruang Terbuka Hijau');
+        $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time');
         $response->assertSee('Dr. Nurfadillah Bahar, M.Kes.');
         $response->assertSee('SUB2026-00106_Copyedit_Final_Approved.docx');
         $response->assertSee('Unduh Naskah Final (.docx)');
@@ -26,9 +26,10 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response->assertSee('Belum ada berkas galai publikasi');
         $response->assertSee('Unggah Draf Galai PDF Pertama');
 
-        // Langkah 2: Info proofreader
+        // Langkah 2: Info proofreader & tombol berstatus perlu PDF
         $response->assertSee('Putaran Proofreading');
         $response->assertSee('Dra. Sitti Aminah, M.Hum.');
+        $response->assertSee('Kirim Galai ke Proofreader (Perlu PDF)');
 
         // Langkah 3: Persetujuan akhir belum aktif
         $response->assertSee('Persetujuan Akhir Galai Publikasi');
@@ -50,7 +51,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response = $this->get('/layouteditor/submissions/SUB-2026-00107');
 
         $response->assertStatus(200);
-        $response->assertSee('Transformasi Digital Pelayanan Publik Kelurahan');
+        $response->assertSee('Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu');
         $response->assertSee('SUB2026-00107_Galley_v1.pdf');
         $response->assertSee('Unduh Galai');
 
@@ -72,7 +73,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response = $this->get('/layouteditor/submissions/SUB-2026-00108');
 
         $response->assertStatus(200);
-        $response->assertSee('Kajian Karakteristik Geoteknik Sedimen Pesisir Pantai Losari');
+        $response->assertSee('Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar');
         $response->assertSee('Dalam Eskalasi Tata Letak');
 
         // Kotak tiket eskalasi aktif
@@ -89,7 +90,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response = $this->get('/layouteditor/submissions/SUB-2026-00109');
 
         $response->assertStatus(200);
-        $response->assertSee('Efektivitas Program Lorong Wisata');
+        $response->assertSee('Observasi Awal Distribusi Mikroplastik pada Sedimen Muara Sungai Jeneberang Makassar');
 
         // Versi galai v2 aktif dan v1 superseded
         $response->assertSee('PDF Full Text (v2 Final Terbit)');

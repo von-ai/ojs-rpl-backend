@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             SectionSeeder::class,
             SubmissionSeeder::class,
             CopyeditSeeder::class,
+            LayoutEditorSeeder::class,
         ]);
     }
 }

@@ -77,6 +77,8 @@ Route::prefix('layouteditor')->name('layouteditor.')->group(function () {
     Route::post('/request-proofread', [LayoutEditorSubmissionController::class, 'requestProofread'])->name('request-proofread');
     Route::post('/escalate', [LayoutEditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/request-final-approval', [LayoutEditorSubmissionController::class, 'requestFinalApproval'])->name('request-final-approval');
+    Route::get('/galleys/{id}/download', [LayoutEditorSubmissionController::class, 'downloadGalley'])->name('galleys.download');
+    Route::get('/files/{id}/download', [LayoutEditorSubmissionController::class, 'downloadFile'])->name('files.download');
 });
 
 // Portal Journal Manager (Tata Kelola Edisi, Tim Redaksi & Kebijakan)

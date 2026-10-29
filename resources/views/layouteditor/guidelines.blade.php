@@ -23,7 +23,7 @@
 
         <div class="shrink-0">
             <a 
-                href="#unduh-template-galley" 
+                href="{{ route('layouteditor.files.download', 'Template_Format_Galai_BRIDA.docx') }}" 
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover text-white text-xs font-semibold rounded-xl shadow-2xs transition"
                 title="Unduh berkas template tata letak resmi"
             >

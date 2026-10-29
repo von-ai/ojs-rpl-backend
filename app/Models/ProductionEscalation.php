@@ -46,6 +46,14 @@ class ProductionEscalation extends Model
     }
 
     /**
+     * @return BelongsTo<Galley, $this>
+     */
+    public function galley(): BelongsTo
+    {
+        return $this->belongsTo(Galley::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function openedBy(): BelongsTo
