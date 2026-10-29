@@ -112,37 +112,47 @@
                 </div>
 
                 <!-- Tombol Aksi Permohonan Persetujuan EIC -->
-                @if(!$submission['approval']['editor_final']['ready_for_publication'])
-                    @if($submission['proofreading']['unresolved_count'] > 0)
-                        <div class="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200 self-start sm:self-center">
-                            Selesaikan {{ $submission['proofreading']['unresolved_count'] }} catatan koreksi sebelum mengajukan persetujuan final.
-                        </div>
-                    @elseif(count($submission['galleys']) === 0)
-                        <div class="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded self-start sm:self-center">
-                            Draf galai belum tersedia.
-                        </div>
-                    @else
-                        <form action="{{ route('layouteditor.request-final-approval') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="submission_id" value="{{ $submission['id'] }}">
-                            <button 
-                                type="submit" 
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition whitespace-nowrap"
-                            >
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Mohon Persetujuan Akhir EIC</span>
-                            </button>
-                        </form>
-                    @endif
-                @else
+                @if(!empty($submission['approval']['editor_final']['ready_for_publication']))
                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-emerald-200 text-emerald-900 border border-emerald-300 self-start sm:self-center">
                         <svg class="w-3.5 h-3.5 text-emerald-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         <span>Galai Disetujui</span>
                     </span>
+                @elseif(count($submission['galleys']) === 0)
+                    <div class="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded self-start sm:self-center">
+                        Draf galai belum tersedia.
+                    </div>
+                @elseif(empty($submission['proofreading']['has_assignment']) || ($submission['proofreading']['status'] ?? '') === 'waiting_galley' || ($submission['proofreading']['status'] ?? '') === 'waiting_review')
+                    <div class="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200 self-start sm:self-center">
+                        Galai belum melalui putaran proofreading. Kirim galai ke Proofreader terlebih dahulu.
+                    </div>
+                @elseif(($submission['proofreading']['status'] ?? '') === 'under_review' || (empty($submission['proofreading']['is_completed']) && ($submission['proofreading']['total_notes_count'] ?? 0) === 0))
+                    <div class="text-[11px] text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200 self-start sm:self-center">
+                        Putaran proofreading sedang berlangsung. Menunggu hasil tinjauan Proofreader.
+                    </div>
+                @elseif(($submission['proofreading']['unresolved_count'] ?? 0) > 0)
+                    <div class="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200 self-start sm:self-center">
+                        Selesaikan {{ $submission['proofreading']['unresolved_count'] }} catatan koreksi sebelum mengajukan persetujuan final.
+                    </div>
+                @elseif(!empty($submission['escalation']['has_active']))
+                    <div class="text-[11px] text-purple-700 bg-purple-50 px-2.5 py-1 rounded border border-purple-200 self-start sm:self-center">
+                        Terdapat tiket eskalasi aktif yang belum diselesaikan oleh Section Editor.
+                    </div>
+                @else
+                    <form action="{{ route('layouteditor.request-final-approval') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="submission_id" value="{{ $submission['id'] }}">
+                        <button 
+                            type="submit" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition whitespace-nowrap"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Mohon Persetujuan Akhir EIC</span>
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

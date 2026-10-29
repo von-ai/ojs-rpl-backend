@@ -140,4 +140,20 @@ class Submission extends Model
     {
         return $this->hasOne(LayoutAssignment::class)->whereNull('revoked_at')->latestOfMany('created_at');
     }
+
+    /**
+     * @return HasMany<Galley, $this>
+     */
+    public function galleys(): HasMany
+    {
+        return $this->hasMany(Galley::class);
+    }
+
+    /**
+     * @return HasOne<Galley, $this>
+     */
+    public function activeGalley(): HasOne
+    {
+        return $this->hasOne(Galley::class)->where('status', 'active')->latestOfMany('created_at');
+    }
 }

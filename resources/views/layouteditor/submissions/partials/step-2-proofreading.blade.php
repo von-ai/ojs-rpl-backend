@@ -44,14 +44,43 @@
                 <strong class="text-gray-900">{{ $submission['proofreading']['proofreader_name'] }}</strong>
             </div>
 
-            <!-- Tombol Pengajuan Proofreading Baru Jika Diperlukan -->
-            @if(count($submission['galleys']) > 0 && $submission['proofreading']['status'] === 'waiting_galley')
+            <!-- Tombol Aksi Pengajuan Proofreading -->
+            @if(count($submission['galleys']) === 0)
+                <button 
+                    type="button" 
+                    disabled
+                    title="Silakan unggah draf galai PDF di Langkah 1 terlebih dahulu"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-400 bg-gray-100 rounded-lg border border-gray-200 cursor-not-allowed opacity-75 shadow-2xs"
+                >
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span>Kirim Galai ke Proofreader (Perlu PDF)</span>
+                </button>
+            @elseif(($submission['proofreading']['unresolved_count'] ?? 0) > 0)
+                <span 
+                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-800 bg-amber-50 rounded-lg border border-amber-200"
+                    title="Selesaikan seluruh catatan koreksi sebelum mengirimkan putaran baru ke proofreader"
+                >
+                    <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>{{ $submission['proofreading']['unresolved_count'] }} Catatan Belum Selesai</span>
+                </span>
+            @elseif(!empty($submission['approval']['editor_final']['ready_for_publication']))
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Proofreading Selesai (Galai Disetujui)</span>
+                </span>
+            @else
                 <form action="{{ route('layouteditor.request-proofread') }}" method="POST">
                     @csrf
                     <input type="hidden" name="submission_id" value="{{ $submission['id'] }}">
                     <button 
                         type="submit" 
-                        class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-2xs transition"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

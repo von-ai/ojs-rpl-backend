@@ -44,8 +44,8 @@ class LayoutEditorCatalogPageTest extends TestCase
 
         // Baris Naskah
         $response->assertSee('SUB-2026-00106');
-        $response->assertSee('Analisis Spasial Ruang Terbuka Hijau');
-        $response->assertSee('Dr. Nurfadillah Bahar, M.Kes.');
+        $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara');
+        $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('Buka Galai');
     }
 
@@ -92,7 +92,7 @@ class LayoutEditorCatalogPageTest extends TestCase
     public function test_pencarian_naskah_layout(): void
     {
         // Pencarian dengan judul naskah
-        $responseSearch1 = $this->get('/layouteditor/submissions?q=Urban+Heat+Island');
+        $responseSearch1 = $this->get('/layouteditor/submissions?q=Sensor+IoT');
         $responseSearch1->assertStatus(200);
         $responseSearch1->assertSee('SUB-2026-00106');
         $responseSearch1->assertDontSee('SUB-2026-00107');

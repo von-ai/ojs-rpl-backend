@@ -33,6 +33,7 @@
         @php
             $isSubmissionsActive = request()->routeIs('layouteditor.submissions.*') || request()->routeIs('layouteditor.dashboard');
             $isGuidelinesActive = request()->routeIs('layouteditor.guidelines');
+            $badgeCount = $assignedCount ?? \App\ViewModels\LayoutEditorSubmissionsViewModel::getSidebarBadgeCount();
         @endphp
 
         <!-- 1. Penugasan Galai & Tata Letak -->
@@ -48,7 +49,7 @@
                 <span class="truncate sidebar-label">Penugasan Galai</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isSubmissionsActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                8
+                {{ $badgeCount }}
             </span>
         </a>
 

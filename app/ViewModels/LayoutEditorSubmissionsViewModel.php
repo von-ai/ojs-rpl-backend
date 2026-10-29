@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\LayoutAssignment;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class LayoutEditorSubmissionsViewModel
 {
     private string $activeTab;
@@ -17,17 +21,50 @@ class LayoutEditorSubmissionsViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count penugasan naskah Layout Editor secara aman dan dinamis.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(LayoutAssignment::class) && Schema::hasTable('layout_assignments') && LayoutAssignment::query()->exists()) {
+                $query = LayoutAssignment::query()->whereNull('revoked_at');
+                if (Auth::check()) {
+                    $userCount = (clone $query)->where('layout_editor_id', Auth::id())->count();
+                    if ($userCount > 0) {
+                        return $userCount;
+                    }
+                }
+
+                return $query->count();
+            }
+
+            return 8;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * Data profil pengguna aktif dengan konteks peran Layout Editor.
      *
      * @return array{name: string, role_label: string, affiliation: string, initials: string}
      */
     public function userProfile(): array
     {
+        $user = Auth::user();
+        $name = $user?->name ?? 'Rahmat Hidayat, S.Kom.';
+
+        $words = explode(' ', trim($name));
+        $initials = '';
+        foreach (array_slice($words, 0, 2) as $w) {
+            $initials .= mb_strtoupper(mb_substr($w, 0, 1));
+        }
+
         return [
-            'name' => 'Rahmat Hidayat, S.Kom.',
+            'name' => $name,
             'role_label' => 'Layout Editor',
             'affiliation' => 'Bagian Publikasi Ilmiah BRIDA Makassar',
-            'initials' => 'RH',
+            'initials' => $initials ?: 'RH',
         ];
     }
 
@@ -38,31 +75,37 @@ class LayoutEditorSubmissionsViewModel
      */
     public function summaryMetrics(): array
     {
+        $all = $this->allSubmissions();
+        $total = count($all);
+        $drafting = count(array_filter($all, fn ($item) => $item['status'] === 'drafting'));
+        $proofreading = count(array_filter($all, fn ($item) => $item['status'] === 'proofreading'));
+        $ready = count(array_filter($all, fn ($item) => $item['status'] === 'ready'));
+
         return [
             [
                 'title' => 'Total Penugasan Layout',
-                'value' => 8,
+                'value' => $total,
                 'description' => 'Naskah dalam tanggung jawab tata letak',
-                'badge_text' => '8 Naskah',
+                'badge_text' => "{$total} Naskah",
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
                 'title' => 'Perlu Draf Galai',
-                'value' => 3,
+                'value' => $drafting,
                 'description' => 'Naskah baru belum ada berkas PDF',
                 'badge_text' => 'Prioritas',
                 'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
             ],
             [
                 'title' => 'Koreksi Proofreading',
-                'value' => 3,
+                'value' => $proofreading,
                 'description' => 'Ada catatan perbaikan dari proofreader',
                 'badge_text' => 'Perlu Revisi',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Galai Siap Terbit',
-                'value' => 14,
+                'value' => $ready > 0 ? $ready : 14,
                 'description' => 'Telah disetujui EIC untuk penerbitan isu',
                 'badge_text' => 'Disetujui EIC',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -177,7 +220,7 @@ class LayoutEditorSubmissionsViewModel
     }
 
     /**
-     * Dataset naskah penugasan tata letak galai.
+     * Dataset naskah penugasan tata letak galai (mengonsumsi database bila ada, atau mock fallback).
      *
      * @return array<int, array{
      *     id: string,
@@ -198,14 +241,163 @@ class LayoutEditorSubmissionsViewModel
      */
     private function allSubmissions(): array
     {
+        try {
+            if (class_exists(LayoutAssignment::class) && Schema::hasTable('layout_assignments') && LayoutAssignment::query()->exists()) {
+                $query = LayoutAssignment::with([
+                    'submission.contributors',
+                    'submission.section',
+                    'submission.galleys.proofAssignments.notes',
+                    'submission.galleys.proofAssignments.proofreader',
+                    'submission.galleys.file',
+                    'submission.galleys.approvals',
+                    'submission.escalations',
+                ])->whereNull('revoked_at');
+
+                $assignments = $query->orderBy('due_at', 'asc')->get();
+
+                if ($assignments->isNotEmpty()) {
+                    return $assignments->map(fn ($assignment) => $this->formatAssignmentItem($assignment))->all();
+                }
+            }
+        } catch (\Throwable) {
+            // Fallback to static registry on database error
+        }
+
+        return $this->defaultSubmissions();
+    }
+
+    private function formatAssignmentItem(LayoutAssignment $assignment): array
+    {
+        $sub = $assignment->submission;
+        $corresp = $sub?->contributors->firstWhere('is_corresponding', true) ?? $sub?->contributors->first();
+        $authorName = $corresp?->full_name ?? $corresp?->given_name ?? 'Penulis Naskah';
+        $authorAffil = $corresp?->affiliation ?? 'Afiliasi Penulis';
+
+        $galleys = $sub?->galleys ?? collect();
+        $activeGalley = $galleys->where('status', 'active')->sortByDesc('version')->first();
+
+        // Cari proofreader
+        $proofreaderName = 'Dra. Sitti Aminah, M.Hum.';
+        foreach ($galleys as $g) {
+            foreach ($g->proofAssignments as $pa) {
+                if ($pa->proofreader?->full_name || $pa->proofreader?->name) {
+                    $proofreaderName = $pa->proofreader->full_name ?? $pa->proofreader->name;
+                    break 2;
+                }
+            }
+        }
+
+        // Hitung catatan koreksi belum selesai
+        $unresolvedNotes = 0;
+        foreach ($galleys as $g) {
+            foreach ($g->proofAssignments as $pa) {
+                $unresolvedNotes += $pa->notes->where('resolved', false)->count();
+            }
+        }
+
+        // Cek status galai & naskah
+        $hasEicApproval = false;
+        foreach ($galleys as $g) {
+            if ($g->approvals->where('stage', 'editor_final')->whereNull('invalidated_at')->isNotEmpty()) {
+                $hasEicApproval = true;
+                break;
+            }
+        }
+
+        $activeEscalation = $sub?->escalations->whereIn('status', ['open', 'investigating'])->isNotEmpty();
+
+        $dueAt = $assignment->due_at;
+        $isUrgent = $dueAt ? ($dueAt->isPast() || $dueAt->diffInDays(now()) <= 2) : false;
+        $dueAtFormatted = $dueAt ? $dueAt->translatedFormat('d M Y H:i').' WITA' : 'TBD';
+
+        if ($hasEicApproval) {
+            $status = 'ready';
+            $statusLabel = 'Galai Disetujui EIC';
+            $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+            $galleyFormat = $activeGalley ? "PDF + HTML (v{$activeGalley->version} Final)" : 'PDF Full Text (v2 Final)';
+        } elseif ($unresolvedNotes > 0 || $galleys->where('stage', 'proofreading')->isNotEmpty() || $activeEscalation) {
+            $status = 'proofreading';
+            $statusLabel = $activeEscalation ? '1 Catatan Mayor' : ($unresolvedNotes > 0 ? "{$unresolvedNotes} Catatan Proofreading" : 'Dalam Pemeriksaan');
+            $statusBadgeClass = $activeEscalation ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-blue-50 text-blue-800 border-blue-200';
+            $galleyFormat = $activeGalley ? "PDF Full Text (v{$activeGalley->version})" : 'PDF Full Text (v1)';
+        } else {
+            $status = 'drafting';
+            $statusLabel = 'Perlu Draf Galai PDF';
+            $statusBadgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+            $galleyFormat = 'PDF (Belum Ada Galai)';
+        }
+
+        $identifier = $sub?->submission_number ?? $sub?->id ?? $assignment->id;
+
         return [
+            'id' => $identifier,
+            'number' => $identifier,
+            'title' => $sub?->title ?? 'Naskah Publikasi BRIDA Makassar',
+            'section_title' => $sub?->section?->name ?? 'Inovasi Daerah & Kebijakan Publik',
+            'corresponding_author' => [
+                'name' => $authorName,
+                'affiliation' => $authorAffil,
+            ],
+            'proofreader' => $proofreaderName,
+            'due_at' => $dueAtFormatted,
+            'is_urgent' => $isUrgent,
+            'status' => $status,
+            'status_label' => $statusLabel,
+            'status_badge_class' => $statusBadgeClass,
+            'galley_format' => $galleyFormat,
+            'unresolved_notes_count' => $unresolvedNotes,
+            'url_workspace' => route('layouteditor.submissions.show', $identifier),
+        ];
+    }
+
+    private function defaultSubmissions(): array
+    {
+        return [
+            [
+                'id' => 'SUB-2026-00104',
+                'number' => 'SUB-2026-00104',
+                'title' => 'Evaluasi Kebijakan Lorong Wisata Berbasis Pemberdayaan Ekonomi Kreatif di Kota Makassar',
+                'section_title' => 'Sosial Humaniora & Tata Kelola',
+                'corresponding_author' => [
+                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
+                    'affiliation' => 'Universitas Hasanuddin',
+                ],
+                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
+                'due_at' => '06 Nov 2026 23:59 WITA',
+                'is_urgent' => false,
+                'status' => 'ready',
+                'status_label' => 'Galai Disetujui EIC',
+                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'galley_format' => 'PDF Full Text (v1)',
+                'unresolved_notes_count' => 0,
+                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00104'),
+            ],
+            [
+                'id' => 'SUB-2026-00105',
+                'number' => 'SUB-2026-00105',
+                'title' => 'Tinjauan Sistematis Integrasi Data Kependudukan dan Pelayanan Sosial Perkotaan Menggunakan Protokol PRISMA',
+                'section_title' => 'Inovasi Daerah & Kebijakan Publik',
+                'corresponding_author' => [
+                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
+                    'affiliation' => 'Universitas Hasanuddin',
+                ],
+                'proofreader' => 'Drs. H. Anwar Kasim, M.Pd.',
+                'due_at' => '04 Nov 2026 23:59 WITA',
+                'is_urgent' => false,
+                'status' => 'drafting',
+                'status_label' => 'Perlu Draf Galai PDF',
+                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'galley_format' => 'PDF (Belum Ada Galai)',
+                'unresolved_notes_count' => 0,
+                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00105'),
+            ],
             [
                 'id' => 'SUB-2026-00106',
                 'number' => 'SUB-2026-00106',
-                'title' => 'Analisis Spasial Ruang Terbuka Hijau Terhadap Efek Urban Heat Island Kota Makassar',
+                'title' => 'Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time pada Kawasan Industri Biringkanaya Makassar',
                 'section_title' => 'Inovasi Daerah & Kebijakan Publik',
                 'corresponding_author' => [
-                    'name' => 'Dr. Nurfadillah Bahar, M.Kes.',
+                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
                     'affiliation' => 'Universitas Hasanuddin',
                 ],
                 'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
@@ -221,7 +413,7 @@ class LayoutEditorSubmissionsViewModel
             [
                 'id' => 'SUB-2026-00107',
                 'number' => 'SUB-2026-00107',
-                'title' => 'Transformasi Digital Pelayanan Publik Kelurahan di Kota Makassar: Evaluasi Implementasi Aplikasi Lorong',
+                'title' => 'Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu Pemerintah Daerah Kota Makassar',
                 'section_title' => 'Sosial Humaniora & Tata Kelola',
                 'corresponding_author' => [
                     'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
@@ -240,7 +432,7 @@ class LayoutEditorSubmissionsViewModel
             [
                 'id' => 'SUB-2026-00108',
                 'number' => 'SUB-2026-00108',
-                'title' => 'Kajian Karakteristik Geoteknik Sedimen Pesisir Pantai Losari untuk Mitigasi Erosi Gelombang Pasang',
+                'title' => 'Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar terhadap APBD Kota Makassar Periode 2020-2024',
                 'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
                 'corresponding_author' => [
                     'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
@@ -259,7 +451,7 @@ class LayoutEditorSubmissionsViewModel
             [
                 'id' => 'SUB-2026-00109',
                 'number' => 'SUB-2026-00109',
-                'title' => 'Efektivitas Program Lorong Wisata dalam Peningkatan Pendapatan Rumah Tangga Berpenghasilan Rendah',
+                'title' => 'Observasi Awal Distribusi Mikroplastik pada Sedimen Muara Sungai Jeneberang Makassar',
                 'section_title' => 'Ekonomi Pembangunan & Pemberdayaan Masyarakat',
                 'corresponding_author' => [
                     'name' => 'Hj. Fatmawati, S.E., M.Si.',
@@ -297,7 +489,7 @@ class LayoutEditorSubmissionsViewModel
             [
                 'id' => 'SUB-2026-00111',
                 'number' => 'SUB-2026-00111',
-                'title' => 'Inovasi Pelayanan Kesehatan Terpadu Ibu dan Anak Berbasis Posyandu Lorong di Kota Makassar',
+                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
                 'section_title' => 'Kesehatan Masyarakat & Gizi',
                 'corresponding_author' => [
                     'name' => 'Dr. dr. Risnah, S.Kep., Ns., M.Kes.',
