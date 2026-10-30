@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
-use App\Models\Galley;
 use App\Models\ProofAssignment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;

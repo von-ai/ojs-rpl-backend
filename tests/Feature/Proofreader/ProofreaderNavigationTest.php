@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Proofreader;
 
+use App\ViewModels\ProofreaderSubmissionsViewModel;
 use Tests\TestCase;
 
 class ProofreaderNavigationTest extends TestCase
@@ -113,7 +114,7 @@ class ProofreaderNavigationTest extends TestCase
         $response = $this->get('/proofreader/submissions');
         $response->assertStatus(200);
 
-        $badgeCount = \App\ViewModels\ProofreaderSubmissionsViewModel::getSidebarBadgeCount();
+        $badgeCount = ProofreaderSubmissionsViewModel::getSidebarBadgeCount();
         $this->assertGreaterThan(0, $badgeCount);
 
         // Angka pada navbar harus tercetak di HTML
