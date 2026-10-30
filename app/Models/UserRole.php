@@ -43,6 +43,7 @@ class UserRole extends Model
     public static function roleLabel(string $roleCode): string
     {
         return match ($roleCode) {
+            'sysadmin' => 'System Administrator',
             'manager' => 'Journal Manager',
             'editor_in_chief' => 'Editor in Chief',
             'section_editor' => 'Section Editor',
@@ -58,6 +59,7 @@ class UserRole extends Model
     public static function roleBadgeClass(string $roleCode): string
     {
         return match ($roleCode) {
+            'sysadmin' => 'bg-purple-50 text-purple-800 border-purple-200',
             'manager' => 'bg-purple-50 text-purple-800 border-purple-200',
             'editor_in_chief' => 'bg-brand-maroon text-white border-brand-maroon',
             'section_editor' => 'bg-blue-50 text-blue-800 border-blue-200',
