@@ -11,6 +11,7 @@ use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
 use App\Http\Controllers\PublicJournalController;
+use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +80,19 @@ Route::middleware('auth')->prefix('section-editor')->name('section-editor.')->gr
     Route::post('/assignments/{assignmentId}/reminder', [SectionEditorController::class, 'sendReminder'])->name('assignments.reminder');
     Route::post('/extensions/{extensionId}/decide', [SectionEditorController::class, 'decideExtension'])->name('extensions.decide');
     Route::post('/rounds/{roundId}/recommendation', [SectionEditorController::class, 'submitRecommendation'])->name('rounds.recommendation');
+});
+
+// Portal Mitra Bestari (Peer Reviewer - UC-08 Undangan & UC-09 Evaluasi Telaah)
+Route::middleware('auth')->prefix('reviewer')->name('reviewer.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('reviewer.assignments.index');
+    })->name('dashboard');
+    Route::get('/assignments', [ReviewerController::class, 'index'])->name('assignments.index');
+    Route::get('/assignments/{id}', [ReviewerController::class, 'show'])->name('assignments.show');
+    Route::post('/assignments/{id}/respond', [ReviewerController::class, 'respond'])->name('assignments.respond');
+    Route::post('/assignments/{id}/extension', [ReviewerController::class, 'requestExtension'])->name('assignments.extension');
+    Route::post('/assignments/{id}/draft', [ReviewerController::class, 'saveDraft'])->name('assignments.draft');
+    Route::post('/assignments/{id}/submit', [ReviewerController::class, 'submitReview'])->name('assignments.submit');
 });
 
 // Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
