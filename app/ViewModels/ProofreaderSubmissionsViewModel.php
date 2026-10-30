@@ -22,27 +22,39 @@ class ProofreaderSubmissionsViewModel
     }
 
     /**
-     * Jumlah badge navigasi sidebar untuk penugasan proofreading aktif.
+     * Helper statis untuk mengambil badge count penugasan naskah Proofreader secara aman dan dinamis.
      */
     public static function getSidebarBadgeCount(): int
     {
         try {
-            if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments')) {
-                $count = ProofAssignment::whereIn('status', ['assigned', 'in_progress'])->count();
-                if ($count > 0) {
-                    return $count;
+            if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments') && ProofAssignment::query()->exists()) {
+                $query = ProofAssignment::query()->whereHas('galley.submission');
+
+                if (Auth::check()) {
+                    $userCount = (clone $query)->where('proofreader_id', Auth::id())->count();
+                    if ($userCount > 0) {
+                        return $userCount;
+                    }
                 }
 
-                $galleysInProofreading = Galley::where('stage', 'proofreading')->count();
-                if ($galleysInProofreading > 0) {
-                    return $galleysInProofreading;
+                $total = $query->count();
+                if ($total > 0) {
+                    return $total;
                 }
             }
-        } catch (\Throwable) {
-            // fallback
-        }
 
-        return 6;
+            return (new self)->totalAssignedCount();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Jumlah seluruh naskah penugasan proofreading (termasuk yang telah selesai).
+     */
+    public function totalAssignedCount(): int
+    {
+        return count($this->allSubmissions());
     }
 
     /**
@@ -247,12 +259,21 @@ class ProofreaderSubmissionsViewModel
     {
         try {
             if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments')) {
-                $assignments = ProofAssignment::with([
+                $query = ProofAssignment::with([
                     'galley.submission.section',
                     'galley.submission.author',
                     'galley.submission.activeLayoutAssignment.layoutEditor',
                     'galley.proofreadingNotes',
-                ])->latest('created_at')->get();
+                ]);
+
+                if (Auth::check()) {
+                    $userAssigned = (clone $query)->where('proofreader_id', Auth::id());
+                    if ($userAssigned->exists()) {
+                        $query = $userAssigned;
+                    }
+                }
+
+                $assignments = $query->latest('created_at')->get();
 
                 if ($assignments->isNotEmpty()) {
                     $results = [];
