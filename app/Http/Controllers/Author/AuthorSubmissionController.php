@@ -13,18 +13,25 @@ use App\Models\Submission;
 use App\Models\SubmissionContributor;
 use App\Models\SubmissionFile;
 use App\Models\User;
+use App\Services\Author\AuthorSubmissionService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AuthorSubmissionController extends Controller
 {
+    public function __construct(
+        protected AuthorSubmissionService $authorSubmissionService
+    ) {}
+
     /**
      * Menampilkan formulir wizard pengajuan naskah baru.
      */
@@ -403,5 +410,89 @@ class AuthorSubmissionController extends Controller
         return redirect()
             ->route('author.submissions.show', $submission->id)
             ->with('success', 'Naskah ilmiah berhasil diajukan penarikannya dan status naskah telah diperbarui menjadi ditarik.');
+    }
+
+    /**
+     * Memproses pengunggahan naskah revisi dan response letter oleh Penulis (UC-07).
+     */
+    public function storeRevision(Request $request, string $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'manuscript_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
+            'response_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'manuscript_file.required' => 'Berkas manuskrip revisi wajib diunggah.',
+            'manuscript_file.mimes' => 'Format berkas manuskrip harus berupa PDF, DOC, atau DOCX.',
+            'manuscript_file.max' => 'Ukuran berkas manuskrip tidak boleh melebihi 20 MB.',
+            'response_letter_file.mimes' => 'Format response letter harus berupa PDF, DOC, atau DOCX.',
+            'response_letter_file.max' => 'Ukuran response letter tidak boleh melebihi 20 MB.',
+        ]);
+
+        $user = $request->user();
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->first();
+
+        if (! $submission) {
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('error', 'Naskah ilmiah tidak ditemukan.');
+        }
+
+        try {
+            $this->authorSubmissionService->submitRevision(
+                submission: $submission,
+                actor: $user,
+                manuscriptFile: $request->file('manuscript_file'),
+                responseLetterFile: $request->file('response_letter_file'),
+                note: $validated['note'] ?? null
+            );
+
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('success', 'Naskah revisi berhasil diunggah. Status naskah kini kembali ditelaah dewan redaksi.');
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('error', 'Terjadi kesalahan sistem saat memproses revisi naskah: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Memproses pengunduhan berkas privat naskah (UC-06).
+     */
+    public function downloadFile(Request $request, string $id, string $fileId): BinaryFileResponse|StreamedResponse|RedirectResponse
+    {
+        $user = $request->user();
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->first();
+
+        if (! $submission) {
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('error', 'Naskah ilmiah tidak ditemukan.');
+        }
+
+        try {
+            return $this->authorSubmissionService->downloadFile(
+                submission: $submission,
+                fileId: $fileId,
+                actor: $user
+            );
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        }
     }
 }

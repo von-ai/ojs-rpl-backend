@@ -156,4 +156,12 @@ class Submission extends Model
     {
         return $this->hasOne(Galley::class)->where('status', 'active')->latestOfMany('created_at');
     }
+
+    /**
+     * @return HasMany<Revision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(Revision::class)->orderBy('round', 'desc');
+    }
 }

@@ -135,17 +135,24 @@ class AuthorSubmissionDetailViewModel
         foreach ($sub->files as $sf) {
             $f = $sf->file;
             if ($f) {
+                $genreLabel = match ($sf->genre) {
+                    'response_letter' => 'Surat Tanggapan Revisi',
+                    'revision' => 'Manuskrip Revisi',
+                    default => 'Manuskrip Utama',
+                };
+
                 $files[] = [
+                    'id' => $f->id,
                     'name' => $f->original_name,
                     'genre' => $sf->genre ?? 'manuscript',
-                    'genre_label' => $sf->genre === 'response_letter' ? 'Surat Tanggapan Revisi' : 'Manuskrip Utama',
+                    'genre_label' => $genreLabel,
                     'size_formatted' => $this->formatBytes($f->byte_size ?? 0),
                     'byte_size' => (int) ($f->byte_size ?? 0),
                     'mime_type' => $f->mime_type ?? 'application/pdf',
                     'checksum' => $f->checksum_sha256 ?? 'sha256-verified-safe',
                     'virus_scan_status' => $f->virus_scan_status ?? 'clean',
                     'uploaded_at' => $f->created_at ? $f->created_at->format('d M Y, H:i') : now()->format('d M Y, H:i'),
-                    'download_url' => '#download-file',
+                    'download_url' => route('author.submissions.files.download', ['id' => $sub->id, 'fileId' => $f->id]),
                 ];
             }
         }
