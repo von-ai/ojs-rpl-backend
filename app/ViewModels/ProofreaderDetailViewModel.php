@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Submission;
+use Illuminate\Support\Facades\Schema;
+
 class ProofreaderDetailViewModel
 {
     private string $submissionId;
@@ -96,9 +99,162 @@ class ProofreaderDetailViewModel
      */
     public function submission(): array
     {
+        $fromDb = $this->querySubmission();
+        if ($fromDb !== null) {
+            return $fromDb;
+        }
+
         $registry = $this->registry();
 
         return $registry[$this->submissionId] ?? $registry['SUB-2026-00106'];
+    }
+
+    private function querySubmission(): ?array
+    {
+        try {
+            if (! class_exists(Submission::class) || ! Schema::hasTable('submissions')) {
+                return null;
+            }
+
+            $sub = Submission::with([
+                'contributors',
+                'section',
+                'galleys.file',
+                'galleys.proofAssignments.notes',
+                'galleys.proofAssignments.proofreader',
+                'escalations',
+            ])->where('submission_number', $this->submissionId)
+                ->orWhere('id', $this->submissionId)
+                ->first();
+
+            if (! $sub) {
+                return null;
+            }
+
+            return $this->formatSubmissionFromDb($sub);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function formatSubmissionFromDb(Submission $sub): array
+    {
+        $registry = $this->registry();
+        $fallback = $registry[$sub->submission_number] ?? $registry['SUB-2026-00106'];
+
+        $corresp = $sub->contributors->firstWhere('is_corresponding', true) ?? $sub->contributors->first();
+        $authorName = $corresp?->full_name ?? $corresp?->given_name ?? $fallback['corresponding_author']['name'];
+        $authorEmail = $corresp?->email ?? $fallback['corresponding_author']['email'];
+        $authorAffil = $corresp?->affiliation ?? $fallback['corresponding_author']['affiliation'];
+
+        $activeGalley = $sub->galleys->where('status', 'active')->sortByDesc('version')->first()
+            ?? $sub->galleys->sortByDesc('version')->first();
+
+        $activeAssignment = $activeGalley?->proofAssignments?->last();
+        if (! $activeAssignment) {
+            foreach ($sub->galleys as $g) {
+                if ($g->proofAssignments->isNotEmpty()) {
+                    $activeAssignment = $g->proofAssignments->last();
+                    break;
+                }
+            }
+        }
+
+        $assignmentCode = $activeAssignment ? ('#PR-'.strtoupper(substr($activeAssignment->id, 0, 10))) : $fallback['assignment_code'];
+
+        $galleyData = [
+            'id' => $activeGalley?->id ?? 'GAL-01JARK-02',
+            'version' => (int) ($activeGalley?->version ?? 1),
+            'version_label' => 'Versi '.($activeGalley?->version ?? 1).($activeGalley && $activeGalley->version > 1 ? ' (Revisi)' : ''),
+            'file_name' => $activeGalley?->file?->original_name ?? 'Galley_Draft.pdf',
+            'size_formatted' => $activeGalley?->file ? number_format($activeGalley->file->byte_size / 1048576, 2).' MB' : '3.8 MB',
+            'checksum_sha256' => $activeGalley?->checksum_sha256 ?? '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b',
+            'download_url' => '#',
+            'uploaded_at' => $activeGalley?->created_at ? $activeGalley->created_at->translatedFormat('d M Y, H:i').' WITA' : 'TBD',
+        ];
+
+        // Format catatan koreksi
+        $rawNotes = $activeAssignment?->notes ?? collect();
+        $catLabels = [
+            'typo' => 'Tipografi / Ejaan',
+            'layout' => 'Tata Letak / Format',
+            'metadata' => 'Metadata / Penulis / Judul',
+            'reference' => 'Sitasi & Pustaka',
+        ];
+        $sevBadges = [
+            'minor' => 'bg-blue-50 text-blue-700 border-blue-200',
+            'major' => 'bg-amber-50 text-amber-800 border-amber-200',
+            'critical' => 'bg-red-50 text-red-700 border-red-200',
+        ];
+
+        $notesList = $rawNotes->map(function ($n) use ($catLabels, $sevBadges) {
+            return [
+                'id' => $n->id,
+                'page' => $n->page,
+                'category' => $n->category,
+                'category_label' => $catLabels[$n->category] ?? ucfirst($n->category),
+                'severity' => $n->severity,
+                'severity_badge' => $sevBadges[$n->severity] ?? 'bg-gray-100 text-gray-700 border-gray-200',
+                'severity_label' => ucfirst($n->severity),
+                'description' => $n->description,
+                'resolved' => (bool) $n->resolved,
+                'resolution' => $n->resolution,
+                'resolved_at' => $n->resolved_at ? $n->resolved_at->translatedFormat('d M Y, H:i').' WITA' : null,
+                'verified' => (bool) $n->resolved,
+            ];
+        })->values()->all();
+
+        // Jika DB belum ada catatan, pakai fallback notes
+        if (empty($notesList) && ! $activeAssignment) {
+            $notesList = $fallback['notes'];
+        }
+
+        $totalNotes = count($notesList);
+        $unresolvedNotes = count(array_filter($notesList, fn ($item) => ! $item['resolved']));
+        $resolvedNotes = $totalNotes - $unresolvedNotes;
+        $blockingNotes = count(array_filter($notesList, fn ($item) => ! $item['resolved'] && in_array($item['severity'], ['critical', 'major'], true)));
+        $canSignoff = $blockingNotes === 0 && ($activeAssignment?->status !== 'completed');
+
+        $escalation = $sub->escalations->where('status', 'open')->first();
+
+        return [
+            'id' => $sub->submission_number ?? $sub->id,
+            'number' => $sub->submission_number ?? $sub->id,
+            'assignment_code' => $assignmentCode,
+            'title' => $sub->title,
+            'section_title' => $sub->section?->title ?? $fallback['section_title'],
+            'corresponding_author' => [
+                'name' => $authorName,
+                'email' => $authorEmail,
+                'affiliation' => $authorAffil,
+            ],
+            'section_editor' => $fallback['section_editor'],
+            'layout_editor' => $fallback['layout_editor'],
+            'due_at' => $activeAssignment?->due_at ? $activeAssignment->due_at->translatedFormat('d M Y') : $fallback['due_at'],
+            'assigned_at' => $activeAssignment?->assigned_at ? $activeAssignment->assigned_at->translatedFormat('d M Y, H:i').' WITA' : $fallback['assigned_at'],
+            'is_urgent' => $fallback['is_urgent'],
+            'status' => $activeAssignment?->status ?? 'in_review',
+            'status_label' => $activeAssignment?->status === 'completed' ? 'Pemeriksaan Selesai & Disetujui' : ($unresolvedNotes > 0 ? 'Menunggu Tindak Lanjut Layout Editor' : 'Siap Diberikan Sign-off'),
+            'status_badge_class' => $activeAssignment?->status === 'completed' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200',
+            'is_completed' => $activeAssignment?->status === 'completed',
+            'active_galley' => $galleyData,
+            'copyedit_reference' => $fallback['copyedit_reference'],
+            'notes' => $notesList,
+            'summary' => [
+                'total_notes' => $totalNotes,
+                'unresolved_notes' => $unresolvedNotes,
+                'resolved_notes' => $resolvedNotes,
+                'can_signoff' => $canSignoff,
+                'signoff_guard_reason' => $blockingNotes > 0 ? "Terdapat {$blockingNotes} catatan berkategori Kritis/Mayor yang belum diselesaikan oleh Layout Editor." : null,
+            ],
+            'escalation' => [
+                'has_active' => (bool) $escalation,
+                'ticket_id' => $escalation?->id,
+                'reason' => $escalation?->reason,
+                'status_label' => $escalation ? 'Menunggu Peninjauan Editor' : null,
+            ],
+            'activity_timeline' => $fallback['activity_timeline'],
+        ];
     }
 
     /**

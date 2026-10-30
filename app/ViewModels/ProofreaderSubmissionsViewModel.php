@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\ProofAssignment;
+use Illuminate\Support\Facades\Schema;
+
 class ProofreaderSubmissionsViewModel
 {
     private string $activeTab;
@@ -204,6 +207,75 @@ class ProofreaderSubmissionsViewModel
      * }>
      */
     private function allSubmissions(): array
+    {
+        try {
+            if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments') && ProofAssignment::query()->exists()) {
+                $assignments = ProofAssignment::with([
+                    'galley.submission.contributors',
+                    'galley.submission.section',
+                    'notes',
+                ])->latest()->get();
+
+                $list = [];
+                $seenSubmissions = [];
+
+                foreach ($assignments as $a) {
+                    $sub = $a->galley?->submission;
+                    if (! $sub || in_array($sub->id, $seenSubmissions, true)) {
+                        continue;
+                    }
+                    $seenSubmissions[] = $sub->id;
+
+                    $corresp = $sub->contributors->firstWhere('is_corresponding', true) ?? $sub->contributors->first();
+                    $unresolved = $a->notes->where('resolved', false)->count();
+
+                    $status = 'pending';
+                    $statusLabel = 'Perlu Pemeriksaan Galai';
+                    $badgeClass = 'bg-amber-50 text-amber-800 border-amber-200/80';
+
+                    if ($a->status === 'completed') {
+                        $status = 'completed';
+                        $statusLabel = 'Pemeriksaan Selesai';
+                        $badgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                    } elseif ($unresolved > 0) {
+                        $status = 'waiting_layout';
+                        $statusLabel = 'Menunggu Revisi Layout';
+                        $badgeClass = 'bg-blue-50 text-blue-800 border-blue-200';
+                    }
+
+                    $list[] = [
+                        'id' => $sub->submission_number ?? $sub->id,
+                        'number' => $sub->submission_number ?? $sub->id,
+                        'title' => $sub->title,
+                        'section_title' => $sub->section?->title ?? 'Inovasi Daerah',
+                        'corresponding_author' => [
+                            'name' => $corresp?->full_name ?? $corresp?->given_name ?? 'Penulis Naskah',
+                            'affiliation' => $corresp?->affiliation ?? 'BRIDA Makassar',
+                        ],
+                        'layout_editor' => 'Rahmat Hidayat, S.Kom.',
+                        'galley_version' => 'v'.($a->galley?->version ?? 1),
+                        'due_at' => $a->due_at ? $a->due_at->translatedFormat('d M Y') : 'TBD',
+                        'is_urgent' => false,
+                        'status' => $status,
+                        'status_label' => $statusLabel,
+                        'status_badge_class' => $badgeClass,
+                        'unresolved_notes_count' => $unresolved,
+                        'url_workspace' => route('proofreader.submissions.show', $sub->submission_number ?? $sub->id),
+                    ];
+                }
+
+                if (! empty($list)) {
+                    return $list;
+                }
+            }
+        } catch (\Throwable) {
+            // fallback
+        }
+
+        return $this->fallbackSubmissions();
+    }
+
+    private function fallbackSubmissions(): array
     {
         return [
             [
