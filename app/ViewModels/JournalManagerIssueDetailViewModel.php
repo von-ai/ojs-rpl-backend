@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Issue;
+use App\Models\Submission;
+use Illuminate\Support\Facades\Schema;
+
 class JournalManagerIssueDetailViewModel
 {
     private string $issueId;
@@ -64,26 +68,138 @@ class JournalManagerIssueDetailViewModel
      */
     public function issue(): array
     {
-        $dataset = $this->registry();
+        if (Schema::hasTable('issues')) {
+            $issue = Issue::with([
+                'journal',
+                'issueArticles.submission.section',
+                'issueArticles.submission.author',
+                'issueArticles.submission.activeGalley',
+            ])->where('id', $this->issueId)->first();
 
-        if (isset($dataset[$this->issueId])) {
-            return $dataset[$this->issueId];
+            if ($issue) {
+                return $this->formatIssueData($issue);
+            }
         }
 
-        return array_merge($dataset['ISSUE-01JARK960A'], [
-            'id' => $this->issueId,
-        ]);
+        return $this->registryIssue();
     }
 
-    /**
-     * Kumpulan dataset skenario edisi terbitan.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function registry(): array
+    private function formatIssueData(Issue $issue): array
     {
+        $articles = $issue->issueArticles->map(function ($ia) use ($issue) {
+            $sub = $ia->submission;
+
+            $galleyDownloadUrl = '#';
+            if ($sub && $sub->activeGalley) {
+                try {
+                    $galleyDownloadUrl = route('layouteditor.galleys.download', $sub->activeGalley->id);
+                } catch (\Throwable) {
+                    $galleyDownloadUrl = '#';
+                }
+            }
+
+            return [
+                'id' => (string) $ia->id,
+                'submission_number' => $sub?->submission_number ?? 'SUB-N/A',
+                'position' => (int) $ia->position,
+                'title' => $sub?->title ?? 'Naskah Artikel',
+                'section_title' => $sub?->section?->name ?? 'Bidang Riset',
+                'authors_string' => $sub?->author?->name ?? 'Penulis Utama',
+                'pages' => $ia->pages ?? '1-14',
+                'galley_pdf_url' => $galleyDownloadUrl,
+                'doi' => $ia->doi ?? ($issue->doi_prefix ? "{$issue->doi_prefix}.".str_pad((string) $ia->position, 2, '0', STR_PAD_LEFT) : '-'),
+            ];
+        })->values()->all();
+
+        // Antrean Naskah Siap Terbit (belum masuk edisi)
+        $readyArticles = [];
+        if (Schema::hasTable('submissions')) {
+            $readySubmissions = Submission::where('journal_id', $issue->journal_id)
+                ->whereDoesntHave('issueArticle')
+                ->where(function ($q) {
+                    $q->whereIn('status', ['approved', 'in_production', 'ready_for_issue'])
+                        ->orWhereHas('galleys', fn ($g) => $g->where('status', 'active'));
+                })
+                ->with(['section', 'author', 'activeGalley'])
+                ->get();
+
+            $readyArticles = $readySubmissions->map(function (Submission $sub) {
+                $formatLabel = $sub->activeGalley
+                    ? "{$sub->activeGalley->label} (v{$sub->activeGalley->version})"
+                    : 'PDF Full Text (v1 Final)';
+
+                return [
+                    'id' => (string) $sub->id,
+                    'number' => (string) $sub->submission_number,
+                    'title' => (string) $sub->title,
+                    'section_title' => (string) ($sub->section?->name ?? 'Bidang Riset'),
+                    'author_name' => (string) ($sub->author?->name ?? 'Penulis Naskah'),
+                    'galley_format' => $formatLabel,
+                    'approved_at' => $sub->updated_at ? $sub->updated_at->translatedFormat('d M Y H:i').' WITA' : 'Tersedia',
+                ];
+            })->values()->all();
+        }
+
+        $canPublish = $issue->canPublish();
+        $emptyGuardViolated = count($articles) === 0;
+
+        // Susun Linimasa Aktivitas Dinamis
+        $timeline = [];
+        if ($issue->isPublished() && $issue->published_at) {
+            $timeline[] = [
+                'title' => 'Edisi Resmi Dipublikasikan',
+                'actor' => 'Journal Manager',
+                'date' => $issue->published_at->translatedFormat('d M Y H:i').' WITA',
+                'description' => "Edisi {$issue->title} telah resmi dipublikasikan dan terbuka untuk pembaca.",
+                'badge_class' => 'bg-emerald-600',
+            ];
+        }
+
+        if (count($articles) > 0) {
+            $lastArticle = end($articles);
+            $timeline[] = [
+                'title' => 'Artikel #'.count($articles).' Ditambahkan ke Daftar Isi',
+                'actor' => 'Journal Manager',
+                'date' => $issue->updated_at ? $issue->updated_at->translatedFormat('d M Y H:i').' WITA' : 'Hari ini',
+                'description' => "Artikel {$lastArticle['submission_number']} dimasukkan ke posisi nomor {$lastArticle['position']} dengan halaman {$lastArticle['pages']}.",
+                'badge_class' => 'bg-brand-maroon',
+            ];
+        }
+
+        $timeline[] = [
+            'title' => 'Draf Edisi Dibuat',
+            'actor' => 'Journal Manager',
+            'date' => $issue->created_at ? $issue->created_at->translatedFormat('d M Y H:i').' WITA' : 'Bulan ini',
+            'description' => "Nomor terbitan Vol. {$issue->volume} No. {$issue->number} ({$issue->year}) dibuka untuk kurasi naskah.",
+            'badge_class' => 'bg-blue-500',
+        ];
+
         return [
-            // 1. Skenario Draf Kurasi: Edisi yang sedang disusun daftar isinya
+            'id' => (string) $issue->id,
+            'volume' => (string) $issue->volume,
+            'number' => (string) $issue->number,
+            'year' => (int) $issue->year,
+            'title' => (string) $issue->title,
+            'description' => $issue->description,
+            'status' => (string) $issue->status,
+            'status_label' => $issue->status_label,
+            'status_badge_class' => $issue->status_badge_class,
+            'is_current' => (bool) $issue->is_current,
+            'scheduled_at' => $issue->scheduled_at ? $issue->scheduled_at->translatedFormat('d M Y') : null,
+            'publication_date' => $issue->published_at ? $issue->published_at->translatedFormat('d M Y') : null,
+            'published_at' => $issue->published_at ? $issue->published_at->translatedFormat('d M Y H:i').' WITA' : null,
+            'doi_prefix' => (string) ($issue->doi_prefix ?? "10.61234/sirida.v{$issue->volume}i{$issue->number}"),
+            'can_publish' => $canPublish,
+            'empty_guard_violated' => $emptyGuardViolated,
+            'articles' => $articles,
+            'ready_articles' => $readyArticles,
+            'activity_timeline' => $timeline,
+        ];
+    }
+
+    private function registryIssue(): array
+    {
+        $registry = [
             'ISSUE-01JARK960A' => [
                 'id' => 'ISSUE-01JARK960A',
                 'volume' => '6',
@@ -174,7 +290,6 @@ class JournalManagerIssueDetailViewModel
                 ],
             ],
 
-            // 2. Skenario Edisi Terbit Resmi (Current Issue)
             'ISSUE-01JARK961B' => [
                 'id' => 'ISSUE-01JARK961B',
                 'volume' => '6',
@@ -217,5 +332,13 @@ class JournalManagerIssueDetailViewModel
                 ],
             ],
         ];
+
+        if (isset($registry[$this->issueId])) {
+            return $registry[$this->issueId];
+        }
+
+        return array_merge($registry['ISSUE-01JARK960A'], [
+            'id' => $this->issueId,
+        ]);
     }
 }

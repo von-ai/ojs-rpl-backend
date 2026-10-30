@@ -213,7 +213,7 @@
 
                                     <button 
                                         type="button" 
-                                        onclick="openAssignRoleModal('{{ $user['id'] }}', '{{ addslashes($user['name']) }}')"
+                                        onclick="openAssignRoleModal('{{ $user['id'] }}', '{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
                                         class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-brand-maroon bg-brand-maroon/5 hover:bg-brand-maroon hover:text-white rounded-lg transition border border-brand-maroon/20"
                                         title="Atur penugasan peran jurnal pengguna"
                                     >
@@ -248,22 +248,56 @@
             </table>
         </div>
 
-        <!-- Pagination Simpel -->
+        <!-- Pagination Interaktif -->
         @php
             $pagination = $viewModel->pagination();
         @endphp
-        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between text-xs text-gray-500">
+        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
             <span>
                 Menampilkan <strong class="text-gray-800">{{ $pagination['from'] }}</strong> - <strong class="text-gray-800">{{ $pagination['to'] }}</strong> dari <strong class="text-gray-800">{{ $pagination['total'] }}</strong> pengguna
             </span>
 
-            <div class="flex items-center gap-1">
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Sebelumnya
-                </button>
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Selanjutnya
-                </button>
+            <div class="flex items-center gap-1.5">
+                @if ($pagination['has_previous_page'])
+                    <a 
+                        href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $pagination['previous_page']])) }}"
+                        class="px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition shadow-2xs"
+                    >
+                        Sebelumnya
+                    </a>
+                @else
+                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                        Sebelumnya
+                    </span>
+                @endif
+
+                @for ($p = 1; $p <= $pagination['last_page']; $p++)
+                    @if ($p == $pagination['current_page'])
+                        <span class="w-7 h-7 flex items-center justify-center rounded-md bg-brand-maroon text-white font-bold text-xs shadow-2xs select-none">
+                            {{ $p }}
+                        </span>
+                    @else
+                        <a 
+                            href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $p])) }}"
+                            class="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium text-xs transition shadow-2xs"
+                        >
+                            {{ $p }}
+                        </a>
+                    @endif
+                @endfor
+
+                @if ($pagination['has_more_pages'])
+                    <a 
+                        href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $pagination['next_page']])) }}"
+                        class="px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition shadow-2xs"
+                    >
+                        Selanjutnya
+                    </a>
+                @else
+                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                        Selanjutnya
+                    </span>
+                @endif
             </div>
         </div>
     </div>
@@ -301,9 +335,27 @@
 
             <form action="{{ route('journalmanager.users.assign-role') }}" method="POST" class="mt-4 space-y-4">
                 @csrf
+                <input type="hidden" name="user_id" id="assign_user_id" value="">
                 <div>
-                    <label for="assign_user_name" class="block text-xs font-semibold text-gray-700 mb-1">Target Pengguna</label>
-                    <input type="text" id="assign_user_name" placeholder="Pilih pengguna..." class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" value="Dr. Nurfadillah Bahar, M.Kes.">
+                    <label for="assign_user_email" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Email Akun Pengguna <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="assign_user_email" 
+                        required 
+                        list="registered_users_email_list"
+                        placeholder="Masukkan alamat email akun pengguna..." 
+                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" 
+                        value=""
+                    >
+                    <datalist id="registered_users_email_list">
+                        @foreach ($viewModel->allRegisteredUsers() as $registeredUser)
+                            <option value="{{ $registeredUser['email'] }}"></option>
+                        @endforeach
+                    </datalist>
+                    <p id="assign_user_name_preview" class="text-[11px] text-gray-500 mt-1 hidden"></p>
                 </div>
 
                 <div>
@@ -394,10 +446,22 @@
 </div>
 
 <script>
-    function openAssignRoleModal(userId = '', userName = '') {
+    function openAssignRoleModal(userId = '', userEmail = '', userName = '') {
         const modal = document.getElementById('modal-assign-role');
-        const nameInput = document.getElementById('assign_user_name');
-        if (nameInput && userName) nameInput.value = userName;
+        const idInput = document.getElementById('assign_user_id');
+        const emailInput = document.getElementById('assign_user_email');
+        const namePreview = document.getElementById('assign_user_name_preview');
+        if (idInput) idInput.value = userId;
+        if (emailInput) emailInput.value = userEmail;
+        if (namePreview) {
+            if (userName) {
+                namePreview.innerText = 'Pengguna: ' + userName;
+                namePreview.classList.remove('hidden');
+            } else {
+                namePreview.innerText = '';
+                namePreview.classList.add('hidden');
+            }
+        }
         if (modal) modal.classList.remove('hidden');
     }
     function closeAssignRoleModal() {
