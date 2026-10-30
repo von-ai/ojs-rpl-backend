@@ -207,6 +207,22 @@ class Submission extends Model
     }
 
     /**
+     * @return HasMany<ReviewRound, $this>
+     */
+    public function reviewRounds(): HasMany
+    {
+        return $this->hasMany(ReviewRound::class)->orderBy('round', 'asc');
+    }
+
+    /**
+     * @return HasOne<ReviewRound, $this>
+     */
+    public function currentReviewRound(): HasOne
+    {
+        return $this->hasOne(ReviewRound::class)->where('status', 'active')->latestOfMany('round');
+    }
+
+    /**
      * @return HasOneThrough<Issue, IssueArticle, $this>
      */
     public function issue(): HasOneThrough
