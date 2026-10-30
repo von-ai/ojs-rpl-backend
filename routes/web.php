@@ -123,6 +123,10 @@ Route::prefix('proofreader')->name('proofreader.')->group(function () {
     Route::post('/verify-note', [ProofreaderSubmissionController::class, 'verifyNote'])->name('verify-note');
     Route::post('/complete', [ProofreaderSubmissionController::class, 'completeProofread'])->name('complete');
     Route::post('/escalate', [ProofreaderSubmissionController::class, 'submitEscalation'])->name('escalate');
+
+    // Pengunduhan Berkas Galai PDF & Rujukan Copyediting
+    Route::get('/galleys/{id}/download', [ProofreaderSubmissionController::class, 'downloadGalley'])->name('galleys.download');
+    Route::get('/files/{id}/download', [ProofreaderSubmissionController::class, 'downloadFile'])->name('files.download');
 });
 
 // Portal System Administrator (Tata Kelola Multi-Jurnal, Pengguna Global & Platform)
