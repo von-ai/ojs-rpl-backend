@@ -6,7 +6,6 @@ namespace Database\Seeders;
 
 use App\Models\FileEntry;
 use App\Models\Galley;
-use App\Models\ProductionEscalation;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
@@ -74,66 +73,63 @@ class ProofreaderSeeder extends Seeder
             'SUB-2026-00103',
             'SUB-2026-00104',
             'SUB-2026-00105',
-            'SUB-2026-00106',
-            'SUB-2026-00107',
-            'SUB-2026-00108',
         ])->get()->keyBy('submission_number');
 
-        // Skenario 1: SUB-2026-00106 — Review Galai v2 dengan Catatan Terbuka & Verifikasi
-        if ($sub106 = $submissions->get('SUB-2026-00106')) {
-            $docx106 = $this->createPhysicalFile(
-                'SUB-2026-00106_Copyedited_Final.docx',
-                "submissions/{$sub106->id}/SUB-2026-00106_Copyedited_Final.docx",
+        // Skenario 1: SUB-2026-00105 — Review Galai v2 dengan Catatan Terbuka & Verifikasi
+        if ($sub105 = $submissions->get('SUB-2026-00105')) {
+            $docx105 = $this->createPhysicalFile(
+                'SUB-2026-00105_Copyedited_Final.docx',
+                "submissions/{$sub105->id}/SUB-2026-00105_Copyedited_Final.docx",
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 $sectionEditor->id,
                 657408,
                 'docx'
             );
 
-            $pdf106 = $this->createPhysicalFile(
-                'SUB-2026-00106_Galley_v2.pdf',
-                "galleys/{$sub106->id}/SUB-2026-00106_Galley_v2.pdf",
+            $pdf105 = $this->createPhysicalFile(
+                'SUB-2026-00105_Galley_v2.pdf',
+                "galleys/{$sub105->id}/SUB-2026-00105_Galley_v2.pdf",
                 'application/pdf',
                 $layoutEditor->id,
                 3984588,
                 'pdf'
             );
 
-            $galley106 = Galley::updateOrCreate(
-                ['submission_id' => $sub106->id, 'version' => 2],
+            $galley105 = Galley::updateOrCreate(
+                ['submission_id' => $sub105->id, 'version' => 2],
                 [
-                    'file_id' => $pdf106->id,
+                    'file_id' => $pdf105->id,
                     'supersedes_galley_id' => null,
                     'format' => 'pdf',
                     'stage' => 'proofreading',
                     'status' => 'active',
-                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'checksum_sha256' => $pdf105->checksum_sha256,
                     'approved_checksum' => null,
                     'label' => 'PDF Full Text (v2 Revisi)',
                 ]
             );
 
-            $assign106 = ProofAssignment::updateOrCreate(
-                ['galley_id' => $galley106->id, 'proofreader_id' => $proofreader1->id],
+            $assign105 = ProofAssignment::updateOrCreate(
+                ['galley_id' => $galley105->id, 'proofreader_id' => $proofreader1->id],
                 [
-                    'file_id' => $pdf106->id,
+                    'file_id' => $pdf105->id,
                     'due_at' => now()->addDays(2),
                     'status' => 'in_progress',
                     'assigned_at' => now()->subDays(3),
-                    'checksum_sha256' => substr($pdf106->checksum_sha256, 0, 64),
+                    'checksum_sha256' => substr($pdf105->checksum_sha256, 0, 64),
                     'message' => 'Mohon periksa ulang penataan gambar dan kelengkapan daftar pustaka.',
                 ]
             );
 
             // Note 1: Minor Typo - Resolved & Verified
             ProofreadingNote::updateOrCreate(
-                ['proof_assignment_id' => $assign106->id, 'page' => 2, 'category' => 'typo'],
+                ['proof_assignment_id' => $assign105->id, 'page' => 2, 'category' => 'typo'],
                 [
-                    'galley_id' => $galley106->id,
-                    'file_id' => $pdf106->id,
-                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'galley_id' => $galley105->id,
+                    'file_id' => $pdf105->id,
+                    'checksum_sha256' => $pdf105->checksum_sha256,
                     'severity' => 'minor',
-                    'description' => 'Kesalahan penulisan kata "pariwista" seharusnya "pariwisata" pada alinea kedua paragraf pembuka.',
+                    'description' => 'Kesalahan penulisan kata "irigasi" seharusnya "irigasi teknis" pada judul subbab.',
                     'resolved' => true,
                     'resolution' => 'Sudah diperbaiki pada draf galai v2 sesuai teks copyediting final.',
                     'resolved_at' => now()->subHours(4),
@@ -146,15 +142,15 @@ class ProofreaderSeeder extends Seeder
 
             // Note 2: Major Layout - Resolved, Siap Diverifikasi Proofreader
             ProofreadingNote::updateOrCreate(
-                ['proof_assignment_id' => $assign106->id, 'page' => 4, 'category' => 'layout'],
+                ['proof_assignment_id' => $assign105->id, 'page' => 4, 'category' => 'layout'],
                 [
-                    'galley_id' => $galley106->id,
-                    'file_id' => $pdf106->id,
-                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'galley_id' => $galley105->id,
+                    'file_id' => $pdf105->id,
+                    'checksum_sha256' => $pdf105->checksum_sha256,
                     'severity' => 'major',
-                    'description' => 'Keterangan Gambar 3 (Peta Kawasan Benteng Somba Opu) terpotong margin bawah kolom sebelah kanan.',
+                    'description' => 'Keterangan Gambar 2 terpotong margin bawah kolom sebelah kanan.',
                     'resolved' => true,
-                    'resolution' => 'Ukuran skala gambar 3 diperkecil 10% dan posisi keterangan dipindahkan ke baris penuh.',
+                    'resolution' => 'Ukuran skala gambar 2 diperkecil 10% dan posisi keterangan dipindahkan ke baris penuh.',
                     'resolved_at' => now()->subHours(3),
                     'verified' => false,
                     'verified_at' => null,
@@ -165,13 +161,13 @@ class ProofreaderSeeder extends Seeder
 
             // Note 3: Critical Reference - Belum Selesai (Menahan Signoff Guard)
             ProofreadingNote::updateOrCreate(
-                ['proof_assignment_id' => $assign106->id, 'page' => 7, 'category' => 'reference'],
+                ['proof_assignment_id' => $assign105->id, 'page' => 7, 'category' => 'reference'],
                 [
-                    'galley_id' => $galley106->id,
-                    'file_id' => $pdf106->id,
-                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'galley_id' => $galley105->id,
+                    'file_id' => $pdf105->id,
+                    'checksum_sha256' => $pdf105->checksum_sha256,
                     'severity' => 'critical',
-                    'description' => 'Sitasi (BPS Kota Makassar, 2025) pada halaman 3 belum tercantum dalam daftar pustaka.',
+                    'description' => 'Sitasi pada halaman 3 belum tercantum dalam daftar pustaka.',
                     'resolved' => false,
                     'resolution' => null,
                     'resolved_at' => null,
@@ -183,49 +179,40 @@ class ProofreaderSeeder extends Seeder
             );
         }
 
-        // Skenario 2: SUB-2026-00107 — Naskah Bersih Siap Sign-off
-        if ($sub107 = $submissions->get('SUB-2026-00107')) {
-            $docx107 = $this->createPhysicalFile(
-                'SUB-2026-00107_Copyedited_Final.docx',
-                "submissions/{$sub107->id}/SUB-2026-00107_Copyedited_Final.docx",
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                $sectionEditor->id,
-                839680,
-                'docx'
-            );
-
-            $pdf107 = $this->createPhysicalFile(
-                'SUB-2026-00107_Galley_v1.pdf',
-                "galleys/{$sub107->id}/SUB-2026-00107_Galley_v1.pdf",
+        // Skenario 2: SUB-2026-00104 — Menunggu Tindak Lanjut Layout
+        if ($sub104 = $submissions->get('SUB-2026-00104')) {
+            $pdf104 = $this->createPhysicalFile(
+                'SUB-2026-00104_Galley_v1.pdf',
+                "galleys/{$sub104->id}/SUB-2026-00104_Galley_v1.pdf",
                 'application/pdf',
                 $layoutEditor->id,
-                5452595,
+                2450000,
                 'pdf'
             );
 
-            $galley107 = Galley::updateOrCreate(
-                ['submission_id' => $sub107->id, 'version' => 1],
+            $galley104 = Galley::updateOrCreate(
+                ['submission_id' => $sub104->id, 'version' => 1],
                 [
-                    'file_id' => $pdf107->id,
+                    'file_id' => $pdf104->id,
                     'supersedes_galley_id' => null,
                     'format' => 'pdf',
                     'stage' => 'proofreading',
                     'status' => 'active',
-                    'checksum_sha256' => $pdf107->checksum_sha256,
+                    'checksum_sha256' => $pdf104->checksum_sha256,
                     'approved_checksum' => null,
                     'label' => 'PDF Full Text (v1 Draf Awal)',
                 ]
             );
 
             ProofAssignment::updateOrCreate(
-                ['galley_id' => $galley107->id, 'proofreader_id' => $proofreader1->id],
+                ['galley_id' => $galley104->id, 'proofreader_id' => $proofreader1->id],
                 [
-                    'file_id' => $pdf107->id,
-                    'due_at' => now()->addDay(),
-                    'status' => 'assigned',
-                    'assigned_at' => now()->subDay(),
-                    'checksum_sha256' => substr($pdf107->checksum_sha256, 0, 64),
-                    'message' => 'Naskah siap diperiksa bukti baca sebelum diajukan persetujuan akhir.',
+                    'file_id' => $pdf104->id,
+                    'due_at' => now()->addDays(3),
+                    'status' => 'in_progress',
+                    'assigned_at' => now()->subDays(2),
+                    'checksum_sha256' => substr($pdf104->checksum_sha256, 0, 64),
+                    'message' => 'Periksa ejaan dan konsistensi tabel.',
                 ]
             );
         }
@@ -290,57 +277,6 @@ class ProofreaderSeeder extends Seeder
                     'verified' => true,
                     'verified_at' => now()->subDays(6),
                     'verified_by' => $proofreader1->id,
-                    'version' => 1,
-                ]
-            );
-        }
-
-        // Skenario 4: SUB-2026-00108 — Naskah dengan Tiket Eskalasi Terbuka
-        if ($sub108 = $submissions->get('SUB-2026-00108')) {
-            $pdf108 = $this->createPhysicalFile(
-                'SUB-2026-00108_Galley_v1.pdf',
-                "galleys/{$sub108->id}/SUB-2026-00108_Galley_v1.pdf",
-                'application/pdf',
-                $layoutEditor->id,
-                1650000,
-                'pdf'
-            );
-
-            $galley108 = Galley::updateOrCreate(
-                ['submission_id' => $sub108->id, 'version' => 1],
-                [
-                    'file_id' => $pdf108->id,
-                    'supersedes_galley_id' => null,
-                    'format' => 'pdf',
-                    'stage' => 'proofreading',
-                    'status' => 'active',
-                    'checksum_sha256' => $pdf108->checksum_sha256,
-                    'approved_checksum' => null,
-                    'label' => 'PDF Full Text (v1)',
-                ]
-            );
-
-            ProofAssignment::updateOrCreate(
-                ['galley_id' => $galley108->id, 'proofreader_id' => $proofreader2->id],
-                [
-                    'file_id' => $pdf108->id,
-                    'due_at' => now()->addDays(3),
-                    'status' => 'in_progress',
-                    'assigned_at' => now()->subDays(2),
-                    'checksum_sha256' => substr($pdf108->checksum_sha256, 0, 64),
-                    'message' => 'Periksa konsistensi penomoran rumus pada subbab 3.',
-                ]
-            );
-
-            ProductionEscalation::updateOrCreate(
-                ['submission_id' => $sub108->id, 'opened_by' => $proofreader2->id],
-                [
-                    'copyedit_id' => null,
-                    'galley_id' => $galley108->id,
-                    'reason' => 'Terdapat bagian teks yang terpotong dari versi copyediting asli pada rumus matematis halaman 5.',
-                    'status' => 'open',
-                    'resolution' => null,
-                    'resume_stage' => null,
                     'version' => 1,
                 ]
             );

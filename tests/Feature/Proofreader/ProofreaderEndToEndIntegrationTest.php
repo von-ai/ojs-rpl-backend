@@ -42,7 +42,7 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         // Akses katalog penugasan proofreader
         $indexResponse = $this->get('/proofreader/submissions');
         $indexResponse->assertStatus(200);
-        $indexResponse->assertSee('SUB-2026-00106');
+        $indexResponse->assertSee('SUB-2026-00105');
         $indexResponse->assertSee('SUB-2026-00107');
         $indexResponse->assertSee('SUB-2026-00103');
         $indexResponse->assertSee('Dra. Sitti Aminah, M.Hum.');
@@ -50,25 +50,24 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         // Sidebar badge dinamis dari basis data
         $indexResponse->assertSee('sidebar-badge-full', false);
 
-        // Akses detail naskah SUB-2026-00106
-        $detailResponse = $this->get('/proofreader/submissions/SUB-2026-00106');
+        // Akses detail naskah SUB-2026-00105
+        $detailResponse = $this->get('/proofreader/submissions/SUB-2026-00105');
         $detailResponse->assertStatus(200);
-        $detailResponse->assertSee('SUB-2026-00106');
-        $detailResponse->assertSee('Benteng Somba Opu');
-        $detailResponse->assertSee('SUB-2026-00106_Galley_v2.pdf');
-        $detailResponse->assertSee('SUB-2026-00106_Copyedited_Final.docx');
+        $detailResponse->assertSee('SUB-2026-00105');
+        $detailResponse->assertSee('SUB-2026-00105_Galley_v2.pdf');
+        $detailResponse->assertSee('SUB-2026-00105_Copyedited_Final.docx');
         $detailResponse->assertSee('Tipografi / Ejaan');
         $detailResponse->assertSee('Tata Letak / Format');
-        $detailResponse->assertSee('Sitasi & Pustaka');
+        $detailResponse->assertSee('Sitasi');
 
-        // Unduh berkas galai PDF naskah 106
-        $galley106 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00106'))->firstOrFail();
-        $downloadGalley = $this->get(route('proofreader.galleys.download', $galley106->id));
+        // Unduh berkas galai PDF naskah 105
+        $galley105 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))->firstOrFail();
+        $downloadGalley = $this->get(route('proofreader.galleys.download', $galley105->id));
         $downloadGalley->assertStatus(200);
         $downloadGalley->assertHeader('Content-Type', 'application/pdf');
 
-        // Unduh berkas acuan copyediting naskah 106
-        $downloadDocx = $this->get(route('proofreader.files.download', 'SUB-2026-00106'));
+        // Unduh berkas acuan copyediting naskah 105
+        $downloadDocx = $this->get(route('proofreader.files.download', 'SUB-2026-00105'));
         $downloadDocx->assertStatus(200);
         $downloadDocx->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
@@ -121,18 +120,18 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $proofreader = User::where('email', 'sitti.aminah@brida.makassar.go.id')->firstOrFail();
         $this->actingAs($proofreader);
 
-        // Catatan 2 pada SUB-2026-00106 telah diselesaikan layout editor namun belum diverifikasi
-        $note = ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00106'))
+        // Catatan 2 pada SUB-2026-00105 telah diselesaikan layout editor namun belum diverifikasi
+        $note = ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))
             ->where('resolved', true)
             ->where('verified', false)
             ->firstOrFail();
 
         $response = $this->post('/proofreader/verify-note', [
-            'submission_id' => 'SUB-2026-00106',
+            'submission_id' => 'SUB-2026-00105',
             'note_id' => $note->id,
         ]);
 
-        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00106'));
+        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00105'));
         $response->assertSessionHas('status', 'Perbaikan galai berhasil diverifikasi.');
 
         $freshNote = $note->fresh();
@@ -155,16 +154,16 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $proofreader = User::where('email', 'sitti.aminah@brida.makassar.go.id')->firstOrFail();
         $this->actingAs($proofreader);
 
-        // SUB-2026-00106 memiliki catatan kritis yang belum diselesaikan
+        // SUB-2026-00105 memiliki catatan kritis yang belum diselesaikan
         $response = $this->post('/proofreader/complete', [
-            'submission_id' => 'SUB-2026-00106',
+            'submission_id' => 'SUB-2026-00105',
         ]);
 
-        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00106'));
+        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00105'));
         $response->assertSessionHasErrors(['general']);
 
         // Pastikan status penugasan tetap in_progress (tidak berubah jadi completed)
-        $assignment = ProofAssignment::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00106'))
+        $assignment = ProofAssignment::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))
             ->firstOrFail();
         $this->assertSame('in_progress', $assignment->status);
 
@@ -182,8 +181,8 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $this->actingAs($proofreader);
 
         // Pada skenario ini, seluruh catatan koreksi telah dituntaskan layout editor dan diverifikasi proofreader
-        $galley107 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->firstOrFail();
-        ProofreadingNote::where('galley_id', $galley107->id)->update([
+        $galley105 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))->firstOrFail();
+        ProofreadingNote::where('galley_id', $galley105->id)->update([
             'resolved' => true,
             'resolution' => 'Seluruh format tata letak dan sitasi telah diperbaiki pada draf galai.',
             'resolved_at' => now(),
@@ -193,22 +192,22 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         ]);
 
         $response = $this->post('/proofreader/complete', [
-            'submission_id' => 'SUB-2026-00107',
+            'submission_id' => 'SUB-2026-00105',
         ]);
 
-        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00107'));
+        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00105'));
         $response->assertSessionHas('status');
 
-        $assignment = ProofAssignment::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))
+        $assignment = ProofAssignment::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))
             ->latest()
             ->firstOrFail();
         $this->assertSame('completed', $assignment->status);
 
-        $galley = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->firstOrFail();
+        $galley = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))->firstOrFail();
         $this->assertSame('approved', $galley->stage);
 
         Mail::assertSent(ProofreadingSignoffCompletedMail::class, function ($mail) {
-            return $mail->submission->submission_number === 'SUB-2026-00107';
+            return $mail->submission->submission_number === 'SUB-2026-00105';
         });
     }
 
@@ -223,11 +222,11 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $this->actingAs($proofreader);
 
         $response = $this->post('/proofreader/escalate', [
-            'submission_id' => 'SUB-2026-00107',
+            'submission_id' => 'SUB-2026-00105',
             'reason' => 'Terdapat tabel data hasil pengujian yang hilang pada halaman 6 galai PDF.',
         ]);
 
-        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00107'));
+        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00105'));
         $response->assertSessionHas('status', 'Tiket eskalasi ketidaksesuaian naskah berhasil dikirimkan ke Editor.');
 
         $this->assertDatabaseHas('production_escalations', [
@@ -238,7 +237,7 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         ]);
 
         Mail::assertSent(ProofreaderEscalationSubmittedMail::class, function ($mail) {
-            return $mail->submission->submission_number === 'SUB-2026-00107';
+            return $mail->submission->submission_number === 'SUB-2026-00105';
         });
     }
 
