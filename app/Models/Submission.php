@@ -156,4 +156,36 @@ class Submission extends Model
     {
         return $this->hasOne(Galley::class)->where('status', 'active')->latestOfMany('created_at');
     }
+
+    /**
+     * @return HasMany<EditorAssignment, $this>
+     */
+    public function editorAssignments(): HasMany
+    {
+        return $this->hasMany(EditorAssignment::class);
+    }
+
+    /**
+     * @return HasOne<EditorAssignment, $this>
+     */
+    public function activeEditorAssignment(): HasOne
+    {
+        return $this->hasOne(EditorAssignment::class)->whereNull('revoked_at')->latestOfMany('created_at');
+    }
+
+    /**
+     * @return HasMany<DeskReview, $this>
+     */
+    public function deskReviews(): HasMany
+    {
+        return $this->hasMany(DeskReview::class);
+    }
+
+    /**
+     * @return HasMany<EditorialDecision, $this>
+     */
+    public function editorialDecisions(): HasMany
+    {
+        return $this->hasMany(EditorialDecision::class);
+    }
 }
