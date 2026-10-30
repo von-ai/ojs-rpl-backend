@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Section;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class JournalManagerSectionsViewModel
 {
     /**
@@ -13,11 +17,18 @@ class JournalManagerSectionsViewModel
      */
     public function userProfile(): array
     {
+        $user = Auth::user();
+        $name = $user?->name ?? 'Andi Muhammad Yusuf, M.Si.';
+        $affiliation = $user?->profile?->affiliation ?? 'BRIDA Kota Makassar';
+
+        $cleanName = preg_replace('/[^a-zA-Z]/', '', $name) ?: 'AY';
+        $initials = strtoupper(substr($cleanName, 0, 2));
+
         return [
-            'name' => 'Andi Muhammad Yusuf, M.Si.',
+            'name' => $name,
             'role_label' => 'Journal Manager',
-            'affiliation' => 'BRIDA Kota Makassar',
-            'initials' => 'AY',
+            'affiliation' => $affiliation,
+            'initials' => $initials,
         ];
     }
 
@@ -56,7 +67,7 @@ class JournalManagerSectionsViewModel
     }
 
     /**
-     * Daftar seluruh bidang naskah / seksi penelitian pada jurnal.
+     * Daftar seluruh bidang naskah / seksi penelitian pada jurnal dari basis data atau fallback.
      *
      * @return array<int, array{
      *     id: string,
@@ -72,6 +83,32 @@ class JournalManagerSectionsViewModel
      */
     public function sections(): array
     {
+        if (Schema::hasTable('sections')) {
+            $sections = Section::withCount('submissions')
+                ->orderBy('position')
+                ->get();
+
+            if ($sections->isNotEmpty()) {
+                return $sections->map(function (Section $sec) {
+                    $accepting = (bool) $sec->accepting_submissions;
+
+                    return [
+                        'id' => (string) $sec->id,
+                        'position' => (int) $sec->position,
+                        'name' => (string) $sec->name,
+                        'slug' => (string) $sec->slug,
+                        'description' => (string) ($sec->description ?? ''),
+                        'accepting_submissions' => $accepting,
+                        'status_label' => $accepting ? 'Buka Submission' : 'Tutup Submission',
+                        'status_badge_class' => $accepting
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-amber-50 text-amber-800 border-amber-200',
+                        'submissions_count' => (int) ($sec->submissions_count ?? 0),
+                    ];
+                })->all();
+            }
+        }
+
         return [
             [
                 'id' => 'SEC-01JARK-01',
@@ -100,55 +137,22 @@ class JournalManagerSectionsViewModel
                 'position' => 3,
                 'name' => 'Teknologi & Infrastruktur Berkelanjutan',
                 'slug' => 'teknologi-infrastruktur-berkelanjutan',
-                'description' => 'Rekayasa teknik sipil, sistem transportasi publik perkotaan, IoT kota cerdas (smart city), dan mitigasi kebencanaan pesisir.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 9,
-            ],
-            [
-                'id' => 'SEC-01JARK-04',
-                'position' => 4,
-                'name' => 'Ekonomi Pembangunan & Pemberdayaan Masyarakat',
-                'slug' => 'ekonomi-pembangunan-pemberdayaan-masyarakat',
-                'description' => 'Kajian UMKM lorong wisata, ekonomi sirkular, pengentasan kemiskinan ekstrem, dan retribusi daerah.',
+                'description' => 'Riset teknik sipil lingkungan, mitigasi banjir pasang rob, sensor kualitas udara perkotaan, dan smart city.',
                 'accepting_submissions' => true,
                 'status_label' => 'Buka Submission',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
                 'submissions_count' => 8,
             ],
             [
-                'id' => 'SEC-01JARK-05',
-                'position' => 5,
-                'name' => 'Kesehatan Masyarakat & Gizi',
-                'slug' => 'kesehatan-masyarakat-gizi',
-                'description' => 'Pencegahan stunting terpadu, efektivitas posyandu lorong, dan ketahanan sanitasi pemukiman padat.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 7,
-            ],
-            [
-                'id' => 'SEC-01JARK-06',
-                'position' => 6,
-                'name' => 'Lingkungan & Ketahanan Kota',
-                'slug' => 'lingkungan-ketahanan-kota',
-                'description' => 'Adaptasi perubahan iklim, pengelolaan sampah berbasis komunitas, dan ruang terbuka hijau perkotaan.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 6,
-            ],
-            [
-                'id' => 'SEC-01JARK-07',
-                'position' => 7,
-                'name' => 'Arsip Edisi Khusus Riset Maritim (2024)',
-                'slug' => 'edisi-khusus-maritim-2024',
-                'description' => 'Seksi khusus tertutup untuk artikel riset kemaritiman tahun 2024.',
+                'id' => 'SEC-01JARK-04',
+                'position' => 4,
+                'name' => 'Kajian Kebencanaan Pesisir & Maritim',
+                'slug' => 'kebencanaan-pesisir-maritim',
+                'description' => 'Studi khusus geomorfologi pantai, sedimentasi muara sungai, dan mitigasi gelombang pasang pulau-pulau kecil.',
                 'accepting_submissions' => false,
                 'status_label' => 'Tutup Submission',
-                'status_badge_class' => 'bg-gray-100 text-gray-600 border-gray-200',
-                'submissions_count' => 5,
+                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'submissions_count' => 3,
             ],
         ];
     }
