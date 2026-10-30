@@ -6,15 +6,20 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
+use App\Http\Controllers\Eic\EditorInChiefController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
+use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
+Route::get('/', [PublicJournalController::class, 'index'])->name('journal.index');
+Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('journal.articles.search');
+Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('journal.articles.show');
+Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('journal.articles.galleys.download');
+Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('journal.articles.cite');
 
 // Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {
@@ -46,6 +51,18 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
     Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
+});
+
+// Portal Editor-in-Chief (Pemimpin Redaksi) - Wajib Autentikasi (UC-10, UC-11, UC-12)
+Route::middleware('auth')->prefix('eic')->name('eic.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('eic.submissions.index');
+    })->name('dashboard');
+    Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
+    Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
+    Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
 });
 
 // Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
