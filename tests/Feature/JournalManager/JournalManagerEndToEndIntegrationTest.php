@@ -348,6 +348,27 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         Mail::assertSent(RoleAssignedMail::class, function (RoleAssignedMail $mail) use ($targetUser) {
             return $mail->user->email === $targetUser->email;
         });
+
+        // Pengujian penetapan peran menggunakan EMAIL (bukan kolom name)
+        $resByEmail = $this->post('/journalmanager/users/assign-role', [
+            'email' => 'andi.ilyas@unhas.ac.id',
+            'role_code' => 'copyeditor',
+        ]);
+        $resByEmail->assertRedirect('/journalmanager/users');
+        $resByEmail->assertSessionHas('status');
+
+        $this->assertTrue(UserRole::where('user_id', $targetUser->id)
+            ->where('journal_id', $journal->id)
+            ->where('role_code', 'copyeditor')
+            ->exists());
+
+        // Pengujian invariant: email tidak terdaftar ditolak dengan pesan error yang jelas
+        $resNotFound = $this->post('/journalmanager/users/assign-role', [
+            'email' => 'email.tidak.ditemukan@unhas.ac.id',
+            'role_code' => 'section_editor',
+        ]);
+        $resNotFound->assertRedirect('/journalmanager/users');
+        $resNotFound->assertSessionHasErrors(['role']);
     }
 
     /**

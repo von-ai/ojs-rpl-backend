@@ -213,7 +213,7 @@
 
                                     <button 
                                         type="button" 
-                                        onclick="openAssignRoleModal('{{ $user['id'] }}', '{{ addslashes($user['name']) }}')"
+                                        onclick="openAssignRoleModal('{{ $user['id'] }}', '{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
                                         class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-brand-maroon bg-brand-maroon/5 hover:bg-brand-maroon hover:text-white rounded-lg transition border border-brand-maroon/20"
                                         title="Atur penugasan peran jurnal pengguna"
                                     >
@@ -303,8 +303,25 @@
                 @csrf
                 <input type="hidden" name="user_id" id="assign_user_id" value="">
                 <div>
-                    <label for="assign_user_name" class="block text-xs font-semibold text-gray-700 mb-1">Target Pengguna</label>
-                    <input type="text" name="user_name" id="assign_user_name" placeholder="Pilih pengguna..." class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" value="">
+                    <label for="assign_user_email" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Email Akun Pengguna <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="assign_user_email" 
+                        required 
+                        list="registered_users_email_list"
+                        placeholder="Masukkan alamat email akun pengguna..." 
+                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" 
+                        value=""
+                    >
+                    <datalist id="registered_users_email_list">
+                        @foreach ($viewModel->users() as $registeredUser)
+                            <option value="{{ $registeredUser['email'] }}">{{ $registeredUser['name'] }} ({{ $registeredUser['email'] }})</option>
+                        @endforeach
+                    </datalist>
+                    <p id="assign_user_name_preview" class="text-[11px] text-gray-500 mt-1 hidden"></p>
                 </div>
 
                 <div>
@@ -395,12 +412,22 @@
 </div>
 
 <script>
-    function openAssignRoleModal(userId = '', userName = '') {
+    function openAssignRoleModal(userId = '', userEmail = '', userName = '') {
         const modal = document.getElementById('modal-assign-role');
         const idInput = document.getElementById('assign_user_id');
-        const nameInput = document.getElementById('assign_user_name');
+        const emailInput = document.getElementById('assign_user_email');
+        const namePreview = document.getElementById('assign_user_name_preview');
         if (idInput) idInput.value = userId;
-        if (nameInput) nameInput.value = userName;
+        if (emailInput) emailInput.value = userEmail;
+        if (namePreview) {
+            if (userName) {
+                namePreview.innerText = 'Pengguna: ' + userName;
+                namePreview.classList.remove('hidden');
+            } else {
+                namePreview.innerText = '';
+                namePreview.classList.add('hidden');
+            }
+        }
         if (modal) modal.classList.remove('hidden');
     }
     function closeAssignRoleModal() {

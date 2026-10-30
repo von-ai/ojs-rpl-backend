@@ -175,7 +175,7 @@ class JournalManagerController extends Controller
     {
         $rawRole = (string) $request->input('role_code', 'Section Editor');
         $userId = $request->input('user_id');
-        $userName = $request->input('user_name');
+        $userEmail = trim((string) ($request->input('email') ?? $request->input('user_email') ?? $request->input('user_name')));
         $expertiseKeywords = $request->input('expertise_keywords');
 
         // Normalisasi format kode peran (misal: 'Section Editor' -> 'section_editor')
@@ -187,10 +187,15 @@ class JournalManagerController extends Controller
                 if (! empty($userId)) {
                     $user = User::find($userId);
                 }
-                if (! $user && ! empty($userName)) {
-                    $user = User::where('name', $userName)
-                        ->orWhere('full_name', $userName)
+                if (! $user && ! empty($userEmail)) {
+                    // Pencarian pengguna berdasarkan EMAIL atau USERNAME (tabel users tidak memiliki kolom 'name')
+                    $user = User::where('email', $userEmail)
+                        ->orWhere('username', $userEmail)
                         ->first();
+
+                    if (! $user) {
+                        throw new DomainException("Pengguna dengan alamat email '{$userEmail}' tidak ditemukan dalam sistem.");
+                    }
                 }
                 if (! $user) {
                     $user = User::first();
