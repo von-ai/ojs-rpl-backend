@@ -118,14 +118,26 @@ class ProofreaderDetailViewModel
             ];
         }
 
+        // Escalation Information
+        $activeEscalation = $sub->escalations()->whereIn('status', ['open', 'investigating'])->latest()->first();
+        $escalationData = [
+            'has_active' => (bool) $activeEscalation,
+            'ticket_id' => $activeEscalation ? '#ESC-'.substr($activeEscalation->id, -8) : null,
+            'reason' => $activeEscalation?->reason,
+            'status_label' => $activeEscalation ? ($activeEscalation->status === 'investigating' ? 'Sedang Dimediasi Section Editor' : 'Menunggu Tindak Lanjut Editor') : null,
+            'created_at' => $activeEscalation?->created_at ? $activeEscalation->created_at->translatedFormat('d M Y, H:i').' WITA' : null,
+        ];
+
         $totalNotes = count($notes);
         $unresolvedNotes = count(array_filter($notes, fn ($n) => ! $n['resolved']));
         $resolvedNotes = count(array_filter($notes, fn ($n) => $n['resolved']));
         $unverifiedNotes = count(array_filter($notes, fn ($n) => $n['resolved'] && ! $n['verified']));
 
-        $canSignoff = ($unresolvedNotes === 0 && $unverifiedNotes === 0);
+        $canSignoff = ($unresolvedNotes === 0 && $unverifiedNotes === 0 && ! $escalationData['has_active']);
         $signoffGuardReason = null;
-        if ($unresolvedNotes > 0) {
+        if ($escalationData['has_active']) {
+            $signoffGuardReason = "Persetujuan akhir (sign-off) ditangguhkan karena terdapat tiket eskalasi aktif ({$escalationData['ticket_id']}) yang sedang ditinjau Section Editor.";
+        } elseif ($unresolvedNotes > 0) {
             $criticalUnresolved = count(array_filter($notes, fn ($n) => ! $n['resolved'] && in_array($n['severity'], ['critical', 'major'], true)));
             $signoffGuardReason = $criticalUnresolved > 0
                 ? "Terdapat {$unresolvedNotes} catatan berkategori Kritis/Major yang belum diselesaikan oleh Layout Editor."
@@ -154,6 +166,10 @@ class ProofreaderDetailViewModel
             $status = 'completed';
             $statusLabel = 'Pemeriksaan Selesai & Disetujui';
             $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
+        } elseif ($escalationData['has_active']) {
+            $status = 'escalated';
+            $statusLabel = 'Dalam Eskalasi Redaksi';
+            $statusBadgeClass = 'bg-purple-50 text-purple-800 border-purple-200/80';
         }
 
         // Active Galley Information
@@ -189,17 +205,17 @@ class ProofreaderDetailViewModel
             'description' => 'Naskah teks bersih hasil copyediting final untuk rujukan verifikasi tata letak teks.',
         ];
 
-        // Escalation Information
-        $activeEscalation = $sub->escalations()->whereIn('status', ['open', 'investigating'])->latest()->first();
-        $escalationData = [
-            'has_active' => (bool) $activeEscalation,
-            'ticket_id' => $activeEscalation ? '#ESC-'.substr($activeEscalation->id, -8) : null,
-            'reason' => $activeEscalation?->reason,
-            'status_label' => $activeEscalation ? 'Dalam Tinjauan Editor' : null,
-        ];
-
         // Timeline
         $timeline = [];
+        if ($activeEscalation) {
+            $timeline[] = [
+                'title' => 'Tiket Eskalasi Diajukan ke Section Editor',
+                'actor' => 'Proofreader',
+                'date' => $activeEscalation->created_at ? $activeEscalation->created_at->translatedFormat('d M Y, H:i').' WITA' : 'Baru saja',
+                'description' => 'Ketidaksesuaian naskah: "'.$activeEscalation->reason.'"',
+                'badge_class' => 'bg-purple-100 text-purple-700',
+            ];
+        }
         if ($isCompleted) {
             $timeline[] = [
                 'title' => 'Persetujuan Proofreader Selesai (Sign-off)',

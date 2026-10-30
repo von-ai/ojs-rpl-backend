@@ -166,6 +166,16 @@ class ProofreaderService
         return DB::transaction(function () use ($sub, $actor): ProofAssignment {
             $galley = $this->resolveActiveGalley($sub);
 
+            // Guardrail 0: Pastikan tidak terdapat tiket eskalasi aktif yang belum diselesaikan
+            $activeEscalation = ProductionEscalation::where('submission_id', $sub->id)
+                ->whereIn('status', ['open', 'investigating'])
+                ->first();
+
+            if ($activeEscalation) {
+                $ticketCode = '#ESC-'.substr($activeEscalation->id, -8);
+                throw new DomainException("Tidak dapat menyelesaikan proofreading karena naskah sedang berada dalam tiket eskalasi aktif ({$ticketCode}) yang ditinjau Section Editor.");
+            }
+
             // Guardrail 1: Pastikan tidak ada catatan yang belum diselesaikan Layout Editor
             $unresolvedNotes = ProofreadingNote::where('galley_id', $galley->id)
                 ->where('resolved', false)

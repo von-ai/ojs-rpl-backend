@@ -23,6 +23,34 @@
             <p class="text-[11px] text-emerald-700 leading-relaxed">
                 Anda telah memberikan persetujuan akhir pada berkas galai ini. Galai siap untuk proses penerbitan terbitan (issue).
             </p>
+    @elseif(!empty($submission['escalation']['has_active']))
+        <!-- Guard Rail Aktif: Eskalasi Masalah Masih Berjalan -->
+        <div class="bg-purple-50/80 border border-purple-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-start gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-purple-900">Sign-off Ditangguhkan (Eskalasi Aktif)</h4>
+                    <p class="text-[11px] text-purple-800 mt-0.5 leading-relaxed">
+                        Naskah sedang dalam peninjauan Section Editor (Tiket {{ $submission['escalation']['ticket_id'] }}). Persetujuan sign-off dikunci hingga proses mediasi selesai.
+                    </p>
+                </div>
+            </div>
+
+            <button 
+                type="button" 
+                disabled 
+                class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 min-h-11 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                title="Menunggu penyelesaian eskalasi oleh Section Editor"
+            >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Sign-off Terkunci (Dalam Eskalasi Redaksi)</span>
+            </button>
         </div>
     @elseif($submission['summary']['can_signoff'])
         <!-- Siap Diberikan Sign-off (Guard Rail Lolos) -->

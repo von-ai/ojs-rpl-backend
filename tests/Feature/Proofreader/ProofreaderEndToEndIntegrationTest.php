@@ -239,6 +239,14 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         Mail::assertSent(ProofreaderEscalationSubmittedMail::class, function ($mail) {
             return $mail->submission->submission_number === 'SUB-2026-00105';
         });
+
+        // Verifikasi perubahan tampilan pada ruang kerja pemeriksaan
+        $showResponse = $this->get('/proofreader/submissions/SUB-2026-00105');
+        $showResponse->assertStatus(200);
+        $showResponse->assertSee('Eskalasi Masalah Aktif');
+        $showResponse->assertSee('Terdapat tabel data hasil pengujian yang hilang pada halaman 6 galai PDF.');
+        $showResponse->assertSee('Sign-off Terkunci (Dalam Eskalasi Redaksi)');
+        $showResponse->assertSee('Dalam Eskalasi Redaksi');
     }
 
     /**
@@ -258,6 +266,29 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00108'));
+        $response->assertSessionHasErrors(['general']);
+    }
+
+    /**
+     * Guard rail sign-off: Mencegah persetujuan sign-off saat terdapat eskalasi aktif.
+     */
+    public function test_guardrail_prevents_signoff_when_escalation_active(): void
+    {
+        $proofreader = User::where('email', 'sitti.aminah@brida.makassar.go.id')->firstOrFail();
+        $this->actingAs($proofreader);
+
+        // Buat eskalasi aktif untuk SUB-2026-00105
+        $this->post('/proofreader/escalate', [
+            'submission_id' => 'SUB-2026-00105',
+            'reason' => 'Perbedaan teks pada metodologi penelitian.',
+        ]);
+
+        // Coba lakukan persetujuan akhir
+        $response = $this->post('/proofreader/complete', [
+            'submission_id' => 'SUB-2026-00105',
+        ]);
+
+        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00105'));
         $response->assertSessionHasErrors(['general']);
     }
 }

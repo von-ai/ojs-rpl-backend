@@ -291,10 +291,16 @@ class ProofreaderSubmissionsViewModel
                         $statusLabel = 'Perlu Pemeriksaan Galai';
                         $badgeClass = 'bg-amber-50 text-amber-800 border-amber-200/80';
 
+                        $hasActiveEscalation = $sub->escalations()->whereIn('status', ['open', 'investigating'])->exists();
+
                         if ($assignment->status === 'completed' || $galley->stage === 'approved') {
                             $status = 'completed';
                             $statusLabel = 'Pemeriksaan Bukti Selesai';
                             $badgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
+                        } elseif ($hasActiveEscalation) {
+                            $status = 'waiting_layout';
+                            $statusLabel = 'Dalam Eskalasi Redaksi';
+                            $badgeClass = 'bg-purple-50 text-purple-800 border-purple-200/80';
                         } elseif ($unresolvedCount > 0) {
                             $status = 'waiting_layout';
                             $statusLabel = 'Menunggu Revisi Layout';
