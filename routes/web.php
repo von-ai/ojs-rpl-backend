@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
+use App\Http\Controllers\Eic\EditorInChiefController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
@@ -44,6 +45,18 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
+});
+
+// Portal Editor-in-Chief (Pemimpin Redaksi) - Wajib Autentikasi (UC-10, UC-11, UC-12)
+Route::middleware('auth')->prefix('eic')->name('eic.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('eic.submissions.index');
+    })->name('dashboard');
+    Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
+    Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
+    Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
+    Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
 });
 
 // Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
