@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\AuditLog;
+use Illuminate\Support\Facades\Schema;
+
 class SysAdminAuditLogsViewModel
 {
     private string $actorType;
@@ -26,22 +29,27 @@ class SysAdminAuditLogsViewModel
      */
     public function summaryMetrics(): array
     {
+        $all = $this->allLogs();
+        $total = count($all);
+        $userCount = count(array_filter($all, fn ($item) => $item['actor_type'] === 'user'));
+        $systemCount = count(array_filter($all, fn ($item) => $item['actor_type'] === 'system'));
+
         return [
             [
                 'title' => 'Total Log Tercatat',
-                'value' => '1,280 Entri',
+                'value' => "{$total} Entri",
                 'badge_text' => 'Append-Only',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
                 'title' => 'Aktivitas Pengguna',
-                'value' => '940 Aksi',
+                'value' => "{$userCount} Aksi",
                 'badge_text' => 'Aktor User',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Eksekusi Sistem Otomatis',
-                'value' => '340 Kejadian',
+                'value' => "{$systemCount} Kejadian",
                 'badge_text' => 'Aktor System',
                 'color_class' => 'text-purple-700 bg-purple-50 border-purple-200',
             ],
@@ -119,6 +127,11 @@ class SysAdminAuditLogsViewModel
             $items = array_values(array_filter($items, fn ($item) => $item['actor_type'] === $this->actorType));
         }
 
+        // Filter aksi
+        if ($this->action !== 'all') {
+            $items = array_values(array_filter($items, fn ($item) => $item['action'] === $this->action));
+        }
+
         // Filter pencarian kata kunci
         if ($this->searchQuery !== '') {
             $query = mb_strtolower($this->searchQuery);
@@ -154,7 +167,7 @@ class SysAdminAuditLogsViewModel
     }
 
     /**
-     * Seluruh data mock log jejak audit (Tabel 57 audit_logs).
+     * Seluruh data log jejak audit (Database dengan fallback mock).
      *
      * @return array<int, array{
      *     id: string,
@@ -173,6 +186,56 @@ class SysAdminAuditLogsViewModel
      * }>
      */
     private function allLogs(): array
+    {
+        try {
+            if (Schema::hasTable('audit_logs') && AuditLog::count() > 0) {
+                return AuditLog::with(['actor', 'targetUser', 'journal'])->latest('occurred_at')->get()->map(function (AuditLog $log) {
+                    $actorName = $log->actor?->name ?? ($log->system_actor ? 'Sistem Otomatis' : 'Sistem Latar Belakang');
+
+                    return [
+                        'id' => (string) $log->id,
+                        'action' => (string) $log->action,
+                        'action_label' => (string) $log->action_label,
+                        'actor_name' => $actorName,
+                        'actor_type' => (string) $log->actor_type,
+                        'system_actor' => $log->system_actor,
+                        'effective_role' => (string) ($log->effective_role ?? 'System Administrator'),
+                        'resource_type' => (string) ($log->resource_type ?? 'system'),
+                        'resource_id' => (string) ($log->resource_id ?? 'N/A'),
+                        'occurred_at' => $log->occurred_at?->format('d M Y, H:i').' WITA',
+                        'request_id' => (string) ($log->request_id ?? 'req_sys'),
+                        'reason' => $log->reason,
+                        'diff' => $log->before_after ?? $log->details,
+                    ];
+                })->toArray();
+            }
+        } catch (\Throwable) {
+            // Fallback
+        }
+
+        return $this->mockLogs();
+    }
+
+    /**
+     * Seluruh data mock log jejak audit (Tabel audit_logs).
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     action: string,
+     *     action_label: string,
+     *     actor_name: string,
+     *     actor_type: string,
+     *     system_actor: ?string,
+     *     effective_role: string,
+     *     resource_type: string,
+     *     resource_id: string,
+     *     occurred_at: string,
+     *     request_id: string,
+     *     reason: ?string,
+     *     diff: ?array<string, mixed>
+     * }>
+     */
+    private function mockLogs(): array
     {
         return [
             [
@@ -231,8 +294,8 @@ class SysAdminAuditLogsViewModel
                 'resource_type' => 'journal',
                 'resource_id' => 'JOURNAL-01JARK-04',
                 'occurred_at' => '23 Okt 2026, 11:15 WITA',
-                'request_id' => 'req_01jark_4482dc',
                 'reason' => 'Pengarsipan resmi Buletin Riset Litbang periode 2018-2022.',
+                'request_id' => 'req_01jark_4482dc',
                 'diff' => ['before' => ['status' => 'active'], 'after' => ['status' => 'archived']],
             ],
             [

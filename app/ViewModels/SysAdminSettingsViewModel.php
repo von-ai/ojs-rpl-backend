@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Schema;
+
 class SysAdminSettingsViewModel
 {
     /**
-     * Konfigurasi pengaturan platform level global (Tabel 55 system_settings).
+     * Konfigurasi pengaturan platform level global (Tabel system_settings).
      *
      * @return array{
      *     site_name: string,
@@ -21,15 +24,15 @@ class SysAdminSettingsViewModel
      */
     public function settings(): array
     {
-        return [
-            'site_name' => 'SIRIDA — Portal Ilmiah BRIDA Kota Makassar',
-            'site_description' => 'Sistem Informasi Riset dan Inovasi Daerah Kota Makassar — Repositori dan penerbitan berkala ilmiah terpadu Badan Riset dan Inovasi Daerah.',
-            'maintenance_mode' => false,
-            'maintenance_message' => 'Sistem sedang dalam proses pemeliharaan rutin server. Silakan coba beberapa saat lagi.',
-            'max_upload_size_mb' => 32,
-            'allowed_file_extensions' => 'pdf, docx, odt, jpg, png, csv',
-            'session_lifetime_minutes' => 120,
-        ];
+        try {
+            if (Schema::hasTable('system_settings')) {
+                return SystemSetting::getAllSettings();
+            }
+        } catch (\Throwable) {
+            // Fallback
+        }
+
+        return SystemSetting::defaults();
     }
 
     /**
@@ -50,9 +53,11 @@ class SysAdminSettingsViewModel
      */
     public function serverHealth(): array
     {
+        $dbConnection = (string) config('database.default', 'sqlite');
+
         return [
             'php_version' => 'PHP '.PHP_VERSION,
-            'database_driver' => 'SQLite (pdo_sqlite engine)',
+            'database_driver' => $dbConnection === 'sqlite' ? 'SQLite (pdo_sqlite engine)' : ucfirst($dbConnection),
             'environment' => app()->environment(),
             'disk_usage_formatted' => '4.2 GB / 20 GB',
             'disk_percentage' => 21,
@@ -71,6 +76,9 @@ class SysAdminSettingsViewModel
      */
     public function summaryMetrics(): array
     {
+        $settings = $this->settings();
+        $isMaintenance = (bool) ($settings['maintenance_mode'] ?? false);
+
         return [
             [
                 'title' => 'Status Operasional',
@@ -80,9 +88,9 @@ class SysAdminSettingsViewModel
             ],
             [
                 'title' => 'Mode Pemeliharaan',
-                'value' => 'Non-Aktif',
-                'badge_text' => 'Publik Terbuka',
-                'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
+                'value' => $isMaintenance ? 'Aktif' : 'Non-Aktif',
+                'badge_text' => $isMaintenance ? 'Dibatasi (Admin)' : 'Publik Terbuka',
+                'color_class' => $isMaintenance ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Kapasitas Disk Storage',

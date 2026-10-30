@@ -351,9 +351,9 @@
                     required 
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
-                    <option value="JOURNAL-01JARK-01">JTIIK Makassar</option>
-                    <option value="JOURNAL-01JARK-02">JIKPM Makassar</option>
-                    <option value="JOURNAL-01JARK-03">JRLMBP Makassar</option>
+                    @foreach ($viewModel->selectableJournals() as $journalOption)
+                        <option value="{{ $journalOption['id'] }}">{{ $journalOption['name'] }}</option>
+                    @endforeach
                 </select>
             </div>
 
