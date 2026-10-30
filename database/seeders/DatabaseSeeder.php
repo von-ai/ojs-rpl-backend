@@ -34,7 +34,6 @@ class DatabaseSeeder extends Seeder
             CopyeditSeeder::class,
             LayoutEditorSeeder::class,
             JournalManagerSeeder::class,
-            SysAdminSeeder::class,
         ]);
     }
 }

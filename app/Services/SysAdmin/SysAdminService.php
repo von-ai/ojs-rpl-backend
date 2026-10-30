@@ -82,10 +82,12 @@ class SysAdminService
             // Buat seksi bawaan (Default Section) untuk jurnal baru
             Section::create([
                 'journal_id' => $journal->id,
-                'title' => 'Artikel Riset',
-                'abbreviation' => 'ART',
+                'name' => 'Artikel Riset',
+                'slug' => 'artikel-riset',
+                'description' => 'Bagian naskah artikel riset dan hasil penelitian empiris.',
+                'accepting_submissions' => true,
                 'position' => 1,
-                'is_active' => true,
+                'version' => 1,
             ]);
 
             // Catat rekam jejak audit append-only
