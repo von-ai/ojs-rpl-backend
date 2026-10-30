@@ -27,7 +27,11 @@ class Issue extends Model
         'doi_prefix',
         'scheduled_at',
         'published_at',
+        'publication_date',
         'version',
+        'publication_failure_code',
+        'publication_failed_at',
+        'failure_diagnostics',
     ];
 
     protected $casts = [
@@ -35,6 +39,9 @@ class Issue extends Model
         'is_current' => 'boolean',
         'scheduled_at' => 'datetime',
         'published_at' => 'datetime',
+        'publication_date' => 'date',
+        'publication_failed_at' => 'datetime',
+        'failure_diagnostics' => 'array',
         'version' => 'integer',
     ];
 
@@ -44,6 +51,18 @@ class Issue extends Model
     public function journal(): BelongsTo
     {
         return $this->belongsTo(Journal::class);
+    }
+
+    /**
+     * @return BelongsToMany<Article, $this>
+     */
+    public function articles(): BelongsToMany
+    {
+        return $this->belongsToMany(Article::class, 'issue_articles')
+            ->using(IssueArticlePivot::class)
+            ->withPivot(['id', 'position', 'pages'])
+            ->withTimestamps()
+            ->orderByPivot('position', 'asc');
     }
 
     /**

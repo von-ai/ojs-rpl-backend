@@ -10,12 +10,16 @@ use App\Http\Controllers\Eic\EditorInChiefController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
+use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
+Route::get('/', [PublicJournalController::class, 'index'])->name('journal.index');
+Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('journal.articles.search');
+Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('journal.articles.show');
+Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('journal.articles.galleys.download');
+Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('journal.articles.cite');
 
 // Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {
