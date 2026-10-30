@@ -153,6 +153,7 @@ class JournalManagerUsersViewModel
             'production' => count(array_filter($all, fn ($u) => count(array_intersect($u['role_codes'], ['copyeditor', 'layout_editor', 'proofreader'])) > 0)),
             'reviewer' => count(array_filter($all, fn ($u) => in_array('reviewer', $u['role_codes'], true))),
             'author' => count(array_filter($all, fn ($u) => in_array('author', $u['role_codes'], true))),
+            'unassigned' => count(array_filter($all, fn ($u) => empty($u['role_codes']))),
         ];
 
         return [
@@ -182,6 +183,11 @@ class JournalManagerUsersViewModel
                     'key' => 'author',
                     'label' => 'Penulis (Author)',
                     'count' => $counts['author'],
+                ],
+                'unassigned' => [
+                    'key' => 'unassigned',
+                    'label' => 'Belum Ada Peran',
+                    'count' => $counts['unassigned'],
                 ],
             ],
         ];
@@ -220,6 +226,8 @@ class JournalManagerUsersViewModel
             $items = array_filter($items, fn ($u) => in_array('reviewer', $u['role_codes'], true));
         } elseif ($this->activeFilter === 'author') {
             $items = array_filter($items, fn ($u) => in_array('author', $u['role_codes'], true));
+        } elseif ($this->activeFilter === 'unassigned') {
+            $items = array_filter($items, fn ($u) => empty($u['role_codes']));
         }
 
         // Filter pencarian
@@ -308,18 +316,25 @@ class JournalManagerUsersViewModel
                     $roles = $u->userRoles;
                     $roleCodes = $roles->pluck('role_code')->all();
 
-                    // Fallback peran jika belum ada record eksplisit di user_roles
+                    // Jika belum ada record eksplisit di user_roles, biarkan kosong sebagai pengguna biasa / belum ada peran
                     if (empty($roleCodes)) {
-                        $roleCodes = ['author'];
-                    }
-
-                    $formattedRoles = array_map(function ($code) {
-                        return [
-                            'code' => $code,
-                            'label' => UserRole::roleLabel($code),
-                            'badge_class' => UserRole::roleBadgeClass($code),
+                        $roleCodes = [];
+                        $formattedRoles = [
+                            [
+                                'code' => 'unassigned',
+                                'label' => 'Belum Ada Peran',
+                                'badge_class' => 'bg-gray-100 text-gray-600 border-gray-200 border-dashed',
+                            ],
                         ];
-                    }, $roleCodes);
+                    } else {
+                        $formattedRoles = array_map(function ($code) {
+                            return [
+                                'code' => $code,
+                                'label' => UserRole::roleLabel($code),
+                                'badge_class' => UserRole::roleBadgeClass($code),
+                            ];
+                        }, $roleCodes);
+                    }
 
                     // Gabungkan kata kunci kepakaran dari peran reviewer
                     $expertise = [];

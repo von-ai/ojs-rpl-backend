@@ -178,6 +178,57 @@ class JournalManagerSeeder extends Seeder
             }
         }
 
+        // 2b. Akun Pengguna Biasa / Global (Belum Terhubung ke Jurnal atau Tenant Manapun)
+        $unassignedUsers = [
+            [
+                'email' => 'fajar.pratama@gmail.com',
+                'username' => 'fajar.pratama',
+                'name' => 'Fajar Pratama, S.T.',
+                'affiliation' => 'Peneliti Terapan & Alumni UNHAS',
+            ],
+            [
+                'email' => 'dewi.lestari@unhas.ac.id',
+                'username' => 'dewi.lestari',
+                'name' => 'Dr. Dewi Lestari, M.Pd.',
+                'affiliation' => 'Fakultas Ilmu Budaya Universitas Hasanuddin',
+            ],
+            [
+                'email' => 'hendra.wijaya@makassar.go.id',
+                'username' => 'hendra.wijaya',
+                'name' => 'Hendra Wijaya, S.Sos.',
+                'affiliation' => 'Dinas Komunikasi dan Informatika Pemerintah Kota Makassar',
+            ],
+            [
+                'email' => 'maya.safitri@brida.makassar.go.id',
+                'username' => 'maya.safitri',
+                'name' => 'Maya Safitri, S.Si.',
+                'affiliation' => 'Badan Riset dan Inovasi Daerah Kota Makassar',
+            ],
+        ];
+
+        foreach ($unassignedUsers as $uud) {
+            $user = User::firstOrCreate(
+                ['email' => $uud['email']],
+                [
+                    'username' => $uud['username'],
+                    'name' => $uud['name'],
+                    'full_name' => $uud['name'],
+                    'password' => Hash::make('password123'),
+                    'email_verified_at' => now(),
+                    'status' => 'active',
+                ]
+            );
+
+            UserProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'affiliation' => $uud['affiliation'],
+                    'country_code' => 'ID',
+                ]
+            );
+            // Catatan: Sengaja tidak dibuatkan entri UserRole agar berstatus pengguna biasa/non-tenant
+        }
+
         // 3. Edisi Terbitan (Issues)
         // Edisi 1: Terbit Resmi (Current Issue: Vol. 6 No. 1, 2026)
         $issueCurrent = Issue::firstOrCreate(
