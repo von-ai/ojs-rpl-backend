@@ -49,6 +49,8 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
+    Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
+    Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
 });
 
 // Portal Editor-in-Chief (Pemimpin Redaksi) - Wajib Autentikasi (UC-10, UC-11, UC-12)

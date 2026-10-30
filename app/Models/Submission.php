@@ -159,6 +159,14 @@ class Submission extends Model
     }
 
     /**
+     * @return HasMany<Revision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(Revision::class)->orderBy('round', 'desc');
+    }
+
+    /**
      * @return HasMany<EditorAssignment, $this>
      */
     public function editorAssignments(): HasMany

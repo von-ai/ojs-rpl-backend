@@ -70,17 +70,30 @@
 
                     <!-- Tombol Unduh Berkas Privat -->
                     <div class="shrink-0 self-end sm:self-center">
-                        <button 
-                            type="button" 
-                            onclick="if(window.toast) window.toast.info('Memulai pengunduhan berkas privat...', 'Unduh Dokumen');"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:scale-[0.98] transition duration-150 cursor-pointer"
-                            title="Unduh berkas manuskrip"
-                        >
-                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            <span>Unduh</span>
-                        </button>
+                        @if(!empty($file['download_url']) && $file['download_url'] !== '#download-file')
+                            <a 
+                                href="{{ $file['download_url'] }}" 
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:scale-[0.98] transition duration-150 cursor-pointer shadow-xs"
+                                title="Unduh berkas {{ $file['name'] }}"
+                            >
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span>Unduh</span>
+                            </a>
+                        @else
+                            <button 
+                                type="button" 
+                                onclick="if(window.toast) window.toast.info('Memulai simulasi pengunduhan berkas privat...', 'Unduh Dokumen');"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:scale-[0.98] transition duration-150 cursor-pointer"
+                                title="Unduh berkas manuskrip"
+                            >
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span>Unduh</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
             @endforeach
