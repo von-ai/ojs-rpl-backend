@@ -403,4 +403,27 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $resNotFound->assertRedirect('/journalmanager/users');
         $resNotFound->assertSessionHasErrors(['email']);
     }
+
+    /**
+     * Skenario 9: Paginasi pengguna interaktif memotong data dan tombol navigasi berfungsi.
+     */
+    public function test_paginasi_pengguna_berfungsi_dan_dapat_diklik(): void
+    {
+        $manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
+        $this->actingAs($manager);
+
+        // Halaman 1
+        $resPage1 = $this->get('/journalmanager/users?page=1');
+        $resPage1->assertStatus(200);
+        $resPage1->assertSee('Menampilkan <strong class="text-gray-800">1</strong> - <strong class="text-gray-800">10</strong> dari <strong class="text-gray-800">15</strong> pengguna', false);
+        $resPage1->assertSee('Selanjutnya');
+        $resPage1->assertSee('page=2');
+
+        // Halaman 2
+        $resPage2 = $this->get('/journalmanager/users?page=2');
+        $resPage2->assertStatus(200);
+        $resPage2->assertSee('Menampilkan <strong class="text-gray-800">11</strong> - <strong class="text-gray-800">15</strong> dari <strong class="text-gray-800">15</strong> pengguna', false);
+        $resPage2->assertSee('Sebelumnya');
+        $resPage2->assertSee('page=1');
+    }
 }

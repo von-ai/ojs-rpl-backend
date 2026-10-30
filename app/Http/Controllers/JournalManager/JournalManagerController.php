@@ -162,8 +162,9 @@ class JournalManagerController extends Controller
     {
         $role = (string) $request->query('role', 'all');
         $search = (string) $request->query('q', '');
+        $page = max(1, (int) $request->query('page', 1));
 
-        $viewModel = new JournalManagerUsersViewModel($role, $search);
+        $viewModel = new JournalManagerUsersViewModel($role, $search, $page);
 
         return view('journalmanager.users.index', compact('viewModel'));
     }

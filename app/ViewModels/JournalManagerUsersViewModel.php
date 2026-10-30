@@ -15,10 +15,16 @@ class JournalManagerUsersViewModel
 
     private string $searchQuery;
 
-    public function __construct(string $activeFilter = 'all', string $searchQuery = '')
+    private int $currentPage;
+
+    private int $perPage;
+
+    public function __construct(string $activeFilter = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10)
     {
         $this->activeFilter = $activeFilter;
         $this->searchQuery = trim($searchQuery);
+        $this->currentPage = max(1, $currentPage);
+        $this->perPage = max(1, $perPage);
     }
 
     /**
@@ -213,7 +219,27 @@ class JournalManagerUsersViewModel
      *     joined_at: string
      * }>
      */
-    public function users(): array
+    /**
+     * Kumpulan seluruh pengguna yang telah difilter (tanpa paginasi).
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     affiliation: string,
+     *     role_codes: array<int, string>,
+     *     roles: array<int, array{code: string, label: string, badge_class: string}>,
+     *     status: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     expertise: array<int, string>,
+     *     active_assignments_count: int,
+     *     is_last_admin: bool,
+     *     is_last_eic: bool,
+     *     joined_at: string
+     * }>
+     */
+    public function filteredUsers(): array
     {
         $items = $this->allUsers();
 
@@ -253,23 +279,66 @@ class JournalManagerUsersViewModel
     }
 
     /**
+     * Kumpulan pengguna untuk halaman aktif (dipotong berdasarkan paginasi).
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     affiliation: string,
+     *     role_codes: array<int, string>,
+     *     roles: array<int, array{code: string, label: string, badge_class: string}>,
+     *     status: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     expertise: array<int, string>,
+     *     active_assignments_count: int,
+     *     is_last_admin: bool,
+     *     is_last_eic: bool,
+     *     joined_at: string
+     * }>
+     */
+    public function users(): array
+    {
+        $filtered = $this->filteredUsers();
+        $offset = ($this->currentPage - 1) * $this->perPage;
+
+        return array_slice($filtered, $offset, $this->perPage);
+    }
+
+    /**
+     * Seluruh pengguna terdaftar (untuk opsi autocomplete / modal tanpa dipotong per halaman).
+     */
+    public function allRegisteredUsers(): array
+    {
+        return $this->allUsers();
+    }
+
+    /**
      * Data pagination.
      *
-     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int}
+     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int, has_more_pages: bool, has_previous_page: bool, previous_page: ?int, next_page: ?int}
      */
     public function pagination(): array
     {
-        $total = count($this->users());
-        $from = $total > 0 ? 1 : 0;
-        $to = min($total, 10);
+        $total = count($this->filteredUsers());
+        $lastPage = max(1, (int) ceil($total / $this->perPage));
+        $currentPage = min($this->currentPage, $lastPage);
+
+        $from = $total > 0 ? (($currentPage - 1) * $this->perPage) + 1 : 0;
+        $to = min($currentPage * $this->perPage, $total);
 
         return [
-            'current_page' => 1,
-            'per_page' => 10,
+            'current_page' => $currentPage,
+            'per_page' => $this->perPage,
             'total' => $total,
             'from' => $from,
             'to' => $to,
-            'last_page' => max(1, (int) ceil($total / 10)),
+            'last_page' => $lastPage,
+            'has_more_pages' => $currentPage < $lastPage,
+            'has_previous_page' => $currentPage > 1,
+            'previous_page' => $currentPage > 1 ? $currentPage - 1 : null,
+            'next_page' => $currentPage < $lastPage ? $currentPage + 1 : null,
         ];
     }
 

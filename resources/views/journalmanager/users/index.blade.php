@@ -248,22 +248,56 @@
             </table>
         </div>
 
-        <!-- Pagination Simpel -->
+        <!-- Pagination Interaktif -->
         @php
             $pagination = $viewModel->pagination();
         @endphp
-        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between text-xs text-gray-500">
+        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
             <span>
                 Menampilkan <strong class="text-gray-800">{{ $pagination['from'] }}</strong> - <strong class="text-gray-800">{{ $pagination['to'] }}</strong> dari <strong class="text-gray-800">{{ $pagination['total'] }}</strong> pengguna
             </span>
 
-            <div class="flex items-center gap-1">
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Sebelumnya
-                </button>
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Selanjutnya
-                </button>
+            <div class="flex items-center gap-1.5">
+                @if ($pagination['has_previous_page'])
+                    <a 
+                        href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $pagination['previous_page']])) }}"
+                        class="px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition shadow-2xs"
+                    >
+                        Sebelumnya
+                    </a>
+                @else
+                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                        Sebelumnya
+                    </span>
+                @endif
+
+                @for ($p = 1; $p <= $pagination['last_page']; $p++)
+                    @if ($p == $pagination['current_page'])
+                        <span class="w-7 h-7 flex items-center justify-center rounded-md bg-brand-maroon text-white font-bold text-xs shadow-2xs select-none">
+                            {{ $p }}
+                        </span>
+                    @else
+                        <a 
+                            href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $p])) }}"
+                            class="w-7 h-7 flex items-center justify-center rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium text-xs transition shadow-2xs"
+                        >
+                            {{ $p }}
+                        </a>
+                    @endif
+                @endfor
+
+                @if ($pagination['has_more_pages'])
+                    <a 
+                        href="{{ route('journalmanager.users.index', array_merge(request()->query(), ['page' => $pagination['next_page']])) }}"
+                        class="px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition shadow-2xs"
+                    >
+                        Selanjutnya
+                    </a>
+                @else
+                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                        Selanjutnya
+                    </span>
+                @endif
             </div>
         </div>
     </div>
@@ -317,8 +351,8 @@
                         value=""
                     >
                     <datalist id="registered_users_email_list">
-                        @foreach ($viewModel->users() as $registeredUser)
-                            <option value="{{ $registeredUser['email'] }}">{{ $registeredUser['name'] }} ({{ $registeredUser['email'] }})</option>
+                        @foreach ($viewModel->allRegisteredUsers() as $registeredUser)
+                            <option value="{{ $registeredUser['email'] }}"></option>
                         @endforeach
                     </datalist>
                     <p id="assign_user_name_preview" class="text-[11px] text-gray-500 mt-1 hidden"></p>
