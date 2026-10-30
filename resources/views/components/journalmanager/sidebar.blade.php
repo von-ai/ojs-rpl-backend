@@ -1,9 +1,17 @@
 {{-- resources/views/components/journalmanager/sidebar.blade.php --}}
+@props([
+    'issuesCount' => null,
+    'usersCount' => null,
+])
+
 @php
     $isIssuesActive = request()->routeIs('journalmanager.issues.*');
     $isUsersActive = request()->routeIs('journalmanager.users.*');
     $isSectionsActive = request()->routeIs('journalmanager.sections.*');
     $isSettingsActive = request()->routeIs('journalmanager.settings.*');
+
+    $activeIssuesCount = $issuesCount ?? \App\ViewModels\JournalManagerIssuesViewModel::getSidebarBadgeCount();
+    $activeUsersCount = $usersCount ?? \App\ViewModels\JournalManagerUsersViewModel::getSidebarBadgeCount();
 @endphp
 
 <aside id="journalmanager-sidebar" class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
@@ -52,7 +60,7 @@
                 <span class="truncate sidebar-label">Edisi & Terbitan</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isIssuesActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                14
+                {{ $activeIssuesCount }}
             </span>
         </a>
 
@@ -69,7 +77,7 @@
                 <span class="truncate sidebar-label">Pengguna & Redaksi</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isUsersActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                28
+                {{ $activeUsersCount }}
             </span>
         </a>
 

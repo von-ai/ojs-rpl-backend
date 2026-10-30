@@ -22,6 +22,22 @@ class JournalManagerUsersViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah pengguna jurnal secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(User::class) && Schema::hasTable('users') && User::query()->exists()) {
+                return User::query()->count();
+            }
+
+            return 28;
+        } catch (\Throwable) {
+            return 28;
+        }
+    }
+
+    /**
      * Profil pengguna aktif Journal Manager.
      *
      * @return array{name: string, role_label: string, affiliation: string, initials: string}

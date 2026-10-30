@@ -23,6 +23,22 @@ class JournalManagerIssuesViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah edisi terbitan secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(Issue::class) && Schema::hasTable('issues') && Issue::query()->exists()) {
+                return Issue::query()->count();
+            }
+
+            return 14;
+        } catch (\Throwable) {
+            return 14;
+        }
+    }
+
+    /**
      * Profil pengguna aktif Journal Manager.
      *
      * @return array{name: string, role_label: string, affiliation: string, initials: string}
