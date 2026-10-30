@@ -159,11 +159,67 @@ class Submission extends Model
     }
 
     /**
+     * @return HasMany<Revision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(Revision::class)->orderBy('round', 'desc');
+    }
+
+    /**
+     * @return HasMany<EditorAssignment, $this>
+     */
+    public function editorAssignments(): HasMany
+    {
+        return $this->hasMany(EditorAssignment::class);
+    }
+
+    /**
+     * @return HasOne<EditorAssignment, $this>
+     */
+    public function activeEditorAssignment(): HasOne
+    {
+        return $this->hasOne(EditorAssignment::class)->whereNull('revoked_at')->latestOfMany('created_at');
+    }
+
+    /**
+     * @return HasMany<DeskReview, $this>
+     */
+    public function deskReviews(): HasMany
+    {
+        return $this->hasMany(DeskReview::class);
+    }
+
+    /**
+     * @return HasMany<EditorialDecision, $this>
+     */
+    public function editorialDecisions(): HasMany
+    {
+        return $this->hasMany(EditorialDecision::class);
+    }
+
+    /**
      * @return HasOne<IssueArticle, $this>
      */
     public function issueArticle(): HasOne
     {
         return $this->hasOne(IssueArticle::class);
+    }
+
+    /**
+     * @return HasMany<ReviewRound, $this>
+     */
+    public function reviewRounds(): HasMany
+    {
+        return $this->hasMany(ReviewRound::class)->orderBy('round', 'asc');
+    }
+
+    /**
+     * @return HasOne<ReviewRound, $this>
+     */
+    public function currentReviewRound(): HasOne
+    {
+        return $this->hasOne(ReviewRound::class)->where('status', 'active')->latestOfMany('round');
     }
 
     /**

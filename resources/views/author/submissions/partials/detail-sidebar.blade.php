@@ -41,8 +41,8 @@
             <div class="pt-1 space-y-2">
                 <button 
                     type="button" 
-                    onclick="if(window.showAlertModal) { window.showAlertModal({ title: 'Unggah Revisi Naskah', message: 'Silakan siapkan berkas manuskrip revisi (anonymized tanpa identitas penulis untuk menjaga blind review) beserta dokumen respon atas masukan mitra bestari (Response Letter).', buttonText: 'Mengerti', type: 'warning' }); } else { alert('Fitur unggah revisi terhubung ke modal SIRIDA.'); }"
-                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition duration-150 cursor-pointer"
+                    onclick="document.getElementById('modal-upload-revisi').classList.remove('hidden'); document.getElementById('modal-upload-revisi').classList.add('flex');"
+                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition duration-150 cursor-pointer shadow-xs"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -51,8 +51,120 @@
                 </button>
 
                 <p class="text-[11px] text-gray-500 text-center leading-tight">
-                    Unggah naskah bersih tanpa informasi identitas penulis.
+                    Unggah naskah bersih tanpa informasi identitas penulis (anonymized).
                 </p>
+            </div>
+
+            <!-- Modal Formulir Pengunggahan Berkas Revisi (UC-07) -->
+            <div 
+                id="modal-upload-revisi" 
+                class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs transition-opacity duration-200"
+                role="dialog" 
+                aria-modal="true" 
+                aria-labelledby="modal-revisi-title"
+            >
+                <div class="relative w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <!-- Header Modal -->
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/70">
+                        <div class="flex items-center gap-2.5 text-gray-900">
+                            <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 id="modal-revisi-title" class="text-sm font-bold text-gray-900 leading-snug">Unggah Revisi Naskah</h3>
+                                <p class="text-[11px] text-gray-500">Putaran telaah dan perbaikan naskah ilmiah</p>
+                            </div>
+                        </div>
+                        <button 
+                            type="button" 
+                            onclick="document.getElementById('modal-upload-revisi').classList.add('hidden'); document.getElementById('modal-upload-revisi').classList.remove('flex');"
+                            class="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                            aria-label="Tutup dialog"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Form Pengunggahan -->
+                    <form 
+                        action="{{ route('author.submissions.revisions.store', $submission['id']) }}" 
+                        method="POST" 
+                        enctype="multipart/form-data" 
+                        class="p-6 space-y-4 text-xs"
+                    >
+                        @csrf
+
+                        <!-- Field Berkas Manuskrip Revisi (Wajib) -->
+                        <div class="space-y-1.5">
+                            <label for="manuscript_file" class="block font-bold text-gray-800">
+                                Berkas Manuskrip Bersih (Revisi) <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="file" 
+                                id="manuscript_file" 
+                                name="manuscript_file" 
+                                required 
+                                accept=".pdf,.doc,.docx"
+                                class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                            <p class="text-[11px] text-gray-500">Format PDF, DOC, atau DOCX. Maksimum 20 MiB. Pastikan identitas penulis telah disamarkan.</p>
+                        </div>
+
+                        <!-- Field Response Letter (Opsional) -->
+                        <div class="space-y-1.5">
+                            <label for="response_letter_file" class="block font-bold text-gray-800">
+                                Berkas Respon / Response Letter (Opsional)
+                            </label>
+                            <input 
+                                type="file" 
+                                id="response_letter_file" 
+                                name="response_letter_file" 
+                                accept=".pdf,.doc,.docx"
+                                class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                            <p class="text-[11px] text-gray-500">Tanggapan poin-demi-poin terhadap catatan penelaah (PDF/DOC/DOCX, maks 20 MiB).</p>
+                        </div>
+
+                        <!-- Catatan Ringkas untuk Editor -->
+                        <div class="space-y-1.5">
+                            <label for="revision_note" class="block font-bold text-gray-800">
+                                Catatan untuk Dewan Redaksi (Opsional)
+                            </label>
+                            <textarea 
+                                id="revision_note" 
+                                name="note" 
+                                rows="3" 
+                                maxlength="2000"
+                                placeholder="Jelaskan secara ringkas poin perbaikan utama yang telah Anda lakukan..."
+                                class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800"
+                            ></textarea>
+                        </div>
+
+                        <!-- Tombol Aksi Modal -->
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                            <button 
+                                type="button" 
+                                onclick="document.getElementById('modal-upload-revisi').classList.add('hidden'); document.getElementById('modal-upload-revisi').classList.remove('flex');"
+                                class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition cursor-pointer shadow-xs"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Kirim Naskah Revisi</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     @endif

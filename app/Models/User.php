@@ -125,6 +125,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<ReviewAssignment, $this>
+     */
+    public function reviewAssignments(): HasMany
+    {
+        return $this->hasMany(ReviewAssignment::class, 'reviewer_id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
