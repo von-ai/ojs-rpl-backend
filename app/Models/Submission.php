@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Submission extends Model
 {
@@ -187,5 +188,21 @@ class Submission extends Model
     public function editorialDecisions(): HasMany
     {
         return $this->hasMany(EditorialDecision::class);
+    }
+
+    /**
+     * @return HasOne<IssueArticle, $this>
+     */
+    public function issueArticle(): HasOne
+    {
+        return $this->hasOne(IssueArticle::class);
+    }
+
+    /**
+     * @return HasOneThrough<Issue, IssueArticle, $this>
+     */
+    public function issue(): HasOneThrough
+    {
+        return $this->hasOneThrough(Issue::class, IssueArticle::class, 'submission_id', 'id', 'id', 'issue_id');
     }
 }

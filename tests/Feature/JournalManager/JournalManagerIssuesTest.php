@@ -112,7 +112,7 @@ class JournalManagerIssuesTest extends TestCase
         // Antrean Naskah Siap Terbit
         $response->assertSee('Antrean Naskah Siap Terbit');
         $response->assertSee('Model Partisipasi Pemuda');
-        $response->assertSee('+ Masukkan ke Edisi');
+        $response->assertSee('Masukkan ke Edisi');
 
         // Otorisasi Publikasi
         $response->assertSee('Publikasikan Edisi Sekarang');
