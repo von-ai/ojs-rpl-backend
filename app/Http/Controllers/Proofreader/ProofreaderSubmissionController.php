@@ -260,10 +260,21 @@ class ProofreaderSubmissionController extends Controller
                 preg_match('/(\d{5})/', $id, $matches);
                 $code = $matches[1] ?? '';
                 if ($code !== '') {
-                    $fileEntry = FileEntry::where('storage_path', 'like', "%{$code}%")
-                        ->orWhere('original_name', 'like', "%{$code}%")
+                    $fileEntry = FileEntry::where(function ($q) use ($code) {
+                        $q->where('storage_path', 'like', "%{$code}%")
+                            ->orWhere('original_name', 'like', "%{$code}%");
+                    })
+                        ->where(function ($q) {
+                            $q->where('original_name', 'like', '%.doc%')
+                                ->orWhere('mime_type', 'like', '%word%')
+                                ->orWhere('mime_type', 'like', '%officedocument%');
+                        })
                         ->latest()
-                        ->first();
+                        ->first()
+                        ?? FileEntry::where('storage_path', 'like', "%{$code}%")
+                            ->orWhere('original_name', 'like', "%{$code}%")
+                            ->latest()
+                            ->first();
                 }
             }
         }
