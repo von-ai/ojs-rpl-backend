@@ -85,7 +85,8 @@ class Article extends Model
     public function issues(): BelongsToMany
     {
         return $this->belongsToMany(Issue::class, 'issue_articles')
-            ->withPivot(['position', 'pages'])
+            ->using(IssueArticlePivot::class)
+            ->withPivot(['id', 'position', 'pages'])
             ->withTimestamps();
     }
 
