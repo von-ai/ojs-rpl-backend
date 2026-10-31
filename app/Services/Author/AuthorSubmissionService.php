@@ -57,14 +57,15 @@ class AuthorSubmissionService
         }
 
         return DB::transaction(function () use ($submission, $actor, $manuscriptFile, $responseLetterFile, $note): Revision {
-            $disk = Storage::disk('local');
+            $storageDisk = config('filesystems.default', 'local');
+            $disk = Storage::disk($storageDisk);
 
             // 1. Simpan berkas revisi manuskrip
-            $manuscriptPath = $manuscriptFile->store("submissions/{$submission->id}/revisions", 'local');
+            $manuscriptPath = $manuscriptFile->store("submissions/{$submission->id}/revisions", $storageDisk);
             $manuscriptSha256 = hash('sha256', (string) $disk->get($manuscriptPath));
 
             $manuscriptEntry = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => $storageDisk,
                 'storage_path' => $manuscriptPath,
                 'original_name' => $manuscriptFile->getClientOriginalName(),
                 'mime_type' => $manuscriptFile->getClientMimeType() ?: 'application/pdf',
@@ -77,11 +78,11 @@ class AuthorSubmissionService
             // 2. Simpan response letter jika diunggah
             $responseLetterEntry = null;
             if ($responseLetterFile && $responseLetterFile->isValid()) {
-                $responseLetterPath = $responseLetterFile->store("submissions/{$submission->id}/revisions", 'local');
+                $responseLetterPath = $responseLetterFile->store("submissions/{$submission->id}/revisions", $storageDisk);
                 $responseLetterSha256 = hash('sha256', (string) $disk->get($responseLetterPath));
 
                 $responseLetterEntry = FileEntry::create([
-                    'storage_disk' => 'local',
+                    'storage_disk' => $storageDisk,
                     'storage_path' => $responseLetterPath,
                     'original_name' => $responseLetterFile->getClientOriginalName(),
                     'mime_type' => $responseLetterFile->getClientMimeType() ?: 'application/pdf',

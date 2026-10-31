@@ -115,78 +115,100 @@
 
         <!-- Tabel Daftar Jurnal Ilmiah -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table class="w-full text-left text-xs sm:text-sm min-w-[960px]">
                 <thead>
                     <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold text-[11px] uppercase tracking-wider">
-                        <th scope="col" class="py-3 px-4 sm:px-5">Instansi Jurnal</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Identitas &amp; ISSN</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Kontak Utama / PIC</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Edisi Berjalan</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Status</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-right">Aksi</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-5/12 min-w-[340px]">Instansi Jurnal</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-36 whitespace-nowrap">Identitas &amp; ISSN</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-48 whitespace-nowrap">Kontak Utama / PIC</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-56">Edisi Berjalan</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-28 whitespace-nowrap text-center">Status</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 w-24 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($viewModel->journals() as $journal)
                         <tr class="hover:bg-gray-50/80 transition-colors group">
                             <!-- Kolom Jurnal -->
-                            <td class="py-3.5 px-4 sm:px-5 max-w-sm sm:max-w-md">
-                                <span class="font-serif font-bold text-gray-900 group-hover:text-brand-maroon transition block leading-snug">
-                                    {{ $journal['name'] }}
-                                </span>
-                                <span class="text-[11px] text-gray-500 block mt-1 line-clamp-1">
-                                    {{ $journal['description'] }}
-                                </span>
-                                <span class="text-[10px] font-mono text-gray-400 block mt-0.5">
-                                    Slug: /{{ $journal['slug'] }} • Total Naskah: {{ $journal['total_submissions'] }}
-                                </span>
+                            <td class="py-4 px-4 sm:px-5 align-top">
+                                <div class="space-y-1">
+                                    <span class="font-serif font-bold text-gray-900 group-hover:text-brand-maroon transition block leading-snug text-sm sm:text-[15px]">
+                                        {{ $journal['name'] }}
+                                    </span>
+                                    @if (!empty($journal['description']))
+                                        <p class="text-xs text-gray-600 leading-relaxed line-clamp-2" title="{{ $journal['description'] }}">
+                                            {{ $journal['description'] }}
+                                        </p>
+                                    @endif
+                                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-gray-400 pt-0.5">
+                                        <span class="inline-flex items-center gap-1 font-mono text-gray-500 bg-gray-100/80 px-1.5 py-0.5 rounded">
+                                            <span class="text-gray-400">slug:</span> /{{ $journal['slug'] }}
+                                        </span>
+                                        <span class="text-gray-300">•</span>
+                                        <span class="inline-flex items-center gap-1 text-gray-500">
+                                            <span>Total Naskah:</span>
+                                            <strong class="font-semibold text-gray-700 tabular-nums">{{ $journal['total_submissions'] }}</strong>
+                                        </span>
+                                    </div>
+                                </div>
                             </td>
 
                             <!-- Kolom Identitas & ISSN -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="space-y-0.5 text-xs">
+                            <td class="py-4 px-4 sm:px-5 align-top whitespace-nowrap">
+                                <div class="space-y-1 text-xs">
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-gray-400 text-[10px] font-semibold">P-ISSN:</span>
+                                        <span class="text-gray-400 text-[10px] font-semibold uppercase">P-ISSN</span>
                                         <span class="font-mono text-gray-800 font-medium">{{ $journal['issn'] ?? '—' }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-gray-400 text-[10px] font-semibold">E-ISSN:</span>
+                                        <span class="text-gray-400 text-[10px] font-semibold uppercase">E-ISSN</span>
                                         <span class="font-mono text-gray-800 font-medium">{{ $journal['eissn'] ?? '—' }}</span>
                                     </div>
                                 </div>
                             </td>
 
                             <!-- Kolom Kontak Utama -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <span class="font-medium text-gray-800 block text-xs truncate max-w-48">
-                                    {{ $journal['primary_contact'] }}
-                                </span>
-                                <span class="text-[10px] text-gray-400 block">Penanggung Jawab</span>
+                            <td class="py-4 px-4 sm:px-5 align-top">
+                                <div class="max-w-44">
+                                    <span class="font-medium text-gray-800 block text-xs truncate" title="{{ $journal['primary_contact'] }}">
+                                        {{ $journal['primary_contact'] }}
+                                    </span>
+                                    <span class="text-[10px] text-gray-400 block mt-0.5">Penanggung Jawab</span>
+                                </div>
                             </td>
 
                             <!-- Kolom Edisi Berjalan -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <span class="text-xs font-semibold text-gray-800 block">
-                                    {{ $journal['current_issue_title'] ?? 'Belum ada terbitan' }}
-                                </span>
+                            <td class="py-4 px-4 sm:px-5 align-top">
+                                <div class="max-w-56">
+                                    @if(!empty($journal['current_issue_title']) && $journal['current_issue_title'] !== 'Belum ada terbitan')
+                                        <span class="text-xs font-semibold text-gray-800 block line-clamp-2 leading-relaxed" title="{{ $journal['current_issue_title'] }}">
+                                            {{ $journal['current_issue_title'] }}
+                                        </span>
+                                        <span class="text-[10px] text-emerald-700 font-medium block mt-0.5">Edisi Aktif Terpublikasi</span>
+                                    @else
+                                        <span class="text-xs text-gray-400 italic block">
+                                            Belum ada terbitan
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <!-- Kolom Status -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border {{ $journal['status_badge_class'] }}">
+                            <td class="py-4 px-4 sm:px-5 align-top text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border {{ $journal['status_badge_class'] }}">
                                     {{ $journal['status_label'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Aksi -->
-                            <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
+                            <td class="py-4 px-4 sm:px-5 align-top text-right whitespace-nowrap">
                                 <form action="{{ route('sysadmin.journals.update-status', $journal['id']) }}" method="POST" class="inline">
                                     @csrf
                                     @if($journal['status'] === 'active')
                                         <input type="hidden" name="status" value="archived">
                                         <button 
                                             type="submit" 
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                                             title="Arsipkan instansi jurnal ini"
                                         >
                                             <span>Arsipkan</span>
@@ -195,7 +217,7 @@
                                         <input type="hidden" name="status" value="active">
                                         <button 
                                             type="submit" 
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 cursor-pointer"
                                             title="Aktifkan kembali publikasi jurnal"
                                         >
                                             <span>Aktifkan</span>
@@ -284,6 +306,28 @@
                     placeholder="Contoh: Jurnal Kebijakan Publik Makassar"
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
+            </div>
+
+            <div>
+                <label for="manager_user_id" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Akun PIC / Journal Manager <span class="text-xs font-normal text-emerald-700">(Otomatis diberi hak akses Journal Manager)</span>
+                </label>
+                <select 
+                    id="manager_user_id" 
+                    name="manager_user_id"
+                    onchange="if(this.options[this.selectedIndex].dataset.name) { document.getElementById('primary_contact').value = this.options[this.selectedIndex].dataset.name; }"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                    <option value="">-- Pilih Akun Pengguna Terdaftar (Opsional) --</option>
+                    @foreach ($viewModel->selectableUsers() as $userOption)
+                        <option value="{{ $userOption['id'] }}" data-name="{{ $userOption['name'] }}">
+                            {{ $userOption['name'] }} ({{ $userOption['email'] }})
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-[11px] text-gray-500 mt-1">
+                    Pengguna yang dipilih akan otomatis ditetapkan sebagai Manajer Jurnal (Journal Manager) untuk instansi baru ini.
+                </p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

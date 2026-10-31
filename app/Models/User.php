@@ -133,6 +133,26 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<AuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_id');
+    }
+
+    /**
+     * Memeriksa apakah pengguna memiliki hak akses System Administrator global.
+     */
+    public function isSysAdmin(): bool
+    {
+        if ($this->relationLoaded('userRoles')) {
+            return $this->userRoles->contains('role_code', 'sysadmin');
+        }
+
+        return $this->userRoles()->where('role_code', 'sysadmin')->exists();
+    }
+
+    /**
      * Mengambil daftar kode peran unik yang dimiliki pengguna, diurutkan sesuai katalog.
      * Setiap pengguna terautentikasi minimal memiliki akses 'author' sebagai fallback dasar.
      *

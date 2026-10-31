@@ -204,11 +204,12 @@ class AuthorSubmissionController extends Controller
             // 7. Simpan Berkas Manuskrip utama jika diunggah
             if ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
                 $file = $request->file('manuscript_file');
-                $path = $file->store('manuscripts', 'local');
+                $storageDisk = config('filesystems.default', 'local');
+                $path = $file->store('manuscripts', $storageDisk);
                 $sha256 = hash_file('sha256', $file->getRealPath());
 
                 $fileEntry = FileEntry::create([
-                    'storage_disk' => 'local',
+                    'storage_disk' => $storageDisk,
                     'storage_path' => $path,
                     'original_name' => $file->getClientOriginalName(),
                     'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',

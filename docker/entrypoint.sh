@@ -14,9 +14,13 @@ rm -f /var/www/html/bootstrap/cache/packages.php \
       /var/www/html/bootstrap/cache/config.php \
       /var/www/html/bootstrap/cache/routes-*.php
 
+# Pastikan folder aplikasi ada
+mkdir -p /var/www/html/storage/app/private /var/www/html/storage/app/public 2>/dev/null || true
+
 # Atur izin direktori agar bisa ditulis oleh web server / php-fpm (user www-data)
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Gunakan || true agar tidak error saat storage/app dimount dari CIFS / Azure Files
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
 
 
 # Jika di environment production dan file .env tersedia, optimasi cache Laravel

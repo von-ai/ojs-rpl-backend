@@ -66,7 +66,7 @@ return new class extends Migration
                 $table->text('abstract');
                 $table->json('keywords');
                 $table->text('references')->nullable();
-                $table->string('license', 191)->default('CC BY 4.0');
+                $table->string('license')->default('CC BY 4.0');
                 $table->string('status', 191)->default('published'); // in_press, published, retracted
                 $table->dateTime('published_at', 6)->nullable();
                 $table->integer('version')->default(1);

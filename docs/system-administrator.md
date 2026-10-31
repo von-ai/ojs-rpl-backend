@@ -209,7 +209,7 @@ Prefix rute: `/sysadmin`
         'environment' => string,        // 'production' / 'local'
         'disk_usage_formatted' => string, // '4.2 GB / 20 GB (21%)'
         'cache_driver' => string,       // 'file'
-        'malware_scanner_status' => string, // 'Active (ClamAV)'
+        'malware_scanner_status' => string, // 'Active (Microsoft Defender for Storage)'
     ],
 ]
 ```

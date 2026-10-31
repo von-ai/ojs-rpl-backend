@@ -11,7 +11,38 @@
         </p>
     </div>
 
-    @if(!$submission['is_completed'])
+    @if(!empty($submission['escalation']['has_active']))
+        <!-- Panel Status Tiket Eskalasi Aktif -->
+        <div class="bg-purple-50/80 border border-purple-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
+                    <span class="text-xs font-bold text-purple-900">Eskalasi Masalah Aktif</span>
+                </div>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-200 text-purple-900 border border-purple-300">
+                    {{ $submission['escalation']['ticket_id'] }}
+                </span>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-purple-800 font-semibold">Status: {{ $submission['escalation']['status_label'] ?? 'Menunggu Mediasi Editor' }}</span>
+                    @if(!empty($submission['escalation']['created_at']))
+                        <span class="text-gray-500 text-[10px]">{{ $submission['escalation']['created_at'] }}</span>
+                    @endif
+                </div>
+
+                <div class="bg-white/90 p-2.5 rounded-lg border border-purple-100 text-gray-800 text-[11px] leading-relaxed space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alasan Pengajuan:</span>
+                    <p class="italic text-gray-700">"{{ $submission['escalation']['reason'] }}"</p>
+                </div>
+
+                <div class="p-2 bg-purple-100/60 rounded border border-purple-200/60 text-[11px] text-purple-800 leading-tight">
+                    Section Editor sedang meninjau naskah ini. Persetujuan akhir (sign-off) ditangguhkan hingga mediasi selesai.
+                </div>
+            </div>
+        </div>
+    @elseif(!$submission['is_completed'])
         <form action="{{ route('proofreader.escalate') }}" method="POST" class="space-y-3">
             @csrf
             <input type="hidden" name="submission_id" value="{{ $submission['id'] }}">

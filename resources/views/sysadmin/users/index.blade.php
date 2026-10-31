@@ -183,31 +183,45 @@
 
                             <!-- Kolom Aksi -->
                             <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
-                                @if($user['is_sysadmin'])
-                                    <form action="{{ route('sysadmin.users.revoke-sysadmin') }}" method="POST" class="inline">
-                                        @csrf
-                                        <input type="hidden" name="user_id" value="{{ $user['id'] }}">
-                                        <button 
-                                            type="submit" 
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200"
-                                            title="Cabut hak akses System Administrator"
-                                        >
-                                            <span>Cabut SysAdmin</span>
-                                        </button>
-                                    </form>
-                                @else
-                                    <form action="{{ route('sysadmin.users.assign-sysadmin') }}" method="POST" class="inline">
-                                        @csrf
-                                        <input type="hidden" name="user_id" value="{{ $user['id'] }}">
-                                        <button 
-                                            type="submit" 
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition border border-purple-200"
-                                            title="Berikan hak akses System Administrator"
-                                        >
-                                            <span>Jadikan SysAdmin</span>
-                                        </button>
-                                    </form>
-                                @endif
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        type="button" 
+                                        onclick="openJournalRoleModal('{{ $user['id'] }}', @js($user['name']), @js($user['email']), @js($user['journal_roles'] ?? []))"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-brand-maroon bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200 cursor-pointer"
+                                        title="Kelola peran jurnal untuk pengguna ini"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                        </svg>
+                                        <span>Peran Jurnal</span>
+                                    </button>
+
+                                    @if($user['is_sysadmin'])
+                                        <form action="{{ route('sysadmin.users.revoke-sysadmin') }}" method="POST" class="inline">
+                                            @csrf
+                                            <input type="hidden" name="user_id" value="{{ $user['id'] }}">
+                                            <button 
+                                                type="submit" 
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200 cursor-pointer"
+                                                title="Cabut hak akses System Administrator"
+                                            >
+                                                <span>Cabut SysAdmin</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('sysadmin.users.assign-sysadmin') }}" method="POST" class="inline">
+                                            @csrf
+                                            <input type="hidden" name="user_id" value="{{ $user['id'] }}">
+                                            <button 
+                                                type="submit" 
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition border border-purple-200 cursor-pointer"
+                                                title="Berikan hak akses System Administrator"
+                                            >
+                                                <span>Jadikan SysAdmin</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -351,9 +365,9 @@
                     required 
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
-                    <option value="JOURNAL-01JARK-01">JTIIK Makassar</option>
-                    <option value="JOURNAL-01JARK-02">JIKPM Makassar</option>
-                    <option value="JOURNAL-01JARK-03">JRLMBP Makassar</option>
+                    @foreach ($viewModel->selectableJournals() as $journalOption)
+                        <option value="{{ $journalOption['id'] }}">{{ $journalOption['name'] }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -406,4 +420,170 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Dialog Kelola Peran Jurnal Pengguna -->
+<div id="modal-journal-roles" class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div>
+                <h3 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+                    Kelola Peran Jurnal Pengguna
+                </h3>
+                <p id="modal-user-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
+            </div>
+            <button 
+                type="button" 
+                onclick="closeJournalRoleModal()"
+                class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer"
+            >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Bagian 1: Peran Jurnal Aktif -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider text-[11px]">
+                Peran Jurnal Saat Ini
+            </h4>
+            <div id="active-roles-list" class="space-y-2 max-h-40 overflow-y-auto">
+                <!-- Diisi secara dinamis lewat JS -->
+            </div>
+        </div>
+
+        <!-- Garis Pemisah -->
+        <hr class="border-gray-200">
+
+        <!-- Bagian 2: Form Tetapkan Peran Jurnal Baru -->
+        <form action="{{ route('sysadmin.users.assign-journal-role') }}" method="POST" class="space-y-4">
+            @csrf
+            <input type="hidden" name="user_id" id="assign_user_id" value="">
+
+            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider text-[11px]">
+                Tetapkan Peran Jurnal Baru
+            </h4>
+
+            <div>
+                <label for="assign_journal_id" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Pilih Instansi Jurnal <span class="text-red-500">*</span>
+                </label>
+                <select 
+                    id="assign_journal_id" 
+                    name="journal_id" 
+                    required 
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                    <option value="">-- Pilih Instansi Jurnal --</option>
+                    @foreach ($viewModel->selectableJournals() as $j)
+                        <option value="{{ $j['id'] }}">{{ $j['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="assign_role_code" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Pilih Peran yang Diberikan <span class="text-red-500">*</span>
+                </label>
+                <select 
+                    id="assign_role_code" 
+                    name="role_code" 
+                    required 
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                    <option value="manager">Journal Manager (Manajer Jurnal)</option>
+                    <option value="editor_in_chief">Editor in Chief (Pimpinan Redaksi)</option>
+                    <option value="section_editor">Section Editor (Editor Bagian)</option>
+                    <option value="copyeditor">Copy Editor (Penyunting Bahasa)</option>
+                    <option value="layout_editor">Layout Editor (Penata Letak Galai)</option>
+                    <option value="proofreader">Proofreader (Korektor Akhir)</option>
+                    <option value="reviewer">Peer Reviewer (Mitra Bestari)</option>
+                    <option value="author">Author (Penulis)</option>
+                </select>
+            </div>
+
+            <div id="expertise_field" class="hidden">
+                <label for="assign_expertise_keywords" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Kata Kunci Kepakaran (Khusus Reviewer)
+                </label>
+                <input 
+                    type="text" 
+                    id="assign_expertise_keywords" 
+                    name="expertise_keywords" 
+                    placeholder="Contoh: Tata Kelola Publik, Smart City (pisahkan koma)"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button 
+                    type="button" 
+                    onclick="closeJournalRoleModal()"
+                    class="px-4 py-2 min-h-11 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="submit" 
+                    class="px-4 py-2 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition shadow-2xs cursor-pointer"
+                >
+                    Simpan Peran Jurnal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openJournalRoleModal(userId, userName, userEmail, roles) {
+        document.getElementById('assign_user_id').value = userId;
+        document.getElementById('modal-user-subtitle').textContent = userName + ' (' + userEmail + ')';
+
+        const listContainer = document.getElementById('active-roles-list');
+        listContainer.innerHTML = '';
+
+        if (!roles || roles.length === 0) {
+            listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200/60">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
+        } else {
+            roles.forEach(function(r) {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200/80 text-xs';
+                item.innerHTML = `
+                    <div class="min-w-0 pr-2">
+                        <span class="font-bold text-gray-900 block truncate">${r.journal_name}</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${r.badge_class || 'bg-gray-100 text-gray-700 border-gray-200'} mt-0.5">
+                            ${r.role_label}
+                        </span>
+                    </div>
+                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" method="POST" class="inline shrink-0" onsubmit="return confirm('Apakah Anda yakin ingin mencabut peran ini?');">
+                        @csrf
+                        <input type="hidden" name="user_id" value="${userId}">
+                        <input type="hidden" name="journal_id" value="${r.journal_id}">
+                        <input type="hidden" name="role_code" value="${r.role_code}">
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded transition cursor-pointer">
+                            Cabut
+                        </button>
+                    </form>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        const roleSelect = document.getElementById('assign_role_code');
+        const expField = document.getElementById('expertise_field');
+        roleSelect.onchange = function() {
+            if (this.value === 'reviewer') {
+                expField.classList.remove('hidden');
+            } else {
+                expField.classList.add('hidden');
+            }
+        };
+
+        document.getElementById('modal-journal-roles').classList.remove('hidden');
+    }
+
+    function closeJournalRoleModal() {
+        document.getElementById('modal-journal-roles').classList.add('hidden');
+    }
+</script>
 @endsection

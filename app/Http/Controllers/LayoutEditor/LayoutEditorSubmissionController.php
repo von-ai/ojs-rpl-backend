@@ -240,7 +240,7 @@ class LayoutEditorSubmissionController extends Controller
 
         if ($galley && $galley->file) {
             $file = $galley->file;
-            $disk = Storage::disk($file->storage_disk);
+            $disk = Storage::disk($file->storage_disk ?: config('filesystems.default', 'local'));
 
             if ($disk->exists($file->storage_path)) {
                 return $disk->download(
@@ -266,7 +266,7 @@ class LayoutEditorSubmissionController extends Controller
             }
 
             if ($fileEntry) {
-                $disk = Storage::disk($fileEntry->storage_disk);
+                $disk = Storage::disk($fileEntry->storage_disk ?: config('filesystems.default', 'local'));
                 if ($disk->exists($fileEntry->storage_path)) {
                     return $disk->download(
                         $fileEntry->storage_path,
@@ -322,7 +322,7 @@ class LayoutEditorSubmissionController extends Controller
         }
 
         if ($fileEntry) {
-            $disk = Storage::disk($fileEntry->storage_disk);
+            $disk = Storage::disk($fileEntry->storage_disk ?: config('filesystems.default', 'local'));
             if ($disk->exists($fileEntry->storage_path)) {
                 return $disk->download(
                     $fileEntry->storage_path,
