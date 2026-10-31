@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY resources ./resources
 COPY vite.config.js ./
-RUN mkdir -p public/build && (npm run build || true)
+RUN npm run build
 
 # =============================================================================
 # Stage 2: Install Composer Dependencies

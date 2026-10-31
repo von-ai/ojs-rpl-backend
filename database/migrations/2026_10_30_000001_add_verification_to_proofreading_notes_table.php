@@ -26,9 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('proofreading_notes', function (Blueprint $table) {
-            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
-                $table->dropForeign(['verified_by']);
-            }
+            $table->dropForeign(['verified_by']);
             $table->dropColumn(['verified', 'verified_at', 'verified_by']);
         });
     }
