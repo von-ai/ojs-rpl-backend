@@ -161,7 +161,7 @@ class EditorInChiefService
 
             $decision = EditorialDecision::create([
                 'submission_id' => $submission->id,
-                'review_round_id' => null,
+                'review_round_id' => $submission->currentReviewRound?->id,
                 'decided_by' => $eic->id,
                 'decision' => $data['decision'],
                 'note_for_author' => trim($data['note_for_author']),

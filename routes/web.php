@@ -71,11 +71,11 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
 Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-editor')->name('section-editor.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('section-editor.submissions.index');
-    })->name('dashboard');
+    Route::get('/', [SectionEditorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [SectionEditorController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [SectionEditorController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [SectionEditorController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/files/{fileId}/download', [SectionEditorController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/rounds', [SectionEditorController::class, 'storeRound'])->name('rounds.store');
     Route::post('/rounds/{roundId}/assign-reviewer', [SectionEditorController::class, 'assignReviewer'])->name('reviewers.assign');
     Route::post('/assignments/{assignmentId}/cancel', [SectionEditorController::class, 'cancelAssignment'])->name('assignments.cancel');

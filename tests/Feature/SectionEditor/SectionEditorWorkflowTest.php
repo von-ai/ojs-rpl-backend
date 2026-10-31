@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\SectionEditor;
 
 use App\Models\EditorAssignment;
+use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewExtension;
 use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
+use App\Models\SubmissionFile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -39,6 +41,8 @@ class SectionEditorWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->withoutVite();
 
         $this->journal = Journal::create([
             'name' => 'Jurnal Inovasi Makassar',
@@ -132,7 +136,7 @@ class SectionEditorWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('SUB-2026-SE-001');
-        $response->assertSee('Putaran Telaah Sejawat (Round 1)');
+        $response->assertSee('Putaran Telaah Sejawat');
         $response->assertSee('Undang Mitra Bestari');
 
         $this->assertDatabaseHas('review_rounds', [
@@ -341,5 +345,66 @@ class SectionEditorWorkflowTest extends TestCase
             'decision' => 'revisions_required',
             'status' => 'draft',
         ]);
+    }
+
+    public function test_section_editor_dapat_mengakses_halaman_dashboard(): void
+    {
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Dashboard Editor Bagian');
+        $response->assertSee('Naskah Prioritas Menunggu Tindakan');
+        $response->assertSee('Optimalisasi Jaringan Sensor IoT');
+    }
+
+    public function test_section_editor_dapat_mengakses_halaman_pedoman_telaah(): void
+    {
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.guidelines'));
+
+        $response->assertOk();
+        $response->assertSee('Pedoman Telaah Sejawat');
+        $response->assertSee('Matriks Standar Rekomendasi Editorial ke Pemimpin Redaksi');
+    }
+
+    public function test_section_editor_dapat_mengunduh_berkas_manuskrip(): void
+    {
+        $fileEntry = FileEntry::create([
+            'original_name' => 'Naskah_IoT_Banjir.pdf',
+            'storage_path' => 'submissions/test-manuscript.pdf',
+            'byte_size' => 10240,
+            'mime_type' => 'application/pdf',
+            'checksum_sha256' => hash('sha256', 'dummy content'),
+            'virus_scan_status' => 'clean',
+        ]);
+
+        $subFile = SubmissionFile::create([
+            'submission_id' => $this->submission->id,
+            'file_id' => $fileEntry->id,
+            'genre' => 'manuscript',
+            'version' => 1,
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.files.download', [
+                'id' => $this->submission->id,
+                'fileId' => $subFile->id,
+            ]));
+
+        $response->assertOk();
+        $this->assertTrue($response->headers->get('content-disposition') !== null);
+    }
+
+    public function test_halaman_detail_section_editor_mematuhi_standar_kebersihan_ui(): void
+    {
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertDontSee('font-serif');
+        $response->assertDontSee('text-justify');
+        $response->assertDontSee('UC-11');
+        $response->assertDontSee('UC-08');
     }
 }

@@ -1,0 +1,131 @@
+{{-- resources/views/section-editor/submissions/partials/audit-history.blade.php --}}
+<section class="bg-white rounded-xl border border-gray-200 p-6 sm:p-7 space-y-6 text-xs">
+    <div 
+        class="flex items-center gap-2.5 border-b border-gray-100 pb-3.5 min-w-0 cursor-help"
+        data-tooltip="Jejak Audit Skrining Awal & Keputusan Editorial"
+        data-tooltip-desc="Rekaman riwayat pemeriksaan awal EIC dan surat keputusan resmi dewan redaksi"
+    >
+        <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <h2 class="text-sm font-bold text-gray-900 leading-tight truncate">
+            Jejak Audit Skrining Awal & Keputusan Editorial
+        </h2>
+    </div>
+
+    <!-- 1. Riwayat Penilaian Skrining Awal EIC -->
+    <div class="space-y-3">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hasil Skrining Awal (Pemimpin Redaksi)</h3>
+
+        @forelse($submission->deskReviews->sortByDesc('created_at') as $desk)
+            @php
+                $deskBadge = match($desk->status) {
+                    'passed' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                    'rejected' => 'bg-rose-50 text-rose-800 border-rose-200',
+                    'revision_required' => 'bg-amber-50 text-amber-800 border-amber-200',
+                    default => 'bg-gray-100 text-gray-700 border-gray-200',
+                };
+                $deskLabel = match($desk->status) {
+                    'passed' => 'Lolos Skrining Awal',
+                    'rejected' => 'Ditolak pada Skrining Awal',
+                    'revision_required' => 'Diminta Perbaikan Format',
+                    default => 'Dalam Pemeriksaan',
+                };
+            @endphp
+            <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/60 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $deskBadge }}">
+                            {{ $deskLabel }}
+                        </span>
+                        @if($desk->similarity_score !== null)
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border tabular-nums {{ $desk->similarity_score <= 20 ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-rose-50 text-rose-800 border-rose-200' }}">
+                                Indeks Kemiripan: {{ number_format((float) $desk->similarity_score, 1) }}%
+                            </span>
+                        @endif
+                    </div>
+                    <span class="text-xs text-gray-500 tabular-nums">
+                        Oleh: <strong class="text-gray-800">{{ $desk->assessor?->name ?? 'Pemimpin Redaksi' }}</strong>
+                        <span class="text-gray-300 mx-1">/</span>
+                        {{ $desk->created_at ? $desk->created_at->format('d M Y, H:i') : '-' }}
+                    </span>
+                </div>
+
+                <!-- 3 Kriteria Skrining -->
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span class="px-2.5 py-0.5 rounded border {{ $desk->scope_fit ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200' }}">
+                        {{ $desk->scope_fit ? 'Sesuai Ruang Lingkup' : 'Tidak Sesuai Ruang Lingkup' }}
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded border {{ $desk->files_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200' }}">
+                        {{ $desk->files_complete ? 'Berkas Lengkap' : 'Berkas Belum Lengkap' }}
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded border {{ $desk->guidelines_compliant ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200' }}">
+                        {{ $desk->guidelines_compliant ? 'Format Sesuai' : 'Format Belum Sesuai' }}
+                    </span>
+                </div>
+
+                @if($desk->notes)
+                    <p class="text-gray-700 leading-relaxed text-left bg-white p-3 rounded-lg border border-gray-200/80">
+                        "{{ $desk->notes }}"
+                    </p>
+                @endif
+            </div>
+        @empty
+            <p class="text-gray-400">Belum ada rekaman penilaian skrining awal pada naskah ini.</p>
+        @endforelse
+    </div>
+
+    <!-- 2. Riwayat Keputusan Editorial Resmi (Jika ada) -->
+    @if($submission->editorialDecisions->isNotEmpty())
+        <div class="space-y-3 pt-4 border-t border-gray-100">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Keputusan Editorial Resmi (Pemimpin Redaksi)</h3>
+
+            @foreach($submission->editorialDecisions->sortByDesc('sent_at') as $decision)
+                @php
+                    $decBadge = match($decision->decision) {
+                        'accept' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                        'revisions_required' => 'bg-amber-50 text-amber-800 border-amber-200',
+                        'resubmit' => 'bg-orange-50 text-orange-800 border-orange-200',
+                        'decline' => 'bg-rose-50 text-rose-800 border-rose-200',
+                        default => 'bg-gray-100 text-gray-700 border-gray-200',
+                    };
+                    $decTitle = match($decision->decision) {
+                        'accept' => 'Diterima untuk Publikasi',
+                        'revisions_required' => 'Perlu Revisi Penulis',
+                        'resubmit' => 'Kirim Ulang untuk Telaah',
+                        'decline' => 'Naskah Ditolak',
+                        default => 'Keputusan Redaksi',
+                    };
+                @endphp
+                <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/70 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $decBadge }}">
+                            Keputusan: {{ $decTitle }}
+                        </span>
+                        <span class="text-gray-500 text-xs tabular-nums">
+                            Diterbitkan oleh <strong class="text-gray-800">{{ $decision->decider?->name ?? 'Pemimpin Redaksi' }}</strong>
+                            <span class="text-gray-300 mx-1">/</span>
+                            {{ $decision->sent_at ? $decision->sent_at->format('d M Y, H:i') : '-' }}
+                        </span>
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-white border border-gray-200/80 space-y-1">
+                        <span class="text-[11px] font-bold text-gray-500 uppercase block">Surat Keputusan untuk Penulis</span>
+                        <p class="text-gray-700 leading-relaxed text-left whitespace-pre-line break-words">"{{ $decision->note_for_author }}"</p>
+                    </div>
+
+                    @if($decision->revision_due_at)
+                        <span class="inline-flex items-center gap-1.5 text-xs text-rose-700 font-semibold tabular-nums">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Batas Waktu Pengumpulan Revisi: {{ $decision->revision_due_at->format('d F Y') }}</span>
+                        </span>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+</section>

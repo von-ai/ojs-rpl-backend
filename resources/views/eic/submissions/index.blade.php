@@ -32,15 +32,9 @@
     <!-- 4 Kartu Metrik Ringkasan (Konsisten dengan Portal Penulis) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         @foreach($viewModel->metricCards() as $card)
-            @php
-                $isCardActive = $viewModel->activeTab === $card['key'];
-            @endphp
-            <a 
-                href="{{ route('eic.submissions.index', ['tab' => $card['key'], 'q' => request('q')]) }}" 
-                class="bg-white rounded-lg border {{ $isCardActive ? 'border-brand-maroon ring-1 ring-brand-maroon' : 'border-gray-200 hover:border-gray-300' }} p-3 sm:p-5 flex flex-col justify-between transition group"
-            >
+            <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-5 flex flex-col justify-between select-none">
                 <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 group-hover:text-brand-maroon uppercase tracking-wider leading-tight">
+                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider leading-tight">
                         {{ $card['title'] }}
                     </span>
                     <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg {{ $card['icon_bg'] }} {{ $card['icon_text'] }} flex items-center justify-center shrink-0">
@@ -69,7 +63,7 @@
                     </span>
                     <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{{ $card['subtitle'] }}</p>
                 </div>
-            </a>
+            </div>
         @endforeach
     </div>
 
