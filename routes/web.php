@@ -54,6 +54,8 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
+    Route::post('/submissions/{id}/payment', [AuthorSubmissionController::class, 'uploadPayment'])->name('submissions.payment.store');
+    Route::get('/submissions/{id}/payment/proof', [AuthorSubmissionController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
     Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
 });
 
@@ -68,6 +70,8 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
     Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
     Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
+    Route::get('/submissions/{id}/payment/proof', [EditorInChiefController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::post('/submissions/{id}/payment/verify', [EditorInChiefController::class, 'verifyPayment'])->name('submissions.payment.verify');
 });
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
@@ -159,6 +163,12 @@ Route::middleware('role.access:manager')->prefix('journalmanager')->name('journa
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
     Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
+
+    // 5. Verifikasi & Pengelolaan Pembayaran APC Naskah
+    Route::post('/submissions/{id}/payment/verify', [JournalManagerController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [JournalManagerController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [JournalManagerController::class, 'waivePayment'])->name('submissions.payment.waive');
+    Route::get('/submissions/{id}/payment/proof', [JournalManagerController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
 });
 
 // Portal Proofreader (Verifikasi Bukti Baca Galai & Catatan Koreksi)

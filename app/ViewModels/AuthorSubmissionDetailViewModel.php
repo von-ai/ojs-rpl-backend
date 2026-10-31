@@ -22,7 +22,7 @@ class AuthorSubmissionDetailViewModel
         // 1. Cek di Database Relasional
         try {
             if (Schema::hasTable('submissions')) {
-                $query = Submission::with(['section', 'journal', 'contributors', 'files.file'])
+                $query = Submission::with(['section', 'journal', 'contributors', 'files.file', 'latestPayment.fileEntry'])
                     ->where('id', $id)
                     ->orWhere('submission_number', $id);
 
@@ -45,6 +45,9 @@ class AuthorSubmissionDetailViewModel
             }
             if (! isset($mock['cannot_withdraw_reason'])) {
                 $mock['cannot_withdraw_reason'] = $this->cannotWithdrawReason($mock, $stage);
+            }
+            if (! isset($mock['payment_info'])) {
+                $mock['payment_info'] = $this->buildMockPaymentInfo($mock);
             }
 
             return $mock;
@@ -69,7 +72,7 @@ class AuthorSubmissionDetailViewModel
             'submitted' => 2,
             'in_review' => 3,
             'revisions_requested' => 4,
-            'in_production', 'accepted', 'ready_for_issue' => 5,
+            'in_production', 'accepted' => 5,
             'published' => 6,
             'declined', 'archived', 'withdrawn' => 2, // Posisi terminasi pada tahapan editorial
             default => 2,
@@ -82,7 +85,6 @@ class AuthorSubmissionDetailViewModel
             'revisions_requested' => 'Perlu Revisi Penulis',
             'in_production' => 'Tahap Produksi & Pemeriksaan Galai',
             'accepted' => 'Naskah Diterima untuk Produksi',
-            'ready_for_issue' => 'Siap Masuk Terbitan (Galai Disetujui)',
             'published' => 'Telah Terbit Resmi',
             'declined' => 'Naskah Ditolak (Declined)',
             'archived' => 'Naskah Diarsipkan (Archived)',
@@ -95,7 +97,7 @@ class AuthorSubmissionDetailViewModel
             'submitted' => 'bg-blue-50 text-blue-700 border-blue-200',
             'in_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             'revisions_requested' => 'bg-red-50 text-red-700 border-red-200',
-            'in_production', 'accepted', 'ready_for_issue' => 'bg-amber-50 text-amber-800 border-amber-200',
+            'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border-amber-200',
             'published' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             'declined' => 'bg-rose-100 text-rose-800 border-rose-300',
             'archived', 'withdrawn' => 'bg-stone-100 text-stone-700 border-stone-300',
@@ -197,13 +199,14 @@ class AuthorSubmissionDetailViewModel
             'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->sampleEditorialFeedback($sub) : null,
             'review_info' => ($sub->status === 'in_review') ? $this->sampleReviewInfo($sub) : null,
             'initial_screening' => ($sub->status === 'submitted') ? $this->sampleInitialScreeningInfo($sub) : null,
-            'production_info' => in_array($sub->status, ['in_production', 'accepted', 'ready_for_issue'], true) ? $this->sampleProductionInfo($sub) : null,
+            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->sampleProductionInfo($sub) : null,
             'publication' => ($sub->status === 'published') ? $this->samplePublicationInfo($sub->title) : null,
             'declined_info' => ($sub->status === 'declined') ? $this->sampleDeclinedInfo($sub) : null,
             'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->sampleWithdrawnInfo($sub) : null,
             'can_withdraw' => $this->canWithdrawSubmission($sub, $stageNumber),
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
+            'payment_info' => $this->buildPaymentInfo($sub),
         ];
     }
 
@@ -1244,7 +1247,7 @@ class AuthorSubmissionDetailViewModel
             'draft' => null,
             'in_review' => 'Naskah telah masuk tahap penelaahan oleh mitra bestari (peer review) sehingga tidak dapat ditarik kembali secara sepihak.',
             'revisions_requested' => 'Naskah telah ditindaklanjuti oleh dewan redaksi dengan permintaan perbaikan/revisi.',
-            'in_production', 'accepted', 'ready_for_issue' => 'Naskah telah disetujui untuk terbit dan dalam proses produksi/penjadwalan edisi terbitan.',
+            'in_production', 'accepted' => 'Naskah telah disetujui untuk terbit dan sedang dalam proses tata letak (galai).',
             'published' => 'Naskah telah terbit resmi dengan identifikasi Digital Object Identifier (DOI).',
             'declined' => 'Alur editorial naskah telah berakhir dengan status naskah ditolak.',
             'archived' => 'Naskah telah dibekukan dalam arsip editorial jurnal.',
@@ -1252,5 +1255,86 @@ class AuthorSubmissionDetailViewModel
             'submitted' => 'Naskah telah ditindaklanjuti oleh dewan redaksi untuk proses evaluasi.',
             default => 'Naskah sedang dalam proses penanganan oleh dewan redaksi/mitra bestari sehingga tidak dapat ditarik kembali.',
         };
+    }
+
+    /**
+     * Membangun struktur informasi tagihan dan bukti pembayaran APC naskah.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildPaymentInfo(Submission $sub): array
+    {
+        $journal = $sub->journal ?? Journal::first();
+        $isPaid = $journal ? $journal->isPaidApc() : false;
+        $payment = $sub->latestPayment;
+
+        if (! $isPaid) {
+            return [
+                'is_free' => true,
+                'has_payment' => false,
+                'status' => 'free',
+                'status_label' => 'Bebas Biaya (Diamond Open Access)',
+                'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'apc_fee_text' => (string) ($journal?->apc_fee ?? 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah)'),
+                'instructions' => 'Naskah ini diterbitkan secara bebas biaya (Diamond Open Access) tanpa pungutan biaya pemrosesan kepada penulis.',
+                'can_upload' => false,
+                'has_proof' => false,
+                'proof_download_url' => null,
+            ];
+        }
+
+        $canUpload = in_array($sub->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)
+            && (! $payment || in_array($payment->status, ['pending_payment', 'rejected'], true));
+
+        $amount = $payment ? (float) $payment->amount : (float) ($journal->apc_amount ?? 500000.00);
+
+        return [
+            'is_free' => false,
+            'has_payment' => (bool) $payment,
+            'status' => $payment ? $payment->status : 'pending_payment',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
+            'invoice_number' => (string) ($payment?->invoice_number ?? ('INV-'.date('Y').'-APC'.substr(preg_replace('/[^0-9]/', '', (string) $sub->submission_number) ?: '00001', -5))),
+            'amount' => $amount,
+            'amount_formatted' => 'Rp '.number_format($amount, 0, ',', '.'),
+            'amount_paid' => $payment?->amount_paid ? (float) $payment->amount_paid : null,
+            'amount_paid_formatted' => $payment?->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : null,
+            'bank_name' => (string) ($journal->payment_bank_name ?: 'Bank Sulselbar'),
+            'account_number' => (string) ($journal->payment_account_number ?: '130-001-009876-5'),
+            'account_holder' => (string) ($journal->payment_account_holder ?: 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar'),
+            'instructions' => (string) ($journal->payment_instructions ?: 'Sertakan ID Naskah pada berita transfer. Unggah foto atau berkas PDF bukti transfer yang sah.'),
+            'sender_bank_name' => $payment?->sender_bank_name,
+            'sender_account_name' => $payment?->sender_account_name,
+            'transfer_date_formatted' => $payment?->transfer_date?->format('d M Y'),
+            'author_notes' => $payment?->author_notes,
+            'verification_notes' => $payment?->verification_notes,
+            'uploaded_at_formatted' => $payment?->uploaded_at ? $payment->uploaded_at->format('d M Y, H:i').' WITA' : null,
+            'verified_at_formatted' => $payment?->verified_at ? $payment->verified_at->format('d M Y, H:i').' WITA' : null,
+            'can_upload' => $canUpload,
+            'has_proof' => (bool) ($payment && $payment->file_entry_id),
+            'proof_download_url' => ($payment && $payment->file_entry_id) ? route('author.submissions.payment.proof', $sub->id) : null,
+        ];
+    }
+
+    /**
+     * Membangun fallback informasi pembayaran untuk mock data.
+     *
+     * @param  array<string, mixed>  $mock
+     * @return array<string, mixed>
+     */
+    public function buildMockPaymentInfo(array $mock): array
+    {
+        return [
+            'is_free' => true,
+            'has_payment' => false,
+            'status' => 'free',
+            'status_label' => 'Bebas Biaya (Diamond Open Access)',
+            'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'apc_fee_text' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+            'instructions' => 'Naskah ini diterbitkan secara bebas biaya (Diamond Open Access) tanpa pungutan biaya pemrosesan kepada penulis.',
+            'can_upload' => false,
+            'has_proof' => false,
+            'proof_download_url' => null,
+        ];
     }
 }

@@ -32,9 +32,11 @@ class DatabaseSeeder extends Seeder
             SectionSeeder::class,
             SubmissionSeeder::class,
             EicSeeder::class,
+            SectionEditorSeeder::class,
             CopyeditSeeder::class,
             LayoutEditorSeeder::class,
             JournalManagerSeeder::class,
+            ArticlePaymentSeeder::class,
         ]);
     }
 }

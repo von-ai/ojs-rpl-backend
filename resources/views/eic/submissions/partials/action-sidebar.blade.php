@@ -772,6 +772,128 @@
     </section>
     @endif
 
+    <!-- SEKSI 5: Status Pembiayaan Artikel (APC) & Bukti Pembayaran -->
+    @php
+        $paymentInfo = $viewModel->paymentInfo();
+    @endphp
+    <section class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-4 shadow-2xs">
+        <div class="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-snug">
+                        Status Pembiayaan & APC
+                    </h3>
+                    <span class="text-[11px] text-gray-400 font-medium block">Biaya Pengelolaan Publikasi</span>
+                </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 text-center leading-tight {{ $paymentInfo['status_badge'] }}">
+                {{ $paymentInfo['status_label'] }}
+            </span>
+        </div>
+
+        @if($paymentInfo['is_free'])
+            <div class="p-3 bg-emerald-50/70 rounded-lg border border-emerald-100 text-xs text-emerald-900 leading-relaxed">
+                <span class="font-bold block mb-0.5">Diamond Open Access:</span>
+                Jurnal ini tidak memungut biaya publikasi kepada penulis. Naskah bebas biaya pemrosesan (APC: Rp 0).
+            </div>
+        @else
+            <div class="text-xs text-gray-700 space-y-3">
+                <!-- Ringkasan Tarif & Nomor Tagihan -->
+                <div class="bg-gray-50/80 rounded-lg p-3 border border-gray-100 grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">No. Tagihan</span>
+                        <span class="font-mono text-xs font-bold text-gray-800 block truncate" title="{{ $paymentInfo['invoice_number'] }}">
+                            {{ $paymentInfo['invoice_number'] }}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">Total Tarif (APC)</span>
+                        <span class="text-xs sm:text-sm font-extrabold text-gray-900 block">
+                            {{ $paymentInfo['amount_formatted'] }}
+                        </span>
+                    </div>
+                </div>
+
+                @if($paymentInfo['has_proof'])
+                    <!-- Panel Rincian Bukti Transfer yang Diunggah Penulis -->
+                    <div class="p-3.5 bg-sky-50/60 rounded-xl border border-sky-200/70 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-900 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Rincian Bukti Transfer
+                            </span>
+                            <span class="text-[10px] text-sky-700 font-medium">Unggahan Penulis</span>
+                        </div>
+
+                        <div class="space-y-1.5 text-xs pt-1 border-t border-sky-100">
+                            <div class="flex items-baseline justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Bank Pengirim</span>
+                                <span class="font-semibold text-gray-900 text-right truncate">{{ $paymentInfo['sender_bank_name'] ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-start justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Nama Pengirim</span>
+                                <span class="font-semibold text-gray-900 text-right leading-tight max-w-[65%]">{{ $paymentInfo['sender_account_name'] ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Tanggal Transfer</span>
+                                <span class="font-semibold text-gray-900 text-right tabular-nums">{{ $paymentInfo['transfer_date'] ?? '-' }}</span>
+                            </div>
+                            @if(!empty($paymentInfo['author_notes']))
+                                <div class="pt-1.5 border-t border-sky-100 text-[11px]">
+                                    <span class="text-gray-500 block mb-1">Catatan Penulis:</span>
+                                    <p class="text-gray-700 italic bg-white/80 p-2 rounded-md border border-sky-100 text-[11px] leading-relaxed">
+                                        "{{ $paymentInfo['author_notes'] }}"
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="pt-1">
+                            <a 
+                                href="{{ $paymentInfo['proof_url'] }}" 
+                                target="_blank"
+                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-sky-800 bg-white hover:bg-sky-50 border border-sky-200 rounded-lg shadow-2xs transition group"
+                            >
+                                <svg class="w-3.5 h-3.5 text-sky-600 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Lihat Berkas Bukti Transfer</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    @if($paymentInfo['can_verify'])
+                        <form action="{{ route('eic.submissions.payment.verify', $submission->id) }}" method="POST" class="pt-0.5">
+                            @csrf
+                            <input type="hidden" name="notes" value="Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).">
+                            <button 
+                                type="submit" 
+                                class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs hover:shadow transition duration-150 cursor-pointer"
+                            >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Verifikasi Pembayaran (Sah)</span>
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <div class="p-3 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-[11px] text-gray-500 text-center leading-relaxed">
+                        {{ $paymentInfo['status'] === 'verified' ? 'Pembayaran telah lunas dan terverifikasi.' : 'Penulis belum mengunggah bukti transfer pembayaran.' }}
+                    </div>
+                @endif
+            </div>
+        @endif
+    </section>
+
 </aside>
 
 @pushOnce('scripts')

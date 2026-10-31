@@ -98,13 +98,28 @@
                                             <span class="text-[11px] text-gray-600 block mt-1">
                                                 Penulis: {{ $art['authors_string'] }}
                                             </span>
-                                            <div class="flex flex-wrap items-center gap-3 text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-gray-100">
-                                                <span class="font-semibold text-gray-700">Halaman: {{ $art['pages'] }}</span>
-                                                <span>•</span>
-                                                <span class="font-mono text-gray-400">DOI: {{ $art['doi'] }}</span>
+                                            <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-gray-100">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-semibold text-gray-700">Halaman: {{ $art['pages'] }}</span>
+                                                    <span>•</span>
+                                                    <span class="font-mono text-gray-400">DOI: {{ $art['doi'] }}</span>
+                                                    <span>•</span>
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border {{ $art['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                        {{ $art['payment_label'] ?? 'Bebas Biaya' }}
+                                                    </span>
+                                                    @if(!empty($art['is_paid_journal']))
+                                                        <button 
+                                                            type="button" 
+                                                            onclick="document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.add('flex');"
+                                                            class="text-brand-maroon hover:underline font-semibold cursor-pointer"
+                                                        >
+                                                            Verifikasi Pembayaran
+                                                        </button>
+                                                    @endif
+                                                </div>
                                                 <a 
                                                     href="{{ $art['galley_pdf_url'] }}" 
-                                                    class="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-brand-maroon hover:underline"
+                                                    class="inline-flex items-center gap-1 text-xs font-semibold text-brand-maroon hover:underline"
                                                 >
                                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -115,6 +130,9 @@
                                         </div>
                                     </div>
                                 </div>
+                                @if(!empty($art['is_paid_journal']))
+                                    @include('journalmanager.issues.partials.modal-payment', ['modalId' => 'modal-pay-art-'.$art['id'], 'item' => $art])
+                                @endif
                             @endforeach
                         </div>
                     @else
@@ -165,6 +183,19 @@
                                         <span>Penulis: {{ $ready['author_name'] }}</span>
                                         <span>•</span>
                                         <span class="text-emerald-700 font-semibold">{{ $ready['galley_format'] }}</span>
+                                        <span>•</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border {{ $ready['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                            {{ $ready['payment_label'] ?? 'Bebas Biaya' }}
+                                        </span>
+                                        @if(!empty($ready['is_paid_journal']))
+                                            <button 
+                                                type="button" 
+                                                onclick="document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.add('flex');"
+                                                class="text-brand-maroon hover:underline font-semibold cursor-pointer"
+                                            >
+                                                {{ !empty($ready['has_proof']) ? 'Bukti Bayar & Verifikasi' : 'Status Tagihan' }}
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -183,6 +214,9 @@
                                     </button>
                                 </form>
                             </div>
+                            @if(!empty($ready['is_paid_journal']))
+                                @include('journalmanager.issues.partials.modal-payment', ['modalId' => 'modal-pay-ready-'.$ready['id'], 'item' => $ready])
+                            @endif
                         @endforeach
                     </div>
                 </div>
@@ -229,6 +263,24 @@
                 @else
                     <!-- Status Draf / Terjadwal -->
                     @if($issue['can_publish'])
+                        @php
+                            $unpaidCount = collect($issue['articles'])->filter(function ($a) {
+                                return !empty($a['is_paid_journal']) && !in_array($a['payment_status'] ?? '', ['verified', 'waived', 'free'], true);
+                            })->count();
+                        @endphp
+
+                        @if($unpaidCount > 0)
+                            <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 space-y-1">
+                                <div class="flex items-center gap-1.5 font-bold text-amber-800">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Peringatan Pembayaran APC ({{ $unpaidCount }} Naskah)</span>
+                                </div>
+                                <p class="text-[11px] text-amber-800">
+                                    Terdapat {{ $unpaidCount }} naskah berbayar yang belum diverifikasi atau belum lunas.
+                                </p>
+                            </div>
+                        @endif
+
                         <form action="{{ route('journalmanager.issues.publish', $issue['id']) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mempublikasikan edisi terbitan ini ke publik?');">
                             @csrf
                             <button 

@@ -229,4 +229,59 @@ class Submission extends Model
     {
         return $this->hasOneThrough(Issue::class, IssueArticle::class, 'submission_id', 'id', 'id', 'issue_id');
     }
+
+    /**
+     * Seluruh riwayat transaksi pembayaran APC naskah
+     *
+     * @return HasMany<ArticlePayment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ArticlePayment::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Catatan transaksi pembayaran APC terbaru
+     *
+     * @return HasOne<ArticlePayment, $this>
+     */
+    public function latestPayment(): HasOne
+    {
+        return $this->hasOne(ArticlePayment::class)->latestOfMany();
+    }
+
+    /**
+     * Alias pembayaran aktif naskah
+     *
+     * @return HasOne<ArticlePayment, $this>
+     */
+    public function payment(): HasOne
+    {
+        return $this->latestPayment();
+    }
+
+    /**
+     * Memeriksa apakah naskah ini wajib membayar biaya pemrosesan (APC)
+     */
+    public function requiresPayment(): bool
+    {
+        return (bool) ($this->journal?->isPaidApc() ?? false);
+    }
+
+    /**
+     * Memeriksa apakah naskah sudah berstatus lunas / bebas biaya
+     */
+    public function isPaymentCleared(): bool
+    {
+        if (! $this->requiresPayment()) {
+            return true;
+        }
+
+        $payment = $this->latestPayment;
+        if (! $payment) {
+            return false;
+        }
+
+        return $payment->isVerified() || $payment->isWaived();
+    }
 }

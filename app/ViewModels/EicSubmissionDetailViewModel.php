@@ -8,6 +8,7 @@ use App\Models\DeskReview;
 use App\Models\EditorialDecision;
 use App\Models\Galley;
 use App\Models\GalleyApproval;
+use App\Models\Journal;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
@@ -373,6 +374,52 @@ class EicSubmissionDetailViewModel
                 'subtitle' => $status === 'published' ? 'Telah Terbit Resmi' : ($status === 'ready_for_issue' ? 'Siap Terbit (Galai Disetujui)' : 'Penyuntingan & Galai'),
                 'state' => in_array($status, ['published', 'ready_for_issue'], true) ? 'completed' : ($inProdOrPub ? 'current' : 'upcoming'),
             ],
+        ];
+    }
+
+    /**
+     * Rincian status dan berkas bukti pembayaran APC naskah.
+     *
+     * @return array<string, mixed>
+     */
+    public function paymentInfo(): array
+    {
+        $sub = $this->submission;
+        $journal = $sub->journal ?? Journal::first();
+        $isPaid = (bool) ($journal?->isPaidApc() ?? false);
+        $payment = $sub->latestPayment;
+
+        if (! $isPaid) {
+            return [
+                'is_free' => true,
+                'status' => 'free',
+                'status_label' => 'Bebas Biaya (Diamond Open Access)',
+                'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'apc_fee' => (string) ($journal?->apc_fee ?? 'Rp 0,-'),
+                'has_proof' => false,
+                'proof_url' => null,
+            ];
+        }
+
+        $hasProof = (bool) ($payment && $payment->file_entry_id);
+
+        return [
+            'is_free' => false,
+            'status' => $payment ? $payment->status : 'pending_payment',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
+            'invoice_number' => $payment?->invoice_number ?? '-',
+            'amount_formatted' => $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : 'Rp '.number_format((float) ($journal?->apc_amount ?? 500000), 0, ',', '.')),
+            'sender_bank_name' => $payment?->sender_bank_name,
+            'sender_account_name' => $payment?->sender_account_name,
+            'transfer_date' => $payment?->transfer_date?->format('d M Y'),
+            'author_notes' => $payment?->author_notes,
+            'verification_notes' => $payment?->verification_notes,
+            'uploaded_at' => $payment?->uploaded_at?->format('d M Y H:i'),
+            'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
+            'has_proof' => $hasProof,
+            'proof_url' => $hasProof ? route('eic.submissions.payment.proof', $sub->id) : null,
+            'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
         ];
     }
 }

@@ -277,7 +277,7 @@ class AuthorSubmissionsViewModel
 
         try {
             if (Schema::hasTable('submissions')) {
-                $submissions = Submission::with(['section', 'contributors'])
+                $submissions = Submission::with(['section', 'contributors', 'journal', 'latestPayment'])
                     ->latest('updated_at')
                     ->get();
 
@@ -289,7 +289,7 @@ class AuthorSubmissionsViewModel
                         'submitted' => ['semua', 'aktif'],
                         'in_review' => ['semua', 'aktif'],
                         'revisions_requested' => ['semua', 'aktif', 'perlu-revisi'],
-                        'in_production', 'accepted', 'ready_for_issue' => ['semua', 'aktif', 'produksi'],
+                        'in_production', 'accepted' => ['semua', 'aktif', 'produksi'],
                         'published' => ['semua', 'terbit'],
                         'declined', 'archived', 'withdrawn' => ['semua', 'arsip'],
                         default => ['semua', 'aktif'],
@@ -301,7 +301,6 @@ class AuthorSubmissionsViewModel
                         'in_review' => 'Proses Telaah',
                         'revisions_requested' => 'Perlu Revisi',
                         'in_production' => 'Pemeriksaan Galai',
-                        'ready_for_issue' => 'Siap Terbit',
                         'accepted' => 'Naskah Diterima',
                         'published' => 'Telah Terbit',
                         'declined' => 'Naskah Ditolak',
@@ -315,18 +314,22 @@ class AuthorSubmissionsViewModel
                         'submitted' => 'bg-blue-50 text-blue-700 border border-blue-200',
                         'in_review' => 'bg-indigo-50 text-indigo-700 border border-indigo-200',
                         'revisions_requested' => 'bg-red-50 text-red-700 border border-red-200',
-                        'in_production', 'accepted', 'ready_for_issue' => 'bg-amber-50 text-amber-800 border border-amber-200',
+                        'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border border-amber-200',
                         'published' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
                         'declined' => 'bg-rose-50 text-rose-700 border border-rose-200',
                         'archived', 'withdrawn' => 'bg-stone-100 text-stone-600 border border-stone-200',
                         default => 'bg-gray-100 text-gray-700 border border-gray-200',
                     };
 
+                    $isPaidJournal = (bool) ($sub->journal?->isPaidApc() ?? false);
+                    $payment = $sub->latestPayment;
+
                     $statusSubtitle = match ($sub->status) {
                         'revisions_requested' => 'Batas Waktu: 15 Nov 2026',
                         'in_review' => 'Putaran 1 Review',
-                        'in_production', 'accepted' => 'Tata Letak & Galai',
-                        'ready_for_issue' => 'Siap Masuk Terbitan',
+                        'in_production', 'accepted' => $isPaidJournal
+                            ? ($payment && $payment->isVerified() ? 'Pembayaran Lunas • Tata Letak' : ($payment && $payment->isPendingVerification() ? 'Verifikasi Bukti Bayar' : ($payment && $payment->isRejected() ? 'Bukti Bayar Perlu Diperbaiki' : 'Menunggu Bukti Bayar APC')))
+                            : 'Tata Letak & Galai',
                         'published' => 'Terbit Resmi Open Access',
                         'declined' => 'Keputusan Redaksi',
                         'archived' => 'Arsip Naskah Resmi',
@@ -338,6 +341,7 @@ class AuthorSubmissionsViewModel
                         'revisions_requested' => 'text-red-700 font-medium',
                         'declined' => 'text-rose-700 font-medium',
                         'published' => 'text-emerald-700 font-medium',
+                        'in_production', 'accepted' => $isPaidJournal && (! $payment || ! $payment->isVerified()) ? 'text-amber-800 font-semibold' : 'text-slate-500 font-medium',
                         default => 'text-slate-500 font-medium',
                     };
 

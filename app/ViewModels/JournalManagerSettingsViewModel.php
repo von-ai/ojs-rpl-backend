@@ -75,6 +75,13 @@ class JournalManagerSettingsViewModel
      *     frequency: string,
      *     open_access_policy: string,
      *     apc_fee: string,
+     *     apc_enabled: bool,
+     *     apc_amount: string,
+     *     payment_bank_name: string,
+     *     payment_account_number: string,
+     *     payment_account_holder: string,
+     *     payment_instructions: string,
+     *     is_paid: bool,
      *     peer_review_policy: string,
      *     license: string
      * }
@@ -88,6 +95,13 @@ class JournalManagerSettingsViewModel
             'frequency' => (string) ($journal?->frequency ?? '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)'),
             'open_access_policy' => (string) ($journal?->open_access_policy ?? 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.'),
             'apc_fee' => (string) ($journal?->apc_fee ?? 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)'),
+            'apc_enabled' => (bool) ($journal?->isPaidApc() ?? false),
+            'apc_amount' => (string) ($journal?->apc_amount ? number_format((float) $journal->apc_amount, 0, ',', '.') : '500.000'),
+            'payment_bank_name' => (string) ($journal?->payment_bank_name ?? 'Bank Sulselbar'),
+            'payment_account_number' => (string) ($journal?->payment_account_number ?? '130-001-009876-5'),
+            'payment_account_holder' => (string) ($journal?->payment_account_holder ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar'),
+            'payment_instructions' => (string) ($journal?->payment_instructions ?? 'Sertakan ID Naskah pada berita transfer (contoh: SUB-2026-00106). Setelah melakukan transfer, unggah foto/berkas bukti transfer pembayaran melalui portal penulis.'),
+            'is_paid' => (bool) ($journal?->isPaidApc() ?? false),
             'peer_review_policy' => (string) ($journal?->peer_review_policy ?? 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).'),
             'license' => (string) ($journal?->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)'),
         ];

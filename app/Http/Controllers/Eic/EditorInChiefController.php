@@ -10,6 +10,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\Eic\EditorInChiefService;
+use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
@@ -17,12 +18,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EditorInChiefController extends Controller
 {
     public function __construct(
-        protected EditorInChiefService $eicService
+        protected EditorInChiefService $eicService,
+        protected ArticlePaymentService $articlePaymentService
     ) {}
 
     /**
@@ -343,5 +346,57 @@ class EditorInChiefController extends Controller
                 ->route('eic.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC untuk diverifikasi EIC.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        $fileEntry = $payment->fileEntry;
+        $disk = Storage::disk($fileEntry->storage_disk);
+
+        if (! $disk->exists($fileEntry->storage_path)) {
+            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
+        }
+
+        return $disk->download(
+            $fileEntry->storage_path,
+            $fileEntry->original_name,
+            ['Content-Type' => $fileEntry->mime_type]
+        );
+    }
+
+    /**
+     * Memverifikasi pembayaran oleh Pemimpin Redaksi (EIC).
+     */
+    public function verifyPayment(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
+
+        return back()->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
     }
 }

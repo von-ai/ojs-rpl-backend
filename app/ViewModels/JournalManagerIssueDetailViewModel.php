@@ -74,6 +74,7 @@ class JournalManagerIssueDetailViewModel
                 'issueArticles.submission.section',
                 'issueArticles.submission.author',
                 'issueArticles.submission.activeGalley',
+                'issueArticles.submission.latestPayment.fileEntry',
             ])->where('id', $this->issueId)->first();
 
             if ($issue) {
@@ -86,7 +87,9 @@ class JournalManagerIssueDetailViewModel
 
     private function formatIssueData(Issue $issue): array
     {
-        $articles = $issue->issueArticles->map(function ($ia) use ($issue) {
+        $isJournalPaid = (bool) ($issue->journal?->isPaidApc() ?? false);
+
+        $articles = $issue->issueArticles->map(function ($ia) use ($issue, $isJournalPaid) {
             $sub = $ia->submission;
 
             $galleyDownloadUrl = '#';
@@ -98,8 +101,17 @@ class JournalManagerIssueDetailViewModel
                 }
             }
 
+            $payment = $sub?->latestPayment;
+            $paymentStatus = ! $isJournalPaid ? 'free' : ($payment ? $payment->status : 'pending_payment');
+            $paymentLabel = ! $isJournalPaid ? 'Bebas Biaya' : ($payment ? $payment->statusLabel() : 'Belum Dibayar');
+            $paymentBadge = ! $isJournalPaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200');
+            $hasProof = (bool) ($payment && $payment->file_entry_id);
+            $proofUrl = ($sub && $hasProof) ? route('journalmanager.submissions.payment.proof', $sub->id) : null;
+            $amountFormatted = $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : ($isJournalPaid ? 'Rp '.number_format((float) ($issue->journal?->apc_amount ?? 500000), 0, ',', '.') : 'Gratis'));
+
             return [
                 'id' => (string) $ia->id,
+                'submission_id' => (string) ($sub?->id ?? ''),
                 'submission_number' => $sub?->submission_number ?? 'SUB-N/A',
                 'position' => (int) $ia->position,
                 'title' => $sub?->title ?? 'Naskah Artikel',
@@ -108,6 +120,21 @@ class JournalManagerIssueDetailViewModel
                 'pages' => $ia->pages ?? '1-14',
                 'galley_pdf_url' => $galleyDownloadUrl,
                 'doi' => $ia->doi ?? ($issue->doi_prefix ? "{$issue->doi_prefix}.".str_pad((string) $ia->position, 2, '0', STR_PAD_LEFT) : '-'),
+                'is_paid_journal' => $isJournalPaid,
+                'payment_status' => $paymentStatus,
+                'payment_label' => $paymentLabel,
+                'payment_badge' => $paymentBadge,
+                'has_proof' => $hasProof,
+                'proof_url' => $proofUrl,
+                'amount_formatted' => $amountFormatted,
+                'invoice_number' => $payment?->invoice_number,
+                'sender_bank_name' => $payment?->sender_bank_name,
+                'sender_account_name' => $payment?->sender_account_name,
+                'transfer_date' => $payment?->transfer_date?->format('d M Y'),
+                'author_notes' => $payment?->author_notes,
+                'verification_notes' => $payment?->verification_notes,
+                'uploaded_at' => $payment?->uploaded_at?->format('d M Y H:i'),
+                'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
             ];
         })->values()->all();
 
@@ -120,13 +147,21 @@ class JournalManagerIssueDetailViewModel
                     $q->whereIn('status', ['approved', 'in_production', 'ready_for_issue'])
                         ->orWhereHas('galleys', fn ($g) => $g->where('status', 'active'));
                 })
-                ->with(['section', 'author', 'activeGalley'])
+                ->with(['section', 'author', 'activeGalley', 'latestPayment.fileEntry', 'journal'])
                 ->get();
 
-            $readyArticles = $readySubmissions->map(function (Submission $sub) {
+            $readyArticles = $readySubmissions->map(function (Submission $sub) use ($isJournalPaid, $issue) {
                 $formatLabel = $sub->activeGalley
                     ? "{$sub->activeGalley->label} (v{$sub->activeGalley->version})"
                     : 'PDF Full Text (v1 Final)';
+
+                $payment = $sub->latestPayment;
+                $paymentStatus = ! $isJournalPaid ? 'free' : ($payment ? $payment->status : 'pending_payment');
+                $paymentLabel = ! $isJournalPaid ? 'Bebas Biaya' : ($payment ? $payment->statusLabel() : 'Belum Dibayar');
+                $paymentBadge = ! $isJournalPaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : ($payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200');
+                $hasProof = (bool) ($payment && $payment->file_entry_id);
+                $proofUrl = $hasProof ? route('journalmanager.submissions.payment.proof', $sub->id) : null;
+                $amountFormatted = $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : ($isJournalPaid ? 'Rp '.number_format((float) ($issue->journal?->apc_amount ?? 500000), 0, ',', '.') : 'Gratis'));
 
                 return [
                     'id' => (string) $sub->id,
@@ -136,6 +171,21 @@ class JournalManagerIssueDetailViewModel
                     'author_name' => (string) ($sub->author?->name ?? 'Penulis Naskah'),
                     'galley_format' => $formatLabel,
                     'approved_at' => $sub->updated_at ? $sub->updated_at->translatedFormat('d M Y H:i').' WITA' : 'Tersedia',
+                    'is_paid_journal' => $isJournalPaid,
+                    'payment_status' => $paymentStatus,
+                    'payment_label' => $paymentLabel,
+                    'payment_badge' => $paymentBadge,
+                    'has_proof' => $hasProof,
+                    'proof_url' => $proofUrl,
+                    'amount_formatted' => $amountFormatted,
+                    'invoice_number' => $payment?->invoice_number,
+                    'sender_bank_name' => $payment?->sender_bank_name,
+                    'sender_account_name' => $payment?->sender_account_name,
+                    'transfer_date' => $payment?->transfer_date?->format('d M Y'),
+                    'author_notes' => $payment?->author_notes,
+                    'verification_notes' => $payment?->verification_notes,
+                    'uploaded_at' => $payment?->uploaded_at?->format('d M Y H:i'),
+                    'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
                 ];
             })->values()->all();
         }
