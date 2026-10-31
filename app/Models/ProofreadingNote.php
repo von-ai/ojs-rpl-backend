@@ -25,6 +25,9 @@ class ProofreadingNote extends Model
         'resolved',
         'resolution',
         'resolved_at',
+        'verified',
+        'verified_at',
+        'verified_by',
         'version',
     ];
 
@@ -32,6 +35,8 @@ class ProofreadingNote extends Model
         'page' => 'integer',
         'resolved' => 'boolean',
         'resolved_at' => 'datetime',
+        'verified' => 'boolean',
+        'verified_at' => 'datetime',
         'version' => 'integer',
     ];
 
@@ -59,8 +64,21 @@ class ProofreadingNote extends Model
         return $this->belongsTo(FileEntry::class, 'file_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
     public function isBlocking(): bool
     {
         return ! $this->resolved && in_array($this->severity, ['critical', 'major'], true);
+    }
+
+    public function isVerified(): bool
+    {
+        return (bool) $this->verified;
     }
 }
