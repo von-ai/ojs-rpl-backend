@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Eic;
 
+use App\Models\FileEntry;
+use App\Models\Galley;
+use App\Models\GalleyApproval;
 use App\Models\Journal;
+use App\Models\ProofAssignment;
+use App\Models\ProofreadingNote;
 use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
@@ -381,5 +386,141 @@ class EditorInChiefWorkflowTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pedoman Keputusan Redaksi');
         $response->assertSee('Matriks Standar Pengambilan Keputusan Editorial Akhir');
+    }
+
+    /**
+     * EIC dapat mengesahkan galai final dan sistem mengotomasi status naskah ke ready_for_issue.
+     */
+    public function test_eic_dapat_mengesahkan_galai_final_dan_mengotomasi_status_ke_ready_for_issue(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Siapkan naskah pada tahap in_production
+        $this->submission->update(['status' => 'in_production']);
+
+        $file = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'galleys/test-sample.pdf',
+            'original_name' => 'Galley-Final.pdf',
+            'mime_type' => 'application/pdf',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'sample-pdf-content'),
+            'virus_scan_status' => 'clean',
+            'created_by' => $this->eic->id,
+        ]);
+
+        $galley = Galley::create([
+            'submission_id' => $this->submission->id,
+            'file_id' => $file->id,
+            'format' => 'pdf',
+            'stage' => 'proofreading',
+            'status' => 'active',
+            'checksum_sha256' => $file->checksum_sha256,
+            'version' => 1,
+            'label' => 'PDF Full Text',
+        ]);
+
+        // Buat penugasan proofreading yang sudah diselesaikan
+        ProofAssignment::create([
+            'galley_id' => $galley->id,
+            'proofreader_id' => $this->sectionEditor->id,
+            'due_at' => now()->addDays(7),
+            'status' => 'completed',
+            'assigned_at' => now()->subDays(2),
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+        ]);
+
+        // Post pengesahan galai oleh EIC
+        $response = $this->post(route('eic.submissions.approve-galley', $this->submission->id), [
+            'note' => 'Galai telah diperiksa dan disetujui untuk penjadwalan terbitan berkala.',
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        // Verifikasi otomatisasi status naskah berubah ke ready_for_issue
+        $freshSubmission = $this->submission->fresh();
+        $this->assertSame('ready_for_issue', $freshSubmission->status);
+
+        // Verifikasi rekod GalleyApproval dengan stage editor_final
+        $this->assertDatabaseHas('galley_approvals', [
+            'galley_id' => $galley->id,
+            'approved_by' => $this->eic->id,
+            'stage' => 'editor_final',
+            'checksum_sha256' => $galley->checksum_sha256,
+        ]);
+
+        // Verifikasi status galai terkunci menjadi approved
+        $this->assertSame('approved', $galley->fresh()->stage);
+        $this->assertSame($galley->checksum_sha256, $galley->fresh()->approved_checksum);
+    }
+
+    /**
+     * EIC gagal mengesahkan galai jika masih ada catatan proofreading yang belum diselesaikan.
+     */
+    public function test_eic_gagal_mengesahkan_galai_jika_catatan_proofreading_belum_selesai(): void
+    {
+        $this->actingAs($this->eic);
+
+        $this->submission->update(['status' => 'in_production']);
+
+        $file = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'galleys/test-sample-unresolved.pdf',
+            'original_name' => 'Galley-Unresolved.pdf',
+            'mime_type' => 'application/pdf',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'sample-unresolved-content'),
+            'virus_scan_status' => 'clean',
+            'created_by' => $this->eic->id,
+        ]);
+
+        $galley = Galley::create([
+            'submission_id' => $this->submission->id,
+            'file_id' => $file->id,
+            'format' => 'pdf',
+            'stage' => 'proofreading',
+            'status' => 'active',
+            'checksum_sha256' => $file->checksum_sha256,
+            'version' => 1,
+            'label' => 'PDF Full Text',
+        ]);
+
+        $proofAssignment = ProofAssignment::create([
+            'galley_id' => $galley->id,
+            'proofreader_id' => $this->sectionEditor->id,
+            'due_at' => now()->addDays(7),
+            'status' => 'in_progress',
+            'assigned_at' => now()->subDays(2),
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+        ]);
+
+        // Tambahkan catatan koreksi yang belum diselesaikan (resolved = false)
+        ProofreadingNote::create([
+            'proof_assignment_id' => $proofAssignment->id,
+            'galley_id' => $galley->id,
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+            'category' => 'typo',
+            'severity' => 'major',
+            'description' => 'Kesalahan penulisan nama instansi pada halaman 2.',
+            'resolved' => false,
+        ]);
+
+        $response = $this->post(route('eic.submissions.approve-galley', $this->submission->id), [
+            'note' => 'Coba sahkan galai yang belum tuntas.',
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('error');
+
+        // Status naskah tetap in_production, tidak beralih ke ready_for_issue
+        $this->assertSame('in_production', $this->submission->fresh()->status);
+        $this->assertDatabaseMissing('galley_approvals', [
+            'galley_id' => $galley->id,
+            'stage' => 'editor_final',
+        ]);
     }
 }

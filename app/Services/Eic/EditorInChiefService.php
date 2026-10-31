@@ -7,6 +7,11 @@ namespace App\Services\Eic;
 use App\Models\DeskReview;
 use App\Models\EditorAssignment;
 use App\Models\EditorialDecision;
+use App\Models\Galley;
+use App\Models\GalleyApproval;
+use App\Models\ProductionEscalation;
+use App\Models\ProofAssignment;
+use App\Models\ProofreadingNote;
 use App\Models\Submission;
 use App\Models\User;
 use DomainException;
@@ -188,6 +193,85 @@ class EditorInChiefService
     }
 
     /**
+     * Menerbitkan persetujuan akhir galai publikasi resmi oleh Pemimpin Redaksi (EIC) (UC-14 & UC-15).
+     * Secara otomatis memindahkan status naskah ke 'ready_for_issue'.
+     */
+    public function approveFinalGalley(
+        Submission $submission,
+        User $eic,
+        ?string $note = null
+    ): GalleyApproval {
+        // Cari galai aktif naskah (utamakan PDF)
+        $activeGalley = $submission->activeGalley
+            ?? Galley::where('submission_id', $submission->id)
+                ->where('status', 'active')
+                ->latest('version')
+                ->first();
+
+        if (! $activeGalley) {
+            throw new DomainException('Tidak dapat menerbitkan persetujuan akhir: naskah belum memiliki berkas galai aktif.');
+        }
+
+        // Invariant Guard 1: Putaran proofreading wajib telah dilakukan
+        $hasProof = ProofAssignment::whereHas('galley', fn ($q) => $q->where('submission_id', $submission->id))
+            ->exists();
+
+        if (! $hasProof) {
+            throw new DomainException('Tidak dapat menerbitkan persetujuan akhir: galai naskah wajib melalui putaran proofreading terlebih dahulu.');
+        }
+
+        // Invariant Guard 2: Seluruh catatan koreksi proofreading wajib diselesaikan
+        $unresolvedNotes = ProofreadingNote::whereHas('galley', fn ($q) => $q->where('submission_id', $submission->id))
+            ->where('resolved', false)
+            ->count();
+
+        if ($unresolvedNotes > 0) {
+            throw new DomainException("Tidak dapat menerbitkan persetujuan akhir: masih terdapat {$unresolvedNotes} catatan koreksi proofreading yang belum diselesaikan.");
+        }
+
+        // Invariant Guard 3: Tidak boleh ada tiket eskalasi aktif
+        $hasActiveEscalation = ProductionEscalation::where('submission_id', $submission->id)
+            ->whereIn('status', ['open', 'investigating'])
+            ->exists();
+
+        if ($hasActiveEscalation) {
+            throw new DomainException('Tidak dapat menerbitkan persetujuan akhir: terdapat tiket eskalasi kendala tata letak yang belum diselesaikan.');
+        }
+
+        return DB::transaction(function () use ($submission, $activeGalley, $eic, $note): GalleyApproval {
+            // Invalidate approval editor_final sebelumnya jika ada
+            GalleyApproval::where('galley_id', $activeGalley->id)
+                ->where('stage', 'editor_final')
+                ->whereNull('invalidated_at')
+                ->update(['invalidated_at' => Carbon::now('UTC')]);
+
+            // Kunci stage galai menjadi approved dan kunci approved_checksum
+            $activeGalley->stage = 'approved';
+            $activeGalley->approved_checksum = $activeGalley->checksum_sha256;
+            $activeGalley->save();
+
+            // Terbitkan rekod persetujuan akhir resmi (GalleyApproval)
+            $approval = GalleyApproval::create([
+                'galley_id' => $activeGalley->id,
+                'approved_by' => $eic->id,
+                'stage' => 'editor_final',
+                'checksum_sha256' => $activeGalley->checksum_sha256,
+                'approved_at' => Carbon::now('UTC'),
+                'invalidated_at' => null,
+                'file_id' => $activeGalley->file_id,
+                'note' => $note ? trim($note) : 'Persetujuan akhir galai resmi disahkan oleh Pemimpin Redaksi. Naskah siap dijadwalkan ke edisi terbitan.',
+            ]);
+
+            // OTOMASI: Pemindahan status naskah ke ready_for_issue
+            $submission->status = 'ready_for_issue';
+            $submission->version = (int) $submission->version + 1;
+            $submission->save();
+
+            return $approval;
+        });
+    }
+
+    /**
      * Mengambil daftar naskah terstruktur untuk ruang kerja Editor-in-Chief.
      */
     public function getSubmissionsQueue(
@@ -213,7 +297,7 @@ class EditorInChiefService
         } elseif ($statusTab === 'revisions') {
             $query->where('status', 'revisions_requested');
         } elseif ($statusTab === 'decided') {
-            $query->whereIn('status', ['accepted', 'declined', 'in_production', 'published']);
+            $query->whereIn('status', ['accepted', 'declined', 'in_production', 'ready_for_issue', 'published']);
         }
 
         if (! empty($search)) {

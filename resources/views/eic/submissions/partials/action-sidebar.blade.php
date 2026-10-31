@@ -620,6 +620,158 @@
         @endif
     </section>
 
+    @php
+        $activeGalley = $viewModel->activeGalley();
+        $hasFinalApproval = $viewModel->hasFinalGalleyApproval();
+        $finalApproval = $viewModel->finalGalleyApproval();
+        $canApproveFinal = $viewModel->canApproveFinalGalley();
+    @endphp
+
+    @if($activeGalley || in_array($submission->status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true))
+    <!-- Kartu 4: Persetujuan Akhir Galai (Ready for Issue) -->
+    <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
+        <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <div 
+                class="flex items-center gap-2 min-w-0 cursor-help" 
+                data-tooltip="Persetujuan Akhir Galai" 
+                data-tooltip-desc="Pengesahan galai publikasi resmi (PDF) oleh Pemimpin Redaksi sebelum naskah masuk ke edisi terbitan"
+            >
+                <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-tight truncate">
+                    Persetujuan Akhir Galai
+                </h3>
+            </div>
+            @if($submission->status === 'ready_for_issue' || $hasFinalApproval)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 shrink-0">
+                    Siap Terbit
+                </span>
+            @elseif($canApproveFinal)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 shrink-0">
+                    Perlu Pengesahan
+                </span>
+            @else
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 bg-gray-50 border border-gray-200 shrink-0">
+                    Produksi
+                </span>
+            @endif
+        </div>
+
+        @if($submission->status === 'ready_for_issue' || $hasFinalApproval)
+            <!-- Status: Telah Disahkan Resmi (ready_for_issue) -->
+            <div class="p-3.5 rounded-lg bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-emerald-800 font-medium">Status Publikasi:</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        Siap Masuk Terbitan
+                    </span>
+                </div>
+                @if($finalApproval)
+                    <div class="flex items-center justify-between gap-2 text-emerald-900">
+                        <span class="text-emerald-700">Tanggal Pengesahan:</span>
+                        <strong class="tabular-nums">{{ $finalApproval->approved_at?->format('d M Y, H:i') ?? '-' }}</strong>
+                    </div>
+                    @if($finalApproval->approvedBy)
+                        <div class="flex items-center justify-between gap-2 text-emerald-900">
+                            <span class="text-emerald-700">Disahkan Oleh:</span>
+                            <strong>{{ $finalApproval->approvedBy->name }}</strong>
+                        </div>
+                    @endif
+                    @if($finalApproval->note)
+                        <div class="pt-2 border-t border-emerald-200/80 text-emerald-800 leading-relaxed italic">
+                            "{{ $finalApproval->note }}"
+                        </div>
+                    @endif
+                @endif
+                @if($activeGalley)
+                    <div class="pt-2 border-t border-emerald-200/80 flex items-center justify-between gap-2">
+                        <span class="text-emerald-700 font-mono text-[10px] truncate">
+                            SHA: {{ substr((string) $activeGalley->checksum_sha256, 0, 16) }}...
+                        </span>
+                        <a 
+                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}" 
+                            class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-navy hover:underline shrink-0"
+                            target="_blank"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Unduh Galai</span>
+                        </a>
+                    </div>
+                @endif
+            </div>
+            <p class="text-[11px] text-gray-500 leading-snug">
+                Naskah ini telah memenuhi seluruh kriteria mutu proofreading dan siap dimasukkan ke dalam daftar isi edisi terbitan berkala oleh Manajer Jurnal.
+            </p>
+        @elseif($activeGalley)
+            <!-- Form Pengesahan Akhir Galai EIC -->
+            <form action="{{ route('eic.submissions.approve-galley', $submission->id) }}" method="POST" class="space-y-4">
+                @csrf
+
+                <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-gray-500">Berkas Galai:</span>
+                        <strong class="text-gray-900">{{ $activeGalley->label }} (v{{ $activeGalley->version }})</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-gray-500">Format:</span>
+                        <span class="uppercase font-semibold text-gray-800">{{ $activeGalley->format }}</span>
+                    </div>
+                    <div class="pt-2 border-t border-gray-200/80 flex items-center justify-between gap-2">
+                        <span class="text-gray-500 text-[10px] font-mono truncate">
+                            {{ substr((string) $activeGalley->checksum_sha256, 0, 16) }}...
+                        </span>
+                        <a 
+                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}" 
+                            class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-maroon hover:underline shrink-0"
+                            target="_blank"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Periksa Galai</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="galley_approval_note" class="block font-semibold text-gray-800">
+                        Catatan Pengesahan Galai (Opsional)
+                    </label>
+                    <textarea 
+                        name="note" 
+                        id="galley_approval_note" 
+                        rows="2" 
+                        class="w-full rounded-lg border border-gray-300 p-2.5 text-xs text-gray-900 focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon outline-hidden placeholder:text-gray-400"
+                        placeholder="Contoh: Galai telah diperiksa dan disetujui untuk penjadwalan terbitan."
+                    ></textarea>
+                </div>
+
+                <button 
+                    type="submit" 
+                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition duration-150 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 focus:ring-offset-1"
+                    onclick="return confirm('Apakah Anda yakin ingin mengesahkan galai naskah ini? Status naskah akan otomatis beralih menjadi Siap Terbit (ready_for_issue).')"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Sahkan Persetujuan Akhir Galai</span>
+                </button>
+            </form>
+        @else
+            <!-- Belum Ada Galai Aktif -->
+            <div class="p-3.5 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-gray-500 leading-relaxed">
+                Naskah sedang dalam tahap tata letak. Persetujuan akhir galai dapat diterbitkan setelah <strong>Layout Editor</strong> mengunggah berkas galai final dan menyelesaikan seluruh putaran koreksi proofreading.
+            </div>
+        @endif
+    </section>
+    @endif
+
 </aside>
 
 @pushOnce('scripts')

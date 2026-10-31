@@ -310,4 +310,38 @@ class EditorInChiefController extends Controller
                 ->with('error', $e->getMessage());
         }
     }
+
+    /**
+     * Menerbitkan persetujuan akhir galai publikasi resmi oleh Pemimpin Redaksi (UC-14 & UC-15).
+     * Secara otomatis mengalihkan status naskah menjadi 'ready_for_issue'.
+     */
+    public function approveGalley(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::with(['activeGalley', 'galleys'])
+            ->where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $eic = $request->user() ?? User::firstOrFail();
+
+            $this->eicService->approveFinalGalley(
+                submission: $submission,
+                eic: $eic,
+                note: $validated['note'] ?? null
+            );
+
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('success', 'Persetujuan akhir galai resmi berhasil diterbitkan. Status naskah kini beralih menjadi Siap Terbit (ready_for_issue).');
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        }
+    }
 }

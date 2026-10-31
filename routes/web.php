@@ -67,6 +67,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
     Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
+    Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
 });
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)

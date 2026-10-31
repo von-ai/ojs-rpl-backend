@@ -50,7 +50,7 @@ class EicSubmissionsViewModel
         $needDeskReview = Submission::where('status', 'submitted')->count();
         $inReview = Submission::where('status', 'in_review')->count();
         $needRevision = Submission::where('status', 'revisions_requested')->count();
-        $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'published'])->count();
+        $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'ready_for_issue', 'published'])->count();
 
         return [
             [
@@ -102,7 +102,7 @@ class EicSubmissionsViewModel
         $needDeskReview = Submission::where('status', 'submitted')->count();
         $inReview = Submission::where('status', 'in_review')->count();
         $needRevision = Submission::where('status', 'revisions_requested')->count();
-        $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'published'])->count();
+        $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'ready_for_issue', 'published'])->count();
         $all = Submission::where('status', '!=', 'draft')->count();
 
         return [
@@ -141,6 +141,10 @@ class EicSubmissionsViewModel
             'in_production' => [
                 'label' => 'Tahap Produksi',
                 'badge_class' => 'bg-purple-50 text-purple-800 border border-purple-200',
+            ],
+            'ready_for_issue' => [
+                'label' => 'Siap Terbit',
+                'badge_class' => 'bg-emerald-50 text-emerald-800 border border-emerald-200',
             ],
             'published' => [
                 'label' => 'Telah Terbit',

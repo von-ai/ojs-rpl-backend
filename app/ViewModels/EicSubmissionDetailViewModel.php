@@ -6,6 +6,8 @@ namespace App\ViewModels;
 
 use App\Models\DeskReview;
 use App\Models\EditorialDecision;
+use App\Models\Galley;
+use App\Models\GalleyApproval;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
@@ -42,11 +44,76 @@ class EicSubmissionDetailViewModel
         return in_array($this->submission->status, [
             'accepted',
             'in_production',
+            'ready_for_issue',
             'published',
             'declined',
             'archived',
             'withdrawn',
         ], true);
+    }
+
+    /**
+     * Mengambil berkas galai aktif naskah saat ini jika ada.
+     */
+    public function activeGalley(): ?Galley
+    {
+        return $this->submission->activeGalley
+            ?? $this->submission->galleys->firstWhere('status', 'active');
+    }
+
+    /**
+     * Memeriksa apakah naskah memiliki persetujuan akhir galai resmi (editor_final).
+     */
+    public function hasFinalGalleyApproval(): bool
+    {
+        $galley = $this->activeGalley();
+        if (! $galley) {
+            return false;
+        }
+
+        return $galley->approvals
+            ->where('stage', 'editor_final')
+            ->whereNull('invalidated_at')
+            ->isNotEmpty();
+    }
+
+    /**
+     * Mengambil objek persetujuan akhir galai resmi jika telah disahkan.
+     */
+    public function finalGalleyApproval(): ?GalleyApproval
+    {
+        $galley = $this->activeGalley();
+        if (! $galley) {
+            return null;
+        }
+
+        return $galley->approvals
+            ->where('stage', 'editor_final')
+            ->whereNull('invalidated_at')
+            ->sortByDesc('approved_at')
+            ->first();
+    }
+
+    /**
+     * Memeriksa apakah Pemimpin Redaksi dapat menerbitkan persetujuan akhir galai.
+     * Naskah harus memiliki galai aktif, belum disahkan final, dan belum terbit.
+     */
+    public function canApproveFinalGalley(): bool
+    {
+        if (in_array($this->submission->status, ['published', 'declined', 'archived', 'withdrawn', 'ready_for_issue'], true)) {
+            return false;
+        }
+
+        $galley = $this->activeGalley();
+        if (! $galley) {
+            return false;
+        }
+
+        if ($this->hasFinalGalleyApproval()) {
+            return false;
+        }
+
+        return in_array($this->submission->status, ['accepted', 'in_production'], true);
     }
 
     /**
@@ -122,6 +189,7 @@ class EicSubmissionDetailViewModel
             'revisions_requested' => 'Perlu Revisi Penulis',
             'accepted' => 'Diterima untuk Publikasi',
             'in_production' => 'Tahap Produksi',
+            'ready_for_issue' => 'Siap Masuk Terbitan',
             'published' => 'Telah Terbit Resmi',
             'declined' => 'Naskah Ditolak',
             'archived', 'withdrawn' => 'Naskah Diarsipkan',
@@ -134,6 +202,7 @@ class EicSubmissionDetailViewModel
             'revisions_requested' => 'bg-orange-50 text-orange-800 border-orange-200',
             'accepted' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'in_production' => 'bg-purple-50 text-purple-800 border-purple-200',
+            'ready_for_issue' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'published' => 'bg-green-50 text-green-800 border-green-200',
             'declined' => 'bg-red-50 text-red-800 border-red-200',
             'archived', 'withdrawn' => 'bg-zinc-100 text-zinc-700 border-zinc-300',
@@ -145,6 +214,7 @@ class EicSubmissionDetailViewModel
             'in_review' => 'Tahap 3 dari 6',
             'revisions_requested' => 'Tahap 4 dari 6',
             'accepted', 'in_production' => 'Tahap 5 dari 6',
+            'ready_for_issue' => 'Tahap 5 dari 6 (Siap Terbit)',
             'published' => 'Tahap 6 dari 6',
             'declined', 'archived', 'withdrawn' => 'Alur Dihentikan',
             default => 'Tahap 1 dari 6',
@@ -255,12 +325,12 @@ class EicSubmissionDetailViewModel
     {
         $status = $this->submission->status;
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
-            || in_array($status, ['in_review', 'revisions_requested', 'accepted', 'in_production', 'published'], true);
+            || in_array($status, ['in_review', 'revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
         $hasSe = $this->submission->activeEditorAssignment !== null
-            || in_array($status, ['revisions_requested', 'accepted', 'in_production', 'published'], true);
+            || in_array($status, ['revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
         $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
-            || in_array($status, ['accepted', 'in_production', 'published', 'declined'], true);
-        $inProdOrPub = in_array($status, ['accepted', 'in_production', 'published'], true);
+            || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published', 'declined'], true);
+        $inProdOrPub = in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true);
 
         if ($status === 'declined') {
             return [
@@ -300,8 +370,8 @@ class EicSubmissionDetailViewModel
             [
                 'step' => 5,
                 'title' => 'Produksi & Terbit',
-                'subtitle' => $status === 'published' ? 'Telah Terbit Resmi' : 'Penyuntingan & Galai',
-                'state' => $status === 'published' ? 'completed' : ($inProdOrPub ? 'current' : 'upcoming'),
+                'subtitle' => $status === 'published' ? 'Telah Terbit Resmi' : ($status === 'ready_for_issue' ? 'Siap Terbit (Galai Disetujui)' : 'Penyuntingan & Galai'),
+                'state' => in_array($status, ['published', 'ready_for_issue'], true) ? 'completed' : ($inProdOrPub ? 'current' : 'upcoming'),
             ],
         ];
     }
