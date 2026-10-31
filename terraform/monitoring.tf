@@ -25,7 +25,7 @@ resource "azurerm_application_insights_standard_web_test" "availability" {
   enabled                 = true
 
   request {
-    url = "${var.app_url}/up"
+    url = var.app_url != "" ? "${var.app_url}/up" : "https://${azurerm_container_app.web.ingress[0].fqdn}/up"
   }
 
   tags = var.tags

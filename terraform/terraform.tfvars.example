@@ -18,7 +18,7 @@ container_registry_password = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # PAT d
 # Aplikasi Laravel
 app_key   = "base64:YOUR_APP_KEY_HERE="
 app_debug = false
-app_url   = "https://jurnal.makassar.go.id"
+app_url   = "" # Kosongkan ("") jika deploy tanpa custom domain untuk menggunakan FQDN bawaan Azure
 
 # TiDB Cloud Serverless (MySQL 8.0 Protocol)
 db_host     = "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"

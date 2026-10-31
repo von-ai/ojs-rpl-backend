@@ -105,9 +105,9 @@ variable "app_debug" {
 }
 
 variable "app_url" {
-  description = "URL dasar aplikasi web SIRIDA"
+  description = "URL dasar aplikasi web SIRIDA (kosongkan jika deploy tanpa custom domain untuk menggunakan FQDN bawaan Azure)"
   type        = string
-  default     = "https://jurnal.makassar.go.id"
+  default     = ""
 }
 
 # -----------------------------------------------------------------------------
