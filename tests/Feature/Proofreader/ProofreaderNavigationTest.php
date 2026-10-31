@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Proofreader;
 
+use App\ViewModels\ProofreaderSubmissionsViewModel;
 use Tests\TestCase;
 
 class ProofreaderNavigationTest extends TestCase
@@ -103,5 +104,20 @@ class ProofreaderNavigationTest extends TestCase
         ]);
         $responseEscalate->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00106'));
         $responseEscalate->assertSessionHas('status');
+    }
+
+    /**
+     * Keterangan angka badge pada navigasi sejalan dengan total penugasan yang ada.
+     */
+    public function test_keterangan_angka_navbar_sejalan_dengan_jumlah_penugasan_yang_ada(): void
+    {
+        $response = $this->get('/proofreader/submissions');
+        $response->assertStatus(200);
+
+        $badgeCount = ProofreaderSubmissionsViewModel::getSidebarBadgeCount();
+        $this->assertGreaterThan(0, $badgeCount);
+
+        // Angka pada navbar harus tercetak di HTML
+        $response->assertSee((string) $badgeCount);
     }
 }
