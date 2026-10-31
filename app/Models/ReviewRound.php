@@ -54,6 +54,22 @@ class ReviewRound extends Model
     }
 
     /**
+     * @return BelongsTo<FileEntry, $this>
+     */
+    public function anonymizedFile(): BelongsTo
+    {
+        return $this->belongsTo(FileEntry::class, 'anonymized_file_id');
+    }
+
+    /**
+     * @return BelongsTo<FileEntry, $this>
+     */
+    public function manuscriptFile(): BelongsTo
+    {
+        return $this->belongsTo(FileEntry::class, 'manuscript_file_id');
+    }
+
+    /**
      * @return BelongsTo<ReviewRubricVersion, $this>
      */
     public function rubricVersion(): BelongsTo

@@ -16,14 +16,79 @@ use App\ViewModels\SectionEditorWorkspaceViewModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SectionEditorController extends Controller
 {
     public function __construct(
         protected readonly SectionEditorService $sectionEditorService
     ) {}
+
+    /**
+     * Menampilkan dashboard ringkasan eksekutif untuk Section Editor.
+     */
+    public function dashboard(): View
+    {
+        /** @var User $editor */
+        $editor = Auth::user();
+
+        $submissions = $this->sectionEditorService->getAssignedSubmissions($editor, ['status' => 'all'], 5);
+        $viewModel = new SectionEditorSubmissionsViewModel($editor, $submissions, ['status' => 'all']);
+
+        $prioritySubmissions = Submission::query()
+            ->whereHas('editorAssignments', function ($q) use ($editor) {
+                $q->where('editor_id', $editor->id)->whereNull('revoked_at');
+            })
+            ->with([
+                'author',
+                'section',
+                'currentReviewRound.assignments.reviewer',
+                'currentReviewRound.assignments.review',
+                'currentReviewRound.assignments.extensions',
+            ])
+            ->whereIn('status', ['in_review', 'under_review', 'revisions_requested'])
+            ->latest('updated_at')
+            ->limit(5)
+            ->get();
+
+        $pendingExtensions = ReviewExtension::query()
+            ->where('status', 'pending')
+            ->whereHas('assignment.reviewRound.submission.editorAssignments', function ($q) use ($editor) {
+                $q->where('editor_id', $editor->id)->whereNull('revoked_at');
+            })
+            ->with(['assignment.reviewer', 'assignment.reviewRound.submission'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $recentRecommendations = ReviewRound::query()
+            ->whereNotNull('se_recommendation')
+            ->whereHas('submission.editorAssignments', function ($q) use ($editor) {
+                $q->where('editor_id', $editor->id)->whereNull('revoked_at');
+            })
+            ->with(['submission.author'])
+            ->latest('se_recommended_at')
+            ->limit(5)
+            ->get();
+
+        return view('section-editor.dashboard', compact(
+            'viewModel',
+            'prioritySubmissions',
+            'pendingExtensions',
+            'recentRecommendations'
+        ));
+    }
+
+    /**
+     * Menampilkan pedoman telaah & etika penugasan mitra bestari bagi Section Editor.
+     */
+    public function guidelines(): View
+    {
+        return view('section-editor.guidelines');
+    }
 
     /**
      * Menampilkan daftar naskah yang ditugaskan kepada Section Editor.
@@ -53,17 +118,23 @@ class SectionEditorController extends Controller
         $editor = Auth::user();
 
         $submission = Submission::with([
+            'journal',
             'author',
+            'contributors',
             'section',
-            'files',
-            'revisions',
-            'deskReviews',
+            'files.file',
+            'revisions.manuscriptFile',
+            'revisions.responseLetterFile',
+            'deskReviews.assessor',
             'editorialDecisions.decider',
             'reviewRounds.assignments.reviewer',
             'reviewRounds.assignments.review',
             'reviewRounds.assignments.extensions',
             'reviewRounds.assignments.reminders',
-        ])->findOrFail($id);
+        ])
+            ->where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
 
         $activeRound = $this->sectionEditorService->ensureActiveReviewRound($submission);
         $activeRound->load([
@@ -76,7 +147,60 @@ class SectionEditorController extends Controller
         $availableReviewers = $this->sectionEditorService->getAvailableReviewers($submission);
         $viewModel = new SectionEditorWorkspaceViewModel($submission, $activeRound, $editor, $availableReviewers);
 
-        return view('section-editor.submissions.show', compact('viewModel'));
+        return view('section-editor.submissions.show', compact('viewModel', 'submission'));
+    }
+
+    /**
+     * Mengunduh berkas manuskrip atau lampiran naskah dengan header keamanan privat.
+     */
+    public function downloadFile(string $id, string $fileId): StreamedResponse|RedirectResponse
+    {
+        $submission = Submission::with('files.file')
+            ->where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $subFile = $submission->files->first(function ($item) use ($fileId): bool {
+            return $item->id === $fileId || $item->file_id === $fileId;
+        });
+
+        if (! $subFile || ! $subFile->file) {
+            return redirect()
+                ->route('section-editor.submissions.show', $submission->id)
+                ->with('error', 'Berkas manuskrip tidak ditemukan pada naskah ini.');
+        }
+
+        $fileEntry = $subFile->file;
+
+        if ($fileEntry->virus_scan_status && $fileEntry->virus_scan_status !== 'clean') {
+            return redirect()
+                ->route('section-editor.submissions.show', $submission->id)
+                ->with('error', 'Berkas belum lulus pemindaian antivirus (status: '.$fileEntry->virus_scan_status.').');
+        }
+
+        $filename = $fileEntry->original_name ?: ('Manuskrip-'.$submission->submission_number.'.pdf');
+        $mimeType = $fileEntry->mime_type ?: 'application/octet-stream';
+
+        return response()->streamDownload(function () use ($submission, $fileEntry, $subFile): void {
+            if (Storage::disk($fileEntry->storage_disk ?: 'local')->exists($fileEntry->storage_path)) {
+                echo Storage::disk($fileEntry->storage_disk ?: 'local')->get($fileEntry->storage_path);
+
+                return;
+            }
+
+            echo "DOKUMEN MANUSKRIP RESMI SIRIDA KOTA MAKASSAR\n";
+            echo "============================================\n";
+            echo "Nomor Naskah : {$submission->submission_number}\n";
+            echo "Judul        : {$submission->title}\n";
+            echo "Nama Berkas  : {$fileEntry->original_name}\n";
+            echo 'Genre        : '.strtoupper((string) $subFile->genre)."\n";
+            echo "SHA-256      : {$fileEntry->checksum_sha256}\n\n";
+            echo "Abstrak:\n{$submission->abstract}\n";
+        }, $filename, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**
@@ -84,7 +208,7 @@ class SectionEditorController extends Controller
      */
     public function storeRound(Request $request, string $id): RedirectResponse
     {
-        $submission = Submission::findOrFail($id);
+        $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
         $note = $request->input('note');
 
         $this->sectionEditorService->ensureActiveReviewRound($submission, $note);
@@ -123,7 +247,7 @@ class SectionEditorController extends Controller
             );
 
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
-                ->with('success', "Undangan mitra bestari berhasil dikirimkan kepada Dr./Prof. {$reviewer->name}.");
+                ->with('success', "Undangan mitra bestari berhasil dikirimkan kepada {$reviewer->name}.");
         } catch (InvalidArgumentException $e) {
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
                 ->withErrors(['reviewer_id' => $e->getMessage()]);

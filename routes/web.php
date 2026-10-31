@@ -76,11 +76,11 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
 Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-editor')->name('section-editor.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('section-editor.submissions.index');
-    })->name('dashboard');
+    Route::get('/', [SectionEditorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [SectionEditorController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [SectionEditorController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [SectionEditorController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/files/{fileId}/download', [SectionEditorController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/rounds', [SectionEditorController::class, 'storeRound'])->name('rounds.store');
     Route::post('/rounds/{roundId}/assign-reviewer', [SectionEditorController::class, 'assignReviewer'])->name('reviewers.assign');
     Route::post('/assignments/{assignmentId}/cancel', [SectionEditorController::class, 'cancelAssignment'])->name('assignments.cancel');
@@ -91,11 +91,11 @@ Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-edito
 
 // Portal Mitra Bestari (Peer Reviewer - UC-08 Undangan & UC-09 Evaluasi Telaah)
 Route::middleware(['auth', 'role.access:reviewer'])->prefix('reviewer')->name('reviewer.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('reviewer.assignments.index');
-    })->name('dashboard');
+    Route::get('/', [ReviewerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [ReviewerController::class, 'guidelines'])->name('guidelines');
     Route::get('/assignments', [ReviewerController::class, 'index'])->name('assignments.index');
     Route::get('/assignments/{id}', [ReviewerController::class, 'show'])->name('assignments.show');
+    Route::get('/assignments/{id}/files/{fileId}/download', [ReviewerController::class, 'downloadFile'])->name('files.download');
     Route::post('/assignments/{id}/respond', [ReviewerController::class, 'respond'])->name('assignments.respond');
     Route::post('/assignments/{id}/extension', [ReviewerController::class, 'requestExtension'])->name('assignments.extension');
     Route::post('/assignments/{id}/draft', [ReviewerController::class, 'saveDraft'])->name('assignments.draft');
