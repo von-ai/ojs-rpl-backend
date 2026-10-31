@@ -24,6 +24,7 @@ class PublicJournalController extends Controller
      */
     public function index(Request $request): View
     {
+        $journal = $this->publicArticleService->getJournal();
         $searchQuery = $request->input('q');
         $selectedCategory = $request->input('category');
         $year = $request->filled('year') ? (int) $request->input('year') : null;
@@ -42,10 +43,11 @@ class PublicJournalController extends Controller
             selectedCategory: $selectedCategory,
             dbCurrentIssue: $currentIssue,
             dbArticles: $articles,
-            dbArchives: $archives
+            dbArchives: $archives,
+            journal: $journal
         );
 
-        return view('journal.index', compact('viewModel'));
+        return view('journal.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -53,6 +55,7 @@ class PublicJournalController extends Controller
      */
     public function search(Request $request): View
     {
+        $journal = $this->publicArticleService->getJournal();
         $query = $request->input('q');
         $category = $request->input('category');
         $year = $request->filled('year') ? (int) $request->input('year') : null;
@@ -66,10 +69,11 @@ class PublicJournalController extends Controller
         $viewModel = new PublicJournalViewModel(
             searchQuery: $query,
             selectedCategory: $category,
-            dbArticles: $results
+            dbArticles: $results,
+            journal: $journal
         );
 
-        return view('journal.search', compact('viewModel', 'results'));
+        return view('journal.search', compact('viewModel', 'results', 'journal'));
     }
 
     /**
@@ -77,6 +81,7 @@ class PublicJournalController extends Controller
      */
     public function showArticle(Request $request, string $slugOrId): View
     {
+        $journal = $this->publicArticleService->getJournal();
         $article = $this->publicArticleService->findPublishedArticle($slugOrId);
 
         if (! $article) {
@@ -87,9 +92,9 @@ class PublicJournalController extends Controller
         $this->publicArticleService->recordMetric($article, 'abstract_view', $request);
 
         $citations = $this->publicArticleService->generateCitations($article);
-        $viewModel = new PublicJournalViewModel;
+        $viewModel = new PublicJournalViewModel(journal: $journal);
 
-        return view('journal.article', compact('article', 'citations', 'viewModel'));
+        return view('journal.article', compact('article', 'citations', 'viewModel', 'journal'));
     }
 
     /**
@@ -148,5 +153,154 @@ class PublicJournalController extends Controller
             'Content-Type' => $contentType,
             'Content-Disposition' => "attachment; filename=\"{$article->slug}-citation.{$extension}\"",
         ]);
+    }
+
+    /**
+     * Menampilkan Halaman Edisi Terkini (Current Issue).
+     */
+    public function currentIssue(Request $request): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $currentIssue = $this->publicArticleService->getCurrentIssue();
+
+        if (! $currentIssue) {
+            abort(404, 'Edisi terbitan terkini belum dipublikasikan.');
+        }
+
+        $viewModel = new PublicJournalViewModel(
+            dbCurrentIssue: $currentIssue,
+            dbArticles: null,
+            journal: $journal
+        );
+
+        return view('journal.issues.show', [
+            'issue' => $currentIssue,
+            'viewModel' => $viewModel,
+            'isCurrent' => true,
+            'journal' => $journal,
+        ]);
+    }
+
+    /**
+     * Menampilkan Detail Edisi Tertentu (UC-03).
+     */
+    public function showIssue(Request $request, string $id): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $issue = $this->publicArticleService->getIssueById($id, $journal);
+
+        if (! $issue) {
+            abort(404, 'Edisi jurnal tidak ditemukan atau belum diterbitkan.');
+        }
+
+        $viewModel = new PublicJournalViewModel(
+            dbCurrentIssue: $issue,
+            dbArticles: null,
+            journal: $journal
+        );
+
+        return view('journal.issues.show', [
+            'issue' => $issue,
+            'viewModel' => $viewModel,
+            'isCurrent' => (bool) $issue->is_current,
+            'journal' => $journal,
+        ]);
+    }
+
+    /**
+     * Menampilkan Halaman Arsip Seluruh Edisi Terbitan.
+     */
+    public function archives(Request $request): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $issues = $this->publicArticleService->getAllPublishedIssues($journal, 12);
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.issues.archive', compact('issues', 'viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Informasi Umum Jurnal (Tentang Jurnal).
+     */
+    public function about(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.about.index', compact('viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Susunan Dewan Redaksi dan Mitra Bestari.
+     */
+    public function editorialTeam(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $team = $this->publicArticleService->getEditorialTeam($journal);
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.about.editorial-team', compact('team', 'viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Kebijakan Redaksi, Etika Publikasi & Hak Cipta.
+     */
+    public function policies(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.about.policies', compact('viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Panduan Penulis & Pengiriman Naskah (Author Guidelines).
+     */
+    public function submissionsGuide(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.about.submissions', compact('viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Informasi Kontak & Sekretariat Redaksi BRIDA Makassar.
+     */
+    public function contact(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.about.contact', compact('viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Daftar Pengumuman Resmi Jurnal.
+     */
+    public function announcements(): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $announcements = $this->publicArticleService->getAnnouncements($journal, 10);
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.announcements.index', compact('announcements', 'viewModel', 'journal'));
+    }
+
+    /**
+     * Menampilkan Detail Pengumuman Resmi.
+     */
+    public function showAnnouncement(string $id): View
+    {
+        $journal = $this->publicArticleService->getJournal();
+        $announcement = $this->publicArticleService->findAnnouncement($id, $journal);
+
+        if (! $announcement) {
+            abort(404, 'Pengumuman tidak ditemukan atau belum dipublikasikan.');
+        }
+
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+
+        return view('journal.announcements.show', compact('announcement', 'viewModel', 'journal'));
     }
 }

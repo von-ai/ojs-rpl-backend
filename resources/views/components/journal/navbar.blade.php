@@ -32,7 +32,7 @@
             </form>
 
             <!-- Kirim Naskah CTA Button -->
-            <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-sm transition-all shrink-0">
+            <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg border border-brand-maroon transition-all shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -54,7 +54,7 @@
     <div class="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto text-xs font-semibold text-gray-700 py-1 no-scrollbar">
         @if (!empty($navLinks))
             @foreach ($navLinks as $link)
-                <a href="{{ $link['url'] }}" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap {{ $link['active'] && request()->routeIs('journal.index') && !request('q') && !request('filter') ? 'text-brand-maroon font-bold border-b-2 border-brand-maroon rounded-b-none' : '' }}">
+                <a href="{{ $link['url'] }}" class="px-3 py-2 rounded-md transition-colors text-nowrap {{ $link['active'] ? 'text-brand-maroon font-bold border-b-2 border-brand-maroon rounded-b-none' : 'text-gray-700 hover:text-brand-maroon' }}">
                     {{ $link['label'] }}
                 </a>
             @endforeach

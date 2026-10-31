@@ -18,11 +18,29 @@ use App\Http\Controllers\SysAdmin\SysAdminController;
 use Illuminate\Support\Facades\Route;
 
 // Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
-Route::get('/', [PublicJournalController::class, 'index'])->name('journal.index');
-Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('journal.articles.search');
-Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('journal.articles.show');
-Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('journal.articles.galleys.download');
-Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('journal.articles.cite');
+Route::name('journal.')->group(function () {
+    Route::get('/', [PublicJournalController::class, 'index'])->name('index');
+    Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
+    Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('articles.show');
+    Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('articles.galleys.download');
+    Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('articles.cite');
+
+    // Edisi & Arsip Publik (Issues & Archives)
+    Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
+    Route::get('/issues/{id}', [PublicJournalController::class, 'showIssue'])->name('issues.show');
+    Route::get('/archives', [PublicJournalController::class, 'archives'])->name('archives');
+
+    // Informasi Jurnal & Kebijakan Redaksi (About & Policies)
+    Route::get('/about', [PublicJournalController::class, 'about'])->name('about');
+    Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
+    Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');
+    Route::get('/about/submissions', [PublicJournalController::class, 'submissionsGuide'])->name('about.submissions');
+    Route::get('/about/contact', [PublicJournalController::class, 'contact'])->name('about.contact');
+
+    // Pengumuman Publik (Announcements)
+    Route::get('/announcements', [PublicJournalController::class, 'announcements'])->name('announcements.index');
+    Route::get('/announcements/{id}', [PublicJournalController::class, 'showAnnouncement'])->name('announcements.show');
+});
 
 // Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {

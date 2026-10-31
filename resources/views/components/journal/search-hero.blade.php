@@ -2,7 +2,7 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
     <!-- Left 2-Column Catalog Search Panel -->
-    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-2xs flex flex-col justify-between">
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5 sm:p-6 flex flex-col justify-between">
         <div>
             <!-- Top Subhead Row -->
             <div class="flex items-center justify-between gap-2 mb-2 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
@@ -38,7 +38,7 @@
                         <option value="abstrak">Abstrak & Kata Kunci</option>
                     </select>
 
-                    <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-sm transition-all shrink-0">
+                    <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg border border-brand-maroon transition-all shrink-0">
                         Telusuri
                     </button>
                 </div>
@@ -54,7 +54,7 @@
                 @forelse ($categories as $cat)
                     <a
                         href="{{ route('journal.index', ['category' => $cat['name']]) }}"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ request('category') === $cat['name'] ? 'bg-brand-maroon text-white shadow-xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ request('category') === $cat['name'] ? 'bg-brand-maroon text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
                     >
                         <span>{{ $cat['name'] }}</span>
                         <span class="text-[10px] opacity-75">({{ $cat['count'] }})</span>
