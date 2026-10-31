@@ -37,7 +37,7 @@
 
 <!-- Header Kartu Utama Naskah (Konsisten dengan Portal Penulis) -->
 <header class="bg-white rounded-xl border border-gray-200 p-6 sm:p-7 space-y-4">
-    <!-- Baris Status, Tag Kategori, dan Tombol Aksi -->
+    <!-- Baris Status dan Tag Kategori -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-2 flex-wrap text-xs">
             <!-- Nomor Submisi -->
@@ -59,21 +59,6 @@
             <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 tabular-nums shrink-0">
                 {{ $statusInfo['stage_name'] }}
             </span>
-        </div>
-
-        <!-- Tombol Cetak Ringkasan -->
-        <div class="flex items-center gap-2 shrink-0">
-            <button 
-                type="button" 
-                onclick="window.print()"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition duration-150 cursor-pointer"
-                title="Cetak lembar ringkasan naskah"
-            >
-                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span>Cetak</span>
-            </button>
         </div>
     </div>
 
