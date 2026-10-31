@@ -30,10 +30,19 @@ fi
 RG_NAME=$(${TF_BIN} output -raw resource_group_name 2>/dev/null || echo "")
 WEB_NAME=$(${TF_BIN} output -raw web_app_name 2>/dev/null || echo "")
 
+WEB_URL=$(${TF_BIN} output -raw public_app_url 2>/dev/null || echo "")
+
 if [ -z "$RG_NAME" ] || [ -z "$WEB_NAME" ]; then
     echo -e "${RED}[ERROR] Gagal mendapatkan nama Container App atau Resource Group dari output Terraform.${NC}"
     echo -e "Pastikan infrastruktur telah di-apply terlebih dahulu."
     exit 1
+fi
+
+# Bangunkan kontainer jika sedang scale-to-zero
+if [ -n "$WEB_URL" ] && [ "$WEB_URL" != "N/A" ]; then
+    echo -e "${BLUE}--> Memastikan Web Container aktif (wake-up ping: ${WEB_URL}/up)...${NC}"
+    curl -s -k -m 15 -o /dev/null "${WEB_URL}/up" || true
+    sleep 5
 fi
 
 echo -e "${BLUE}--> Menjalankan 'php artisan migrate --force' di Container '${WEB_NAME}'...${NC}"

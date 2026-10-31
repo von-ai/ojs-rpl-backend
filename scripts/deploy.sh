@@ -40,7 +40,7 @@ if ! command -v az &> /dev/null; then
     echo -e "${YELLOW}[WARNING] Azure CLI ('az') tidak terdeteksi di sistem.${NC}"
     echo -e "Pastikan kredensial Azure (ARM_SUBSCRIPTION_ID, ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_TENANT_ID) tersedia di environment."
 else
-    echo -e "${GREEN}[OK]${NC} Azure CLI terpasang ($(${az} --version 2>/dev/null | head -n 1 || az version --output json 2>/dev/null | grep -o '"azure-cli": "[^"]*' || echo "detected"))"
+    echo -e "${GREEN}[OK]${NC} Azure CLI terpasang ($(az version --output json 2>/dev/null | grep -o '"azure-cli": "[^"]*' || echo "detected"))"
 fi
 
 # 3. Cek file konfigurasi terraform.tfvars

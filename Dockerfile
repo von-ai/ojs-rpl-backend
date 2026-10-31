@@ -40,6 +40,7 @@ RUN apk add --no-cache \
     nginx \
     supervisor \
     curl \
+    ca-certificates \
     && install-php-extensions \
         pdo_mysql \
         bcmath \
