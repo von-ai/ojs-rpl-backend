@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use App\Models\Journal;
+use App\Models\User;
 use Database\Seeders\SysAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -102,5 +104,44 @@ class SysAdminUsersTest extends TestCase
         ]);
         $resImport->assertRedirect(route('sysadmin.users.index'));
         $resImport->assertSessionHas('status');
+    }
+
+    /**
+     * SysAdmin dapat menetapkan peran jurnal dan mencabut peran pengguna.
+     */
+    public function test_sysadmin_bisa_menetapkan_dan_mencabut_peran_jurnal_pengguna(): void
+    {
+        $user = User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail();
+        $journal = Journal::where('slug', 'jtiik-makassar')->firstOrFail();
+
+        // 1. Tetapkan peran Journal Manager
+        $resAssign = $this->post('/sysadmin/users/assign-journal-role', [
+            'user_id' => $user->id,
+            'journal_id' => $journal->id,
+            'role_code' => 'manager',
+        ]);
+        $resAssign->assertRedirect(route('sysadmin.users.index'));
+        $resAssign->assertSessionHas('status');
+
+        $this->assertDatabaseHas('user_roles', [
+            'user_id' => $user->id,
+            'journal_id' => $journal->id,
+            'role_code' => 'manager',
+        ]);
+
+        // 2. Cabut peran Journal Manager
+        $resRevoke = $this->post('/sysadmin/users/revoke-journal-role', [
+            'user_id' => $user->id,
+            'journal_id' => $journal->id,
+            'role_code' => 'manager',
+        ]);
+        $resRevoke->assertRedirect(route('sysadmin.users.index'));
+        $resRevoke->assertSessionHas('status');
+
+        $this->assertDatabaseMissing('user_roles', [
+            'user_id' => $user->id,
+            'journal_id' => $journal->id,
+            'role_code' => 'manager',
+        ]);
     }
 }

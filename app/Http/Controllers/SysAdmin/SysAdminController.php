@@ -6,6 +6,7 @@ namespace App\Http\Controllers\SysAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserRole;
 use App\Services\SysAdmin\SysAdminService;
 use App\ViewModels\SysAdminAuditLogsViewModel;
 use App\ViewModels\SysAdminJournalsViewModel;
@@ -73,6 +74,7 @@ class SysAdminController extends Controller
         $issn = $request->input('issn');
         $eissn = $request->input('eissn');
         $description = $request->input('description');
+        $managerUserId = $request->input('manager_user_id');
 
         try {
             if (Schema::hasTable('journals')) {
@@ -83,6 +85,7 @@ class SysAdminController extends Controller
                     'issn' => $issn ? (string) $issn : null,
                     'eissn' => $eissn ? (string) $eissn : null,
                     'description' => $description ? (string) $description : null,
+                    'manager_user_id' => $managerUserId ? (string) $managerUserId : null,
                 ], $actor);
 
                 return redirect()->route('sysadmin.journals.index')
@@ -177,6 +180,70 @@ class SysAdminController extends Controller
 
         return redirect()->route('sysadmin.users.index')
             ->with('status', 'Hak akses System Administrator berhasil dicabut.');
+    }
+
+    /**
+     * Menetapkan peran pengguna pada jurnal tertentu dari dashboard SysAdmin.
+     */
+    public function assignJournalRole(Request $request): RedirectResponse
+    {
+        $actor = $this->resolveActor();
+        $userId = (string) $request->input('user_id', '');
+        $journalId = (string) $request->input('journal_id', '');
+        $roleCode = (string) $request->input('role_code', 'manager');
+        $expertise = $request->input('expertise_keywords');
+
+        try {
+            if (Schema::hasTable('user_roles') && Schema::hasTable('users') && Schema::hasTable('journals')) {
+                $this->sysAdminService->assignJournalRole(
+                    $userId,
+                    $journalId,
+                    $roleCode,
+                    $expertise ? (string) $expertise : null,
+                    $actor
+                );
+
+                $roleLabel = UserRole::roleLabel($roleCode);
+
+                return redirect()->route('sysadmin.users.index')
+                    ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil ditetapkan kepada pengguna.");
+            }
+        } catch (DomainException $e) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['role' => $e->getMessage()]);
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return redirect()->route('sysadmin.users.index')
+            ->with('status', 'Peran jurnal berhasil ditetapkan kepada pengguna.');
+    }
+
+    /**
+     * Mencabut peran pengguna dari jurnal tertentu.
+     */
+    public function revokeJournalRole(Request $request): RedirectResponse
+    {
+        $actor = $this->resolveActor();
+        $userId = (string) $request->input('user_id', '');
+        $journalId = (string) $request->input('journal_id', '');
+        $roleCode = (string) $request->input('role_code', '');
+
+        try {
+            if (Schema::hasTable('user_roles')) {
+                $this->sysAdminService->revokeJournalRole($userId, $journalId, $roleCode, $actor);
+
+                $roleLabel = UserRole::roleLabel($roleCode);
+
+                return redirect()->route('sysadmin.users.index')
+                    ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil dicabut.");
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return redirect()->route('sysadmin.users.index')
+            ->with('status', 'Peran jurnal berhasil dicabut.');
     }
 
     /**

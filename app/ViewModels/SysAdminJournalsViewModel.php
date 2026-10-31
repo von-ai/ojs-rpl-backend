@@ -6,6 +6,7 @@ namespace App\ViewModels;
 
 use App\Models\Issue;
 use App\Models\Journal;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
@@ -227,6 +228,33 @@ class SysAdminJournalsViewModel
             'to' => $total,
             'last_page' => 1,
         ];
+    }
+
+    /**
+     * Daftar pengguna yang dapat dipilih sebagai PIC / Journal Manager.
+     *
+     * @return array<int, array{id: string, name: string, email: string, affiliation: string}>
+     */
+    public function selectableUsers(): array
+    {
+        try {
+            if (class_exists(User::class) && Schema::hasTable('users')) {
+                return User::with('profile')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (User $u) => [
+                        'id' => (string) $u->id,
+                        'name' => (string) ($u->name ?: $u->full_name),
+                        'email' => (string) $u->email,
+                        'affiliation' => (string) ($u->profile?->affiliation ?? '—'),
+                    ])
+                    ->all();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
     }
 
     /**

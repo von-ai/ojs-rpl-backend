@@ -304,6 +304,17 @@ class SysAdminUsersViewModel
                         'roles_formatted' => $rolesFormatted,
                         'role_codes' => $roleCodes,
                         'journal_memberships_count' => $journalCount,
+                        'journal_roles' => $user->userRoles->whereNotNull('journal_id')->map(function ($ur) {
+                            return [
+                                'id' => (string) $ur->id,
+                                'role_code' => (string) $ur->role_code,
+                                'role_label' => UserRole::roleLabel($ur->role_code),
+                                'badge_class' => UserRole::roleBadgeClass($ur->role_code),
+                                'journal_id' => (string) $ur->journal_id,
+                                'journal_name' => (string) ($ur->journal?->name ?? 'Jurnal'),
+                                'expertise_keywords' => $ur->expertise_keywords ?? [],
+                            ];
+                        })->values()->toArray(),
                         'status' => (string) ($user->status ?? 'active'),
                         'status_label' => ($user->status ?? 'active') === 'active' ? 'Aktif' : 'Non-Aktif',
                         'status_badge_class' => ($user->status ?? 'active') === 'active'

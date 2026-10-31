@@ -67,7 +67,7 @@ class SysAdminService
         $eissn = ! empty($data['eissn']) ? trim((string) $data['eissn']) : null;
         $description = ! empty($data['description']) ? trim((string) $data['description']) : null;
 
-        return DB::transaction(function () use ($name, $slug, $primaryContact, $issn, $eissn, $description, $actor) {
+        return DB::transaction(function () use ($name, $slug, $primaryContact, $issn, $eissn, $description, $actor, $data) {
             $journal = Journal::create([
                 'name' => $name,
                 'slug' => $slug,
@@ -78,6 +78,30 @@ class SysAdminService
                 'status' => 'active',
                 'version' => 1,
             ]);
+
+            // Jika akun PIC / Journal Manager ditentukan, kaitkan peran 'manager' pada jurnal baru
+            $managerUserId = ! empty($data['manager_user_id']) ? (string) $data['manager_user_id'] : null;
+            if ($managerUserId) {
+                $managerUser = User::find($managerUserId);
+                if ($managerUser) {
+                    UserRole::firstOrCreate([
+                        'user_id' => $managerUser->id,
+                        'journal_id' => $journal->id,
+                        'role_code' => 'manager',
+                    ]);
+
+                    AuditLog::record([
+                        'journal_id' => $journal->id,
+                        'actor_id' => $actor?->id,
+                        'user_id' => $managerUser->id,
+                        'actor_type' => 'user',
+                        'effective_role' => 'System Administrator',
+                        'action' => 'user.role_assigned',
+                        'resource_type' => 'user_role',
+                        'reason' => "Penunjukan PIC sebagai Journal Manager untuk jurnal {$journal->name} kepada {$managerUser->name}.",
+                    ]);
+                }
+            }
 
             // Buat seksi bawaan (Default Section) untuk jurnal baru
             Section::create([
@@ -262,6 +286,123 @@ class SysAdminService
                 'before_after' => [
                     'before' => ['is_sysadmin' => true],
                     'after' => ['is_sysadmin' => false],
+                ],
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Menetapkan peran pengguna pada jurnal tertentu.
+     */
+    public function assignJournalRole(
+        string $userId,
+        string $journalId,
+        string $roleCode,
+        ?string $expertiseKeywords = null,
+        ?User $actor = null
+    ): UserRole {
+        $user = User::findOrFail($userId);
+        $journal = Journal::findOrFail($journalId);
+
+        $validRoles = [
+            'manager',
+            'editor_in_chief',
+            'section_editor',
+            'copyeditor',
+            'layout_editor',
+            'proofreader',
+            'reviewer',
+            'author',
+        ];
+
+        if (! in_array($roleCode, $validRoles, true)) {
+            throw new DomainException("Kode peran '{$roleCode}' tidak valid.");
+        }
+
+        $keywords = null;
+        if ($expertiseKeywords !== null && trim($expertiseKeywords) !== '') {
+            $keywords = array_values(array_filter(array_map('trim', explode(',', $expertiseKeywords))));
+        }
+
+        return DB::transaction(function () use ($user, $journal, $roleCode, $keywords, $actor) {
+            $userRole = UserRole::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'journal_id' => $journal->id,
+                    'role_code' => $roleCode,
+                ],
+                [
+                    'expertise_keywords' => $keywords,
+                ]
+            );
+
+            // Catat log audit
+            AuditLog::record([
+                'journal_id' => $journal->id,
+                'actor_id' => $actor?->id,
+                'user_id' => $user->id,
+                'actor_type' => 'user',
+                'effective_role' => 'System Administrator',
+                'action' => 'user.role_assigned',
+                'resource_type' => 'user_role',
+                'resource_id' => $userRole->id,
+                'reason' => "Penetapan peran '".UserRole::roleLabel($roleCode)."' untuk jurnal {$journal->name} kepada {$user->name}.",
+                'before_after' => [
+                    'after' => [
+                        'user_id' => $user->id,
+                        'journal_id' => $journal->id,
+                        'role_code' => $roleCode,
+                    ],
+                ],
+            ]);
+
+            return $userRole;
+        });
+    }
+
+    /**
+     * Mencabut peran pengguna dari jurnal tertentu.
+     */
+    public function revokeJournalRole(
+        string $userId,
+        string $journalId,
+        string $roleCode,
+        ?User $actor = null
+    ): bool {
+        $user = User::findOrFail($userId);
+        $journal = Journal::findOrFail($journalId);
+
+        $userRole = UserRole::where('user_id', $user->id)
+            ->where('journal_id', $journal->id)
+            ->where('role_code', $roleCode)
+            ->first();
+
+        if (! $userRole) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($user, $journal, $roleCode, $userRole, $actor) {
+            $userRole->delete();
+
+            // Catat log audit
+            AuditLog::record([
+                'journal_id' => $journal->id,
+                'actor_id' => $actor?->id,
+                'user_id' => $user->id,
+                'actor_type' => 'user',
+                'effective_role' => 'System Administrator',
+                'action' => 'user.role_revoked',
+                'resource_type' => 'user_role',
+                'resource_id' => $userRole->id,
+                'reason' => "Pencabutan peran '".UserRole::roleLabel($roleCode)."' dari jurnal {$journal->name} untuk {$user->name}.",
+                'before_after' => [
+                    'before' => [
+                        'user_id' => $user->id,
+                        'journal_id' => $journal->id,
+                        'role_code' => $roleCode,
+                    ],
                 ],
             ]);
 

@@ -308,6 +308,28 @@
                 >
             </div>
 
+            <div>
+                <label for="manager_user_id" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Akun PIC / Journal Manager <span class="text-xs font-normal text-emerald-700">(Otomatis diberi hak akses Journal Manager)</span>
+                </label>
+                <select 
+                    id="manager_user_id" 
+                    name="manager_user_id"
+                    onchange="if(this.options[this.selectedIndex].dataset.name) { document.getElementById('primary_contact').value = this.options[this.selectedIndex].dataset.name; }"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+                    <option value="">-- Pilih Akun Pengguna Terdaftar (Opsional) --</option>
+                    @foreach ($viewModel->selectableUsers() as $userOption)
+                        <option value="{{ $userOption['id'] }}" data-name="{{ $userOption['name'] }}">
+                            {{ $userOption['name'] }} ({{ $userOption['email'] }})
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-[11px] text-gray-500 mt-1">
+                    Pengguna yang dipilih akan otomatis ditetapkan sebagai Manajer Jurnal (Journal Manager) untuk instansi baru ini.
+                </p>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label for="slug" class="block text-xs font-semibold text-gray-700 mb-1">
