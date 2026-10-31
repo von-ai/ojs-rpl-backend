@@ -58,48 +58,61 @@
     display: none;
 }
 
-/* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) */
+/* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) — Berlaku Seragam di Seluruh Portal */
 @media (min-width: 1024px) {
-    #author-sidebar {
+    .portal-sidebar,
+    aside[id$="-sidebar"] {
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    #author-sidebar.sidebar-collapsed {
-        width: 4.25rem; /* 68px */
+    .portal-sidebar.sidebar-collapsed,
+    aside[id$="-sidebar"].sidebar-collapsed {
+        width: 4.25rem !important; /* 68px */
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-label,
-    #author-sidebar.sidebar-collapsed .sidebar-heading,
-    #author-sidebar.sidebar-collapsed .sidebar-brand-text,
-    #author-sidebar.sidebar-collapsed .sidebar-badge-full {
+    .portal-sidebar.sidebar-collapsed .sidebar-label,
+    .portal-sidebar.sidebar-collapsed .sidebar-heading,
+    .portal-sidebar.sidebar-collapsed .sidebar-brand-text,
+    .portal-sidebar.sidebar-collapsed .sidebar-badge-full,
+    .portal-sidebar.sidebar-collapsed .sidebar-user-info,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-label,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-heading,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-brand-text,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-badge-full,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-user-info {
         display: none !important;
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-header {
+    .portal-sidebar.sidebar-collapsed .sidebar-header,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-header {
         justify-content: center !important;
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-brand-link {
+    .portal-sidebar.sidebar-collapsed .sidebar-brand-link,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-brand-link {
         display: none !important;
     }
 
-    #author-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn {
+    .portal-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn,
+    aside[id$="-sidebar"].sidebar-collapsed #sidebar-collapse-toggle-btn {
         display: flex !important;
         width: 2.25rem !important;
         height: 2.25rem !important;
         margin: auto !important;
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-divider {
+    .portal-sidebar.sidebar-collapsed .sidebar-divider,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-divider {
         display: block !important;
         width: 1.75rem;
         margin-left: auto;
         margin-right: auto;
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-nav-item {
+    .portal-sidebar.sidebar-collapsed .sidebar-nav-item,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-nav-item {
         justify-content: center !important;
         width: 2.5rem !important; /* 40px icon button */
         height: 2.5rem !important;
@@ -109,7 +122,8 @@
         border-radius: 0.5rem !important;
     }
 
-    #author-sidebar.sidebar-collapsed .sidebar-badge-dot {
+    .portal-sidebar.sidebar-collapsed .sidebar-badge-dot,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-badge-dot {
         display: block !important;
     }
 }

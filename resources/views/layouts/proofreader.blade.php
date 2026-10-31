@@ -41,56 +41,5 @@
     <x-toast />
 
     @stack('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Sidebar Collapse toggle
-            const toggleBtn = document.getElementById('sidebar-collapse-toggle-btn');
-            const sidebar = document.getElementById('proofreader-sidebar');
-            const collapseLeft = document.getElementById('collapse-icon-left');
-            const collapseRight = document.getElementById('collapse-icon-right');
-            const openSidebarBtn = document.getElementById('open-sidebar-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-
-            if (toggleBtn && sidebar) {
-                toggleBtn.addEventListener('click', function () {
-                    sidebar.classList.toggle('w-60');
-                    sidebar.classList.toggle('w-18');
-                    document.body.classList.toggle('sidebar-collapsed');
-
-                    const isCollapsed = sidebar.classList.contains('w-18');
-                    localStorage.setItem('proofreader_sidebar_collapsed', isCollapsed ? 'true' : 'false');
-
-                    if (collapseLeft && collapseRight) {
-                        collapseLeft.classList.toggle('hidden', isCollapsed);
-                        collapseRight.classList.toggle('hidden', !isCollapsed);
-                    }
-                });
-
-                // Inisialisasi state awal collapse dari local storage
-                if (localStorage.getItem('proofreader_sidebar_collapsed') === 'true') {
-                    sidebar.classList.remove('w-60');
-                    sidebar.classList.add('w-18');
-                    document.body.classList.add('sidebar-collapsed');
-                    if (collapseLeft && collapseRight) {
-                        collapseLeft.classList.add('hidden');
-                        collapseRight.classList.remove('hidden');
-                    }
-                }
-            }
-
-            // Mobile Drawer toggle
-            if (openSidebarBtn && sidebar) {
-                openSidebarBtn.addEventListener('click', function () {
-                    sidebar.classList.remove('-translate-x-full');
-                });
-            }
-
-            if (closeSidebarBtn && sidebar) {
-                closeSidebarBtn.addEventListener('click', function () {
-                    sidebar.classList.add('-translate-x-full');
-                });
-            }
-        });
-    </script>
 </body>
 </html>

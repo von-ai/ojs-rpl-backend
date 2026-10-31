@@ -41,40 +41,5 @@
     <x-toast />
 
     @stack('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Sidebar Collapse toggle
-            const toggleBtn = document.getElementById('sidebar-collapse-toggle-btn');
-            const sidebar = document.getElementById('layouteditor-sidebar');
-            const collapseLeft = document.getElementById('collapse-icon-left');
-            const collapseRight = document.getElementById('collapse-icon-right');
-            const openSidebarBtn = document.getElementById('open-sidebar-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-
-            if (toggleBtn && sidebar) {
-                toggleBtn.addEventListener('click', function () {
-                    sidebar.classList.toggle('w-60');
-                    sidebar.classList.toggle('w-18');
-                    document.body.classList.toggle('sidebar-collapsed');
-
-                    const isCollapsed = sidebar.classList.contains('w-18');
-                    if (collapseLeft) collapseLeft.classList.toggle('hidden', isCollapsed);
-                    if (collapseRight) collapseRight.classList.toggle('hidden', !isCollapsed);
-                });
-            }
-
-            // Mobile drawer toggle
-            if (openSidebarBtn && sidebar) {
-                openSidebarBtn.addEventListener('click', function () {
-                    sidebar.classList.remove('-translate-x-full');
-                });
-            }
-            if (closeSidebarBtn && sidebar) {
-                closeSidebarBtn.addEventListener('click', function () {
-                    sidebar.classList.add('-translate-x-full');
-                });
-            }
-        });
-    </script>
 </body>
 </html>
