@@ -50,7 +50,7 @@ locals {
     { name = "DB_SSL_MODE", value = var.db_ssl_mode },
     { name = "SESSION_DRIVER", value = "redis" },
     { name = "CACHE_STORE", value = "redis" },
-    { name = "QUEUE_CONNECTION", value = "redis" },
+    { name = "QUEUE_CONNECTION", value = "database" },
     { name = "REDIS_CLIENT", value = "phpredis" },
     { name = "REDIS_HOST", value = azurerm_redis_cache.redis.hostname },
     { name = "REDIS_PORT", value = tostring(azurerm_redis_cache.redis.ssl_port) },
