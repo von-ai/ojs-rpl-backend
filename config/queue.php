@@ -33,11 +33,11 @@ return [
 
         // Persist identity emails atomically on the application's own database.
         'identity' => [
-            'driver' => 'database',
-            'connection' => null,
-            'table' => 'jobs',
-            'queue' => 'identity',
-            'retry_after' => 90,
+            'driver' => env('IDENTITY_QUEUE_DRIVER', 'database'),
+            'connection' => env('IDENTITY_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => env('IDENTITY_QUEUE', 'identity'),
+            'retry_after' => (int) env('IDENTITY_QUEUE_RETRY_AFTER', 90),
             'after_commit' => false,
         ],
 
