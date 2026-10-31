@@ -270,9 +270,9 @@ variable "aca_worker_cpu" {
 }
 
 variable "aca_worker_memory" {
-  description = "Alokasi RAM untuk Queue Worker Container (default 0.5Gi)"
+  description = "Alokasi RAM untuk Queue Worker Container (default 1.0Gi, rasio 1:2 vCPU:RAM di ACA Consumption Plan)"
   type        = string
-  default     = "0.5Gi"
+  default     = "1.0Gi"
 }
 
 variable "aca_worker_min_replicas" {
