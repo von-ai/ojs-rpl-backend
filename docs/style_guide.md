@@ -48,7 +48,7 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 
 | Status Pemindaian | Utility Badge Tailwind | Representasi |
 | :--- | :--- | :--- |
-| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian ClamAV dan aman diunduh. |
+| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian Microsoft Defender for Storage dan aman diunduh. |
 | `pending_scan` | `bg-amber-50 text-amber-700 ring-1 ring-amber-200` | Berkas baru diunggah dan berada dalam antrean pemindaian otomatis. |
 | `infected` | `bg-red-50 text-red-700 ring-1 ring-red-200` | Berkas terdeteksi malware/virus, dikarantina otomatis oleh sistem. |
 

@@ -274,7 +274,7 @@ class SysAdminAuditLogsViewModel
                 'action_label' => 'Pemindaian Malware Berkas Unggahan',
                 'actor_name' => 'Sistem Latar Belakang',
                 'actor_type' => 'system',
-                'system_actor' => 'clamav_scan_daemon',
+                'system_actor' => 'malware_scanner',
                 'effective_role' => 'System Daemon',
                 'resource_type' => 'scan_attempts',
                 'resource_id' => 'SCAN-01JARK-12',

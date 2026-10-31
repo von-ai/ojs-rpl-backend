@@ -35,7 +35,7 @@ class SysAdminOperationsTest extends TestCase
         $response->assertSee('Diagnostik Kesehatan Server');
         $response->assertSee('PHP');
         $response->assertSee('SQLite');
-        $response->assertSee('ClamAV');
+        $response->assertSee('Defender');
         $response->assertSee('Kosongkan Cache Aplikasi');
     }
 
@@ -86,7 +86,7 @@ class SysAdminOperationsTest extends TestCase
         $responseSystem = $this->get('/sysadmin/audit-logs?actor_type=system');
         $responseSystem->assertStatus(200);
         $responseSystem->assertSee('LOG-01JARK-03');
-        $responseSystem->assertSee('clamav_scan_daemon');
+        $responseSystem->assertSee('malware_scanner');
         $responseSystem->assertDontSee('LOG-01JARK-01');
 
         // 2. Filter aktor Pengguna (user)

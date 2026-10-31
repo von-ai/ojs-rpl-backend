@@ -96,7 +96,7 @@ class SysAdminSettingsViewModel
             'disk_percentage' => $diskPercentage,
             'disk_free_formatted' => $diskFreeFormatted,
             'cache_driver' => (string) config('cache.default', 'file'),
-            'malware_scanner_status' => 'Aktif (ClamAV Background Scanner)',
+            'malware_scanner_status' => 'Aktif (Microsoft Defender for Storage)',
             'timezone' => $timezoneLabel,
             'uptime' => '99.98% (30 Hari Terakhir)',
             'laravel_version' => 'Laravel '.app()->version(),
@@ -135,7 +135,7 @@ class SysAdminSettingsViewModel
             ],
             [
                 'title' => 'Pemindai Malware',
-                'value' => 'ClamAV Aktif',
+                'value' => 'Defender Aktif',
                 'badge_text' => '0 Ancaman',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],

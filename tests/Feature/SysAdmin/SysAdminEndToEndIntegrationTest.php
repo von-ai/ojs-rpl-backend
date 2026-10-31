@@ -352,7 +352,7 @@ class SysAdminEndToEndIntegrationTest extends TestCase
         // Catat log aktor system
         AuditLog::record([
             'actor_type' => 'system',
-            'system_actor' => 'clamav_scan_daemon',
+            'system_actor' => 'malware_scanner',
             'action' => 'cron_worker.scheduled_scan',
             'reason' => 'Pengujian jejak audit sistem',
         ]);
@@ -361,11 +361,11 @@ class SysAdminEndToEndIntegrationTest extends TestCase
         $resUser = $this->actingAs($this->admin)->get('/sysadmin/audit-logs?actor_type=user');
         $resUser->assertStatus(200);
         $resUser->assertSee('Pengujian jejak audit user');
-        $resUser->assertDontSee('clamav_scan_daemon');
+        $resUser->assertDontSee('malware_scanner');
 
         $resSys = $this->actingAs($this->admin)->get('/sysadmin/audit-logs?actor_type=system');
         $resSys->assertStatus(200);
-        $resSys->assertSee('clamav_scan_daemon');
+        $resSys->assertSee('malware_scanner');
         $resSys->assertDontSee('Pengujian jejak audit user');
     }
 

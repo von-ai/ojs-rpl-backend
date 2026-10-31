@@ -335,13 +335,13 @@ class SysAdminSeeder extends Seeder
         AuditLog::record([
             'id' => 'LOG-01JARK-03',
             'actor_type' => 'system',
-            'system_actor' => 'clamav_scan_daemon',
+            'system_actor' => 'malware_scanner',
             'effective_role' => 'System Daemon',
             'action' => 'cron_worker.scheduled_scan',
             'resource_type' => 'scan_attempts',
             'resource_id' => 'SCAN-01JARK-12',
             'request_id' => 'cron_job_daily_security_audit',
-            'reason' => 'Rutinitas pemindaian harian virus/malware seluruh berkas galai PDF & naskah.',
+            'reason' => 'Rutinitas pemindaian harian virus/malware Microsoft Defender seluruh berkas galai PDF & naskah.',
             'before_after' => ['scanned_files' => 114, 'threats_found' => 0, 'status' => 'clean'],
             'occurred_at' => now()->subDays(6)->addHours(4),
         ]);
