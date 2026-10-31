@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Issue;
+use App\Models\Journal;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+
 class SysAdminJournalsViewModel
 {
     private string $activeStatus;
@@ -17,12 +23,47 @@ class SysAdminJournalsViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah instansi jurnal secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(Journal::class) && Schema::hasTable('journals')) {
+                return Journal::query()->count();
+            }
+
+            return 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * Data profil pengguna aktif dengan konteks System Administrator.
      *
      * @return array{name: string, role_label: string, affiliation: string, initials: string}
      */
     public function userProfile(): array
     {
+        try {
+            $user = Auth::user();
+
+            if ($user !== null) {
+                $name = (string) $user->name;
+                $parts = explode(' ', (string) preg_replace('/[^a-zA-Z\s]/', '', $name));
+                $initials = strtoupper(substr($parts[0] ?? 'F', 0, 1).(isset($parts[1]) ? substr($parts[1], 0, 1) : 'A'));
+
+                return [
+                    'name' => $name,
+                    'role_label' => 'System Administrator',
+                    'affiliation' => $user->profile?->affiliation ?? 'Pengelola Sistem & Infrastruktur IT BRIDA',
+                    'initials' => $initials ?: 'FA',
+                ];
+            }
+        } catch (\Throwable) {
+            // Fallback
+        }
+
         return [
             'name' => 'Fahri Azis, S.T.',
             'role_label' => 'System Administrator',
@@ -38,31 +79,45 @@ class SysAdminJournalsViewModel
      */
     public function summaryMetrics(): array
     {
+        $all = $this->allJournals();
+        $total = count($all);
+        $active = count(array_filter($all, fn ($item) => $item['status'] === 'active'));
+        $archived = count(array_filter($all, fn ($item) => $item['status'] === 'archived'));
+
+        $runningIssues = 0;
+        try {
+            if (Schema::hasTable('issues')) {
+                $runningIssues = Issue::where('status', 'published')->count();
+            }
+        } catch (\Throwable) {
+            $runningIssues = 0;
+        }
+
         return [
             [
                 'title' => 'Total Jurnal Ilmiah',
-                'value' => 4,
+                'value' => $total,
                 'description' => 'Instansi jurnal terdaftar dalam platform',
-                'badge_text' => '4 Instansi',
+                'badge_text' => "{$total} Instansi",
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
                 'title' => 'Jurnal Aktif',
-                'value' => 3,
+                'value' => $active,
                 'description' => 'Jurnal aktif menerima dan mempublikasikan artikel',
                 'badge_text' => 'Aktif Publikasi',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
             [
                 'title' => 'Edisi Terbit Berjalan',
-                'value' => 6,
+                'value' => $runningIssues,
                 'description' => 'Total terbitan aktif tahun berjalan',
                 'badge_text' => 'Volume 2026',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Jurnal Diarsipkan',
-                'value' => 1,
+                'value' => $archived,
                 'description' => 'Arsip historis terbitan masa lalu',
                 'badge_text' => 'Arsip Historis',
                 'color_class' => 'text-gray-700 bg-gray-100 border-gray-200',
@@ -176,7 +231,34 @@ class SysAdminJournalsViewModel
     }
 
     /**
-     * Seluruh data instansi jurnal ilmiah (mock realistis SIRIDA).
+     * Daftar pengguna yang dapat dipilih sebagai PIC / Journal Manager.
+     *
+     * @return array<int, array{id: string, name: string, email: string, affiliation: string}>
+     */
+    public function selectableUsers(): array
+    {
+        try {
+            if (class_exists(User::class) && Schema::hasTable('users')) {
+                return User::with('profile')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (User $u) => [
+                        'id' => (string) $u->id,
+                        'name' => (string) ($u->name ?: $u->full_name),
+                        'email' => (string) $u->email,
+                        'affiliation' => (string) ($u->profile?->affiliation ?? '—'),
+                    ])
+                    ->all();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
+    }
+
+    /**
+     * Seluruh data instansi jurnal ilmiah (Database dengan fallback mock).
      *
      * @return array<int, array{
      *     id: string,
@@ -195,6 +277,64 @@ class SysAdminJournalsViewModel
      * }>
      */
     private function allJournals(): array
+    {
+        try {
+            if (Schema::hasTable('journals')) {
+                return Journal::with(['currentIssue', 'submissions'])->get()->map(function (Journal $j) {
+                    return [
+                        'id' => (string) $j->id,
+                        'slug' => (string) $j->slug,
+                        'name' => (string) $j->name,
+                        'description' => (string) ($j->focus_scope ?? "Publikasi ilmiah berkala {$j->name}"),
+                        'issn' => $j->issn,
+                        'eissn' => $j->eissn,
+                        'status' => (string) $j->status,
+                        'status_label' => match ((string) $j->status) {
+                            'active' => 'Aktif Publikasi',
+                            'archived' => 'Diarsipkan',
+                            'unlisted' => 'Tidak Terdaftar',
+                            default => ucfirst((string) $j->status),
+                        },
+                        'status_badge_class' => match ((string) $j->status) {
+                            'active' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                            'archived' => 'bg-gray-100 text-gray-700 border-gray-200',
+                            'unlisted' => 'bg-amber-50 text-amber-800 border-amber-200',
+                            default => 'bg-gray-100 text-gray-700 border-gray-200',
+                        },
+                        'total_submissions' => $j->submissions()->count(),
+                        'current_issue_title' => $j->currentIssue?->title ?? 'Belum ada terbitan',
+                        'primary_contact' => $j->publisher ?? 'Pengelola Jurnal',
+                        'url_public' => '/'.$j->slug,
+                    ];
+                })->toArray();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
+    }
+
+    /**
+     * Data mock jurnal realistis SIRIDA.
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     slug: string,
+     *     name: string,
+     *     description: string,
+     *     issn: ?string,
+     *     eissn: ?string,
+     *     status: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     total_submissions: int,
+     *     current_issue_title: ?string,
+     *     primary_contact: string,
+     *     url_public: string
+     * }>
+     */
+    private function mockJournals(): array
     {
         return [
             [

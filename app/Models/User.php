@@ -133,6 +133,26 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<AuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_id');
+    }
+
+    /**
+     * Memeriksa apakah pengguna memiliki hak akses System Administrator global.
+     */
+    public function isSysAdmin(): bool
+    {
+        if ($this->relationLoaded('userRoles')) {
+            return $this->userRoles->contains('role_code', 'sysadmin');
+        }
+
+        return $this->userRoles()->where('role_code', 'sysadmin')->exists();
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

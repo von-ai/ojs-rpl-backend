@@ -44,7 +44,7 @@
             <!-- Daftar Penulis & Kontributor Lengkap -->
             @include('author.submissions.partials.detail-contributors', ['submission' => $submission])
 
-            <!-- Berkas Manuskrip, SHA-256, & Pindai Antivirus ClamAV -->
+            <!-- Berkas Manuskrip, SHA-256, & Pindai Antivirus Microsoft Defender -->
             @include('author.submissions.partials.detail-files', ['submission' => $submission])
         </div>
 

@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use Database\Seeders\SysAdminSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SysAdminOperationsTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(SysAdminSeeder::class);
+    }
+
     /**
      * Halaman settings memuat form konfigurasi global dan kartu diagnostik kesehatan server.
      */
@@ -24,7 +35,7 @@ class SysAdminOperationsTest extends TestCase
         $response->assertSee('Diagnostik Kesehatan Server');
         $response->assertSee('PHP');
         $response->assertSee('SQLite');
-        $response->assertSee('ClamAV');
+        $response->assertSee('Defender');
         $response->assertSee('Kosongkan Cache Aplikasi');
     }
 
@@ -75,7 +86,7 @@ class SysAdminOperationsTest extends TestCase
         $responseSystem = $this->get('/sysadmin/audit-logs?actor_type=system');
         $responseSystem->assertStatus(200);
         $responseSystem->assertSee('LOG-01JARK-03');
-        $responseSystem->assertSee('clamav_scan_daemon');
+        $responseSystem->assertSee('malware_scanner');
         $responseSystem->assertDontSee('LOG-01JARK-01');
 
         // 2. Filter aktor Pengguna (user)

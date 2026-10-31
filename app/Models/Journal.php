@@ -77,6 +77,22 @@ class Journal extends Model
     }
 
     /**
+     * @return HasMany<UserImport, $this>
+     */
+    public function userImports(): HasMany
+    {
+        return $this->hasMany(UserImport::class);
+    }
+
+    /**
+     * @return HasMany<AuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    /**
      * @return BelongsTo<Issue, $this>
      */
     public function currentIssue(): BelongsTo

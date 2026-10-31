@@ -20,7 +20,7 @@
 <body class="font-sans antialiased text-gray-900 bg-canvas h-dvh min-h-dvh flex flex-col lg:flex-row overflow-hidden pb-[env(safe-area-inset-bottom)]">
 
     <!-- Sidebar Navigation Khusus System Administrator -->
-    <x-sysadmin.sidebar />
+    <x-sysadmin.sidebar :journals-count="$journalsCount ?? null" :users-count="$usersCount ?? null" />
 
     <!-- Main Content Wrapper -->
     <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">

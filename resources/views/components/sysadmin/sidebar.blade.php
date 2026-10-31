@@ -1,3 +1,8 @@
+@props([
+    'journalsCount' => null,
+    'usersCount' => null,
+])
+
 <aside id="sysadmin-sidebar" class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
     <!-- Header Brand & Tombol Kontrol -->
     <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
@@ -35,6 +40,9 @@
             $isUsersActive = request()->routeIs('sysadmin.users.*');
             $isSettingsActive = request()->routeIs('sysadmin.settings.*');
             $isAuditActive = request()->routeIs('sysadmin.audit-logs.*');
+
+            $activeJournalsCount = $journalsCount ?? \App\ViewModels\SysAdminJournalsViewModel::getSidebarBadgeCount();
+            $activeUsersCount = $usersCount ?? \App\ViewModels\SysAdminUsersViewModel::getSidebarBadgeCount();
         @endphp
 
         <!-- 1. Jurnal Ilmiah (Multi-Tenancy) -->
@@ -50,7 +58,7 @@
                 <span class="truncate sidebar-label">Jurnal Ilmiah</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isJournalsActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                4
+                {{ $activeJournalsCount }}
             </span>
         </a>
 
@@ -67,7 +75,7 @@
                 <span class="truncate sidebar-label">Pengguna &amp; Akses</span>
             </div>
             <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isUsersActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                142
+                {{ $activeUsersCount }}
             </span>
         </a>
 

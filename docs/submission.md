@@ -204,7 +204,7 @@ Eksekusi seeder idempoten untuk mengisi seluruh variasi data naskah realistis:
 php artisan db:seed --class=SubmissionSeeder
 ```
 > [!TIP]
-> Perintah di atas akan membuat akun penulis resmi (`andi.ilyas@unhas.ac.id`) beserta 9 naskah ilmiah Kota Makassar dengan relasi lengkap (kontributor, berkas SHA-256, dan hasil scan ClamAV bersih).
+> Perintah di atas akan membuat akun penulis resmi (`andi.ilyas@unhas.ac.id`) beserta 9 naskah ilmiah Kota Makassar dengan relasi lengkap (kontributor, berkas SHA-256, dan hasil scan Microsoft Defender bersih).
 
 ### Langkah 7: Kompilasi Aset Frontend (Tailwind CSS v4 & Vite)
 Pilih salah satu sesuai kebutuhan:
