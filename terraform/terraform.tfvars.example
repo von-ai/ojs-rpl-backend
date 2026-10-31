@@ -1,0 +1,47 @@
+# =============================================================================
+# SIRIDA - Konfigurasi Variabel Terraform (Contoh / Template)
+# Salin file ini menjadi `terraform.tfvars` lalu lengkapi nilai sensitif Anda:
+#   cp terraform.tfvars.example terraform.tfvars
+# =============================================================================
+
+# Penamaan & Region
+project_name   = "sirida"
+environment    = "poc"
+azure_location = "southeastasia" # Singapore
+
+# Container Image (GitHub Container Registry)
+container_image             = "ghcr.io/von-ai/ojs-rpl-backend:latest"
+container_registry_server   = "ghcr.io"
+container_registry_username = "github-username"
+container_registry_password = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # PAT dengan scope read:packages
+
+# Aplikasi Laravel
+app_key   = "base64:YOUR_APP_KEY_HERE="
+app_debug = false
+app_url   = "https://jurnal.makassar.go.id"
+
+# TiDB Cloud Serverless (MySQL 8.0 Protocol)
+db_host     = "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"
+db_port     = 4000
+db_database = "ojs_rpl"
+db_username = "xxxxxx.root"
+db_password = "YOUR_TIDB_PASSWORD_HERE"
+db_ssl_mode = "REQUIRED"
+
+# Cloudflare (DNS, WAF, SSL)
+enable_cloudflare    = false # Set true jika ingin mengaktifkan Cloudflare DNS & WAF otomatis
+cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN"
+cloudflare_zone_id   = "YOUR_CLOUDFLARE_ZONE_ID"
+domain_name          = "makassar.go.id"
+subdomain            = "jurnal"
+
+# Azure Communication Services / SMTP Relay
+mail_host         = "smtp.azurecomm.net"
+mail_port         = 587
+mail_username     = "sirida-smtp-user"
+mail_password     = "YOUR_SMTP_PASSWORD"
+mail_from_address = "no-reply@jurnal.makassar.go.id"
+mail_from_name    = "SIRIDA - Jurnal Kota Makassar"
+
+# Monitoring & Alert
+alert_email = "benediktus.gianto.jarod@gmail.com"
