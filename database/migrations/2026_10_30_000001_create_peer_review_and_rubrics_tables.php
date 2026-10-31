@@ -145,7 +145,7 @@ return new class extends Migration
                 $table->char('assignment_id', 26);
                 $table->foreignUlid('sent_by')->constrained('users')->restrictOnDelete();
                 $table->dateTime('queued_at', 6);
-                $table->text('delivery_status')->default('sent');
+                $table->string('delivery_status', 191)->default('sent');
                 $table->text('message')->nullable();
                 $table->timestamps(6);
 

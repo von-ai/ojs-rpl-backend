@@ -37,7 +37,7 @@
             <span class="text-[11px] text-gray-400 font-medium">Bahasa Indonesia (ID)</span>
         </div>
         <div class="p-4 sm:p-5 rounded-lg bg-gray-50 border border-gray-200">
-            <p class="font-sans text-xs sm:text-sm text-gray-700 leading-relaxed text-justify sm:text-left selection:bg-brand-maroon/10 selection:text-brand-maroon break-words [overflow-wrap:anywhere]">
+            <p class="font-sans text-xs sm:text-sm text-gray-700 leading-relaxed text-left selection:bg-brand-maroon/10 selection:text-brand-maroon break-words [overflow-wrap:anywhere]">
                 {{ $submission['abstract'] }}
             </p>
         </div>

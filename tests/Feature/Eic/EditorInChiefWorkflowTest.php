@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Eic;
 
 use App\Models\Journal;
+use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -252,5 +253,133 @@ class EditorInChiefWorkflowTest extends TestCase
             'decision' => 'accept',
             'status' => 'sent',
         ]);
+    }
+
+    /**
+     * EIC dapat menjalankan desk review lolos sekaligus langsung menugaskan Section Editor (UC-10 & UC-11).
+     */
+    public function test_eic_dapat_desk_review_lolos_sekaligus_assign_section_editor(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->post(route('eic.submissions.desk-review', $this->submission->id), [
+            'scope_fit' => 1,
+            'files_complete' => 1,
+            'guidelines_compliant' => 1,
+            'similarity_score' => 10.2,
+            'notes' => 'Lolos skrining awal dan langsung didelegasikan ke Section Editor.',
+            'status' => 'passed',
+            'section_editor_id' => $this->sectionEditor->id,
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('editor_assignments', [
+            'submission_id' => $this->submission->id,
+            'editor_id' => $this->sectionEditor->id,
+            'role' => 'section_editor',
+        ]);
+    }
+
+    /**
+     * Halaman detail ruang kerja EIC menampilkan ringkasan rekomendasi SE, hasil review, dan riwayat audit.
+     */
+    public function test_halaman_detail_eic_menampilkan_ringkasan_review_dan_audit(): void
+    {
+        $this->actingAs($this->eic);
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'minimum_completed_reviews' => 2,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'se_recommendation' => 'accept',
+            'se_recommendation_note' => 'Kedua reviewer sepakat naskah sangat berkualitas.',
+            'se_recommended_at' => now(),
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Analisis Kebijakan Smart City Makassar');
+        $response->assertSee('Kedua reviewer sepakat naskah sangat berkualitas.');
+        $response->assertSee('Skrining Awal');
+        $response->assertSee('Penugasan Section Editor');
+        $response->assertSee('Keputusan Editorial Resmi');
+        $response->assertDontSee('UC-10');
+        $response->assertDontSee('UC-11');
+        $response->assertDontSee('UC-12');
+        $response->assertDontSee('text-justify');
+        $response->assertDontSee('font-serif');
+    }
+
+    /**
+     * EIC dapat mengakses halaman Dashboard Pemimpin Redaksi.
+     */
+    public function test_eic_dapat_mengakses_halaman_dashboard(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->get(route('eic.dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Dashboard Pemimpin Redaksi');
+        $response->assertSee('Naskah Prioritas Menunggu Tindakan');
+        $response->assertSee('Analisis Kebijakan Smart City Makassar');
+    }
+
+    /**
+     * Tahap yang sudah dilewati tidak dapat diubah kembali (penguncian tahapan alur kerja).
+     */
+    public function test_tahap_yang_sudah_dilewati_tidak_dapat_diubah_kembali(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Naskah sudah berada di tahap telaah (in_review) -> Skrining Awal terkunci
+        $this->submission->update(['status' => 'in_review']);
+
+        $deskResponse = $this->post(route('eic.submissions.desk-review', $this->submission->id), [
+            'scope_fit' => 1,
+            'files_complete' => 1,
+            'guidelines_compliant' => 1,
+            'similarity_score' => 10.0,
+            'status' => 'rejected',
+        ]);
+
+        $deskResponse->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $deskResponse->assertSessionHas('error');
+        $this->assertSame('in_review', $this->submission->fresh()->status);
+
+        // Naskah sudah berada di tahap diterima/produksi -> Penugasan SE & Keputusan Akhir terkunci
+        $this->submission->update(['status' => 'accepted']);
+
+        $assignResponse = $this->post(route('eic.submissions.assign-editor', $this->submission->id), [
+            'section_editor_id' => $this->sectionEditor->id,
+        ]);
+        $assignResponse->assertSessionHas('error');
+
+        $decisionResponse = $this->post(route('eic.submissions.decision', $this->submission->id), [
+            'decision' => 'decline',
+            'note_for_author' => 'Percobaan ubah keputusan final.',
+        ]);
+        $decisionResponse->assertSessionHas('error');
+        $this->assertSame('accepted', $this->submission->fresh()->status);
+    }
+
+    /**
+     * EIC dapat mengakses halaman Pedoman Keputusan Redaksi & COPE.
+     */
+    public function test_eic_dapat_mengakses_halaman_pedoman_redaksi(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->get(route('eic.guidelines'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Pedoman Keputusan Redaksi');
+        $response->assertSee('Matriks Standar Pengambilan Keputusan Editorial Akhir');
     }
 }

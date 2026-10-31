@@ -50,6 +50,14 @@
     background: rgba(156, 163, 175, 0.6);
 }
 
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
 /* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) */
 @media (min-width: 1024px) {
     #author-sidebar {

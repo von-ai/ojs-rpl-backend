@@ -56,29 +56,30 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 
 ## 2. Tipografi & Hierarki Teks (Typography)
 
-Sistem menggunakan konsep **Dual-Font Typography** yang menggabungkan presisi fungsional modern dengan keanggunan publikasi akademik:
+Sistem menggunakan standar **Single-Font Typography (`Inter` / `font-sans`)** yang menjamin keseragaman visual, keterbacaan tinggi, dan tampilan modern berstandar industri di seluruh portal peran:
 
 ```html
-<!-- Google Fonts Embed di resources/views/layouts/author.blade.php -->
+<!-- Google Fonts Embed di resources/views/layouts/ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
 ```
 
-### A. Panduan Penggunaan Font:
-1. **Inter (`font-sans`):**
-   * Digunakan secara seragam untuk seluruh antarmuka aplikasi: judul artikel ilmiah, paragraf abstrak, label formulir, tombol aksi, badge status, tabel data, navigasi sidebar, breadcrumb, dan notifikasi.
-   * Memberikan keterbacaan tinggi, konsistensi modern yang bersih (*clean*), serta bebas disparitas gaya antar-elemen.
-   * Dilengkapi optimasi OpenType: `font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum'`. Angka tabular (`tnum`) wajib digunakan pada tanggal, nomor naskah, volume jurnal, counter, dan hash SHA-256 agar tersusun sejajar tanpa pergeseran lebar karakter.
-2. **Lora (`font-serif`):**
-   * Bersifat spesifik untuk blok sitasi gaya cetak APA (`citation-content-apa`).
+### A. Panduan Penggunaan Font & Perataan Teks:
+1. **Inter (`font-sans`) Seragam di Seluruh Elemen:**
+   * Digunakan secara mutlak dan konsisten untuk seluruh antarmuka aplikasi: judul halaman, judul artikel ilmiah pada halaman detail (`h1`), paragraf abstrak, label formulir, tombol aksi, badge status, tabel data, navigasi sidebar, breadcrumb, dan notifikasi.
+   * **Larangan Mencampur Font Judul:** Dilarang menggunakan `font-serif` (`Lora`) pada judul halaman atau judul naskah di halaman detail agar tidak terjadi perbedaan gaya huruf (*font mismatch*) dengan halaman daftar dan komponen lainnya.
+   * Dilengkapi optimasi OpenType: `font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum'`. Angka tabular (`tnum` / `tabular-nums`) wajib digunakan pada tanggal, nomor naskah, volume jurnal, counter, dan persentase agar tersusun sejajar.
+2. **Perataan Teks Rata Kiri (`text-left` Wajib, `text-justify` Dilarang):**
+   * Seluruh blok teks panjang termasuk abstrak naskah, catatan redaksi, surat keputusan, dan pedoman wajib menggunakan perataan rata kiri (`text-left`).
+   * Penggunaan `text-justify` (rata kiri-kanan) **dilarang keras** di seluruh aplikasi karena menghasilkan celah kata tidak merata di berbagai ukuran layar.
 
 ### B. Skala Tipografi:
-- **Judul Artikel Ilmiah (H1 - Inter)**: `font-sans text-2xl sm:text-[26px] lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight`
-- **Sub-heading Panel (H2 - Inter)**: `font-sans text-base sm:text-lg font-bold text-gray-900 leading-tight`
-- **Label Form / Header Kolom**: `text-xs font-bold text-gray-700 uppercase tracking-wider`
-- **Paragraf Abstrak & Body Umum**: `font-sans text-xs sm:text-sm text-gray-700 leading-relaxed`
-- **Teks Kode / Hash SHA-256**: `font-mono text-[11px] sm:text-xs text-gray-500 tabular-nums`
+- **Judul Artikel Ilmiah pada Detail (`H1` - Inter)**: `font-sans text-2xl sm:text-[26px] lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight`
+- **Judul Halaman Ruang Kerja (`H1` - Inter)**: `font-sans text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight`
+- **Sub-heading Panel (`H2` - Inter)**: `font-sans text-sm font-bold text-gray-900 leading-tight`
+- **Label Form / Header Kolom**: `text-xs font-bold text-gray-600 uppercase tracking-wider`
+- **Paragraf Abstrak & Body Umum**: `font-sans text-xs sm:text-sm text-gray-700 leading-relaxed text-left`
 
 ---
 
@@ -230,3 +231,23 @@ Setiap antarmuka naskah wajib menerapkan aturan defensif berikut:
      ```
 5. **Privasi Double-Blind:**
    * Identitas peninjau, email reviewer, dan skor evaluasi rahasia diisolasi di sisi server pada ViewModel dan tidak pernah dirender ke DOM HTML penulis.
+
+---
+
+## 5. Standar Kebersihan Visual & Copywriting Layak Rilis (Production UI Hygiene)
+
+Agar seluruh portal peran (Penulis, Pemimpin Redaksi, Editor Bagian, dan Mitra Bestari) memiliki kualitas produk standar industri yang seragam dan bersih, aturan berikut wajib dipatuhi:
+
+1. **Keseragaman Komponen dengan Portal Penulis:**
+   * Gunakan pola kartu metrik 4 kolom dengan ikon SVG di dalam kotak warna lembut (`w-7 h-7 sm:w-8 sm:h-8 rounded-lg`), angka utama `text-2xl sm:text-3xl font-bold tabular-nums`, dan sub-deskripsi singkat di bawahnya.
+   * Gunakan navigasi tab bergaris bawah (`border-b-2 border-brand-maroon text-brand-maroon`) dengan badge penghitung `rounded-full`.
+2. **Larangan Karakter Dot (`•`) & Bulatan Dekoratif:**
+   * Dilarang menggunakan simbol dot/bullet (`•`) untuk memisahkan metadata tanggal, penulis, atau rincian berkas. Gunakan garis miring halus (`/`) atau spasi antar-elemen (`gap-*`).
+   * Dilarang menampilkan bulatan warna dekoratif (`<span class="w-2 h-2 rounded-full ...">`) di samping nama editor, judul form sidebar, atau indikator header.
+3. **Larangan Istilah Bahasa Asing di Dalam Kurung:**
+   * Seluruh teks antarmuka wajib menggunakan Bahasa Indonesia yang bersih tanpa tambahan istilah bahasa Inggris di dalam kurung (contoh yang **dilarang**: `Skrining Awal (Desk Review)`, `Pemimpin Redaksi (Editor-in-Chief)`, `Diterima (Accept Submission)`, `Batas Waktu (Due Date)`).
+4. **Larangan Menampilkan Kode `UC-*` & Jargon Internal:**
+   * Kode spesifikasi kebutuhan seperti `UC-10`, `UC-11`, `UC-12`, `UC-07`, serta atribut teknis internal seperti `ETag v1` atau `ClamAV Clean` dilarang ditampilkan pada layar pengguna. Gunakan istilah fungsional yang ramah pengguna seperti `Terverifikasi Aman`.
+5. **Keringkasan Tabel Antrean Editorial:**
+   * Kolom **Status Naskah** hanya menampilkan satu badge status utama tanpa tambahan teks keterangan tahap di bawahnya.
+   * Kolom **Section Editor & Review** hanya menampilkan nama editor bagian dan progres jumlah telaah selesai tanpa menampilkan tag rekomendasi tambahan.

@@ -35,6 +35,8 @@
 
             <!-- Profile & Menu -->
             <div class="flex items-center gap-4 text-xs">
+                <x-role-switcher current-role="reviewer" />
+
                 <nav class="hidden md:flex items-center gap-2">
                     <a href="{{ route('reviewer.assignments.index') }}" class="px-3 py-1.5 rounded-lg font-bold {{ request()->routeIs('reviewer.*') ? 'bg-brand-maroon/10 text-brand-maroon' : 'text-gray-600 hover:text-gray-900' }}">
                         Tugas Penelaahan Ilmiah
@@ -106,6 +108,9 @@
     <footer class="bg-white border-t border-gray-200 py-4 px-4 sm:px-8 text-center text-xs text-gray-500">
         <p>&copy; 2026 Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar — Sistem Informasi Manajemen Jurnal OJS 3.</p>
     </footer>
+
+    <!-- Reusable Toast Notification System -->
+    <x-toast />
 
     @stack('scripts')
 </body>

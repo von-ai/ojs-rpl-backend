@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\DeskReview;
+use App\Models\EditorialDecision;
+use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,49 +18,291 @@ class EicSubmissionDetailViewModel
     ) {}
 
     /**
+     * Apakah tahap Skrining Awal (Tahap 1) masih dapat diisi atau diubah.
+     * Hanya aktif ketika naskah berstatus submitted dan belum berpindah ke tahap berikutnya.
+     */
+    public function canEditDeskReview(): bool
+    {
+        return $this->submission->status === 'submitted';
+    }
+
+    /**
+     * Apakah tahap lanjutan sedang menunggu penyelesaian Skrining Awal terlebih dahulu.
+     */
+    public function isWaitingDeskReview(): bool
+    {
+        return $this->submission->status === 'submitted' && $this->submission->reviewRounds->isEmpty();
+    }
+
+    /**
+     * Apakah alur editorial naskah telah mencapai keputusan final (diterima, produksi, terbit, ditolak, diarsipkan).
+     */
+    public function isWorkflowFinalized(): bool
+    {
+        return in_array($this->submission->status, [
+            'accepted',
+            'in_production',
+            'published',
+            'declined',
+            'archived',
+            'withdrawn',
+        ], true);
+    }
+
+    /**
+     * Apakah penugasan Section Editor (Tahap 2) dapat dilakukan atau diperbarui.
+     */
+    public function canAssignSectionEditor(): bool
+    {
+        if ($this->isWorkflowFinalized()) {
+            return false;
+        }
+
+        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+            || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
+    }
+
+    /**
+     * Apakah penetapan Keputusan Editorial Resmi (Tahap 3) dapat dilakukan.
+     */
+    public function canMakeEditorialDecision(): bool
+    {
+        if ($this->isWorkflowFinalized()) {
+            return false;
+        }
+
+        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+            || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
+    }
+
+    /**
+     * Mengambil keputusan editorial resmi terakhir jika sudah diterbitkan.
+     */
+    public function latestEditorialDecision(): ?EditorialDecision
+    {
+        return $this->submission->editorialDecisions->sortByDesc('sent_at')->first();
+    }
+
+    /**
      * Mengambil daftar calon Section Editor yang dapat ditugaskan.
+     * Memprioritaskan pemegang role section_editor dengan fallback daftar pengguna non-penulis.
      *
      * @return Collection<int, User>
      */
-    public function availableSectionEditors()
+    public function availableSectionEditors(): Collection
     {
+        $roleEditors = User::where('id', '!=', $this->submission->author_id)
+            ->whereHas('userRoles', function ($q): void {
+                $q->whereIn('role_code', ['section_editor', 'editor_in_chief']);
+            })
+            ->orderBy('full_name', 'asc')
+            ->get();
+
+        if ($roleEditors->isNotEmpty()) {
+            return $roleEditors;
+        }
+
         return User::where('id', '!=', $this->submission->author_id)
-            ->orderBy('name', 'asc')
+            ->orderBy('full_name', 'asc')
             ->limit(20)
             ->get();
     }
 
     /**
-     * Informasi ringkas status alur kerja naskah.
+     * Informasi ringkas status alur kerja naskah sesuai 9 status kanonis.
      *
-     * @return array{label: string, badge_class: string}
+     * @return array{label: string, badge_class: string, stage_name: string}
      */
     public function statusInfo(): array
     {
         $label = match ($this->submission->status) {
             'draft' => 'Draf Belum Diajukan',
-            'submitted' => 'Menunggu Skrining Awal (Desk Review)',
-            'in_review' => 'Dalam Penelaahan Dewan Redaksi / Mitra Bestari',
-            'revisions_requested' => 'Menunggu Pengunggahan Revisi Penulis',
-            'accepted', 'in_production' => 'Naskah Diterima (Tahap Produksi)',
+            'submitted' => 'Menunggu Skrining Awal',
+            'in_review' => 'Dalam Penelaahan',
+            'revisions_requested' => 'Perlu Revisi Penulis',
+            'accepted' => 'Diterima untuk Publikasi',
+            'in_production' => 'Tahap Produksi',
             'published' => 'Telah Terbit Resmi',
-            'declined' => 'Naskah Ditolak (Declined)',
-            'withdrawn' => 'Naskah Ditarik Penulis',
+            'declined' => 'Naskah Ditolak',
+            'archived', 'withdrawn' => 'Naskah Diarsipkan',
             default => 'Dalam Proses Editorial',
         };
 
         $badgeClass = match ($this->submission->status) {
-            'submitted' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'in_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-            'revisions_requested' => 'bg-amber-50 text-amber-700 border-amber-200',
-            'accepted', 'in_production' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            'declined' => 'bg-rose-50 text-rose-700 border-rose-200',
+            'submitted' => 'bg-amber-50 text-amber-800 border-amber-200',
+            'in_review' => 'bg-sky-50 text-sky-800 border-sky-200',
+            'revisions_requested' => 'bg-orange-50 text-orange-800 border-orange-200',
+            'accepted' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'in_production' => 'bg-purple-50 text-purple-800 border-purple-200',
+            'published' => 'bg-green-50 text-green-800 border-green-200',
+            'declined' => 'bg-red-50 text-red-800 border-red-200',
+            'archived', 'withdrawn' => 'bg-zinc-100 text-zinc-700 border-zinc-300',
             default => 'bg-gray-100 text-gray-700 border-gray-200',
+        };
+
+        $stageName = match ($this->submission->status) {
+            'submitted' => 'Tahap 2 dari 6',
+            'in_review' => 'Tahap 3 dari 6',
+            'revisions_requested' => 'Tahap 4 dari 6',
+            'accepted', 'in_production' => 'Tahap 5 dari 6',
+            'published' => 'Tahap 6 dari 6',
+            'declined', 'archived', 'withdrawn' => 'Alur Dihentikan',
+            default => 'Tahap 1 dari 6',
         };
 
         return [
             'label' => $label,
             'badge_class' => $badgeClass,
+            'stage_name' => $stageName,
+        ];
+    }
+
+    /**
+     * Mengambil penilaian skrining awal terakhir jika sudah dilakukan.
+     */
+    public function latestDeskReview(): ?DeskReview
+    {
+        return $this->submission->deskReviews->sortByDesc('created_at')->first();
+    }
+
+    /**
+     * Mengambil putaran review terakhir pada naskah.
+     */
+    public function latestReviewRound(): ?ReviewRound
+    {
+        return $this->submission->reviewRounds->sortByDesc('round')->first();
+    }
+
+    /**
+     * Ringkasan metrik progres telaah mitra bestari dan rekomendasi Editor Bagian.
+     *
+     * @return array{
+     *     has_round: bool,
+     *     round_number: int,
+     *     invited_count: int,
+     *     completed_count: int,
+     *     minimum_required: int,
+     *     threshold_met: bool,
+     *     se_recommendation: ?string,
+     *     se_recommendation_label: string,
+     *     se_recommendation_badge: string,
+     *     se_recommendation_note: ?string,
+     *     se_recommended_at: ?string
+     * }
+     */
+    public function reviewSummary(): array
+    {
+        $round = $this->latestReviewRound();
+
+        if (! $round) {
+            return [
+                'has_round' => false,
+                'round_number' => 0,
+                'invited_count' => 0,
+                'completed_count' => 0,
+                'minimum_required' => 2,
+                'threshold_met' => false,
+                'se_recommendation' => null,
+                'se_recommendation_label' => 'Belum Ada Rekomendasi Editor Bagian',
+                'se_recommendation_badge' => 'bg-gray-100 text-gray-600 border-gray-200',
+                'se_recommendation_note' => null,
+                'se_recommended_at' => null,
+            ];
+        }
+
+        $invitedCount = $round->assignments->count();
+        $completedCount = $round->assignments->where('status', 'completed')->count();
+        $minRequired = max(1, (int) $round->minimum_completed_reviews);
+        $rec = $round->se_recommendation;
+
+        $recLabel = match ($rec) {
+            'accept' => 'Rekomendasi Editor Bagian: Terima Naskah',
+            'revisions_required' => 'Rekomendasi Editor Bagian: Perlu Revisi Penulis',
+            'resubmit' => 'Rekomendasi Editor Bagian: Kirim Ulang Telaah',
+            'decline' => 'Rekomendasi Editor Bagian: Tolak Naskah',
+            default => 'Menunggu Rekomendasi Editor Bagian',
+        };
+
+        $recBadge = match ($rec) {
+            'accept' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'revisions_required' => 'bg-amber-50 text-amber-800 border-amber-200',
+            'resubmit' => 'bg-orange-50 text-orange-800 border-orange-200',
+            'decline' => 'bg-rose-50 text-rose-800 border-rose-200',
+            default => 'bg-gray-100 text-gray-600 border-gray-200',
+        };
+
+        return [
+            'has_round' => true,
+            'round_number' => (int) $round->round,
+            'invited_count' => $invitedCount,
+            'completed_count' => $completedCount,
+            'minimum_required' => $minRequired,
+            'threshold_met' => $completedCount >= $minRequired,
+            'se_recommendation' => $rec,
+            'se_recommendation_label' => $recLabel,
+            'se_recommendation_badge' => $recBadge,
+            'se_recommendation_note' => $round->se_recommendation_note,
+            'se_recommended_at' => $round->se_recommended_at ? $round->se_recommended_at->format('d M Y, H:i') : null,
+        ];
+    }
+
+    /**
+     * Daftar 5 langkah visual stepper progres alur kerja editorial.
+     *
+     * @return array<int, array{step: int, title: string, subtitle: string, state: string}>
+     */
+    public function workflowSteps(): array
+    {
+        $status = $this->submission->status;
+        $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
+            || in_array($status, ['in_review', 'revisions_requested', 'accepted', 'in_production', 'published'], true);
+        $hasSe = $this->submission->activeEditorAssignment !== null
+            || in_array($status, ['revisions_requested', 'accepted', 'in_production', 'published'], true);
+        $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
+            || in_array($status, ['accepted', 'in_production', 'published', 'declined'], true);
+        $inProdOrPub = in_array($status, ['accepted', 'in_production', 'published'], true);
+
+        if ($status === 'declined') {
+            return [
+                ['step' => 1, 'title' => 'Skrining Awal', 'subtitle' => 'Pemeriksaan Redaksi', 'state' => 'completed'],
+                ['step' => 2, 'title' => 'Penugasan Editor', 'subtitle' => 'Delegasi Editor Bagian', 'state' => $hasSe ? 'completed' : 'terminated'],
+                ['step' => 3, 'title' => 'Telaah Sejawat', 'subtitle' => 'Evaluasi Mitra Bestari', 'state' => $this->submission->reviewRounds->isNotEmpty() ? 'completed' : 'terminated'],
+                ['step' => 4, 'title' => 'Keputusan Redaksi', 'subtitle' => 'Naskah Ditolak Resmi', 'state' => 'terminated'],
+                ['step' => 5, 'title' => 'Produksi & Terbit', 'subtitle' => 'Alur Dihentikan', 'state' => 'upcoming'],
+            ];
+        }
+
+        return [
+            [
+                'step' => 1,
+                'title' => 'Skrining Awal',
+                'subtitle' => 'Pemeriksaan Kelayakan',
+                'state' => $hasDeskPassed ? 'completed' : ($status === 'submitted' ? 'current' : 'upcoming'),
+            ],
+            [
+                'step' => 2,
+                'title' => 'Penugasan Editor',
+                'subtitle' => $this->submission->activeEditorAssignment?->editor?->name ?? 'Pilih Editor Bagian',
+                'state' => $hasSe ? 'completed' : ($hasDeskPassed ? 'current' : 'upcoming'),
+            ],
+            [
+                'step' => 3,
+                'title' => 'Telaah & Revisi',
+                'subtitle' => $status === 'revisions_requested' ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
+                'state' => $inProdOrPub ? 'completed' : (in_array($status, ['in_review', 'revisions_requested'], true) ? 'current' : 'upcoming'),
+            ],
+            [
+                'step' => 4,
+                'title' => 'Keputusan Redaksi',
+                'subtitle' => $hasDecision ? 'Keputusan Diterbitkan' : 'Penetapan Keputusan',
+                'state' => $inProdOrPub ? 'completed' : ($this->reviewSummary()['se_recommendation'] ? 'current' : ($hasDecision ? 'completed' : 'upcoming')),
+            ],
+            [
+                'step' => 5,
+                'title' => 'Produksi & Terbit',
+                'subtitle' => $status === 'published' ? 'Telah Terbit Resmi' : 'Penyuntingan & Galai',
+                'state' => $status === 'published' ? 'completed' : ($inProdOrPub ? 'current' : 'upcoming'),
+            ],
         ];
     }
 }

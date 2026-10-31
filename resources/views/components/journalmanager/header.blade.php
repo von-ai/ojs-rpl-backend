@@ -23,6 +23,8 @@
 
     <!-- Header Actions -->
     <div class="flex items-center gap-3 shrink-0">
+        <x-role-switcher current-role="manager" />
+
         <!-- Badge Context Jurnal Aktif -->
         <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>

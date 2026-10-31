@@ -36,6 +36,8 @@
 
     <!-- Right: Server Health Status & User Profile -->
     <div class="flex items-center gap-3 shrink-0">
+        <x-role-switcher current-role="sysadmin" />
+
         <!-- Status Server Online -->
         <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-[11px] font-semibold text-emerald-800" title="Seluruh layanan sistem beroperasi normal">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

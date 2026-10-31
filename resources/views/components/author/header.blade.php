@@ -33,8 +33,10 @@
     </div>
 
 
-    <!-- Right: Notification & Author Profile Menu -->
+    <!-- Right: Notification, Role Switcher & Author Profile Menu -->
     <div class="flex items-center gap-3 shrink-0">
+        <x-role-switcher current-role="author" />
+
         <!-- Notification Bell -->
         <a href="#notifikasi" class="relative p-2 min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition duration-150" aria-label="Notifikasi baru">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

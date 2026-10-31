@@ -34,6 +34,10 @@ class EditorInChiefService
         User $actor,
         array $data
     ): DeskReview {
+        if ($submission->status !== 'submitted') {
+            throw new DomainException('Tahap skrining awal telah selesai dan tidak dapat diubah lagi karena naskah sudah berada pada tahapan berikutnya.');
+        }
+
         $allowedStatuses = ['passed', 'rejected', 'revision_required'];
         if (! in_array($data['status'], $allowedStatuses, true)) {
             throw new DomainException("Status hasil desk review tidak valid: {$data['status']}");
@@ -90,6 +94,10 @@ class EditorInChiefService
         User $sectionEditor,
         ?string $note = null
     ): EditorAssignment {
+        if (in_array($submission->status, ['accepted', 'in_production', 'published', 'declined', 'archived', 'withdrawn'], true)) {
+            throw new DomainException('Penugasan Editor Bagian tidak dapat diubah karena naskah telah melewati tahap penelaahan.');
+        }
+
         return DB::transaction(function () use ($submission, $sectionEditor, $note): EditorAssignment {
             // Cabut penugasan Section Editor aktif sebelumnya jika ada
             EditorAssignment::where('submission_id', $submission->id)
@@ -131,6 +139,10 @@ class EditorInChiefService
         User $eic,
         array $data
     ): EditorialDecision {
+        if (in_array($submission->status, ['accepted', 'in_production', 'published', 'declined', 'archived', 'withdrawn'], true)) {
+            throw new DomainException('Keputusan editorial akhir telah ditetapkan secara permanen dan tidak dapat diubah lagi.');
+        }
+
         $allowedDecisions = ['accept', 'revisions_required', 'resubmit', 'decline'];
         if (! in_array($data['decision'], $allowedDecisions, true)) {
             throw new DomainException("Jenis keputusan editorial tidak valid: {$data['decision']}");
@@ -189,7 +201,10 @@ class EditorInChiefService
             'activeEditorAssignment.editor',
             'deskReviews',
             'editorialDecisions',
-        ]);
+            'currentReviewRound.assignments',
+            'reviewRounds.assignments',
+            'revisions',
+        ])->where('status', '!=', 'draft');
 
         if ($statusTab === 'submitted') {
             $query->where('status', 'submitted');

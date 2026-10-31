@@ -255,5 +255,35 @@
             showToast(event.detail);
         }
     });
+
+    // Tampilkan toast otomatis dari flash session (mis. saat beralih peran)
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('role_switched_toast'))
+            showToast({
+                type: 'success',
+                title: 'Peran Aktif Dialihkan',
+                message: @json(session('role_switched_toast')),
+                duration: 3500
+            });
+        @endif
+
+        @if(session('toast_success'))
+            showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: @json(session('toast_success')),
+                duration: 4000
+            });
+        @endif
+
+        @if(session('toast_error'))
+            showToast({
+                type: 'error',
+                title: 'Akses Ditolak',
+                message: @json(session('toast_error')),
+                duration: 4500
+            });
+        @endif
+    });
 })();
 </script>
