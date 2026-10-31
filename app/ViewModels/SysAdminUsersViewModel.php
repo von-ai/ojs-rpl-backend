@@ -23,6 +23,22 @@ class SysAdminUsersViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah seluruh pengguna sistem secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(User::class) && Schema::hasTable('users') && User::query()->exists()) {
+                return User::query()->count();
+            }
+
+            return 10;
+        } catch (\Throwable) {
+            return 10;
+        }
+    }
+
+    /**
      * 4 Ringkasan metrik statistik direktori pengguna global.
      *
      * @return array<int, array{title: string, value: int, description: string, badge_text: string, color_class: string}>

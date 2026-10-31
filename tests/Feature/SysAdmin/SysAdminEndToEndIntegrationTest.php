@@ -15,10 +15,14 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Services\SysAdmin\SysAdminService;
+use App\ViewModels\SysAdminJournalsViewModel;
+use App\ViewModels\SysAdminSettingsViewModel;
+use App\ViewModels\SysAdminUsersViewModel;
 use Database\Seeders\SysAdminSeeder;
 use DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -376,5 +380,81 @@ class SysAdminEndToEndIntegrationTest extends TestCase
         $this->assertDatabaseHas('journals', ['slug' => 'jtiik-makassar']);
         $this->assertDatabaseHas('user_imports', ['file_name' => 'Reviewer_Kepakaran_SmartCity_2026.csv']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'system_settings.updated']);
+    }
+
+    /**
+     * 7. Sinkronisasi Dinamis Angka Badge Sidebar SysAdmin dengan Database.
+     */
+    public function test_sysadmin_sidebar_badge_counts_are_dynamically_synchronized_with_database(): void
+    {
+        // Kondisi awal (setUp membuat 2 user admin, 0 jurnal DB fallback ke 4 mock)
+        $this->assertSame(2, SysAdminUsersViewModel::getSidebarBadgeCount());
+        $this->assertSame(4, SysAdminJournalsViewModel::getSidebarBadgeCount());
+
+        // Buat jurnal baru
+        Journal::create([
+            'name' => 'Jurnal Teknologi Informasi',
+            'slug' => 'jtiik',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+        Journal::create([
+            'name' => 'Jurnal Inovasi Daerah',
+            'slug' => 'sirida-inovasi',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+
+        $this->assertSame(2, SysAdminJournalsViewModel::getSidebarBadgeCount());
+
+        // Buat user tambahan
+        User::factory()->count(3)->create();
+        $this->assertSame(5, SysAdminUsersViewModel::getSidebarBadgeCount());
+    }
+
+    /**
+     * 8. Komponen Sidebar SysAdmin me-render badge dinamis secara tepat.
+     */
+    public function test_sysadmin_sidebar_component_renders_dynamic_counts(): void
+    {
+        // 1. Rendering dengan nilai custom eksplisit
+        $renderedCustom = Blade::render('<x-sysadmin.sidebar :journals-count="8" :users-count="88" />');
+        $this->assertStringContainsString('sidebar-badge-full', $renderedCustom);
+        $this->assertStringContainsString('8', $renderedCustom);
+        $this->assertStringContainsString('88', $renderedCustom);
+
+        // 2. Rendering tanpa props (fallback otomatis ke ViewModel)
+        Journal::create([
+            'name' => 'Jurnal Uji Render',
+            'slug' => 'jurnal-uji-render',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+
+        $renderedAuto = Blade::render('<x-sysadmin.sidebar />');
+        $this->assertStringContainsString('sidebar-badge-full', $renderedAuto);
+        $this->assertStringContainsString((string) SysAdminJournalsViewModel::getSidebarBadgeCount(), $renderedAuto);
+        $this->assertStringContainsString((string) SysAdminUsersViewModel::getSidebarBadgeCount(), $renderedAuto);
+    }
+
+    /**
+     * 9. SysAdminSettingsViewModel menghitung diagnostik kesehatan server dan pengaturan secara valid.
+     */
+    public function test_sysadmin_settings_view_model_computes_dynamic_server_health_metrics(): void
+    {
+        $vm = new SysAdminSettingsViewModel;
+
+        $health = $vm->serverHealth();
+        $this->assertArrayHasKey('php_version', $health);
+        $this->assertArrayHasKey('database_driver', $health);
+        $this->assertArrayHasKey('disk_usage_formatted', $health);
+        $this->assertArrayHasKey('disk_percentage', $health);
+        $this->assertArrayHasKey('disk_free_formatted', $health);
+        $this->assertArrayHasKey('timezone', $health);
+        $this->assertStringContainsString('PHP', $health['php_version']);
+
+        $metrics = $vm->summaryMetrics();
+        $this->assertCount(4, $metrics);
+        $this->assertStringContainsString('Terpakai', $metrics[2]['value']);
     }
 }

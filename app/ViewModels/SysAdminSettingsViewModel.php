@@ -55,15 +55,49 @@ class SysAdminSettingsViewModel
     {
         $dbConnection = (string) config('database.default', 'sqlite');
 
+        $diskUsageFormatted = '4.2 GB / 20 GB';
+        $diskPercentage = 21;
+        $diskFreeFormatted = '15.8 GB Bebas';
+
+        try {
+            $storagePath = storage_path();
+            $totalBytes = @disk_total_space($storagePath);
+            $freeBytes = @disk_free_space($storagePath);
+
+            if ($totalBytes !== false && $freeBytes !== false && $totalBytes > 0) {
+                $usedBytes = max(0, $totalBytes - $freeBytes);
+                $diskPercentage = (int) round(($usedBytes / $totalBytes) * 100);
+
+                $usedGb = round($usedBytes / (1024 * 1024 * 1024), 1);
+                $totalGb = round($totalBytes / (1024 * 1024 * 1024), 1);
+                $freeGb = round($freeBytes / (1024 * 1024 * 1024), 1);
+
+                $diskUsageFormatted = "{$usedGb} GB / {$totalGb} GB";
+                $diskFreeFormatted = "{$freeGb} GB Bebas";
+            }
+        } catch (\Throwable) {
+            // Graceful fallback to default values
+        }
+
+        $timezone = (string) config('app.timezone', 'Asia/Makassar');
+        $timezoneLabel = match ($timezone) {
+            'Asia/Makassar' => 'Asia/Makassar (WITA)',
+            'Asia/Jakarta' => 'Asia/Jakarta (WIB)',
+            'Asia/Jayapura' => 'Asia/Jayapura (WIT)',
+            'UTC' => 'UTC (Coordinated Universal Time)',
+            default => $timezone,
+        };
+
         return [
             'php_version' => 'PHP '.PHP_VERSION,
             'database_driver' => $dbConnection === 'sqlite' ? 'SQLite (pdo_sqlite engine)' : ucfirst($dbConnection),
             'environment' => app()->environment(),
-            'disk_usage_formatted' => '4.2 GB / 20 GB',
-            'disk_percentage' => 21,
+            'disk_usage_formatted' => $diskUsageFormatted,
+            'disk_percentage' => $diskPercentage,
+            'disk_free_formatted' => $diskFreeFormatted,
             'cache_driver' => (string) config('cache.default', 'file'),
             'malware_scanner_status' => 'Aktif (ClamAV Background Scanner)',
-            'timezone' => 'Asia/Makassar (WITA)',
+            'timezone' => $timezoneLabel,
             'uptime' => '99.98% (30 Hari Terakhir)',
             'laravel_version' => 'Laravel '.app()->version(),
         ];
@@ -78,6 +112,7 @@ class SysAdminSettingsViewModel
     {
         $settings = $this->settings();
         $isMaintenance = (bool) ($settings['maintenance_mode'] ?? false);
+        $health = $this->serverHealth();
 
         return [
             [
@@ -94,8 +129,8 @@ class SysAdminSettingsViewModel
             ],
             [
                 'title' => 'Kapasitas Disk Storage',
-                'value' => '21% Terpakai',
-                'badge_text' => '15.8 GB Bebas',
+                'value' => "{$health['disk_percentage']}% Terpakai",
+                'badge_text' => $health['disk_free_formatted'] ?? '15.8 GB Bebas',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [

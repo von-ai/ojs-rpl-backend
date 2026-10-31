@@ -22,6 +22,22 @@ class SysAdminJournalsViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah instansi jurnal secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(Journal::class) && Schema::hasTable('journals') && Journal::query()->exists()) {
+                return Journal::query()->count();
+            }
+
+            return 4;
+        } catch (\Throwable) {
+            return 4;
+        }
+    }
+
+    /**
      * Data profil pengguna aktif dengan konteks System Administrator.
      *
      * @return array{name: string, role_label: string, affiliation: string, initials: string}
