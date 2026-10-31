@@ -4,10 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use App\Models\Journal;
+use App\Models\User;
+use Database\Seeders\SysAdminSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SysAdminJournalsTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(SysAdminSeeder::class);
+    }
+
     /**
      * Halaman manajemen jurnal memuat 4 ringkasan metrik statistik.
      */
@@ -80,5 +93,30 @@ class SysAdminJournalsTest extends TestCase
         ]);
         $responseStatus->assertRedirect(route('sysadmin.journals.index'));
         $responseStatus->assertSessionHas('status');
+    }
+
+    /**
+     * Pendaftaran jurnal baru dengan akun PIC otomatis memberikan hak akses Journal Manager.
+     */
+    public function test_pendaftaran_jurnal_dengan_akun_pic_menjadikan_journal_manager(): void
+    {
+        $picUser = User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail();
+
+        $responseStore = $this->post('/sysadmin/journals', [
+            'name' => 'Jurnal Rekayasa Maritim Terpadu',
+            'slug' => 'jrmt-makassar',
+            'primary_contact' => $picUser->name,
+            'manager_user_id' => $picUser->id,
+        ]);
+        $responseStore->assertRedirect(route('sysadmin.journals.index'));
+        $responseStore->assertSessionHas('status');
+
+        $journal = Journal::where('slug', 'jrmt-makassar')->firstOrFail();
+
+        $this->assertDatabaseHas('user_roles', [
+            'user_id' => $picUser->id,
+            'journal_id' => $journal->id,
+            'role_code' => 'manager',
+        ]);
     }
 }

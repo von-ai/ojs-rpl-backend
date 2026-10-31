@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Journal;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Support\Facades\Auth;
@@ -34,12 +35,24 @@ class JournalManagerUsersViewModel
     {
         try {
             if (class_exists(User::class) && Schema::hasTable('users') && User::query()->exists()) {
-                return User::query()->count();
+                $journalId = Schema::hasTable('journals') ? Journal::where('slug', 'sirida-makassar')->value('id') : null;
+                $query = User::whereDoesntHave('userRoles', function ($q) {
+                    $q->where('role_code', 'sysadmin')->whereNull('journal_id');
+                });
+
+                if ($journalId) {
+                    $query->where(function ($q) use ($journalId) {
+                        $q->whereHas('userRoles', fn ($r) => $r->where('journal_id', $journalId))
+                            ->orWhereDoesntHave('userRoles');
+                    });
+                }
+
+                return $query->count();
             }
 
-            return 28;
+            return 15;
         } catch (\Throwable) {
-            return 28;
+            return 15;
         }
     }
 
@@ -365,7 +378,16 @@ class JournalManagerUsersViewModel
     private function allUsers(): array
     {
         if (Schema::hasTable('users')) {
-            $query = User::with(['profile', 'userRoles']);
+            $journalId = Schema::hasTable('journals') ? Journal::where('slug', 'sirida-makassar')->value('id') : null;
+
+            $query = User::with([
+                'profile',
+                'userRoles' => function ($r) use ($journalId) {
+                    if ($journalId) {
+                        $r->where('journal_id', $journalId);
+                    }
+                },
+            ]);
 
             if (Schema::hasTable('copyedits')) {
                 $query->withCount('copyedits');
@@ -374,12 +396,31 @@ class JournalManagerUsersViewModel
                 $query->withCount('layoutAssignments');
             }
 
+            // Eksklusikan akun murni System Administrator global dari direktori pengguna jurnal
+            $query->whereDoesntHave('userRoles', function ($q) {
+                $q->where('role_code', 'sysadmin')->whereNull('journal_id');
+            });
+
+            // Batasi pada pengguna yang memiliki peran pada jurnal ini atau pengguna unassigned (tanpa peran)
+            if ($journalId) {
+                $query->where(function ($q) use ($journalId) {
+                    $q->whereHas('userRoles', fn ($r) => $r->where('journal_id', $journalId))
+                        ->orWhereDoesntHave('userRoles');
+                });
+            }
+
             $users = $query->get();
 
             if ($users->isNotEmpty()) {
                 // Hitung total manager dan EIC untuk perlindungan last admin / last eic
-                $managerCount = UserRole::where('role_code', 'manager')->count();
-                $eicCount = UserRole::where('role_code', 'editor_in_chief')->count();
+                $managerQuery = UserRole::where('role_code', 'manager');
+                $eicQuery = UserRole::where('role_code', 'editor_in_chief');
+                if ($journalId) {
+                    $managerQuery->where('journal_id', $journalId);
+                    $eicQuery->where('journal_id', $journalId);
+                }
+                $managerCount = $managerQuery->count();
+                $eicCount = $eicQuery->count();
 
                 return $users->map(function (User $u) use ($managerCount, $eicCount) {
                     $roles = $u->userRoles;

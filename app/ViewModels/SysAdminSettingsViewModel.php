@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Schema;
+
 class SysAdminSettingsViewModel
 {
     /**
-     * Konfigurasi pengaturan platform level global (Tabel 55 system_settings).
+     * Konfigurasi pengaturan platform level global (Tabel system_settings).
      *
      * @return array{
      *     site_name: string,
@@ -21,15 +24,15 @@ class SysAdminSettingsViewModel
      */
     public function settings(): array
     {
-        return [
-            'site_name' => 'SIRIDA — Portal Ilmiah BRIDA Kota Makassar',
-            'site_description' => 'Sistem Informasi Riset dan Inovasi Daerah Kota Makassar — Repositori dan penerbitan berkala ilmiah terpadu Badan Riset dan Inovasi Daerah.',
-            'maintenance_mode' => false,
-            'maintenance_message' => 'Sistem sedang dalam proses pemeliharaan rutin server. Silakan coba beberapa saat lagi.',
-            'max_upload_size_mb' => 32,
-            'allowed_file_extensions' => 'pdf, docx, odt, jpg, png, csv',
-            'session_lifetime_minutes' => 120,
-        ];
+        try {
+            if (Schema::hasTable('system_settings')) {
+                return SystemSetting::getAllSettings();
+            }
+        } catch (\Throwable) {
+            // Fallback
+        }
+
+        return SystemSetting::defaults();
     }
 
     /**
@@ -50,15 +53,51 @@ class SysAdminSettingsViewModel
      */
     public function serverHealth(): array
     {
+        $dbConnection = (string) config('database.default', 'sqlite');
+
+        $diskUsageFormatted = '4.2 GB / 20 GB';
+        $diskPercentage = 21;
+        $diskFreeFormatted = '15.8 GB Bebas';
+
+        try {
+            $storagePath = storage_path();
+            $totalBytes = @disk_total_space($storagePath);
+            $freeBytes = @disk_free_space($storagePath);
+
+            if ($totalBytes !== false && $freeBytes !== false && $totalBytes > 0) {
+                $usedBytes = max(0, $totalBytes - $freeBytes);
+                $diskPercentage = (int) round(($usedBytes / $totalBytes) * 100);
+
+                $usedGb = round($usedBytes / (1024 * 1024 * 1024), 1);
+                $totalGb = round($totalBytes / (1024 * 1024 * 1024), 1);
+                $freeGb = round($freeBytes / (1024 * 1024 * 1024), 1);
+
+                $diskUsageFormatted = "{$usedGb} GB / {$totalGb} GB";
+                $diskFreeFormatted = "{$freeGb} GB Bebas";
+            }
+        } catch (\Throwable) {
+            // Graceful fallback to default values
+        }
+
+        $timezone = (string) config('app.timezone', 'Asia/Makassar');
+        $timezoneLabel = match ($timezone) {
+            'Asia/Makassar' => 'Asia/Makassar (WITA)',
+            'Asia/Jakarta' => 'Asia/Jakarta (WIB)',
+            'Asia/Jayapura' => 'Asia/Jayapura (WIT)',
+            'UTC' => 'UTC (Coordinated Universal Time)',
+            default => $timezone,
+        };
+
         return [
             'php_version' => 'PHP '.PHP_VERSION,
-            'database_driver' => 'SQLite (pdo_sqlite engine)',
+            'database_driver' => $dbConnection === 'sqlite' ? 'SQLite (pdo_sqlite engine)' : ucfirst($dbConnection),
             'environment' => app()->environment(),
-            'disk_usage_formatted' => '4.2 GB / 20 GB',
-            'disk_percentage' => 21,
+            'disk_usage_formatted' => $diskUsageFormatted,
+            'disk_percentage' => $diskPercentage,
+            'disk_free_formatted' => $diskFreeFormatted,
             'cache_driver' => (string) config('cache.default', 'file'),
-            'malware_scanner_status' => 'Aktif (ClamAV Background Scanner)',
-            'timezone' => 'Asia/Makassar (WITA)',
+            'malware_scanner_status' => 'Aktif (Microsoft Defender for Storage)',
+            'timezone' => $timezoneLabel,
             'uptime' => '99.98% (30 Hari Terakhir)',
             'laravel_version' => 'Laravel '.app()->version(),
         ];
@@ -71,6 +110,10 @@ class SysAdminSettingsViewModel
      */
     public function summaryMetrics(): array
     {
+        $settings = $this->settings();
+        $isMaintenance = (bool) ($settings['maintenance_mode'] ?? false);
+        $health = $this->serverHealth();
+
         return [
             [
                 'title' => 'Status Operasional',
@@ -80,19 +123,19 @@ class SysAdminSettingsViewModel
             ],
             [
                 'title' => 'Mode Pemeliharaan',
-                'value' => 'Non-Aktif',
-                'badge_text' => 'Publik Terbuka',
-                'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
+                'value' => $isMaintenance ? 'Aktif' : 'Non-Aktif',
+                'badge_text' => $isMaintenance ? 'Dibatasi (Admin)' : 'Publik Terbuka',
+                'color_class' => $isMaintenance ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Kapasitas Disk Storage',
-                'value' => '21% Terpakai',
-                'badge_text' => '15.8 GB Bebas',
+                'value' => "{$health['disk_percentage']}% Terpakai",
+                'badge_text' => $health['disk_free_formatted'] ?? '15.8 GB Bebas',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
                 'title' => 'Pemindai Malware',
-                'value' => 'ClamAV Aktif',
+                'value' => 'Defender Aktif',
                 'badge_text' => '0 Ancaman',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],

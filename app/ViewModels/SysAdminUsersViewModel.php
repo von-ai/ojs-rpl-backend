@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Journal;
+use App\Models\User;
+use App\Models\UserImport;
+use App\Models\UserRole;
+use Illuminate\Support\Facades\Schema;
+
 class SysAdminUsersViewModel
 {
     private string $activeRole;
@@ -17,37 +23,59 @@ class SysAdminUsersViewModel
     }
 
     /**
+     * Helper statis untuk mengambil badge count jumlah seluruh pengguna sistem secara dinamis dan aman.
+     */
+    public static function getSidebarBadgeCount(): int
+    {
+        try {
+            if (class_exists(User::class) && Schema::hasTable('users')) {
+                return User::query()->count();
+            }
+
+            return 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * 4 Ringkasan metrik statistik direktori pengguna global.
      *
      * @return array<int, array{title: string, value: int, description: string, badge_text: string, color_class: string}>
      */
     public function summaryMetrics(): array
     {
+        $all = $this->allUsers();
+        $total = count($all);
+        $sysadminCount = count(array_filter($all, fn ($item) => $item['is_sysadmin']));
+        $editorCount = count(array_filter($all, fn ($item) => in_array('editor', $item['role_codes'], true) || in_array('editor_in_chief', $item['role_codes'], true) || in_array('section_editor', $item['role_codes'], true) || in_array('manager', $item['role_codes'], true)));
+        $reviewerCount = count(array_filter($all, fn ($item) => in_array('reviewer', $item['role_codes'], true)));
+
         return [
             [
                 'title' => 'Total Akun Pengguna',
-                'value' => 142,
+                'value' => $total,
                 'description' => 'Pengguna terverifikasi lintas instansi jurnal',
-                'badge_text' => '142 Akun',
+                'badge_text' => "{$total} Akun",
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
                 'title' => 'System Administrator',
-                'value' => 2,
+                'value' => $sysadminCount,
                 'description' => 'Pemegang hak akses superadmin global',
                 'badge_text' => 'Superadmin',
                 'color_class' => 'text-purple-700 bg-purple-50 border-purple-200',
             ],
             [
                 'title' => 'Dewan Redaksi Aktif',
-                'value' => 18,
+                'value' => $editorCount,
                 'description' => 'Editor in Chief, Section Editor, & Manager',
                 'badge_text' => 'Redaksi Aktif',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Reviewer Terdaftar',
-                'value' => 64,
+                'value' => $reviewerCount,
                 'description' => 'Mitra bestari dengan bidang kepakaran terdata',
                 'badge_text' => 'Mitra Bestari',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -67,7 +95,7 @@ class SysAdminUsersViewModel
         $counts = [
             'all' => count($all),
             'sysadmin' => count(array_filter($all, fn ($item) => $item['is_sysadmin'])),
-            'editor' => count(array_filter($all, fn ($item) => in_array('editor', $item['role_codes'], true))),
+            'editor' => count(array_filter($all, fn ($item) => in_array('editor', $item['role_codes'], true) || in_array('editor_in_chief', $item['role_codes'], true) || in_array('section_editor', $item['role_codes'], true) || in_array('manager', $item['role_codes'], true))),
             'reviewer' => count(array_filter($all, fn ($item) => in_array('reviewer', $item['role_codes'], true))),
             'author' => count(array_filter($all, fn ($item) => in_array('author', $item['role_codes'], true))),
         ];
@@ -130,6 +158,8 @@ class SysAdminUsersViewModel
         if ($this->activeRole !== 'all') {
             if ($this->activeRole === 'sysadmin') {
                 $items = array_values(array_filter($items, fn ($item) => $item['is_sysadmin']));
+            } elseif ($this->activeRole === 'editor') {
+                $items = array_values(array_filter($items, fn ($item) => in_array('editor', $item['role_codes'], true) || in_array('editor_in_chief', $item['role_codes'], true) || in_array('section_editor', $item['role_codes'], true) || in_array('manager', $item['role_codes'], true)));
             } else {
                 $role = $this->activeRole;
                 $items = array_values(array_filter($items, fn ($item) => in_array($role, $item['role_codes'], true)));
@@ -150,7 +180,7 @@ class SysAdminUsersViewModel
     }
 
     /**
-     * Riwayat pengimporan massal pengguna via berkas CSV (Tabel 54 user_imports).
+     * Riwayat pengimporan massal pengguna via berkas CSV (Tabel user_imports).
      *
      * @return array<int, array{
      *     id: string,
@@ -166,6 +196,158 @@ class SysAdminUsersViewModel
      * }>
      */
     public function recentImports(): array
+    {
+        try {
+            if (Schema::hasTable('user_imports')) {
+                return UserImport::with('journal')->latest()->get()->map(function (UserImport $import) {
+                    return [
+                        'id' => (string) $import->id,
+                        'journal_name' => $import->journal?->name ?? 'Lintas Jurnal Global',
+                        'file_name' => (string) $import->file_name,
+                        'total_rows' => (int) $import->total_rows,
+                        'processed_rows' => (int) $import->processed_rows,
+                        'failed_rows' => (int) $import->failed_rows,
+                        'status' => (string) $import->status,
+                        'status_label' => $import->status_label,
+                        'status_badge_class' => $import->status_badge_class,
+                        'created_at' => $import->created_at?->format('d M Y, H:i').' WITA',
+                    ];
+                })->toArray();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
+    }
+
+    /**
+     * Metadata paginasi pengguna.
+     *
+     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int}
+     */
+    public function pagination(): array
+    {
+        $total = count($this->users());
+
+        return [
+            'current_page' => 1,
+            'per_page' => 10,
+            'total' => $total,
+            'from' => $total > 0 ? 1 : 0,
+            'to' => $total,
+            'last_page' => 1,
+        ];
+    }
+
+    /**
+     * Opsi jurnal ilmiah untuk alokasi pengguna saat impor CSV.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    public function selectableJournals(): array
+    {
+        try {
+            if (Schema::hasTable('journals')) {
+                return Journal::orderBy('name')->get()->map(fn ($j) => [
+                    'id' => (string) $j->id,
+                    'name' => (string) $j->name,
+                ])->toArray();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
+    }
+
+    /**
+     * Daftar seluruh data pengguna global (Database).
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     affiliation: string,
+     *     is_sysadmin: bool,
+     *     roles_formatted: string,
+     *     role_codes: array<int, string>,
+     *     journal_memberships_count: int,
+     *     status: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     created_at: string
+     * }>
+     */
+    private function allUsers(): array
+    {
+        try {
+            if (Schema::hasTable('users')) {
+                return User::with(['profile', 'userRoles.journal'])->get()->map(function (User $user) {
+                    $isSysAdmin = $user->isSysAdmin();
+                    $roleCodes = $user->userRoles->pluck('role_code')->toArray();
+
+                    $labels = array_map(fn ($code) => UserRole::roleLabel($code), $roleCodes);
+                    if ($isSysAdmin && ! in_array('System Administrator', $labels, true)) {
+                        array_unshift($labels, 'System Administrator');
+                    }
+                    $rolesFormatted = ! empty($labels) ? implode(', ', array_unique($labels)) : 'Pengguna Terdaftar';
+
+                    $journalCount = $user->userRoles->whereNotNull('journal_id')->pluck('journal_id')->unique()->count();
+
+                    return [
+                        'id' => (string) $user->id,
+                        'name' => (string) $user->name,
+                        'email' => (string) $user->email,
+                        'affiliation' => (string) ($user->profile?->affiliation ?? 'Sivitas Akademika BRIDA Makassar'),
+                        'is_sysadmin' => $isSysAdmin,
+                        'roles_formatted' => $rolesFormatted,
+                        'role_codes' => $roleCodes,
+                        'journal_memberships_count' => $journalCount,
+                        'journal_roles' => $user->userRoles->whereNotNull('journal_id')->map(function ($ur) {
+                            return [
+                                'id' => (string) $ur->id,
+                                'role_code' => (string) $ur->role_code,
+                                'role_label' => UserRole::roleLabel($ur->role_code),
+                                'badge_class' => UserRole::roleBadgeClass($ur->role_code),
+                                'journal_id' => (string) $ur->journal_id,
+                                'journal_name' => (string) ($ur->journal?->name ?? 'Jurnal'),
+                                'expertise_keywords' => $ur->expertise_keywords ?? [],
+                            ];
+                        })->values()->toArray(),
+                        'status' => (string) ($user->status ?? 'active'),
+                        'status_label' => ($user->status ?? 'active') === 'active' ? 'Aktif' : 'Non-Aktif',
+                        'status_badge_class' => ($user->status ?? 'active') === 'active'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200',
+                        'created_at' => $user->created_at?->format('d M Y') ?? '01 Jan 2026',
+                    ];
+                })->toArray();
+            }
+        } catch (\Throwable) {
+            // Graceful fallback
+        }
+
+        return [];
+    }
+
+    /**
+     * Data mock riwayat impor pengguna CSV.
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     journal_name: string,
+     *     file_name: string,
+     *     total_rows: int,
+     *     processed_rows: int,
+     *     failed_rows: int,
+     *     status: string,
+     *     status_label: string,
+     *     status_badge_class: string,
+     *     created_at: string
+     * }>
+     */
+    private function mockImports(): array
     {
         return [
             [
@@ -196,26 +378,7 @@ class SysAdminUsersViewModel
     }
 
     /**
-     * Metadata paginasi pengguna.
-     *
-     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int}
-     */
-    public function pagination(): array
-    {
-        $total = count($this->users());
-
-        return [
-            'current_page' => 1,
-            'per_page' => 10,
-            'total' => $total,
-            'from' => $total > 0 ? 1 : 0,
-            'to' => $total,
-            'last_page' => 1,
-        ];
-    }
-
-    /**
-     * Daftar seluruh data pengguna global.
+     * Mock dataset realistis pengguna global SIRIDA.
      *
      * @return array<int, array{
      *     id: string,
@@ -232,7 +395,7 @@ class SysAdminUsersViewModel
      *     created_at: string
      * }>
      */
-    private function allUsers(): array
+    private function mockUsers(): array
     {
         return [
             [
@@ -252,72 +415,72 @@ class SysAdminUsersViewModel
             [
                 'id' => 'USER-01JARK-02',
                 'name' => 'Muh. Ilham, S.Kom., M.T.',
-                'email' => 'ilham.it@makassar.go.id',
+                'email' => 'ilham.kominfo@makassar.go.id',
                 'affiliation' => 'Dinas Komunikasi dan Informatika Kota Makassar',
                 'is_sysadmin' => true,
-                'roles_formatted' => 'System Administrator, Journal Manager',
-                'role_codes' => ['sysadmin', 'editor'],
-                'journal_memberships_count' => 2,
+                'roles_formatted' => 'System Administrator',
+                'role_codes' => ['sysadmin'],
+                'journal_memberships_count' => 3,
                 'status' => 'active',
                 'status_label' => 'Aktif',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'created_at' => '15 Jan 2026',
+                'created_at' => '12 Feb 2026',
             ],
             [
                 'id' => 'USER-01JARK-03',
                 'name' => 'Dr. Eng. Ir. Rita Irmawaty, S.T., M.T.',
                 'email' => 'rita.irmawaty@unhas.ac.id',
-                'affiliation' => 'Departemen Teknik Arsitektur & Perencanaan, Universitas Hasanuddin',
+                'affiliation' => 'Departemen Teknik Sipil & Lingkungan Universitas Hasanuddin',
                 'is_sysadmin' => false,
                 'roles_formatted' => 'Editor in Chief (JTIIK), Reviewer',
-                'role_codes' => ['editor', 'reviewer'],
-                'journal_memberships_count' => 1,
+                'role_codes' => ['editor_in_chief', 'editor', 'reviewer'],
+                'journal_memberships_count' => 2,
                 'status' => 'active',
                 'status_label' => 'Aktif',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'created_at' => '02 Feb 2026',
+                'created_at' => '05 Mar 2026',
             ],
             [
                 'id' => 'USER-01JARK-04',
                 'name' => 'Dr. Andi Nurul Hidayah, M.Si.',
                 'email' => 'andi.nurul@unm.ac.id',
-                'affiliation' => 'Fakultas Ilmu Sosial dan Politik, Universitas Negeri Makassar',
+                'affiliation' => 'Fakultas Ilmu Sosial dan Hukum Universitas Negeri Makassar',
                 'is_sysadmin' => false,
-                'roles_formatted' => 'Journal Manager (JIKPM), Penulis',
-                'role_codes' => ['editor', 'author'],
+                'roles_formatted' => 'Section Editor (JIKPM), Author',
+                'role_codes' => ['section_editor', 'editor', 'author'],
                 'journal_memberships_count' => 1,
                 'status' => 'active',
                 'status_label' => 'Aktif',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'created_at' => '10 Feb 2026',
+                'created_at' => '18 Mar 2026',
             ],
             [
                 'id' => 'USER-01JARK-05',
                 'name' => 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.',
                 'email' => 'saleh.pallu@unhas.ac.id',
-                'affiliation' => 'Departemen Teknik Sipil, Universitas Hasanuddin',
+                'affiliation' => 'Pusat Riset Mitigasi Bencana & Oseanografi BRIDA',
                 'is_sysadmin' => false,
-                'roles_formatted' => 'Reviewer Senior, Penulis',
-                'role_codes' => ['reviewer', 'author'],
+                'roles_formatted' => 'Editor in Chief (JRLMBP), Reviewer',
+                'role_codes' => ['editor_in_chief', 'editor', 'reviewer'],
                 'journal_memberships_count' => 2,
                 'status' => 'active',
                 'status_label' => 'Aktif',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'created_at' => '20 Feb 2026',
+                'created_at' => '02 Apr 2026',
             ],
             [
                 'id' => 'USER-01JARK-06',
                 'name' => 'Dra. Sitti Aminah, M.Hum.',
-                'email' => 'sitti.aminah@bahasa.kemdikbud.go.id',
-                'affiliation' => 'Pusat Bahasa & Budaya Sulawesi Selatan',
+                'email' => 'sitti.aminah@makassar.go.id',
+                'affiliation' => 'Sekretariat Litbang Balai Kota Makassar',
                 'is_sysadmin' => false,
-                'roles_formatted' => 'Proofreader, Reviewer Bahasa',
-                'role_codes' => ['reviewer'],
-                'journal_memberships_count' => 3,
+                'roles_formatted' => 'Journal Manager (Buletin Riset Litbang)',
+                'role_codes' => ['manager', 'editor'],
+                'journal_memberships_count' => 1,
                 'status' => 'active',
                 'status_label' => 'Aktif',
                 'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'created_at' => '05 Mar 2026',
+                'created_at' => '10 Mei 2026',
             ],
         ];
     }

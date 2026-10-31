@@ -172,6 +172,10 @@ Route::prefix('proofreader')->name('proofreader.')->group(function () {
     Route::post('/verify-note', [ProofreaderSubmissionController::class, 'verifyNote'])->name('verify-note');
     Route::post('/complete', [ProofreaderSubmissionController::class, 'completeProofread'])->name('complete');
     Route::post('/escalate', [ProofreaderSubmissionController::class, 'submitEscalation'])->name('escalate');
+
+    // Pengunduhan Berkas Galai PDF & Rujukan Copyediting
+    Route::get('/galleys/{id}/download', [ProofreaderSubmissionController::class, 'downloadGalley'])->name('galleys.download');
+    Route::get('/files/{id}/download', [ProofreaderSubmissionController::class, 'downloadFile'])->name('files.download');
 });
 
 // Portal System Administrator (Tata Kelola Multi-Jurnal, Pengguna Global & Platform)
@@ -189,6 +193,8 @@ Route::prefix('sysadmin')->name('sysadmin.')->group(function () {
     Route::get('/users', [SysAdminController::class, 'users'])->name('users.index');
     Route::post('/users/assign-sysadmin', [SysAdminController::class, 'assignSysAdminRole'])->name('users.assign-sysadmin');
     Route::post('/users/revoke-sysadmin', [SysAdminController::class, 'revokeSysAdminRole'])->name('users.revoke-sysadmin');
+    Route::post('/users/assign-journal-role', [SysAdminController::class, 'assignJournalRole'])->name('users.assign-journal-role');
+    Route::post('/users/revoke-journal-role', [SysAdminController::class, 'revokeJournalRole'])->name('users.revoke-journal-role');
     Route::post('/users/import', [SysAdminController::class, 'importUsers'])->name('users.import');
 
     // 3. Pengaturan Platform & Kesehatan Server
