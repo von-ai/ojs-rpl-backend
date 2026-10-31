@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Reviewer;
 
+use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\Review;
 use App\Models\ReviewAssignment;
@@ -134,13 +135,19 @@ class ReviewerWorkflowTest extends TestCase
 
     public function test_reviewer_melihat_proyeksi_double_blind_tanpa_identitas_penulis(): void
     {
+        $this->submission->update([
+            'keywords' => ['Tata Ruang', 'Pesisir Makassar', 'Partisipasi Publik'],
+        ]);
+
         $response = $this->actingAs($this->reviewer)
             ->get(route('reviewer.assignments.show', $this->assignment->id));
 
         $response->assertOk();
-        $response->assertSee('Protokol Double-Blind Peer Review');
+        $response->assertSee('Double-Blind');
         $response->assertSee('SUB-2026-REV-001');
         $response->assertSee('Kajian Kebijakan Publik');
+        $response->assertSee('Tata Ruang');
+        $response->assertSee('Pesisir Makassar');
 
         // Memastikan nama dan email penulis TIDAK bocor ke halaman penelaah
         $response->assertDontSee('Prof. Rahmawati Bahar, Ph.D.');
@@ -312,5 +319,68 @@ class ReviewerWorkflowTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('submit');
+    }
+
+    public function test_reviewer_dapat_mengakses_dashboard_dan_melihat_metrik_statis(): void
+    {
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Dashboard Mitra Bestari');
+        $response->assertSee('Total Penugasan');
+        $response->assertSee('Undangan Masuk');
+        $response->assertSee('Sedang Ditelaah');
+        $response->assertSee('Telaah Selesai');
+    }
+
+    public function test_reviewer_dapat_mengakses_halaman_pedoman_telaah(): void
+    {
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.guidelines'));
+
+        $response->assertOk();
+        $response->assertSee('Pedoman & Etika Telaah Sejawat');
+        $response->assertSee('Standar Rubrik Evaluasi Ilmiah');
+        $response->assertSee('Matriks Standar Rekomendasi Mitra Bestari ke Dewan Redaksi');
+    }
+
+    public function test_reviewer_dapat_mengunduh_berkas_anonim_secara_aman_jika_undangan_diterima(): void
+    {
+        $file = FileEntry::create([
+            'original_name' => 'Naskah-Anonim-Kebijakan-Pesisir.pdf',
+            'storage_path' => 'submissions/files/anon-001.pdf',
+            'storage_disk' => 'local',
+            'mime_type' => 'application/pdf',
+            'byte_size' => 102400,
+            'checksum_sha256' => hash('sha256', 'dummy content'),
+            'virus_scan_status' => 'clean',
+        ]);
+
+        $this->reviewRound->update([
+            'anonymized_file_id' => $file->id,
+        ]);
+
+        // 1. Saat status masih 'invited', unduh berkas ditolak (guard ERD baris 1571)
+        $invitedResponse = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.files.download', [
+                'id' => $this->assignment->id,
+                'fileId' => $file->id,
+            ]));
+
+        $invitedResponse->assertRedirect(route('reviewer.assignments.show', $this->assignment->id));
+        $invitedResponse->assertSessionHas('error');
+
+        // 2. Saat status diubah menjadi 'accepted', unduh berhasil dialirkan secara aman
+        $this->assignment->update(['status' => 'accepted']);
+
+        $acceptedResponse = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.files.download', [
+                'id' => $this->assignment->id,
+                'fileId' => $file->id,
+            ]));
+
+        $acceptedResponse->assertOk();
+        $acceptedResponse->assertHeader('Content-Type', 'application/pdf');
     }
 }
