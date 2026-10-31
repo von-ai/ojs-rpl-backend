@@ -1,6 +1,6 @@
 @props(['inPress' => []])
 
-<div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-2xs space-y-4">
+<div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 space-y-4">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-gray-100 pb-3">
         <div>

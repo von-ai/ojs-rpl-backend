@@ -1,6 +1,6 @@
 @props(['article'])
 
-<div class="bg-white rounded-xl border border-gray-200 p-5 shadow-2xs hover:border-brand-maroon/40 transition-all space-y-3">
+<div class="bg-white rounded-xl border border-gray-200 p-5 hover:border-brand-maroon/40 transition-all space-y-3">
     <!-- Top Metadata Badges & Dates -->
     <div class="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-gray-100 pb-2.5">
         <div class="flex items-center flex-wrap gap-2">
@@ -81,7 +81,7 @@
             </a>
 
             @if(!empty($article['download_url']) && $article['download_url'] !== '#')
-                <a href="{{ $article['download_url'] }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-maroon hover:text-white bg-red-50 hover:bg-brand-maroon border border-brand-maroon/30 hover:border-brand-maroon rounded-lg shadow-2xs transition-all">
+                <a href="{{ $article['download_url'] }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-maroon hover:text-white bg-red-50 hover:bg-brand-maroon border border-brand-maroon/30 hover:border-brand-maroon rounded-lg transition-all">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
