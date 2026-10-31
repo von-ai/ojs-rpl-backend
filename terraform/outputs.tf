@@ -52,6 +52,11 @@ output "storage_container_backups" {
   value       = azurerm_storage_container.backups.name
 }
 
+output "storage_file_share_name" {
+  description = "Nama Azure File Share untuk volume persistensi data container"
+  value       = azurerm_storage_share.app_share.name
+}
+
 output "redis_hostname" {
   description = "Hostname Azure Cache for Redis"
   value       = azurerm_redis_cache.redis.hostname

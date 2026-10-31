@@ -211,10 +211,11 @@ class ReviewerService
 
             // Jika ada berkas naskah beranotasi yang diunggah
             if ($annotatedFile && $annotatedFile->isValid()) {
-                $storedPath = $annotatedFile->store('review-annotations', 'local');
+                $storageDisk = config('filesystems.default', 'local');
+                $storedPath = $annotatedFile->store('review-annotations', $storageDisk);
 
                 $fileEntry = FileEntry::create([
-                    'storage_disk' => 'local',
+                    'storage_disk' => $storageDisk,
                     'storage_path' => $storedPath,
                     'original_name' => $annotatedFile->getClientOriginalName(),
                     'mime_type' => $annotatedFile->getMimeType() ?? 'application/pdf',

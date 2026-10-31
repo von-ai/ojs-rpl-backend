@@ -60,6 +60,16 @@ return [
             'report' => false,
         ],
 
+        'azure' => [
+            'driver' => 'azure',
+            'name' => env('AZURE_STORAGE_NAME'),
+            'key' => env('AZURE_STORAGE_KEY'),
+            'container' => env('AZURE_STORAGE_CONTAINER', 'sirida-manuscripts'),
+            'url' => env('AZURE_STORAGE_URL'),
+            'prefix' => env('AZURE_STORAGE_PREFIX', null),
+            'throw' => false,
+        ],
+
     ],
 
     /*

@@ -26,13 +26,14 @@ class CopyeditorService
     public function uploadOutputFile(Copyedit $copyedit, UploadedFile $file, User $uploader): FileEntry
     {
         return DB::transaction(function () use ($copyedit, $file, $uploader): FileEntry {
-            $path = $file->store("copyedits/{$copyedit->id}", 'local');
-            $disk = Storage::disk('local');
+            $storageDisk = config('filesystems.default', 'local');
+            $path = $file->store("copyedits/{$copyedit->id}", $storageDisk);
+            $disk = Storage::disk($storageDisk);
             $byteSize = (int) $disk->size($path);
             $sha256 = hash('sha256', (string) $disk->get($path));
 
             $fileEntry = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => $storageDisk,
                 'storage_path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',

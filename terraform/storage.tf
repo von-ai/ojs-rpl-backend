@@ -47,6 +47,16 @@ resource "azurerm_storage_container" "backups" {
 }
 
 # -----------------------------------------------------------------------------
+# Azure Storage File Share untuk Persistensi Berkas Kontainer Stateless (NF-01, NF-08)
+# Memastikan berkas di /var/www/html/storage/app tersimpan permanen & aman
+# -----------------------------------------------------------------------------
+resource "azurerm_storage_share" "app_share" {
+  name                 = "sirida-app-data"
+  storage_account_name = azurerm_storage_account.storage.name
+  quota                = 5 # 5 GB
+}
+
+# -----------------------------------------------------------------------------
 # Aturan Manajemen Siklus Hidup Objek (Lifecycle Management: 30 Hari)
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_management_policy" "lifecycle" {

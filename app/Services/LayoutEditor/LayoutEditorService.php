@@ -39,13 +39,14 @@ class LayoutEditorService
         ?string $changeSummary = null
     ): Galley {
         return DB::transaction(function () use ($submission, $file, $label, $format, $uploader): Galley {
-            $path = $file->store("galleys/{$submission->id}", 'local');
-            $disk = Storage::disk('local');
+            $storageDisk = config('filesystems.default', 'local');
+            $path = $file->store("galleys/{$submission->id}", $storageDisk);
+            $disk = Storage::disk($storageDisk);
             $byteSize = (int) $disk->size($path);
             $sha256 = hash('sha256', (string) $disk->get($path));
 
             $fileEntry = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => $storageDisk,
                 'storage_path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getClientMimeType() ?: ($format === 'pdf' ? 'application/pdf' : 'text/html'),

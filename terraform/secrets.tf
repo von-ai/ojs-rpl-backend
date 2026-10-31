@@ -56,7 +56,7 @@ locals {
     { name = "REDIS_PORT", value = tostring(azurerm_redis_cache.redis.ssl_port) },
     { name = "REDIS_PASSWORD", secret_name = "redis-password" },
     { name = "REDIS_SCHEME", value = "tls" },
-    { name = "FILESYSTEM_DISK", value = "azure" },
+    { name = "FILESYSTEM_DISK", value = var.filesystem_disk },
     { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },
     { name = "AZURE_STORAGE_KEY", secret_name = "azure-storage-key" },
     { name = "AZURE_STORAGE_CONTAINER", value = azurerm_storage_container.manuscripts.name },
