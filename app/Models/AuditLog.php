@@ -18,6 +18,7 @@ class AuditLog extends Model
     protected $table = 'audit_logs';
 
     protected $fillable = [
+        'id',
         'journal_id',
         'actor_id',
         'actor_type',
@@ -112,7 +113,7 @@ class AuditLog extends Model
         $ip = $attributes['ip_address'] ?? request()?->ip();
         $userAgent = $attributes['user_agent'] ?? request()?->userAgent();
 
-        return static::create([
+        $data = [
             'journal_id' => $attributes['journal_id'] ?? null,
             'actor_id' => $attributes['actor_id'] ?? null,
             'actor_type' => $actorType,
@@ -129,6 +130,12 @@ class AuditLog extends Model
             'user_agent' => $userAgent,
             'request_id' => $requestId,
             'occurred_at' => $attributes['occurred_at'] ?? now(),
-        ]);
+        ];
+
+        if (isset($attributes['id'])) {
+            $data['id'] = (string) $attributes['id'];
+        }
+
+        return static::create($data);
     }
 }

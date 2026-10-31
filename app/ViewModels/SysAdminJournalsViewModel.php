@@ -27,13 +27,13 @@ class SysAdminJournalsViewModel
     public static function getSidebarBadgeCount(): int
     {
         try {
-            if (class_exists(Journal::class) && Schema::hasTable('journals') && Journal::query()->exists()) {
+            if (class_exists(Journal::class) && Schema::hasTable('journals')) {
                 return Journal::query()->count();
             }
 
-            return 4;
+            return 0;
         } catch (\Throwable) {
-            return 4;
+            return 0;
         }
     }
 
@@ -83,16 +83,13 @@ class SysAdminJournalsViewModel
         $active = count(array_filter($all, fn ($item) => $item['status'] === 'active'));
         $archived = count(array_filter($all, fn ($item) => $item['status'] === 'archived'));
 
-        $runningIssues = 6;
+        $runningIssues = 0;
         try {
-            if (Schema::hasTable('issues') && Schema::hasTable('journals')) {
-                $issueCount = Issue::where('status', 'published')->count();
-                if ($issueCount > 0) {
-                    $runningIssues = $issueCount;
-                }
+            if (Schema::hasTable('issues')) {
+                $runningIssues = Issue::where('status', 'published')->count();
             }
         } catch (\Throwable) {
-            $runningIssues = 6;
+            $runningIssues = 0;
         }
 
         return [
@@ -254,7 +251,7 @@ class SysAdminJournalsViewModel
     private function allJournals(): array
     {
         try {
-            if (Schema::hasTable('journals') && Journal::count() > 0) {
+            if (Schema::hasTable('journals')) {
                 return Journal::with(['currentIssue', 'submissions'])->get()->map(function (Journal $j) {
                     return [
                         'id' => (string) $j->id,
@@ -284,10 +281,10 @@ class SysAdminJournalsViewModel
                 })->toArray();
             }
         } catch (\Throwable) {
-            // Fallback to mock
+            // Graceful fallback
         }
 
-        return $this->mockJournals();
+        return [];
     }
 
     /**

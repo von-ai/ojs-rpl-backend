@@ -188,7 +188,7 @@ class SysAdminAuditLogsViewModel
     private function allLogs(): array
     {
         try {
-            if (Schema::hasTable('audit_logs') && AuditLog::count() > 0) {
+            if (Schema::hasTable('audit_logs')) {
                 return AuditLog::with(['actor', 'targetUser', 'journal'])->latest('occurred_at')->get()->map(function (AuditLog $log) {
                     $actorName = $log->actor?->name ?? ($log->system_actor ? 'Sistem Otomatis' : 'Sistem Latar Belakang');
 
@@ -210,10 +210,10 @@ class SysAdminAuditLogsViewModel
                 })->toArray();
             }
         } catch (\Throwable) {
-            // Fallback
+            // Graceful fallback
         }
 
-        return $this->mockLogs();
+        return [];
     }
 
     /**

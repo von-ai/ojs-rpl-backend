@@ -28,13 +28,13 @@ class SysAdminUsersViewModel
     public static function getSidebarBadgeCount(): int
     {
         try {
-            if (class_exists(User::class) && Schema::hasTable('users') && User::query()->exists()) {
+            if (class_exists(User::class) && Schema::hasTable('users')) {
                 return User::query()->count();
             }
 
-            return 10;
+            return 0;
         } catch (\Throwable) {
-            return 10;
+            return 0;
         }
     }
 
@@ -198,7 +198,7 @@ class SysAdminUsersViewModel
     public function recentImports(): array
     {
         try {
-            if (Schema::hasTable('user_imports') && UserImport::count() > 0) {
+            if (Schema::hasTable('user_imports')) {
                 return UserImport::with('journal')->latest()->get()->map(function (UserImport $import) {
                     return [
                         'id' => (string) $import->id,
@@ -215,10 +215,10 @@ class SysAdminUsersViewModel
                 })->toArray();
             }
         } catch (\Throwable) {
-            // Fallback
+            // Graceful fallback
         }
 
-        return $this->mockImports();
+        return [];
     }
 
     /**
@@ -249,27 +249,20 @@ class SysAdminUsersViewModel
     {
         try {
             if (Schema::hasTable('journals')) {
-                $dbJournals = Journal::all();
-                if ($dbJournals->isNotEmpty()) {
-                    return $dbJournals->map(fn ($j) => [
-                        'id' => (string) $j->id,
-                        'name' => (string) $j->name,
-                    ])->toArray();
-                }
+                return Journal::orderBy('name')->get()->map(fn ($j) => [
+                    'id' => (string) $j->id,
+                    'name' => (string) $j->name,
+                ])->toArray();
             }
         } catch (\Throwable) {
-            // Fallback
+            // Graceful fallback
         }
 
-        return [
-            ['id' => 'JOURNAL-01JARK-01', 'name' => 'JTIIK Makassar'],
-            ['id' => 'JOURNAL-01JARK-02', 'name' => 'JIKPM Makassar'],
-            ['id' => 'JOURNAL-01JARK-03', 'name' => 'JRLMBP Makassar'],
-        ];
+        return [];
     }
 
     /**
-     * Daftar seluruh data pengguna global (Database dengan fallback mock).
+     * Daftar seluruh data pengguna global (Database).
      *
      * @return array<int, array{
      *     id: string,
@@ -289,7 +282,7 @@ class SysAdminUsersViewModel
     private function allUsers(): array
     {
         try {
-            if (Schema::hasTable('users') && User::count() > 0) {
+            if (Schema::hasTable('users')) {
                 return User::with(['profile', 'userRoles.journal'])->get()->map(function (User $user) {
                     $isSysAdmin = $user->isSysAdmin();
                     $roleCodes = $user->userRoles->pluck('role_code')->toArray();
@@ -321,10 +314,10 @@ class SysAdminUsersViewModel
                 })->toArray();
             }
         } catch (\Throwable) {
-            // Fallback
+            // Graceful fallback
         }
 
-        return $this->mockUsers();
+        return [];
     }
 
     /**

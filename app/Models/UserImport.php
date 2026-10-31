@@ -16,6 +16,7 @@ class UserImport extends Model
     protected $table = 'user_imports';
 
     protected $fillable = [
+        'id',
         'journal_id',
         'file_name',
         'total_rows',

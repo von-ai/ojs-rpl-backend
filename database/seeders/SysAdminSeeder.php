@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\AuditLog;
 use App\Models\Journal;
+use App\Models\Section;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\UserImport;
@@ -155,6 +156,102 @@ class SysAdminSeeder extends Seeder
             ]
         );
 
+        // Inisialisasi seksi default untuk seluruh instansi jurnal
+        foreach ([$jtiik, $jikpm, $jrlmbp, $arsip] as $jnl) {
+            Section::firstOrCreate(
+                [
+                    'journal_id' => $jnl->id,
+                    'slug' => 'artikel-riset',
+                ],
+                [
+                    'name' => 'Artikel Riset',
+                    'position' => 1,
+                ]
+            );
+        }
+
+        // Pengguna Instansi Jurnal Multi-Tenancy (Dewan Redaksi & Penulis)
+        $rita = User::firstOrCreate(
+            ['email' => 'rita.irmawaty@unhas.ac.id'],
+            [
+                'username' => 'rita.irmawaty',
+                'name' => 'Dr. Eng. Ir. Rita Irmawaty, S.T., M.T.',
+                'full_name' => 'Dr. Eng. Ir. Rita Irmawaty, S.T., M.T.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+                'status' => 'active',
+                'version' => 1,
+            ]
+        );
+        UserProfile::updateOrCreate(
+            ['user_id' => $rita->id],
+            [
+                'affiliation' => 'Departemen Teknik Sipil & Lingkungan Universitas Hasanuddin',
+                'country_code' => 'ID',
+            ]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $rita->id, 'journal_id' => $jtiik->id, 'role_code' => 'editor_in_chief'],
+            ['expertise_keywords' => ['Smart City', 'Infrastruktur Kota']]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $rita->id, 'journal_id' => $jtiik->id, 'role_code' => 'reviewer'],
+            ['expertise_keywords' => ['Teknik Sipil', 'Sensor IoT']]
+        );
+
+        $andiNurul = User::firstOrCreate(
+            ['email' => 'andi.nurul@unm.ac.id'],
+            [
+                'username' => 'andi.nurul',
+                'name' => 'Dr. Andi Nurul Hidayah, M.Si.',
+                'full_name' => 'Dr. Andi Nurul Hidayah, M.Si.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+                'status' => 'active',
+                'version' => 1,
+            ]
+        );
+        UserProfile::updateOrCreate(
+            ['user_id' => $andiNurul->id],
+            [
+                'affiliation' => 'Fakultas Ilmu Sosial dan Hukum Universitas Negeri Makassar',
+                'country_code' => 'ID',
+            ]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $andiNurul->id, 'journal_id' => $jikpm->id, 'role_code' => 'section_editor']
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $andiNurul->id, 'journal_id' => $jikpm->id, 'role_code' => 'author']
+        );
+
+        $salehPallu = User::firstOrCreate(
+            ['email' => 'saleh.pallu@unhas.ac.id'],
+            [
+                'username' => 'saleh.pallu',
+                'name' => 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.',
+                'full_name' => 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+                'status' => 'active',
+                'version' => 1,
+            ]
+        );
+        UserProfile::updateOrCreate(
+            ['user_id' => $salehPallu->id],
+            [
+                'affiliation' => 'Pusat Riset Mitigasi Bencana & Oseanografi BRIDA',
+                'country_code' => 'ID',
+            ]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $salehPallu->id, 'journal_id' => $jrlmbp->id, 'role_code' => 'section_editor']
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $salehPallu->id, 'journal_id' => $jrlmbp->id, 'role_code' => 'reviewer'],
+            ['expertise_keywords' => ['Mitigasi Rob', 'Oseanografi']]
+        );
+
         // 4. Konfigurasi Parameter Global Platform (system_settings)
         $defaultSettings = SystemSetting::defaults();
         foreach ($defaultSettings as $key => $val) {
@@ -172,6 +269,7 @@ class SysAdminSeeder extends Seeder
         UserImport::firstOrCreate(
             ['file_name' => 'Reviewer_Kepakaran_SmartCity_2026.csv'],
             [
+                'id' => 'IMPORT-01JARK-01',
                 'journal_id' => $jtiik->id,
                 'total_rows' => 35,
                 'processed_rows' => 35,
@@ -186,6 +284,7 @@ class SysAdminSeeder extends Seeder
         UserImport::firstOrCreate(
             ['file_name' => 'Dosen_Fisip_UNM_Kontributor.csv'],
             [
+                'id' => 'IMPORT-01JARK-02',
                 'journal_id' => $jikpm->id,
                 'total_rows' => 20,
                 'processed_rows' => 19,
@@ -199,6 +298,7 @@ class SysAdminSeeder extends Seeder
 
         // 6. Jejak Rekam Audit Append-Only (audit_logs)
         AuditLog::record([
+            'id' => 'LOG-01JARK-01',
             'actor_id' => $primaryAdmin->id,
             'actor_type' => 'user',
             'effective_role' => 'System Administrator',
@@ -215,6 +315,7 @@ class SysAdminSeeder extends Seeder
         ]);
 
         AuditLog::record([
+            'id' => 'LOG-01JARK-02',
             'actor_id' => $primaryAdmin->id,
             'user_id' => $secondaryAdmin->id,
             'actor_type' => 'user',
@@ -232,6 +333,7 @@ class SysAdminSeeder extends Seeder
         ]);
 
         AuditLog::record([
+            'id' => 'LOG-01JARK-03',
             'actor_type' => 'system',
             'system_actor' => 'clamav_scan_daemon',
             'effective_role' => 'System Daemon',

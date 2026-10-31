@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use Database\Seeders\SysAdminSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SysAdminNavigationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(SysAdminSeeder::class);
+    }
+
     /**
      * Rute dashboard sysadmin dialihkan ke manajemen jurnal.
      */

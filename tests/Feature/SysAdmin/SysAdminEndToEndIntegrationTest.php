@@ -387,9 +387,9 @@ class SysAdminEndToEndIntegrationTest extends TestCase
      */
     public function test_sysadmin_sidebar_badge_counts_are_dynamically_synchronized_with_database(): void
     {
-        // Kondisi awal (setUp membuat 2 user admin, 0 jurnal DB fallback ke 4 mock)
+        // Kondisi awal (setUp membuat 2 user admin, 0 jurnal di database)
         $this->assertSame(2, SysAdminUsersViewModel::getSidebarBadgeCount());
-        $this->assertSame(4, SysAdminJournalsViewModel::getSidebarBadgeCount());
+        $this->assertSame(0, SysAdminJournalsViewModel::getSidebarBadgeCount());
 
         // Buat jurnal baru
         Journal::create([
