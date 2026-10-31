@@ -15,6 +15,7 @@ use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
@@ -133,8 +134,8 @@ Route::middleware('role.access:copyeditor')->prefix('copyeditor')->name('copyedi
     Route::post('/request-approval', [CopyeditorSubmissionController::class, 'requestApproval'])->name('request-approval');
     Route::post('/escalate', [CopyeditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
-    Route::get('/files/{id}/download', [CopyeditorSubmissionController::class, 'downloadFile'])->name('files.download');
-    Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->name('author-decision');
+    Route::get('/files/{id}/download', [CopyeditorSubmissionController::class, 'downloadFile'])->withoutMiddleware('role.access:copyeditor')->name('files.download');
+    Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->withoutMiddleware('role.access:copyeditor')->name('author-decision');
     Route::post('/resolve-escalation', [CopyeditorSubmissionController::class, 'resolveEscalation'])->name('resolve-escalation');
 });
 
@@ -239,7 +240,7 @@ Route::middleware('role.access:sysadmin')->prefix('sysadmin')->name('sysadmin.')
 
 Route::redirect('/submissions', '/author/submissions');
 Route::get('/dashboard', function () {
-    $user = auth()->user();
+    $user = Auth::user();
 
     return redirect()->route($user ? $user->defaultPortalRoute() : 'author.submissions.index');
 })->middleware('auth')->name('dashboard');
