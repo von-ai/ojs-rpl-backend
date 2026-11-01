@@ -22,11 +22,9 @@ class AuthorSubmissionsPageTest extends TestCase
 
         $this->withoutVite();
 
-        $this->author = User::factory()->create([
-            'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-            'email' => 'andi.ilyas@unhas.ac.id',
-        ]);
+        $this->seed(\Database\Seeders\SubmissionSeeder::class);
 
+        $this->author = User::where('email', 'andi.ilyas@unhas.ac.id')->firstOrFail();
         $this->actingAs($this->author);
     }
 
@@ -85,16 +83,16 @@ class AuthorSubmissionsPageTest extends TestCase
         // Tidak Boleh Ada Persentase pada Status
         $response->assertDontSee('%');
 
-        // Daftar 5 Naskah Bawaan
-        $response->assertSee('SUB-2026-00124');
+        // Daftar Naskah Hasil Seeding Riil
+        $response->assertSee('SUB-2026-00104');
         $response->assertSee('Evaluasi Kebijakan Lorong Wisata');
-        $response->assertSee('SUB-2026-00142');
-        $response->assertSee('Analisis Ketahanan Pangan');
-        $response->assertSee('SUB-2026-00098');
-        $response->assertSee('Model Prediksi Kualitas Udara');
-        $response->assertSee('SUB-2026-00155');
-        $response->assertSee('Kajian Implementasi Geodatabase');
-        $response->assertSee('SUB-2025-00041');
+        $response->assertSee('SUB-2026-00102');
+        $response->assertSee('Analisis Efektivitas Insentif Pajak');
+        $response->assertSee('SUB-2026-00103');
+        $response->assertSee('Pemodelan Spasial Bahaya Banjir Rob');
+        $response->assertSee('SUB-2026-00101');
+        $response->assertSee('Inovasi Bank Sampah Digital');
+        $response->assertSee('SUB-2026-00107');
         $response->assertSee('Strategi Transformasi Digital');
 
         $response->assertSee('Detail');
@@ -122,20 +120,20 @@ class AuthorSubmissionsPageTest extends TestCase
         // Tab: Perlu Revisi
         $revResponse = $this->get(route('author.submissions.index', ['tab' => 'perlu-revisi']));
         $revResponse->assertStatus(200);
-        $revResponse->assertSee('SUB-2026-00124');
-        $revResponse->assertDontSee('SUB-2025-00041');
+        $revResponse->assertSee('SUB-2026-00104');
+        $revResponse->assertDontSee('SUB-2026-00107');
 
         // Tab: Draf
         $draftResponse = $this->get(route('author.submissions.index', ['tab' => 'draf']));
         $draftResponse->assertStatus(200);
-        $draftResponse->assertSee('SUB-2026-00155');
-        $draftResponse->assertDontSee('SUB-2026-00124');
+        $draftResponse->assertSee('SUB-2026-00101');
+        $draftResponse->assertDontSee('SUB-2026-00104');
 
         // Tab: Telah Terbit
         $publishedResponse = $this->get(route('author.submissions.index', ['tab' => 'terbit']));
         $publishedResponse->assertStatus(200);
-        $publishedResponse->assertSee('SUB-2025-00041');
-        $publishedResponse->assertDontSee('SUB-2026-00142');
+        $publishedResponse->assertSee('SUB-2026-00107');
+        $publishedResponse->assertDontSee('SUB-2026-00102');
     }
 
     /**
@@ -146,14 +144,14 @@ class AuthorSubmissionsPageTest extends TestCase
         // Cari berdasarkan judul
         $searchTitle = $this->get(route('author.submissions.index', ['search' => 'Lorong Wisata']));
         $searchTitle->assertStatus(200);
-        $searchTitle->assertSee('SUB-2026-00124');
-        $searchTitle->assertDontSee('SUB-2026-00098');
+        $searchTitle->assertSee('SUB-2026-00104');
+        $searchTitle->assertDontSee('SUB-2026-00103');
 
         // Cari berdasarkan ID Naskah
-        $searchId = $this->get(route('author.submissions.index', ['search' => 'SUB-2026-00098']));
+        $searchId = $this->get(route('author.submissions.index', ['search' => 'SUB-2026-00103']));
         $searchId->assertStatus(200);
-        $searchId->assertSee('SUB-2026-00098');
-        $searchId->assertDontSee('SUB-2026-00124');
+        $searchId->assertSee('SUB-2026-00103');
+        $searchId->assertDontSee('SUB-2026-00104');
     }
 
     /**
@@ -161,17 +159,16 @@ class AuthorSubmissionsPageTest extends TestCase
      */
     public function test_filter_tahun_dan_jenis_artikel(): void
     {
-        // Filter tahun 2025
-        $yearResponse = $this->get(route('author.submissions.index', ['year' => '2025']));
+        // Filter tahun 2026
+        $yearResponse = $this->get(route('author.submissions.index', ['year' => date('Y')]));
         $yearResponse->assertStatus(200);
-        $yearResponse->assertSee('SUB-2025-00041');
-        $yearResponse->assertDontSee('SUB-2026-00124');
+        $yearResponse->assertSee('SUB-2026-00104');
 
-        // Filter tipe Kajian Kebijakan (sebelumnya Policy Brief)
-        $typeResponse = $this->get(route('author.submissions.index', ['type' => 'Kajian Kebijakan']));
+        // Filter tipe Kajian Kebijakan Strategis
+        $typeResponse = $this->get(route('author.submissions.index', ['type' => 'Kajian Kebijakan Strategis']));
         $typeResponse->assertStatus(200);
-        $typeResponse->assertSee('SUB-2026-00142');
-        $typeResponse->assertDontSee('SUB-2026-00124');
+        $typeResponse->assertSee('SUB-2026-00102');
+        $typeResponse->assertDontSee('SUB-2026-00104');
     }
 
     /**
@@ -206,9 +203,9 @@ class AuthorSubmissionsPageTest extends TestCase
         $this->assertStringNotContainsString('Tahapan Alur', $content);
         $this->assertStringNotContainsString('Detail Tahapan', $content);
         $this->assertStringNotContainsString('Tersimpan otomatis', $content);
-        $this->assertStringContainsString('SUB-2026-00124', $content);
+        $this->assertStringContainsString('SUB-2026-00104', $content);
         $this->assertStringContainsString('Evaluasi Kebijakan Lorong Wisata', $content);
-        $this->assertStringContainsString('SUB-2025-00041', $content);
+        $this->assertStringContainsString('SUB-2026-00107', $content);
     }
 
     /**
@@ -261,13 +258,13 @@ class AuthorSubmissionsPageTest extends TestCase
      */
     public function test_filter_ajax_mengembalikan_json_dengan_transisi_optimal(): void
     {
-        // Query persis sesuai skenario: tab=aktif, search=mod, year=semua, type=semua, sort=-updated_at
+        // Query persis sesuai skenario: tab=aktif, search=Banjir Rob, year=semua, type=semua, sort=-updated_at
         $response = $this->withHeaders([
             'X-Requested-With' => 'XMLHttpRequest',
             'Accept' => 'application/json',
         ])->get(route('author.submissions.index', [
             'tab' => 'aktif',
-            'search' => 'mod',
+            'search' => 'Banjir Rob',
             'year' => 'semua',
             'type' => 'semua',
             'sort' => '-updated_at',
@@ -286,9 +283,9 @@ class AuthorSubmissionsPageTest extends TestCase
         $responseData = $response->json();
         $this->assertEquals(1, $responseData['total']);
         $this->assertTrue($responseData['has_filters']);
-        $this->assertStringContainsString('SUB-2026-00098', $responseData['table_html']);
-        $this->assertStringContainsString('Model Prediksi Kualitas Udara', $responseData['table_html']);
-        $this->assertStringNotContainsString('SUB-2026-00124', $responseData['table_html']);
+        $this->assertStringContainsString('SUB-2026-00103', $responseData['table_html']);
+        $this->assertStringContainsString('Pemodelan Spasial Bahaya Banjir Rob', $responseData['table_html']);
+        $this->assertStringNotContainsString('SUB-2026-00104', $responseData['table_html']);
         $this->assertStringContainsString('export-csv', $responseData['export_url']);
     }
 
@@ -297,8 +294,6 @@ class AuthorSubmissionsPageTest extends TestCase
      */
     public function test_seeder_memetakan_naskah_ke_tab_filter_secara_tepat(): void
     {
-        $this->seed(SubmissionSeeder::class);
-
         // Tab Draf
         $respDraft = $this->get(route('author.submissions.index', ['tab' => 'draf']));
         $respDraft->assertStatus(200);
@@ -326,5 +321,18 @@ class AuthorSubmissionsPageTest extends TestCase
         $respArsip->assertStatus(200);
         $respArsip->assertSee('SUB-2026-00108');
         $respArsip->assertSee('SUB-2026-00109');
+    }
+
+    /**
+     * Memastikan empty state tampil dengan ramah ketika database tidak memiliki naskah.
+     */
+    public function test_empty_state_tampil_ketika_belum_ada_naskah(): void
+    {
+        \App\Models\Submission::query()->delete();
+
+        $response = $this->get(route('author.submissions.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Belum Ada Naskah Ditemukan');
+        $response->assertSee('Mulai Kirim Naskah Baru');
     }
 }

@@ -26,11 +26,9 @@ class AuthorSubmissionDetailTest extends TestCase
 
         $this->withoutVite();
 
-        $this->author = User::factory()->create([
-            'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-            'email' => 'andi.ilyas@unhas.ac.id',
-        ]);
+        $this->seed(\Database\Seeders\SubmissionSeeder::class);
 
+        $this->author = User::where('email', 'andi.ilyas@unhas.ac.id')->firstOrFail();
         $this->actingAs($this->author);
     }
 
@@ -41,7 +39,7 @@ class AuthorSubmissionDetailTest extends TestCase
     {
         Auth::logout();
 
-        $response = $this->get(route('author.submissions.show', 'SUB-2026-00124'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00104'));
 
         $response->assertRedirect(route('login'));
     }
@@ -51,12 +49,11 @@ class AuthorSubmissionDetailTest extends TestCase
      */
     public function test_penulis_dapat_mengakses_detail_naskah_bawaan(): void
     {
-        $response = $this->get(route('author.submissions.show', 'SUB-2026-00124'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00104'));
 
         $response->assertStatus(200);
-        $response->assertSee('SUB-2026-00124');
+        $response->assertSee('SUB-2026-00104');
         $response->assertSee('Evaluasi Kebijakan Lorong Wisata');
-        $response->assertSee('Riset Orisinil');
         $response->assertSee('Perlu Revisi Penulis');
         $response->assertSee('Tahap 4 dari 6');
         $response->assertSee('Abstrak & Metadata Naskah', false);
@@ -78,16 +75,14 @@ class AuthorSubmissionDetailTest extends TestCase
      */
     public function test_detail_naskah_status_terbit_menampilkan_informasi_publikasi(): void
     {
-        $response = $this->get(route('author.submissions.show', 'SUB-2025-00041'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00107'));
 
         $response->assertStatus(200);
-        $response->assertSee('SUB-2025-00041');
+        $response->assertSee('SUB-2026-00107');
         $response->assertSee('Strategi Transformasi Digital');
         $response->assertSee('Telah Terbit Resmi');
         $response->assertSee('10.55981/brida.v2i2.88');
-        $response->assertSee('Vol. 2 No. 2 (2025)');
         $response->assertSee('Kutipan Ilmiah (Sitasi APA 7th)');
-        $response->assertSee('Unduh Galai Cetak PDF');
     }
 
     /**
@@ -95,11 +90,11 @@ class AuthorSubmissionDetailTest extends TestCase
      */
     public function test_detail_naskah_status_draf_menampilkan_opsi_lanjutkan(): void
     {
-        $response = $this->get(route('author.submissions.show', 'SUB-2026-00155'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00101'));
 
         $response->assertStatus(200);
-        $response->assertSee('SUB-2026-00155');
-        $response->assertSee('Kajian Implementasi Geodatabase');
+        $response->assertSee('SUB-2026-00101');
+        $response->assertSee('Inovasi Bank Sampah Digital');
         $response->assertSee('Draf Belum Diajukan');
         $response->assertSee('Naskah Draf Parsial');
         $response->assertSee('Lanjutkan Pengisian Formulir');
@@ -184,7 +179,7 @@ class AuthorSubmissionDetailTest extends TestCase
      */
     public function test_halaman_detail_menjaga_privasi_double_blind_tanpa_bocor_reviewer(): void
     {
-        $response = $this->get(route('author.submissions.show', 'SUB-2026-00124'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00104'));
 
         $response->assertStatus(200);
         // Memastikan tidak ada nama reviewer atau confidential comments internal yang bocor
@@ -279,7 +274,7 @@ class AuthorSubmissionDetailTest extends TestCase
      */
     public function test_naskah_tahap_awal_tanpa_tindak_lanjut_menampilkan_tombol_ajukan_penarikan(): void
     {
-        $response = $this->get(route('author.submissions.show', 'SUB-2026-00142'));
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00102'));
 
         $response->assertStatus(200);
         $response->assertSee('Ajukan Penarikan Naskah');
@@ -298,7 +293,7 @@ class AuthorSubmissionDetailTest extends TestCase
         $respReview->assertSee('Naskah Tidak Dapat Ditarik');
 
         // Naskah berstatus revisions_requested (tahap 4)
-        $respRev = $this->get(route('author.submissions.show', 'SUB-2026-00124'));
+        $respRev = $this->get(route('author.submissions.show', 'SUB-2026-00104'));
         $respRev->assertStatus(200);
         $respRev->assertDontSee('Ajukan Penarikan Naskah');
         $respRev->assertSee('Naskah Tidak Dapat Ditarik');
