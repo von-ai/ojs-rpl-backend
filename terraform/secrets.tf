@@ -48,6 +48,7 @@ locals {
     { name = "DB_USERNAME", value = var.db_username },
     { name = "DB_PASSWORD", secret_name = "db-password" },
     { name = "DB_SSL_MODE", value = var.db_ssl_mode },
+    { name = "MYSQL_ATTR_SSL_CA", value = "/etc/ssl/certs/ca-certificates.crt" },
     { name = "SESSION_DRIVER", value = "redis" },
     { name = "CACHE_STORE", value = "redis" },
     { name = "QUEUE_CONNECTION", value = "database" },
