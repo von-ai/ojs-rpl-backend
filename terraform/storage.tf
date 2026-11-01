@@ -104,5 +104,7 @@ resource "azurerm_security_center_storage_defender" "defender" {
   malware_scanning_on_upload_enabled          = true
   malware_scanning_on_upload_cap_gb_per_month = 50
   sensitive_data_discovery_enabled            = false
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
