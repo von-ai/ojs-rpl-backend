@@ -14,7 +14,7 @@ output "web_app_direct_fqdn" {
 
 output "public_app_url" {
   description = "URL publik aplikasi web jurnal"
-  value       = var.enable_cloudflare ? "https://${var.subdomain}.${var.domain_name}" : "https://${azurerm_container_app.web.ingress[0].fqdn}"
+  value       = var.enable_cloudflare ? (var.subdomain == "@" ? "https://${var.domain_name}" : "https://${var.subdomain}.${var.domain_name}") : "https://${azurerm_container_app.web.ingress[0].fqdn}"
 }
 
 output "web_app_name" {

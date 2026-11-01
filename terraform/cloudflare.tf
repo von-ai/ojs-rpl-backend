@@ -18,12 +18,28 @@ resource "cloudflare_record" "cname_web" {
 resource "cloudflare_record" "asuid_txt" {
   count   = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
-  name    = "asuid.${var.subdomain}"
+  name    = var.subdomain == "@" ? "asuid" : "asuid.${var.subdomain}"
   value   = azurerm_container_app.web.custom_domain_verification_id
   type    = "TXT"
   proxied = false
   ttl     = 300
   comment = "Azure Container Apps Custom Domain Verification Token"
+}
+
+# -----------------------------------------------------------------------------
+# Binding Custom Domain ke Azure Container Apps
+# -----------------------------------------------------------------------------
+resource "azurerm_container_app_custom_domain" "web" {
+  count            = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
+  name             = var.subdomain == "@" ? var.domain_name : "${var.subdomain}.${var.domain_name}"
+  container_app_id = azurerm_container_app.web.id
+
+  certificate_binding_type = "Disabled"
+
+  depends_on = [
+    cloudflare_record.asuid_txt,
+    cloudflare_record.cname_web
+  ]
 }
 
 # -----------------------------------------------------------------------------
