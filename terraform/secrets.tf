@@ -38,7 +38,7 @@ locals {
     { name = "APP_NAME", value = "SIRIDA" },
     { name = "APP_ENV", value = var.environment },
     { name = "APP_DEBUG", value = tostring(var.app_debug) },
-    { name = "APP_URL", value = var.app_url != "" ? var.app_url : "https://ca-${var.project_name}-web-${var.environment}.${azurerm_container_app_environment.env.default_domain}" },
+    { name = "APP_URL", value = var.app_url != "" ? var.app_url : (var.enable_cloudflare ? "https://${var.subdomain}.${var.domain_name}" : "https://ca-${var.project_name}-web-${var.environment}.${azurerm_container_app_environment.env.default_domain}") },
     { name = "APP_KEY", secret_name = "app-key" },
     { name = "LOG_CHANNEL", value = "stderr" },
     { name = "DB_CONNECTION", value = "mysql" },
