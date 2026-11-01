@@ -371,19 +371,6 @@ class AuthorSubmissionController extends Controller
         $detailViewModel = new AuthorSubmissionDetailViewModel;
 
         if (! $submission) {
-            $mock = $detailViewModel->find($id, $user);
-            if ($mock) {
-                if (! ($mock['can_withdraw'] ?? false)) {
-                    return redirect()
-                        ->route('author.submissions.show', $id)
-                        ->with('error', $mock['cannot_withdraw_reason'] ?? 'Naskah tidak dapat ditarik kembali karena telah memasuki tahap telaah (review) atau telah ditindaklanjuti oleh dewan redaksi/mitra bestari.');
-                }
-
-                return redirect()
-                    ->route('author.submissions.show', $id)
-                    ->with('success', "Permohonan penarikan naskah {$id} telah berhasil diajukan ke dewan redaksi.");
-            }
-
             return redirect()
                 ->route('author.submissions.index')
                 ->with('error', 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');

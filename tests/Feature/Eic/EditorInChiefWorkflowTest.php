@@ -14,6 +14,7 @@ use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -62,6 +63,18 @@ class EditorInChiefWorkflowTest extends TestCase
             'eissn' => '2985-7821',
             'status' => 'active',
             'version' => 1,
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->eic->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'editor_in_chief',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->sectionEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
         ]);
 
         $this->section = Section::create([

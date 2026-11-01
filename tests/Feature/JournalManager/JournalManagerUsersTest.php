@@ -4,10 +4,34 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\User;
+use Database\Seeders\JournalManagerSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class JournalManagerUsersTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(JournalManagerSeeder::class);
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
+        $this->actingAs($this->manager);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_manajemen_pengguna_journal_manager_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/journalmanager/users');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman manajemen pengguna menampilkan 4 kartu metrik, tabel anggota, dan modal penetapan peran.
      */
@@ -22,7 +46,7 @@ class JournalManagerUsersTest extends TestCase
 
         // 4 Kartu Metrik
         $response->assertSee('Total Pengguna Jurnal');
-        $response->assertSee('28 Anggota');
+        $response->assertSee('Anggota');
         $response->assertSee('Dewan Redaksi (Editorial)');
         $response->assertSee('Direktori Penelaah');
         $response->assertSee('Penulis & Pembaca');

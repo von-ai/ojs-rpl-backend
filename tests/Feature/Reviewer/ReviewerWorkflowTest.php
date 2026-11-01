@@ -12,6 +12,7 @@ use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -65,6 +66,18 @@ class ReviewerWorkflowTest extends TestCase
         $this->otherReviewer = User::factory()->create([
             'name' => 'Dr. Hendra Wijaya, M.Sc.',
             'email' => 'hendra.rev@itb.ac.id',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->reviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->otherReviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
         ]);
 
         $this->submission = Submission::create([

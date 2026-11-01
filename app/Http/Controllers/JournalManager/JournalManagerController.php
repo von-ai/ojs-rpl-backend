@@ -79,6 +79,10 @@ class JournalManagerController extends Controller
         $viewModel = new JournalManagerIssueDetailViewModel($id);
         $issue = $viewModel->issue();
 
+        if (! $issue) {
+            abort(404, 'Edisi terbitan tidak ditemukan.');
+        }
+
         return view('journalmanager.issues.show', compact('issue', 'id'));
     }
 

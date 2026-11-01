@@ -122,7 +122,7 @@ Route::middleware(['auth', 'role.access:reviewer'])->prefix('reviewer')->name('r
 });
 
 // Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
-Route::middleware('role.access:copyeditor')->prefix('copyeditor')->name('copyeditor.')->group(function () {
+Route::middleware(['auth', 'role.access:copyeditor'])->prefix('copyeditor')->name('copyeditor.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('copyeditor.submissions.index');
     })->name('dashboard');
@@ -140,7 +140,7 @@ Route::middleware('role.access:copyeditor')->prefix('copyeditor')->name('copyedi
 });
 
 // Portal Layout Editor (Produksi Galai Publikasi & Proofreading)
-Route::middleware('role.access:layout_editor')->prefix('layouteditor')->name('layouteditor.')->group(function () {
+Route::middleware(['auth', 'role.access:layout_editor'])->prefix('layouteditor')->name('layouteditor.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('layouteditor.submissions.index');
     })->name('dashboard');
@@ -157,7 +157,7 @@ Route::middleware('role.access:layout_editor')->prefix('layouteditor')->name('la
 });
 
 // Portal Journal Manager (Tata Kelola Edisi, Tim Redaksi & Kebijakan)
-Route::middleware('role.access:manager')->prefix('journalmanager')->name('journalmanager.')->group(function () {
+Route::middleware(['auth', 'role.access:manager'])->prefix('journalmanager')->name('journalmanager.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('journalmanager.issues.index');
     })->name('dashboard');
@@ -191,7 +191,7 @@ Route::middleware('role.access:manager')->prefix('journalmanager')->name('journa
 });
 
 // Portal Proofreader (Verifikasi Bukti Baca Galai & Catatan Koreksi)
-Route::middleware('role.access:proofreader')->prefix('proofreader')->name('proofreader.')->group(function () {
+Route::middleware(['auth', 'role.access:proofreader'])->prefix('proofreader')->name('proofreader.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('proofreader.submissions.index');
     })->name('dashboard');
@@ -211,7 +211,7 @@ Route::middleware('role.access:proofreader')->prefix('proofreader')->name('proof
 });
 
 // Portal System Administrator (Tata Kelola Multi-Jurnal, Pengguna Global & Platform)
-Route::middleware('role.access:sysadmin')->prefix('sysadmin')->name('sysadmin.')->group(function () {
+Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('sysadmin.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('sysadmin.journals.index');
     })->name('dashboard');
