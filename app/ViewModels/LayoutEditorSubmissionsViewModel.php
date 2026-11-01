@@ -220,7 +220,7 @@ class LayoutEditorSubmissionsViewModel
     }
 
     /**
-     * Dataset naskah penugasan tata letak galai (mengonsumsi database bila ada, atau mock fallback).
+     * Dataset naskah penugasan tata letak galai dari basis data.
      *
      * @return array<int, array{
      *     id: string,

@@ -167,7 +167,7 @@ class SysAdminAuditLogsViewModel
     }
 
     /**
-     * Seluruh data log jejak audit (Database dengan fallback mock).
+     * Seluruh data log jejak audit dari basis data.
      *
      * @return array<int, array{
      *     id: string,

@@ -33,7 +33,7 @@ class AuthorSubmissionDetailViewModel
                 }
             }
         } catch (\Throwable) {
-            // Fallback graceful ke mock data
+            // Pengembalian null jika record tidak ditemukan
         }
 
         return null;

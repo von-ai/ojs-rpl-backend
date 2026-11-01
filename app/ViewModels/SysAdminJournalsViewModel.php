@@ -258,7 +258,7 @@ class SysAdminJournalsViewModel
     }
 
     /**
-     * Seluruh data instansi jurnal ilmiah (Database dengan fallback mock).
+     * Seluruh data instansi jurnal ilmiah dari basis data.
      *
      * @return array<int, array{
      *     id: string,

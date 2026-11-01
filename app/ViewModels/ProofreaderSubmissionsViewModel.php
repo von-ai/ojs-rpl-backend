@@ -235,7 +235,7 @@ class ProofreaderSubmissionsViewModel
     }
 
     /**
-     * Seluruh data penugasan proofreading (database nyata atau fallback mock).
+     * Seluruh data penugasan proofreading dari basis data.
      *
      * @return array<int, array{
      *     id: string,
