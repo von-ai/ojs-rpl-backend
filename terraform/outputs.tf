@@ -99,3 +99,8 @@ output "cli_exec_bash_web" {
   description = "Perintah Azure CLI untuk membuka terminal interaktif di Web Container"
   value       = "az containerapp exec --name ${azurerm_container_app.web.name} --resource-group ${azurerm_resource_group.rg.name} --container web"
 }
+
+output "cloudflare_origin_host_header" {
+  description = "FQDN Ingress ACA yang harus di-rewrite sebagai Host Header di Cloudflare Origin Rule"
+  value       = azurerm_container_app.web.ingress[0].fqdn
+}
