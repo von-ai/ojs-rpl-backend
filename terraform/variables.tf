@@ -16,6 +16,12 @@ variable "azure_location" {
   default     = "indonesiacentral"
 }
 
+variable "storage_location" {
+  description = "Wilayah/region Azure khusus untuk Storage Account (default: southeastasia / Singapore agar mendukung Microsoft Defender for Storage)"
+  type        = string
+  default     = "southeastasia"
+}
+
 variable "tags" {
   description = "Tag metadata resource Azure"
   type        = map(string)

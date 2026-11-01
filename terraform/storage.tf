@@ -14,7 +14,7 @@ resource "random_string" "storage_suffix" {
 resource "azurerm_storage_account" "storage" {
   name                     = "st${var.project_name}${var.environment}${random_string.storage_suffix.result}"
   resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
+  location                 = var.storage_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
@@ -96,10 +96,10 @@ resource "azurerm_storage_management_policy" "lifecycle" {
 
 # -----------------------------------------------------------------------------
 # Microsoft Defender for Storage (Malware Scanning)
-# Otomatis dinonaktifkan di indonesiacentral karena layanan belum didukung di region ini
+# Berjalan aktif di Singapore (southeastasia) untuk pemindaian malware naskah otomatis
 # -----------------------------------------------------------------------------
 resource "azurerm_security_center_storage_defender" "defender" {
-  count                                       = var.enable_storage_defender && var.azure_location != "indonesiacentral" ? 1 : 0
+  count                                       = var.enable_storage_defender ? 1 : 0
   storage_account_id                          = azurerm_storage_account.storage.id
   malware_scanning_on_upload_enabled          = true
   malware_scanning_on_upload_cap_gb_per_month = 50
