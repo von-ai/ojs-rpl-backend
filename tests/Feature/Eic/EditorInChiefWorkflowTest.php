@@ -64,6 +64,18 @@ class EditorInChiefWorkflowTest extends TestCase
             'version' => 1,
         ]);
 
+        \App\Models\UserRole::create([
+            'user_id' => $this->eic->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'editor_in_chief',
+        ]);
+
+        \App\Models\UserRole::create([
+            'user_id' => $this->sectionEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
+        ]);
+
         $this->section = Section::create([
             'journal_id' => $this->journal->id,
             'slug' => 'inovasi-daerah',

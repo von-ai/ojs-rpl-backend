@@ -67,6 +67,18 @@ class ReviewerWorkflowTest extends TestCase
             'email' => 'hendra.rev@itb.ac.id',
         ]);
 
+        \App\Models\UserRole::create([
+            'user_id' => $this->reviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        \App\Models\UserRole::create([
+            'user_id' => $this->otherReviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
         $this->submission = Submission::create([
             'submission_number' => 'SUB-2026-REV-001',
             'journal_id' => $this->journal->id,

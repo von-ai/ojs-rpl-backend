@@ -71,6 +71,18 @@ class SectionEditorWorkflowTest extends TestCase
             'email' => 'fahri.se@makassarkota.go.id',
         ]);
 
+        \App\Models\UserRole::create([
+            'user_id' => $this->sectionEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
+        ]);
+
+        \App\Models\UserRole::create([
+            'user_id' => $this->otherEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
+        ]);
+
         $this->reviewerA = User::factory()->create([
             'name' => 'Prof. Dr. Ir. Hasanuddin',
             'email' => 'hasanuddin.rev@unhas.ac.id',
