@@ -291,5 +291,4 @@ class ProofreaderDetailViewModel
 
         return $bytes.' B';
     }
-
 }

@@ -7,6 +7,7 @@ namespace Tests\Feature\Proofreader;
 use App\Models\User;
 use App\Models\UserRole;
 use App\ViewModels\ProofreaderSubmissionsViewModel;
+use Database\Seeders\ProofreaderSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -35,7 +36,7 @@ class ProofreaderNavigationTest extends TestCase
             'user_id' => $this->proofreader->id,
             'role_code' => 'proofreader',
         ]);
-        $this->seed(\Database\Seeders\ProofreaderSeeder::class);
+        $this->seed(ProofreaderSeeder::class);
         $this->actingAs($this->proofreader);
     }
 

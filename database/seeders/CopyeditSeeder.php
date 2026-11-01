@@ -13,6 +13,7 @@ use App\Models\LayoutAssignment;
 use App\Models\ProductionEscalation;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -60,7 +61,7 @@ class CopyeditSeeder extends Seeder
             ]
         );
 
-        \App\Models\UserRole::firstOrCreate([
+        UserRole::firstOrCreate([
             'user_id' => $copyEditor->id,
             'role_code' => 'copyeditor',
         ]);

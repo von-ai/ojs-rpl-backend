@@ -13,6 +13,7 @@ use App\ViewModels\SysAdminJournalsViewModel;
 use App\ViewModels\SysAdminSettingsViewModel;
 use App\ViewModels\SysAdminUsersViewModel;
 use DomainException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -151,7 +152,7 @@ class SysAdminController extends Controller
 
             return redirect()->route('sysadmin.users.index')
                 ->with('status', 'Hak akses System Administrator berhasil diberikan kepada pengguna.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return redirect()->route('sysadmin.users.index')
                 ->with('status', "Pengguna dengan ID '{$userId}' tidak ditemukan.");
         } catch (DomainException $e) {
@@ -181,7 +182,7 @@ class SysAdminController extends Controller
 
             return redirect()->route('sysadmin.users.index')
                 ->with('status', 'Hak akses System Administrator berhasil dicabut.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return redirect()->route('sysadmin.users.index')
                 ->with('status', "Pengguna dengan ID '{$userId}' tidak ditemukan.");
         } catch (DomainException $e) {

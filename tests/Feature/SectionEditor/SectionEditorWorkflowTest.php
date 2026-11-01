@@ -14,6 +14,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionFile;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -71,13 +72,13 @@ class SectionEditorWorkflowTest extends TestCase
             'email' => 'fahri.se@makassarkota.go.id',
         ]);
 
-        \App\Models\UserRole::create([
+        UserRole::create([
             'user_id' => $this->sectionEditor->id,
             'journal_id' => $this->journal->id,
             'role_code' => 'section_editor',
         ]);
 
-        \App\Models\UserRole::create([
+        UserRole::create([
             'user_id' => $this->otherEditor->id,
             'journal_id' => $this->journal->id,
             'role_code' => 'section_editor',

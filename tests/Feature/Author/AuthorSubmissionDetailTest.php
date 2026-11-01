@@ -26,7 +26,7 @@ class AuthorSubmissionDetailTest extends TestCase
 
         $this->withoutVite();
 
-        $this->seed(\Database\Seeders\SubmissionSeeder::class);
+        $this->seed(SubmissionSeeder::class);
 
         $this->author = User::where('email', 'andi.ilyas@unhas.ac.id')->firstOrFail();
         $this->actingAs($this->author);

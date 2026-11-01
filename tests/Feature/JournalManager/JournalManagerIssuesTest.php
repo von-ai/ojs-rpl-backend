@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\Issue;
+use App\Models\Journal;
 use App\Models\User;
-use App\Models\UserRole;
+use Database\Seeders\JournalManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class JournalManagerIssuesTest extends TestCase
@@ -20,7 +21,7 @@ class JournalManagerIssuesTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\JournalManagerSeeder::class);
+        $this->seed(JournalManagerSeeder::class);
 
         $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($this->manager);
@@ -68,8 +69,8 @@ class JournalManagerIssuesTest extends TestCase
      */
     public function test_filter_tab_status_edisi_terbitan(): void
     {
-        $journal = \App\Models\Journal::first();
-        \App\Models\Issue::create([
+        $journal = Journal::first();
+        Issue::create([
             'journal_id' => $journal->id,
             'volume' => '7',
             'number' => '1',

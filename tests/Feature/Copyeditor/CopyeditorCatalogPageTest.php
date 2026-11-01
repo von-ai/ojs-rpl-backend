@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Copyeditor;
 
+use App\Models\Copyedit;
+use App\Models\CopyeditApproval;
+use App\Models\CopyeditApprovedFile;
+use App\Models\CopyeditOutput;
+use App\Models\ProductionEscalation;
 use App\Models\User;
 use App\Models\UserRole;
+use Database\Seeders\CopyeditSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class CopyeditorCatalogPageTest extends TestCase
@@ -25,7 +33,7 @@ class CopyeditorCatalogPageTest extends TestCase
                 'username' => 'andi.kurniawan',
                 'name' => 'Andi Kurniawan, S.Hum., M.Pd.',
                 'full_name' => 'Andi Kurniawan, S.Hum., M.Pd.',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
             ]
         );
@@ -34,7 +42,7 @@ class CopyeditorCatalogPageTest extends TestCase
             'role_code' => 'copyeditor',
         ]);
 
-        $this->seed(\Database\Seeders\CopyeditSeeder::class);
+        $this->seed(CopyeditSeeder::class);
 
         $this->actingAs($this->copyeditor);
     }
@@ -220,13 +228,13 @@ class CopyeditorCatalogPageTest extends TestCase
      */
     public function test_empty_state_tampil_ketika_belum_ada_penugasan_copyedit(): void
     {
-        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF');
-        \App\Models\CopyeditApprovedFile::query()->delete();
-        \App\Models\CopyeditApproval::query()->delete();
-        \App\Models\CopyeditOutput::query()->delete();
-        \App\Models\ProductionEscalation::query()->delete();
-        \App\Models\Copyedit::query()->delete();
-        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = ON');
+        DB::statement('PRAGMA foreign_keys = OFF');
+        CopyeditApprovedFile::query()->delete();
+        CopyeditApproval::query()->delete();
+        CopyeditOutput::query()->delete();
+        ProductionEscalation::query()->delete();
+        Copyedit::query()->delete();
+        DB::statement('PRAGMA foreign_keys = ON');
 
         $response = $this->get('/copyeditor/submissions');
         $response->assertStatus(200);

@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\JournalManager;
 
 use App\Models\User;
-use App\Models\UserRole;
+use Database\Seeders\JournalManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class JournalManagerUsersTest extends TestCase
@@ -20,7 +19,7 @@ class JournalManagerUsersTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\JournalManagerSeeder::class);
+        $this->seed(JournalManagerSeeder::class);
         $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($this->manager);
     }

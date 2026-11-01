@@ -10,6 +10,7 @@ use App\Models\Journal;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +38,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
 
         $this->author = User::factory()->create(['name' => 'Prof. Penulis Korespondensi']);
         $this->copyEditor = User::factory()->create(['name' => 'Budi Copyeditor']);
-        \App\Models\UserRole::create([
+        UserRole::create([
             'user_id' => $this->copyEditor->id,
             'role_code' => 'copyeditor',
         ]);

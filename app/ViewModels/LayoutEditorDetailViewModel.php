@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\ViewModels;
 
 use App\Models\FileEntry;
+use App\Models\Galley;
 use App\Models\LayoutAssignment;
 use App\Models\Submission;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 class LayoutEditorDetailViewModel
@@ -405,7 +407,7 @@ class LayoutEditorDetailViewModel
     /**
      * Menyusun jejak aktivitas produksi tata letak secara dinamis dari entitas database riil.
      *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Galley>  $galleys
+     * @param  Collection<int, Galley>  $galleys
      * @param  array{approved: bool, approved_at: ?string, ready_for_publication: bool}  $editorFinal
      * @return array<int, array{title: string, actor: string, date: string, description: string, badge_class: string}>
      */

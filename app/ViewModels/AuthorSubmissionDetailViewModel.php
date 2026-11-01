@@ -193,7 +193,6 @@ class AuthorSubmissionDetailViewModel
         ];
     }
 
-
     /**
      * Membangun representasi status 6 tahapan editorial OJS 3 dengan dukungan skenario terminasi (declined/withdrawn).
      *
@@ -421,7 +420,6 @@ class AuthorSubmissionDetailViewModel
             return now();
         }
     }
-
 
     /**
      * Membentuk catatan resmi editorial untuk naskah yang berstatus perlu revisi.
@@ -727,5 +725,4 @@ class AuthorSubmissionDetailViewModel
             'proof_download_url' => ($payment && $payment->file_entry_id) ? route('author.submissions.payment.proof', $sub->id) : null,
         ];
     }
-
 }

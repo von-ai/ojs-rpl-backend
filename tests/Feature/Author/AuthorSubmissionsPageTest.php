@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\SubmissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +23,7 @@ class AuthorSubmissionsPageTest extends TestCase
 
         $this->withoutVite();
 
-        $this->seed(\Database\Seeders\SubmissionSeeder::class);
+        $this->seed(SubmissionSeeder::class);
 
         $this->author = User::where('email', 'andi.ilyas@unhas.ac.id')->firstOrFail();
         $this->actingAs($this->author);
@@ -328,7 +329,7 @@ class AuthorSubmissionsPageTest extends TestCase
      */
     public function test_empty_state_tampil_ketika_belum_ada_naskah(): void
     {
-        \App\Models\Submission::query()->delete();
+        Submission::query()->delete();
 
         $response = $this->get(route('author.submissions.index'));
         $response->assertStatus(200);

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\LayoutEditor;
 
+use App\Models\ProofreadingNote;
 use App\Models\User;
 use App\Models\UserRole;
+use Database\Seeders\LayoutEditorSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -34,7 +37,7 @@ class LayoutEditorWorkspaceTest extends TestCase
             'user_id' => $this->layoutEditor->id,
             'role_code' => 'layout_editor',
         ]);
-        $this->seed(\Database\Seeders\LayoutEditorSeeder::class);
+        $this->seed(LayoutEditorSeeder::class);
         $this->actingAs($this->layoutEditor);
     }
 
@@ -151,7 +154,7 @@ class LayoutEditorWorkspaceTest extends TestCase
     public function test_semua_aksi_transaksional_layout_editor_berfungsi(): void
     {
         // 1. Upload Galley
-        $fakeFile = \Illuminate\Http\UploadedFile::fake()->create('SUB2026-00106_Galley_Draft_v1.pdf', 500, 'application/pdf');
+        $fakeFile = UploadedFile::fake()->create('SUB2026-00106_Galley_Draft_v1.pdf', 500, 'application/pdf');
         $resUpload = $this->post('/layouteditor/upload-galley', [
             'submission_id' => 'SUB-2026-00106',
             'galley_label' => 'PDF Full Text (Draf v1)',
@@ -162,7 +165,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $resUpload->assertSessionHas('status', 'Berkas galai PDF berhasil diunggah dan diverifikasi checksum.');
 
         // 2. Resolve Note
-        $note = \App\Models\ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->first();
+        $note = ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->first();
         $resResolve = $this->post('/layouteditor/resolve-note', [
             'submission_id' => 'SUB-2026-00107',
             'note_id' => $note?->id ?? 'NOTE-01JARK-01',

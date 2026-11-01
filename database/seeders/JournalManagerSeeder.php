@@ -375,7 +375,6 @@ class JournalManagerSeeder extends Seeder
             ]
         );
 
-
         // 4. Masukkan Naskah Submisi ke dalam Daftar Isi Edisi
         $authorUser = User::where('email', 'yusuf.brida@makassar.go.id')->first()
             ?? User::first();

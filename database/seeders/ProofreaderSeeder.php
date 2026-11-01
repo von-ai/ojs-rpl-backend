@@ -6,9 +6,13 @@ namespace Database\Seeders;
 
 use App\Models\FileEntry;
 use App\Models\Galley;
+use App\Models\Journal;
+use App\Models\LayoutAssignment;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
+use App\Models\Section;
 use App\Models\Submission;
+use App\Models\SubmissionContributor;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -68,7 +72,7 @@ class ProofreaderSeeder extends Seeder
             ]
         );
 
-        $journal = \App\Models\Journal::first() ?? \App\Models\Journal::create([
+        $journal = Journal::first() ?? Journal::create([
             'slug' => 'sirida-makassar',
             'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
             'issn' => '2985-7821',
@@ -77,7 +81,7 @@ class ProofreaderSeeder extends Seeder
             'version' => 1,
         ]);
 
-        $section = \App\Models\Section::firstOrCreate(
+        $section = Section::firstOrCreate(
             ['slug' => 'sec-inovasi-pelayanan'],
             [
                 'journal_id' => $journal->id,
@@ -103,7 +107,7 @@ class ProofreaderSeeder extends Seeder
             $sub->author_id = $user->id;
             $sub->save();
 
-            \App\Models\SubmissionContributor::updateOrCreate(
+            SubmissionContributor::updateOrCreate(
                 ['submission_id' => $sub->id, 'email' => $email],
                 [
                     'given_name' => $name,
@@ -116,7 +120,7 @@ class ProofreaderSeeder extends Seeder
         };
 
         $ensureLayout = function (Submission $sub) use ($layoutEditor, $sectionEditor) {
-            \App\Models\LayoutAssignment::firstOrCreate(
+            LayoutAssignment::firstOrCreate(
                 ['submission_id' => $sub->id, 'layout_editor_id' => $layoutEditor->id],
                 [
                     'assigned_by' => $sectionEditor->id,
@@ -127,192 +131,192 @@ class ProofreaderSeeder extends Seeder
             );
         };
 
-        $isStandalone = ! \App\Models\LayoutAssignment::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00106'))->exists();
+        $isStandalone = ! LayoutAssignment::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00106'))->exists();
 
         if ($isStandalone) {
             // =========================================================================
             // Skenario 1: SUB-2026-00106 — Review Galai v2 (Benteng Somba Opu)
             // =========================================================================
             $sub106 = Submission::firstOrNew(['submission_number' => 'SUB-2026-00106']);
-        $sub106->journal_id = $journal->id;
-        $sub106->section_id = $section->id;
-        $sub106->title = 'Strategi Pengembangan Destinasi Wisata Sejarah Benteng Somba Opu Berbasis Smart Tourism';
-        $sub106->abstract = 'Kajian pengembangan pariwisata sejarah Benteng Somba Opu berbasis teknologi smart tourism di Kota Makassar.';
-        $sub106->status = 'in_production';
-        $sub106->submitted_at = now()->subDays(30);
-        $sub106->save();
+            $sub106->journal_id = $journal->id;
+            $sub106->section_id = $section->id;
+            $sub106->title = 'Strategi Pengembangan Destinasi Wisata Sejarah Benteng Somba Opu Berbasis Smart Tourism';
+            $sub106->abstract = 'Kajian pengembangan pariwisata sejarah Benteng Somba Opu berbasis teknologi smart tourism di Kota Makassar.';
+            $sub106->status = 'in_production';
+            $sub106->submitted_at = now()->subDays(30);
+            $sub106->save();
 
-        $ensureAuthor($sub106, 'Dr. Andi Nurul Hidayah, M.Si.', 'andi.nurul@unm.ac.id', 'Fakultas Ilmu Sosial dan Politik, Universitas Negeri Makassar');
-        $ensureLayout($sub106);
+            $ensureAuthor($sub106, 'Dr. Andi Nurul Hidayah, M.Si.', 'andi.nurul@unm.ac.id', 'Fakultas Ilmu Sosial dan Politik, Universitas Negeri Makassar');
+            $ensureLayout($sub106);
 
-        $docx106 = $this->createPhysicalFile(
-            'SUB-2026-00106_Copyedited_Final.docx',
-            "submissions/{$sub106->id}/SUB-2026-00106_Copyedited_Final.docx",
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            $sectionEditor->id,
-            657408,
-            'docx'
-        );
+            $docx106 = $this->createPhysicalFile(
+                'SUB-2026-00106_Copyedited_Final.docx',
+                "submissions/{$sub106->id}/SUB-2026-00106_Copyedited_Final.docx",
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                $sectionEditor->id,
+                657408,
+                'docx'
+            );
 
-        $pdf106 = $this->createPhysicalFile(
-            'SUB-2026-00106_Galley_v2.pdf',
-            "galleys/{$sub106->id}/SUB-2026-00106_Galley_v2.pdf",
-            'application/pdf',
-            $layoutEditor->id,
-            3984588,
-            'pdf'
-        );
+            $pdf106 = $this->createPhysicalFile(
+                'SUB-2026-00106_Galley_v2.pdf',
+                "galleys/{$sub106->id}/SUB-2026-00106_Galley_v2.pdf",
+                'application/pdf',
+                $layoutEditor->id,
+                3984588,
+                'pdf'
+            );
 
-        $galley106 = Galley::updateOrCreate(
-            ['submission_id' => $sub106->id, 'version' => 2],
-            [
-                'file_id' => $pdf106->id,
-                'supersedes_galley_id' => null,
-                'format' => 'pdf',
-                'stage' => 'proofreading',
-                'status' => 'active',
-                'checksum_sha256' => $pdf106->checksum_sha256,
-                'approved_checksum' => null,
-                'label' => 'PDF Full Text (v2 Revisi)',
-            ]
-        );
+            $galley106 = Galley::updateOrCreate(
+                ['submission_id' => $sub106->id, 'version' => 2],
+                [
+                    'file_id' => $pdf106->id,
+                    'supersedes_galley_id' => null,
+                    'format' => 'pdf',
+                    'stage' => 'proofreading',
+                    'status' => 'active',
+                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'approved_checksum' => null,
+                    'label' => 'PDF Full Text (v2 Revisi)',
+                ]
+            );
 
-        $assign106 = ProofAssignment::updateOrCreate(
-            ['galley_id' => $galley106->id, 'proofreader_id' => $proofreader1->id],
-            [
-                'file_id' => $pdf106->id,
-                'due_at' => now()->addDays(2),
-                'status' => 'in_progress',
-                'assigned_at' => now()->subDays(3),
-                'checksum_sha256' => substr($pdf106->checksum_sha256, 0, 64),
-                'message' => 'Mohon periksa ulang penataan gambar dan kelengkapan daftar pustaka.',
-            ]
-        );
+            $assign106 = ProofAssignment::updateOrCreate(
+                ['galley_id' => $galley106->id, 'proofreader_id' => $proofreader1->id],
+                [
+                    'file_id' => $pdf106->id,
+                    'due_at' => now()->addDays(2),
+                    'status' => 'in_progress',
+                    'assigned_at' => now()->subDays(3),
+                    'checksum_sha256' => substr($pdf106->checksum_sha256, 0, 64),
+                    'message' => 'Mohon periksa ulang penataan gambar dan kelengkapan daftar pustaka.',
+                ]
+            );
 
-        // Note 1: Minor Typo - Resolved & Verified
-        ProofreadingNote::updateOrCreate(
-            ['id' => 'NOTE-01JARK-01'],
-            [
-                'proof_assignment_id' => $assign106->id,
-                'galley_id' => $galley106->id,
-                'file_id' => $pdf106->id,
-                'checksum_sha256' => $pdf106->checksum_sha256,
-                'page' => 2,
-                'category' => 'typo',
-                'severity' => 'minor',
-                'description' => 'Kesalahan penulisan kata "pariwista" seharusnya "pariwisata" pada alinea kedua paragraf pembuka.',
-                'resolved' => true,
-                'resolution' => 'Sudah diperbaiki pada draf galai v2 sesuai teks copyediting final.',
-                'resolved_at' => now()->subHours(4),
-                'verified' => true,
-                'verified_at' => now()->subHours(2),
-                'verified_by' => $proofreader1->id,
-                'version' => 1,
-            ]
-        );
+            // Note 1: Minor Typo - Resolved & Verified
+            ProofreadingNote::updateOrCreate(
+                ['id' => 'NOTE-01JARK-01'],
+                [
+                    'proof_assignment_id' => $assign106->id,
+                    'galley_id' => $galley106->id,
+                    'file_id' => $pdf106->id,
+                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'page' => 2,
+                    'category' => 'typo',
+                    'severity' => 'minor',
+                    'description' => 'Kesalahan penulisan kata "pariwista" seharusnya "pariwisata" pada alinea kedua paragraf pembuka.',
+                    'resolved' => true,
+                    'resolution' => 'Sudah diperbaiki pada draf galai v2 sesuai teks copyediting final.',
+                    'resolved_at' => now()->subHours(4),
+                    'verified' => true,
+                    'verified_at' => now()->subHours(2),
+                    'verified_by' => $proofreader1->id,
+                    'version' => 1,
+                ]
+            );
 
-        // Note 2: Major Layout - Resolved, Siap Diverifikasi Proofreader
-        ProofreadingNote::updateOrCreate(
-            ['id' => 'NOTE-01JARK-02'],
-            [
-                'proof_assignment_id' => $assign106->id,
-                'galley_id' => $galley106->id,
-                'file_id' => $pdf106->id,
-                'checksum_sha256' => $pdf106->checksum_sha256,
-                'page' => 4,
-                'category' => 'layout',
-                'severity' => 'major',
-                'description' => 'Keterangan Gambar 3 (Peta Kawasan Benteng Somba Opu) terpotong margin bawah kolom sebelah kanan.',
-                'resolved' => true,
-                'resolution' => 'Ukuran skala gambar 3 diperkecil 10% dan posisi keterangan dipindahkan ke baris penuh.',
-                'resolved_at' => now()->subHours(3),
-                'verified' => false,
-                'verified_at' => null,
-                'verified_by' => null,
-                'version' => 1,
-            ]
-        );
+            // Note 2: Major Layout - Resolved, Siap Diverifikasi Proofreader
+            ProofreadingNote::updateOrCreate(
+                ['id' => 'NOTE-01JARK-02'],
+                [
+                    'proof_assignment_id' => $assign106->id,
+                    'galley_id' => $galley106->id,
+                    'file_id' => $pdf106->id,
+                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'page' => 4,
+                    'category' => 'layout',
+                    'severity' => 'major',
+                    'description' => 'Keterangan Gambar 3 (Peta Kawasan Benteng Somba Opu) terpotong margin bawah kolom sebelah kanan.',
+                    'resolved' => true,
+                    'resolution' => 'Ukuran skala gambar 3 diperkecil 10% dan posisi keterangan dipindahkan ke baris penuh.',
+                    'resolved_at' => now()->subHours(3),
+                    'verified' => false,
+                    'verified_at' => null,
+                    'verified_by' => null,
+                    'version' => 1,
+                ]
+            );
 
-        // Note 3: Critical Reference - Belum Selesai (Menahan Signoff Guard)
-        ProofreadingNote::updateOrCreate(
-            ['id' => 'NOTE-01JARK-03'],
-            [
-                'proof_assignment_id' => $assign106->id,
-                'galley_id' => $galley106->id,
-                'file_id' => $pdf106->id,
-                'checksum_sha256' => $pdf106->checksum_sha256,
-                'page' => 7,
-                'category' => 'reference',
-                'severity' => 'critical',
-                'description' => 'Sitasi (BPS Kota Makassar, 2025) pada halaman 3 belum tercantum dalam daftar pustaka.',
-                'resolved' => false,
-                'resolution' => null,
-                'resolved_at' => null,
-                'verified' => false,
-                'verified_at' => null,
-                'verified_by' => null,
-                'version' => 1,
-            ]
-        );
+            // Note 3: Critical Reference - Belum Selesai (Menahan Signoff Guard)
+            ProofreadingNote::updateOrCreate(
+                ['id' => 'NOTE-01JARK-03'],
+                [
+                    'proof_assignment_id' => $assign106->id,
+                    'galley_id' => $galley106->id,
+                    'file_id' => $pdf106->id,
+                    'checksum_sha256' => $pdf106->checksum_sha256,
+                    'page' => 7,
+                    'category' => 'reference',
+                    'severity' => 'critical',
+                    'description' => 'Sitasi (BPS Kota Makassar, 2025) pada halaman 3 belum tercantum dalam daftar pustaka.',
+                    'resolved' => false,
+                    'resolution' => null,
+                    'resolved_at' => null,
+                    'verified' => false,
+                    'verified_at' => null,
+                    'verified_by' => null,
+                    'version' => 1,
+                ]
+            );
 
-        // =========================================================================
-        // Skenario 2: SUB-2026-00107 — Bersih & Siap Disetujui Sign-off (Sentinel-1A)
-        // =========================================================================
-        $sub107 = Submission::firstOrNew(['submission_number' => 'SUB-2026-00107']);
-        $sub107->journal_id = $journal->id;
-        $sub107->section_id = $section->id;
-        $sub107->title = 'Analisis Spasial Kerentanan Banjir Rob Kawasan Pesisir Kota Makassar Menggunakan Sentinel-1A';
-        $sub107->abstract = 'Analisis spasial dinamika pasang surut dan kerentanan banjir rob pesisir Makassar.';
-        $sub107->status = 'in_production';
-        $sub107->submitted_at = now()->subDays(25);
-        $sub107->save();
+            // =========================================================================
+            // Skenario 2: SUB-2026-00107 — Bersih & Siap Disetujui Sign-off (Sentinel-1A)
+            // =========================================================================
+            $sub107 = Submission::firstOrNew(['submission_number' => 'SUB-2026-00107']);
+            $sub107->journal_id = $journal->id;
+            $sub107->section_id = $section->id;
+            $sub107->title = 'Analisis Spasial Kerentanan Banjir Rob Kawasan Pesisir Kota Makassar Menggunakan Sentinel-1A';
+            $sub107->abstract = 'Analisis spasial dinamika pasang surut dan kerentanan banjir rob pesisir Makassar.';
+            $sub107->status = 'in_production';
+            $sub107->submitted_at = now()->subDays(25);
+            $sub107->save();
 
-        $ensureAuthor($sub107, 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.', 'saleh.pallu@unhas.ac.id', 'Departemen Teknik Sipil, Universitas Hasanuddin');
-        $ensureLayout($sub107);
+            $ensureAuthor($sub107, 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.', 'saleh.pallu@unhas.ac.id', 'Departemen Teknik Sipil, Universitas Hasanuddin');
+            $ensureLayout($sub107);
 
-        $docx107 = $this->createPhysicalFile(
-            'SUB-2026-00107_Copyedited_Final.docx',
-            "submissions/{$sub107->id}/SUB-2026-00107_Copyedited_Final.docx",
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            $sectionEditor->id,
-            820000,
-            'docx'
-        );
+            $docx107 = $this->createPhysicalFile(
+                'SUB-2026-00107_Copyedited_Final.docx',
+                "submissions/{$sub107->id}/SUB-2026-00107_Copyedited_Final.docx",
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                $sectionEditor->id,
+                820000,
+                'docx'
+            );
 
-        $pdf107 = $this->createPhysicalFile(
-            'SUB-2026-00107_Galley_v1.pdf',
-            "galleys/{$sub107->id}/SUB-2026-00107_Galley_v1.pdf",
-            'application/pdf',
-            $layoutEditor->id,
-            5200000,
-            'pdf'
-        );
+            $pdf107 = $this->createPhysicalFile(
+                'SUB-2026-00107_Galley_v1.pdf',
+                "galleys/{$sub107->id}/SUB-2026-00107_Galley_v1.pdf",
+                'application/pdf',
+                $layoutEditor->id,
+                5200000,
+                'pdf'
+            );
 
-        $galley107 = Galley::updateOrCreate(
-            ['submission_id' => $sub107->id, 'version' => 1],
-            [
-                'file_id' => $pdf107->id,
-                'supersedes_galley_id' => null,
-                'format' => 'pdf',
-                'stage' => 'proofreading',
-                'status' => 'active',
-                'checksum_sha256' => $pdf107->checksum_sha256,
-                'approved_checksum' => null,
-                'label' => 'PDF Full Text (v1 Draf Awal)',
-            ]
-        );
+            $galley107 = Galley::updateOrCreate(
+                ['submission_id' => $sub107->id, 'version' => 1],
+                [
+                    'file_id' => $pdf107->id,
+                    'supersedes_galley_id' => null,
+                    'format' => 'pdf',
+                    'stage' => 'proofreading',
+                    'status' => 'active',
+                    'checksum_sha256' => $pdf107->checksum_sha256,
+                    'approved_checksum' => null,
+                    'label' => 'PDF Full Text (v1 Draf Awal)',
+                ]
+            );
 
-        ProofAssignment::updateOrCreate(
-            ['galley_id' => $galley107->id, 'proofreader_id' => $proofreader1->id],
-            [
-                'file_id' => $pdf107->id,
-                'due_at' => now()->addDays(3),
-                'status' => 'in_progress',
-                'assigned_at' => now()->subDays(1),
-                'checksum_sha256' => substr($pdf107->checksum_sha256, 0, 64),
-                'message' => 'Naskah bersih untuk pemeriksaan akhir sebelum sign-off.',
-            ]
-        );
+            ProofAssignment::updateOrCreate(
+                ['galley_id' => $galley107->id, 'proofreader_id' => $proofreader1->id],
+                [
+                    'file_id' => $pdf107->id,
+                    'due_at' => now()->addDays(3),
+                    'status' => 'in_progress',
+                    'assigned_at' => now()->subDays(1),
+                    'checksum_sha256' => substr($pdf107->checksum_sha256, 0, 64),
+                    'message' => 'Naskah bersih untuk pemeriksaan akhir sebelum sign-off.',
+                ]
+            );
         }
 
         // =========================================================================

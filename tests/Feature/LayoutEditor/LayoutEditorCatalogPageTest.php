@@ -6,6 +6,7 @@ namespace Tests\Feature\LayoutEditor;
 
 use App\Models\User;
 use App\Models\UserRole;
+use Database\Seeders\LayoutEditorSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -34,7 +35,7 @@ class LayoutEditorCatalogPageTest extends TestCase
             'user_id' => $this->layoutEditor->id,
             'role_code' => 'layout_editor',
         ]);
-        $this->seed(\Database\Seeders\LayoutEditorSeeder::class);
+        $this->seed(LayoutEditorSeeder::class);
         $this->actingAs($this->layoutEditor);
     }
 
