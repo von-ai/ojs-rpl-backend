@@ -26,7 +26,7 @@ Berdasarkan analisis kebutuhan proposal SRS dan evaluasi berbagai opsi layanan c
 | 2 | **Komputasi Worker** | Azure VM, Celery/Supervisor, Dedicated ACA | **ACA Dedicated Worker** | Docker Container | Menjalankan `php artisan queue:work` secara asinkron (pemrosesan PDF dan pemindaian berkas), isolasi proses dari traffic web. |
 | 3 | **Komputasi Scheduler** | Cron VM, Azure Function, ACA Scheduled Job | **ACA Scheduled Job** | Host Cron / Artisan | Menjalankan `php artisan schedule:run` setiap 1 menit untuk deadline review & outbox retry tanpa server standby 24/7. |
 | 4 | **RDBMS** | Azure Database for MySQL, TiDB Serverless, AWS RDS | **TiDB Cloud Serverless** | Container MySQL 8.0 | 100% MySQL 8.0 wire protocol, *scale-to-zero*, bebas biaya sewa disk tetap, kuota gratis 5 GB storage & 50M Request Units/bln. |
-| 5 | **In-Memory Cache & Broker** | Azure Cache for Redis, Upstash, DB Store | **Azure Cache for Redis (Basic C0)** | Container Redis | Latensi sub-milidetik (< 1 ms, collocated di region Azure yang sama dengan ACA), tanpa batasan kuota command (menangani query masif, rate limiting, atomic lock, queue broker), dan biaya on-demand per jam sangat murah (~$0.022/jam atau ~Rp 700 untuk demo 2 jam). |
+| 5 | **In-Memory Cache & Broker** | Azure Managed Redis, Upstash, DB Store | **Azure Managed Redis (AMR: Balanced_B0)** | Container Redis | Engine Redis Enterprise terkelola resmi Azure (latensi < 1 ms, collocated di region Azure yang sama dengan ACA), arsitektur clustered by default, enkripsi TLS port 10000, dan penagihan on-demand per jam sangat murah (~$0.018 - $0.02/jam atau ~Rp 600 untuk demo 2 jam). |
 | 6 | **Object Storage** | Azure Blob Storage, AWS S3, Cloudflare R2 | **Azure Blob Storage** | Azurite Container (Port 10000) | Penyimpanan objek terkelola native Azure dengan integrasi langsung Microsoft Defender for Storage (Malware Scanning). Enkripsi data at-rest otomatis (AES-256), integrasi SAS (Shared Access Signature) token, dan manajemen lifecycle versi berkas 30 hari. |
 | 7 | **Container Registry** | Azure Container Registry (ACR), GHCR, DockerHub | **GitHub Container Registry (GHCR)** | Local Docker Engine | Terintegrasi langsung dengan GitHub Actions CI/CD, gratis private container image (kuota 500 MB & 1 GB transfer). |
 | 8 | **DNS** | Azure DNS, Cloudflare DNS | **Cloudflare DNS** | `/etc/hosts` lokal | Resolusi DNS Anycast tercepat di dunia, pembaruan propagasi instan, 100% gratis. |
@@ -124,7 +124,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 | **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
 | **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
 | **ACA Scheduled Job** | 0.25 vCPU | 0.5 GiB | Trigger cron `* * * * *` (Maks durasi eksekusi: 60 detik) | Hidup hanya beberapa detik tiap menit untuk `schedule:run`. |
-| **Azure Cache for Redis**| Dedicated (Shared) | 250 MB (Basic C0) | On-Demand (Per jam: ~$0.022/jam) | Collocated di region Azure (latensi < 1 ms), tanpa batas QPS/kuota query. |
+| **Azure Managed Redis (AMR)**| Dedicated Clustered (Enterprise Engine) | ~500 MB (Balanced_B0) | On-Demand (Per jam: ~$0.018 - $0.02/jam) | Collocated di region Azure (latensi < 1 ms), arsitektur Enterprise Cluster, TLS Port 10000. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
 | **Azure Blob Storage** | - | Pay-as-you-go | Unlimited kapasitas | Hot Tier dengan enkripsi AES-256 bawaan; kuota gratis 100 GB egress/bulan dari Azure. |
 | **Defender for Storage** | - | Cloud-native Security | On-demand scan | Pemindaian malware near real-time ($0.15/GB dipindai), menandai Blob Index Tags otomatis. |
@@ -168,12 +168,12 @@ Seluruh infrastruktur cloud dikelola secara deklaratif melalui Terraform. Strukt
 
 ```text
 terraform/
-├── providers.tf       # Definisi provider azurerm (~> 3.0) dan cloudflare (~> 4.0)
+├── providers.tf       # Definisi provider azurerm (~> 4.0) dan cloudflare (~> 4.0)
 ├── variables.tf       # Variabel konfigurasi lingkungan (region, domain, credentials)
 ├── main.tf            # Azure Resource Group & Log Analytics Workspace
 ├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduled Job
 ├── storage.tf         # Azure Storage Account, Blob Container, dan Defender for Storage
-├── redis.tf           # Azure Cache for Redis (Basic C0)
+├── redis.tf           # Azure Managed Redis (AMR: Balanced_B0)
 ├── monitoring.tf      # Azure Monitor Application Insights & Availability Web Test
 ├── cloudflare.tf      # DNS records, Cloudflare WAF ruleset, TLS configuration
 ├── secrets.tf         # Pemetaan ACA built-in secrets

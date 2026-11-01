@@ -19,8 +19,8 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Aset dan build | Vite 8; Node 22+; Tailwind CSS 4 | Dependency build/asset bundling tersedia. Produksi hanya menerima hasil build aset, tanpa proses Node di runtime. |
 | Database | MySQL 8.0 / TiDB Cloud Serverless, Eloquent, migrations | TiDB Serverless untuk produksi/PoC; MySQL 8.0 Compose untuk pengembangan lokal. |
 | Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment. Document root hanya `public/`. |
-| Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Azure Cache for Redis (Basic C0) pada produksi untuk antrean dan locking. |
-| Session/cache/locks | Azure Cache for Redis (Basic C0) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review. |
+| Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Azure Managed Redis (AMR: Balanced_B0) pada produksi untuk antrean dan locking. |
+| Session/cache/locks | Azure Managed Redis (AMR: Balanced_B0) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review (Redis Enterprise Engine). |
 | Berkas | Azure Blob Storage melalui Laravel Filesystem/Flysystem | Adapter Azure Blob teruji, container privat, direct upload melalui SAS (Shared Access Signature) URL, enkripsi server-side bawaan. Azurite untuk dev lokal. |
 | Pemeriksaan berkas | Microsoft Defender for Storage (Malware Scanning), inspeksi MIME/checksum, sanitizer HTML/XML | Pemindaian malware otomatis near real-time oleh Microsoft Defender for Storage di cloud; mock scanner pada dev lokal; berkas berstatus karantina jika terdeteksi ancaman. |
 | Autentikasi & Sesi | Stateful Session Cookie (`auth:web`), CSRF token, HttpOnly, SameSite=Lax | Menggunakan sistem session bawaan Laravel dengan proteksi lockout 15 menit dan audit log. Disederhanakan tanpa JWT/Bearer token. |
@@ -71,7 +71,7 @@ meregenerasi CSRF token secara otomatis.
 
 ## Deployment yang dapat diterima
 
-Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps, TiDB Serverless MySQL, Azure Blob Storage, Cloudflare WAF/DNS, Azure Cache for Redis). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduled Job), storage privat (Azure Blob Storage), scanner (Microsoft Defender for Storage), SMTP (Azure Communication Services untuk produksi, Mailpit untuk lokal dev), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
+Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps, TiDB Serverless MySQL, Azure Blob Storage, Cloudflare WAF/DNS, Azure Managed Redis). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduled Job), storage privat (Azure Blob Storage), scanner (Microsoft Defender for Storage), SMTP (Azure Communication Services untuk produksi, Mailpit untuk lokal dev), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
 
 Simpan secret di konfigurasi operator/secret store yang tidak berada di document
 root atau Git. Reference integrasi dipetakan server-side; jangan menerima arbitrary

@@ -83,8 +83,8 @@ for arg in "$@"; do
 done
 
 # 4. Inisialisasi Terraform
-echo -e "\n${BLUE}--> [Step 1/3] Menjalankan ${TF_BIN} init...${NC}"
-${TF_BIN} init
+echo -e "\n${BLUE}--> [Step 1/3] Menjalankan ${TF_BIN} init -upgrade...${NC}"
+${TF_BIN} init -upgrade
 
 # 5. Validasi & Format Check
 echo -e "\n${BLUE}--> [Step 2/3] Validasi sintaks modul Terraform...${NC}"

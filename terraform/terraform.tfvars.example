@@ -45,3 +45,7 @@ mail_from_name    = "SIRIDA - Jurnal Kota Makassar"
 
 # Monitoring & Alert
 alert_email = "benediktus.gianto.jarod@gmail.com"
+
+# Azure Managed Redis (AMR)
+# redis_sku_name = "Balanced_B0" # Default: Balanced_B0 (~500MB, ~$0.02/jam on-demand)
+

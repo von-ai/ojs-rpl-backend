@@ -12,11 +12,11 @@ Arsitektur ini menerapkan pola **The Ephemeral Cloud Pattern**:
 
 ```text
 terraform/
-├── providers.tf            # Definisi provider azurerm (~> 3.100), cloudflare (~> 4.0), random
+├── providers.tf            # Definisi provider azurerm (~> 4.0), cloudflare (~> 4.0), random
 ├── variables.tf            # Deklarasi variabel konfigurasi (region, domain, sizing, credentials)
 ├── main.tf                 # Azure Resource Group & Log Analytics Workspace
 ├── storage.tf              # Azure Storage Account, Blob Container, Lifecycle, Defender
-├── redis.tf                # Azure Cache for Redis (Basic C0 ~250MB, TLS Port 6380)
+├── redis.tf                # Azure Managed Redis (AMR: Balanced_B0 ~500MB, TLS Port 10000)
 ├── secrets.tf              # Pemetaan ACA built-in secrets & variabel environment container
 ├── aca.tf                  # ACA Environment, Web Container, Queue Worker, Scheduled Job
 ├── monitoring.tf           # Azure Application Insights, Web Test (5 Probe), Alert SLA 99.5%

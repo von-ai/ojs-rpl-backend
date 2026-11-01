@@ -178,23 +178,26 @@ variable "enable_storage_defender" {
 # -----------------------------------------------------------------------------
 # Azure Cache for Redis
 # -----------------------------------------------------------------------------
+# Azure Managed Redis (AMR)
+# -----------------------------------------------------------------------------
+variable "redis_sku_name" {
+  description = "SKU Azure Managed Redis (AMR): Balanced_B0 (~500MB untuk PoC/Dev), Balanced_B1 (~1GB), Balanced_B3 (~3GB)"
+  type        = string
+  default     = "Balanced_B0"
+}
+
 variable "redis_capacity" {
-  description = "Kapasitas cache Redis (0 untuk Basic C0 ~250MB)"
+  description = "Kapasitas cache Redis (Deprecated di AMR, dipertahankan untuk kompatibilitas konfigurasi lama)"
   type        = number
   default     = 0
 }
 
 variable "redis_family" {
-  description = "Family SKU Redis (C untuk Basic/Standard)"
+  description = "Family SKU Redis (Deprecated di AMR, dipertahankan untuk kompatibilitas konfigurasi lama)"
   type        = string
   default     = "C"
 }
 
-variable "redis_sku_name" {
-  description = "Nama SKU Redis (Basic / Standard / Premium)"
-  type        = string
-  default     = "Basic"
-}
 
 # -----------------------------------------------------------------------------
 # Transactional Email (Azure Communication Services / SMTP)
