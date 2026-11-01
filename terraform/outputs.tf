@@ -80,6 +80,7 @@ output "application_insights_name" {
 output "custom_domain_verification_id" {
   description = "Token verifikasi kepemilikan custom domain ACA"
   value       = azurerm_container_app.web.custom_domain_verification_id
+  sensitive   = true
 }
 
 output "cli_stream_web_logs" {
