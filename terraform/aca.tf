@@ -59,22 +59,11 @@ resource "azurerm_container_app" "web" {
       concurrent_requests = 30
     }
 
-    volume {
-      name         = "app-data-vol"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.storage.name
-    }
-
     container {
       name   = "web"
       image  = var.container_image
       cpu    = var.aca_web_cpu
       memory = var.aca_web_memory
-
-      volume_mounts {
-        name = "app-data-vol"
-        path = "/var/www/html/storage/app"
-      }
 
       dynamic "env" {
         for_each = local.common_env_vars
@@ -136,23 +125,12 @@ resource "azurerm_container_app" "worker" {
     min_replicas = var.aca_worker_min_replicas
     max_replicas = var.aca_worker_max_replicas
 
-    volume {
-      name         = "app-data-vol"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.storage.name
-    }
-
     container {
       name    = "worker"
       image   = var.container_image
       cpu     = var.aca_worker_cpu
       memory  = var.aca_worker_memory
       command = ["php", "artisan", "queue:work", "--queue=default,identity", "--verbose", "--tries=3", "--timeout=90"]
-
-      volume_mounts {
-        name = "app-data-vol"
-        path = "/var/www/html/storage/app"
-      }
 
       dynamic "env" {
         for_each = local.common_env_vars
