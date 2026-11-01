@@ -1,9 +1,18 @@
 # -----------------------------------------------------------------------------
+# Random Suffix Khusus Storage Account (Menghindari Name Collision Global Azure)
+# -----------------------------------------------------------------------------
+resource "random_string" "storage_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+# -----------------------------------------------------------------------------
 # Azure Blob Storage Account
 # Enkripsi AES-256 bawaan, TLS 1.2+, versioning & soft delete (NF-02, NF-08)
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_account" "storage" {
-  name                     = "st${var.project_name}${var.environment}${random_string.suffix.result}"
+  name                     = "st${var.project_name}${var.environment}${random_string.storage_suffix.result}"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
