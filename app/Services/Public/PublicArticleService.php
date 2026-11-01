@@ -262,8 +262,7 @@ class PublicArticleService
 
         $disk = Storage::disk($fileEntry->storage_disk ?: 'local');
         if (! $disk->exists($fileEntry->storage_path)) {
-            // Fallback placeholder jika berkas di-mock
-            $disk->put($fileEntry->storage_path, "PDF Galley content for: {$article->title}\nChecksum: {$galley->checksum_sha256}");
+            throw new DomainException('Berkas fisik galai publikasi belum tersedia di media penyimpanan.');
         }
 
         return $disk->download(

@@ -332,56 +332,7 @@ class LayoutEditorSubmissionController extends Controller
             }
         }
 
-        // Fallback streaming DOCX nyata
-        $filename = str_ends_with(strtolower($id), '.docx') ? $id : "Naskah_Acuan_Copyedit_{$id}.docx";
-
-        return response()->streamDownload(function () use ($filename) {
-            echo $this->generateFallbackDocx($filename);
-        }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ]);
-    }
-
-    /**
-     * Menghasilkan berkas .docx yang valid untuk fallback unduhan.
-     */
-    private function generateFallbackDocx(string $filename): string
-    {
-        if (class_exists(\ZipArchive::class)) {
-            $temp = tempnam(sys_get_temp_dir(), 'docx_fallback');
-            $zip = new \ZipArchive;
-            if ($zip->open($temp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-                $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                    .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-                    .'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-                    .'<Default Extension="xml" ContentType="application/xml"/>'
-                    .'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
-                    .'</Types>';
-                $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-                    .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
-                    .'</Relationships>';
-                $document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                    .'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                    .'<w:body>'
-                    .'<w:p><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>Jurnal Penelitian BRIDA Makassar</w:t></w:r></w:p>'
-                    .'<w:p><w:r><w:t>Naskah Acuan Layout: '.htmlspecialchars($filename, ENT_XML1).'</w:t></w:r></w:p>'
-                    .'</w:body>'
-                    .'</w:document>';
-
-                $zip->addFromString('[Content_Types].xml', $contentTypes);
-                $zip->addFromString('_rels/.rels', $rels);
-                $zip->addFromString('word/document.xml', $document);
-                $zip->close();
-
-                $binary = (string) file_get_contents($temp);
-                @unlink($temp);
-
-                return $binary;
-            }
-        }
-
-        return "Naskah Acuan Layout BRIDA Makassar: {$filename}\n";
+        abort(404, 'Berkas naskah acuan copyediting tidak ditemukan di media penyimpanan.');
     }
 
     private function findSubmission(string $identifier): ?Submission
