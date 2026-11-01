@@ -99,8 +99,8 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
 2. Request dikirimkan melalui protokol **HTTPS (TLS 1.3)** menuju Cloudflare Edge.
 3. **Cloudflare WAF** memeriksa request; lalu lintas mencurigakan (SQLi/XSS/bot) langsung diblokir.
 4. Jika request meminta aset statis yang ter-cache, Cloudflare CDN langsung merespons dari *edge cache*.
-5. Request dinamis aplikasi web diteruskan (*proxied*) ke alamat Ingress publik **Azure Container Apps**.
-6. Envoy Proxy di ACA meneruskan request ke replika **Web App Container (Laravel)** yang sedang aktif.
+5. Request dinamis aplikasi web diproses oleh **Cloudflare Worker Edge Proxy** (`cloudflare-worker.js`) untuk melakukan *Host Header Rewrite* secara transparan dari domain kustom publik (`sirida.web.id`) ke FQDN dinamis internal Azure Container Apps (`ca-sirida-web-poc...`). Pola ini menyelesaikan batasan Express Environment pada Azure Container Apps dan batasan lisensi paket Cloudflare Free tanpa biaya tambahan.
+6. Envoy Proxy di ACA menerima request dengan Host Header yang sesuai, lalu meneruskannya ke replika **Web App Container (Laravel)** yang sedang aktif.
 
 ### 4.2 Aliran Penyimpanan & Pengunduhan Berkas (*Direct Azure Blob SAS URL*)
 Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 MB berlangsung cepat tanpa membebani memori web server):

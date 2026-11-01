@@ -70,8 +70,26 @@ variable "enable_cloudflare" {
   default     = false
 }
 
+variable "enable_cloudflare_origin_rule" {
+  description = "Aktifkan otomatisasi Cloudflare Origin Rule untuk rewrite Host Header ke ACA Ingress FQDN (memerlukan izin Zone.Rulesets:Edit pada Cloudflare API Token dan paket Enterprise)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cloudflare_worker" {
+  description = "Gunakan Cloudflare Worker Edge Proxy untuk Host Header Rewrite otomatis (Solusi gratis tanpa perlu Enterprise plan)"
+  type        = bool
+  default     = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Account ID Cloudflare (dibutuhkan untuk mengelola Worker dan Worker Custom Domain)"
+  type        = string
+  default     = ""
+}
+
 variable "cloudflare_api_token" {
-  description = "API Token Cloudflare dengan izin Zone.DNS dan Zone.WAF"
+  description = "API Token Cloudflare dengan izin Zone.DNS, Zone.WAF, Workers Scripts:Edit, dan Workers Routes:Edit"
   type        = string
   sensitive   = true
   default     = ""

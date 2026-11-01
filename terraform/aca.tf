@@ -8,6 +8,11 @@ resource "azurerm_container_app_environment" "env" {
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
   tags                       = var.tags
+
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -60,10 +65,11 @@ resource "azurerm_container_app" "web" {
     }
 
     container {
-      name   = "web"
-      image  = var.container_image
-      cpu    = var.aca_web_cpu
-      memory = var.aca_web_memory
+      name    = "web"
+      image   = var.container_image
+      cpu     = var.aca_web_cpu
+      memory  = var.aca_web_memory
+      command = ["/bin/sh", "-c", "mkdir -p /run/nginx && sed -i '/::/d' /etc/nginx/http.d/default.conf 2>/dev/null || true; exec /usr/local/bin/entrypoint.sh"]
 
       dynamic "env" {
         for_each = local.common_env_vars
