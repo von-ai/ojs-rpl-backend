@@ -1662,7 +1662,7 @@ Seluruh key Redis diorganisasikan dalam namespace berversi: `sirida:{env}:v1:`.
 flowchart TD
     App["Laravel Application Service"]
     DB[("MySQL 8.0 / TiDB Serverless InnoDB<br/>(Single Source of Truth)")]
-    Redis[("Azure Managed Redis (AMR)<br/>(Cache / Session / Lease)")]
+    Redis[("Redis Container (ACA)<br/>(Cache / Session / Lease)")]
     Client["Web Browser / Client"]
 
     Client -->|"1. HTTP Request"| App
