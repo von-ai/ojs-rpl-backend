@@ -423,9 +423,10 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $resPage1->assertSee('page=2');
 
         // Halaman 2
+        $page2To = min(20, $totalUsers);
         $resPage2 = $this->get('/journalmanager/users?page=2');
         $resPage2->assertStatus(200);
-        $resPage2->assertSee("Menampilkan <strong class=\"text-gray-800\">11</strong> - <strong class=\"text-gray-800\">{$totalUsers}</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
+        $resPage2->assertSee("Menampilkan <strong class=\"text-gray-800\">11</strong> - <strong class=\"text-gray-800\">{$page2To}</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
         $resPage2->assertSee('Sebelumnya');
         $resPage2->assertSee('page=1');
     }

@@ -20,20 +20,9 @@ class JournalManagerSettingsTest extends TestCase
     {
         parent::setUp();
 
-        $this->manager = User::firstOrCreate(
-            ['email' => 'yusuf.brida@makassar.go.id'],
-            [
-                'username' => 'yusuf.brida',
-                'name' => 'Drs. Muhammad Yusuf, M.Si.',
-                'full_name' => 'Drs. Muhammad Yusuf, M.Si.',
-                'password' => Hash::make('password123'),
-                'email_verified_at' => now(),
-            ]
-        );
-        UserRole::firstOrCreate([
-            'user_id' => $this->manager->id,
-            'role_code' => 'manager',
-        ]);
+        $this->seed(\Database\Seeders\JournalManagerSeeder::class);
+
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($this->manager);
     }
 

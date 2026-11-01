@@ -109,51 +109,6 @@ class JournalManagerSectionsViewModel
             }
         }
 
-        return [
-            [
-                'id' => 'SEC-01JARK-01',
-                'position' => 1,
-                'name' => 'Inovasi Daerah & Kebijakan Publik',
-                'slug' => 'inovasi-daerah-kebijakan-publik',
-                'description' => 'Riset implementasi kebijakan pemerintah kota, reformasi birokrasi, dan terobosan layanan publik perkotaan.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 14,
-            ],
-            [
-                'id' => 'SEC-01JARK-02',
-                'position' => 2,
-                'name' => 'Sosial Humaniora & Tata Kelola',
-                'slug' => 'sosial-humaniora-tata-kelola',
-                'description' => 'Kajian dinamika sosial perkotaan, kearifan lokal, ketahanan sosial masyarakat lorong, dan tata kelola kelurahan.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 11,
-            ],
-            [
-                'id' => 'SEC-01JARK-03',
-                'position' => 3,
-                'name' => 'Teknologi & Infrastruktur Berkelanjutan',
-                'slug' => 'teknologi-infrastruktur-berkelanjutan',
-                'description' => 'Riset teknik sipil lingkungan, mitigasi banjir pasang rob, sensor kualitas udara perkotaan, dan smart city.',
-                'accepting_submissions' => true,
-                'status_label' => 'Buka Submission',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'submissions_count' => 8,
-            ],
-            [
-                'id' => 'SEC-01JARK-04',
-                'position' => 4,
-                'name' => 'Kajian Kebencanaan Pesisir & Maritim',
-                'slug' => 'kebencanaan-pesisir-maritim',
-                'description' => 'Studi khusus geomorfologi pantai, sedimentasi muara sungai, dan mitigasi gelombang pasang pulau-pulau kecil.',
-                'accepting_submissions' => false,
-                'status_label' => 'Tutup Submission',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'submissions_count' => 3,
-            ],
-        ];
+        return [];
     }
 }

@@ -20,20 +20,9 @@ class JournalManagerIssuesTest extends TestCase
     {
         parent::setUp();
 
-        $this->manager = User::firstOrCreate(
-            ['email' => 'yusuf.brida@makassar.go.id'],
-            [
-                'username' => 'yusuf.brida',
-                'name' => 'Drs. Muhammad Yusuf, M.Si.',
-                'full_name' => 'Drs. Muhammad Yusuf, M.Si.',
-                'password' => Hash::make('password123'),
-                'email_verified_at' => now(),
-            ]
-        );
-        UserRole::firstOrCreate([
-            'user_id' => $this->manager->id,
-            'role_code' => 'manager',
-        ]);
+        $this->seed(\Database\Seeders\JournalManagerSeeder::class);
+
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($this->manager);
     }
 
@@ -79,6 +68,18 @@ class JournalManagerIssuesTest extends TestCase
      */
     public function test_filter_tab_status_edisi_terbitan(): void
     {
+        $journal = \App\Models\Journal::first();
+        \App\Models\Issue::create([
+            'journal_id' => $journal->id,
+            'volume' => '7',
+            'number' => '1',
+            'year' => 2027,
+            'title' => 'Vol. 7 No. 1 (2027): Edisi Terjadwal',
+            'status' => 'scheduled',
+            'is_current' => false,
+            'doi_prefix' => '10.61234/sirida.v7i1',
+        ]);
+
         // Tab All: menampilkan semua edisi
         $responseAll = $this->get('/journalmanager/issues?tab=all');
         $responseAll->assertStatus(200);
