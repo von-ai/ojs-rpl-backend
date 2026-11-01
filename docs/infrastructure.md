@@ -26,7 +26,7 @@ Berdasarkan analisis kebutuhan proposal SRS dan evaluasi berbagai opsi layanan c
 | 2 | **Komputasi Worker** | Azure VM, Celery/Supervisor, Dedicated ACA | **ACA Dedicated Worker** | Docker Container | Menjalankan `php artisan queue:work` secara asinkron (pemrosesan PDF dan pemindaian berkas), isolasi proses dari traffic web. |
 | 3 | **Komputasi Scheduler** | Cron VM, Azure Function, ACA Scheduled Job | **ACA Scheduled Job** | Host Cron / Artisan | Menjalankan `php artisan schedule:run` setiap 1 menit untuk deadline review & outbox retry tanpa server standby 24/7. |
 | 4 | **RDBMS** | Azure Database for MySQL, TiDB Serverless, AWS RDS | **TiDB Cloud Serverless** | Container MySQL 8.0 | 100% MySQL 8.0 wire protocol, *scale-to-zero*, bebas biaya sewa disk tetap, kuota gratis 5 GB storage & 50M Request Units/bln. |
-| 5 | **In-Memory Cache & Broker** | Azure Container Apps Redis, Upstash, DB Store | **Redis Container di ACA (redis:7-alpine)** | Container Redis | Berjalan sebagai dedicated internal microservice di dalam ACA Environment yang sama (latensi sub-milidetik, isolasi jaringan privat, password terenkripsi, $0 gratis masuk kuota bulanan ACA). |
+| 5 | **In-Memory Cache & Broker** | Azure Managed Redis, Upstash, DB Store | **Azure Managed Redis (AMR Balanced_B0)** | Container Redis | Layanan Redis Enterprise terkelola native Azure dengan mesin multi-threading performa tinggi, dedicated in-memory store untuk session, atomic locking naskah, dan cache layer (~Rp 210 rb/bln saat aktif atau Rp 0 saat di-destroy). |
 | 6 | **Object Storage** | Azure Blob Storage, AWS S3, Cloudflare R2 | **Azure Blob Storage** | Azurite Container (Port 10000) | Penyimpanan objek terkelola native Azure dengan integrasi langsung Microsoft Defender for Storage (Malware Scanning). Enkripsi data at-rest otomatis (AES-256), integrasi SAS (Shared Access Signature) token, dan manajemen lifecycle versi berkas 30 hari. |
 | 7 | **Container Registry** | Azure Container Registry (ACR), GHCR, DockerHub | **GitHub Container Registry (GHCR)** | Local Docker Engine | Terintegrasi langsung dengan GitHub Actions CI/CD, gratis private container image (kuota 500 MB & 1 GB transfer). |
 | 8 | **DNS** | Azure DNS, Cloudflare DNS | **Cloudflare DNS** | `/etc/hosts` lokal | Resolusi DNS Anycast tercepat di dunia, pembaruan propagasi instan, 100% gratis. |
@@ -173,7 +173,7 @@ terraform/
 ├── main.tf            # Azure Resource Group & Log Analytics Workspace
 ├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduled Job
 ├── storage.tf         # Azure Storage Account, Blob Container, dan Defender for Storage
-├── redis.tf           # Redis Container di ACA (redis:7-alpine, Internal TCP Port 6379)
+├── redis.tf           # Azure Managed Redis (AMR Balanced_B0, Redis Enterprise Engine)
 ├── monitoring.tf      # Azure Monitor Application Insights & Availability Web Test
 ├── cloudflare.tf      # DNS records, Cloudflare WAF ruleset, TLS configuration
 ├── secrets.tf         # Pemetaan ACA built-in secrets

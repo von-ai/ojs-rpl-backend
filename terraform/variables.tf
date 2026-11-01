@@ -11,9 +11,9 @@ variable "environment" {
 }
 
 variable "azure_location" {
-  description = "Wilayah/region Azure untuk menempatkan resource (direkomendasikan Southeast Asia / Singapore)"
+  description = "Wilayah/region Azure untuk menempatkan resource (default: indonesiacentral / Jakarta)"
   type        = string
-  default     = "southeastasia"
+  default     = "indonesiacentral"
 }
 
 variable "tags" {

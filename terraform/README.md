@@ -16,7 +16,7 @@ terraform/
 ├── variables.tf            # Deklarasi variabel konfigurasi (region, domain, sizing, credentials)
 ├── main.tf                 # Azure Resource Group & Log Analytics Workspace
 ├── storage.tf              # Azure Storage Account, Blob Container, Lifecycle, Defender
-├── redis.tf                # Dedicated Redis 7 In-Memory Broker/Cache Container di ACA ($0, Internal Port 6379)
+├── redis.tf                # Azure Managed Redis (AMR) - Balanced_B0 (~500MB, Redis Enterprise Engine)
 ├── secrets.tf              # Pemetaan ACA built-in secrets & variabel environment container
 ├── aca.tf                  # ACA Environment, Web Container, Queue Worker, Scheduled Job
 ├── monitoring.tf           # Azure Application Insights, Web Test (5 Probe), Alert SLA 99.5%
