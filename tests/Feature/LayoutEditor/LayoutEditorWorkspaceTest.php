@@ -34,6 +34,7 @@ class LayoutEditorWorkspaceTest extends TestCase
             'user_id' => $this->layoutEditor->id,
             'role_code' => 'layout_editor',
         ]);
+        $this->seed(\Database\Seeders\LayoutEditorSeeder::class);
         $this->actingAs($this->layoutEditor);
     }
 
@@ -54,7 +55,7 @@ class LayoutEditorWorkspaceTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time');
-        $response->assertSee('Dr. Nurfadillah Bahar, M.Kes.');
+        $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('SUB2026-00106_Copyedit_Final_Approved.docx');
         $response->assertSee('Unduh Naskah Final (.docx)');
 
@@ -150,18 +151,21 @@ class LayoutEditorWorkspaceTest extends TestCase
     public function test_semua_aksi_transaksional_layout_editor_berfungsi(): void
     {
         // 1. Upload Galley
+        $fakeFile = \Illuminate\Http\UploadedFile::fake()->create('SUB2026-00106_Galley_Draft_v1.pdf', 500, 'application/pdf');
         $resUpload = $this->post('/layouteditor/upload-galley', [
             'submission_id' => 'SUB-2026-00106',
             'galley_label' => 'PDF Full Text (Draf v1)',
             'format' => 'pdf',
+            'file' => $fakeFile,
         ]);
         $resUpload->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
         $resUpload->assertSessionHas('status', 'Berkas galai PDF berhasil diunggah dan diverifikasi checksum.');
 
         // 2. Resolve Note
+        $note = \App\Models\ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->first();
         $resResolve = $this->post('/layouteditor/resolve-note', [
             'submission_id' => 'SUB-2026-00107',
-            'note_id' => 'NOTE-01JARK-01',
+            'note_id' => $note?->id ?? 'NOTE-01JARK-01',
             'resolution' => 'Tabel 2 telah diposisikan ke awal halaman 5 format 2-kolom penuh.',
         ]);
         $resResolve->assertRedirect('/layouteditor/submissions/SUB-2026-00107');

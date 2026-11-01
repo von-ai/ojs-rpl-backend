@@ -34,6 +34,7 @@ class LayoutEditorCatalogPageTest extends TestCase
             'user_id' => $this->layoutEditor->id,
             'role_code' => 'layout_editor',
         ]);
+        $this->seed(\Database\Seeders\LayoutEditorSeeder::class);
         $this->actingAs($this->layoutEditor);
     }
 
@@ -136,9 +137,9 @@ class LayoutEditorCatalogPageTest extends TestCase
         $responseSearch1->assertDontSee('SUB-2026-00108');
 
         // Pencarian dengan nama penulis
-        $responseSearch2 = $this->get('/layouteditor/submissions?q=Muhammad+Basri');
+        $responseSearch2 = $this->get('/layouteditor/submissions?q=Faisal+Syarif');
         $responseSearch2->assertStatus(200);
-        $responseSearch2->assertSee('SUB-2026-00107');
+        $responseSearch2->assertSee('SUB-2026-00111');
         $responseSearch2->assertDontSee('SUB-2026-00106');
 
         // Pencarian yang tidak menemukan hasil (Empty State)

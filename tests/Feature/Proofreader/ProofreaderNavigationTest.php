@@ -35,6 +35,7 @@ class ProofreaderNavigationTest extends TestCase
             'user_id' => $this->proofreader->id,
             'role_code' => 'proofreader',
         ]);
+        $this->seed(\Database\Seeders\ProofreaderSeeder::class);
         $this->actingAs($this->proofreader);
     }
 
@@ -122,16 +123,16 @@ class ProofreaderNavigationTest extends TestCase
         // 2. Verifikasi resolusi perbaikan
         $responseVerify = $this->post('/proofreader/verify-note', [
             'submission_id' => 'SUB-2026-00106',
-            'note_id' => 'NOTE-001',
+            'note_id' => 'NOTE-01JARK-02',
         ]);
         $responseVerify->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00106'));
         $responseVerify->assertSessionHas('status');
 
         // 3. Persetujuan akhir proofreading (sign-off)
         $responseComplete = $this->post('/proofreader/complete', [
-            'submission_id' => 'SUB-2026-00106',
+            'submission_id' => 'SUB-2026-00107',
         ]);
-        $responseComplete->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00106'));
+        $responseComplete->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00107'));
         $responseComplete->assertSessionHas('status');
 
         // 4. Eskalasi ketidaksesuaian naskah

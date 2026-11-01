@@ -12,7 +12,7 @@ class LayoutEditorDetailViewModel
 {
     private string $submissionId;
 
-    public function __construct(string $submissionId = 'SUB-2026-00106')
+    public function __construct(string $submissionId)
     {
         $this->submissionId = $submissionId;
     }
@@ -22,7 +22,7 @@ class LayoutEditorDetailViewModel
      * Mengonsumsi data relasi layout_assignments, galleys, proof_assignments,
      * proofreading_notes, galley_approvals, dan production_escalations.
      *
-     * @return array{
+     * @return ?array{
      *     id: string,
      *     number: string,
      *     assignment_code: string,
@@ -114,24 +114,9 @@ class LayoutEditorDetailViewModel
      *     }>
      * }
      */
-    public function submission(): array
+    public function submission(): ?array
     {
-        $fromDb = $this->querySubmission();
-        if ($fromDb !== null) {
-            return $fromDb;
-        }
-
-        $dataset = $this->registry();
-
-        if (isset($dataset[$this->submissionId])) {
-            return $dataset[$this->submissionId];
-        }
-
-        // Fallback dinamis jika ID tidak ditemukan di simulasi dataset
-        return array_merge($dataset['SUB-2026-00106'], [
-            'id' => $this->submissionId,
-            'number' => $this->submissionId,
-        ]);
+        return $this->querySubmission();
     }
 
     private function querySubmission(): ?array
@@ -194,22 +179,26 @@ class LayoutEditorDetailViewModel
         $galleysList = [];
         if ($hasGalleys) {
             $galleysList = $galleys->map(function ($g) use ($stageLabels, $stageBadges) {
-                return [
-                    'id' => $g->id,
-                    'version' => (int) $g->version,
-                    'label' => $g->label,
-                    'format' => $g->format,
-                    'file_name' => $g->file?->original_name ?? "Galley_v{$g->version}.{$g->format}",
-                    'size_formatted' => $g->file ? number_format($g->file->byte_size / 1048576, 2).' MB' : '1.35 MB',
-                    'checksum_sha256' => $g->checksum_sha256,
-                    'stage' => $g->stage,
-                    'stage_label' => $stageLabels[$g->stage] ?? ucfirst($g->stage),
-                    'stage_badge_class' => $stageBadges[$g->stage] ?? 'bg-gray-100 text-gray-700 border-gray-200',
-                    'status' => $g->status === 'active' ? 'active' : 'superseded',
-                    'is_active' => $g->status === 'active',
-                    'uploaded_at' => $g->created_at ? $g->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
-                    'download_url' => route('layouteditor.galleys.download', $g->id),
-                ];
+                $isSuperseded = $g->status === 'superseded';
+                $stageLabel = $isSuperseded ? 'Tergantikan (Superseded)' : ($stageLabels[$g->stage] ?? ucfirst($g->stage));
+                $stageBadge = $isSuperseded ? 'bg-gray-100 text-gray-600 border-gray-200' : ($stageBadges[$g->stage] ?? 'bg-gray-100 text-gray-700 border-gray-200');
+
+                    return [
+                        'id' => $g->id,
+                        'version' => (int) $g->version,
+                        'label' => $g->label,
+                        'format' => $g->format,
+                        'file_name' => $g->file?->original_name ?? "Galley_v{$g->version}.{$g->format}",
+                        'size_formatted' => $g->file ? number_format($g->file->byte_size / 1048576, 2).' MB' : '1.35 MB',
+                        'checksum_sha256' => $g->checksum_sha256,
+                        'stage' => $g->stage,
+                        'stage_label' => $stageLabel,
+                        'stage_badge_class' => $stageBadge,
+                        'status' => $g->status === 'active' ? 'active' : 'superseded',
+                        'is_active' => $g->status === 'active',
+                        'uploaded_at' => $g->created_at ? $g->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
+                        'download_url' => route('layouteditor.galleys.download', $g->id),
+                    ];
             })->values()->all();
         }
 
@@ -279,7 +268,7 @@ class LayoutEditorDetailViewModel
         if ($activeEsc) {
             $escalation = [
                 'has_active' => true,
-                'ticket_id' => 'ESC-2026-'.strtoupper(substr($activeEsc->id, 0, 4)),
+                'ticket_id' => str_starts_with((string) $activeEsc->id, 'ESC-') ? $activeEsc->id : 'ESC-2026-'.strtoupper(substr((string) $activeEsc->id, -4)),
                 'reason' => $activeEsc->reason,
                 'status' => $activeEsc->status,
                 'status_label' => 'Menunggu Arahan Section Editor',
@@ -295,6 +284,10 @@ class LayoutEditorDetailViewModel
             $status = 'ready';
             $statusLabel = 'Galai Disetujui EIC';
             $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+        } elseif ($activeEsc) {
+            $status = 'escalated';
+            $statusLabel = 'Dalam Eskalasi Tata Letak';
+            $statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-200';
         } elseif ($unresolvedCount > 0 || ($allNotes->isNotEmpty() && $unresolvedCount === 0)) {
             $status = 'proofreading';
             $statusLabel = $unresolvedCount > 0 ? "{$unresolvedCount} Catatan Perlu Revisi" : 'Koreksi Selesai Diterapkan';

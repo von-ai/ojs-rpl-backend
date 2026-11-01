@@ -16,7 +16,7 @@ class ProofreaderDetailViewModel
 {
     private string $submissionId;
 
-    public function __construct(string $submissionId = 'SUB-2026-00106')
+    public function __construct(string $submissionId)
     {
         $this->submissionId = $submissionId;
     }
@@ -32,7 +32,7 @@ class ProofreaderDetailViewModel
     /**
      * Data naskah dan penugasan proofreading spesifik.
      */
-    public function submission(): array
+    public function submission(): ?array
     {
         try {
             if (class_exists(Submission::class) && Schema::hasTable('submissions')) {
@@ -57,9 +57,7 @@ class ProofreaderDetailViewModel
             // fallback
         }
 
-        $registry = $this->registry();
-
-        return $registry[$this->submissionId] ?? $registry['SUB-2026-00106'];
+        return null;
     }
 
     /**

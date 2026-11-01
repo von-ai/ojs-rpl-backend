@@ -260,10 +260,10 @@ class LayoutEditorSubmissionsViewModel
                 }
             }
         } catch (\Throwable) {
-            // Fallback to static registry on database error
+            // Fallback to empty on database error
         }
 
-        return $this->defaultSubmissions();
+        return [];
     }
 
     private function formatAssignmentItem(LayoutAssignment $assignment): array
@@ -347,164 +347,6 @@ class LayoutEditorSubmissionsViewModel
             'galley_format' => $galleyFormat,
             'unresolved_notes_count' => $unresolvedNotes,
             'url_workspace' => route('layouteditor.submissions.show', $identifier),
-        ];
-    }
-
-    private function defaultSubmissions(): array
-    {
-        return [
-            [
-                'id' => 'SUB-2026-00104',
-                'number' => 'SUB-2026-00104',
-                'title' => 'Evaluasi Kebijakan Lorong Wisata Berbasis Pemberdayaan Ekonomi Kreatif di Kota Makassar',
-                'section_title' => 'Sosial Humaniora & Tata Kelola',
-                'corresponding_author' => [
-                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'due_at' => '06 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'status' => 'ready',
-                'status_label' => 'Galai Disetujui EIC',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'galley_format' => 'PDF Full Text (v1)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00104'),
-            ],
-            [
-                'id' => 'SUB-2026-00105',
-                'number' => 'SUB-2026-00105',
-                'title' => 'Tinjauan Sistematis Integrasi Data Kependudukan dan Pelayanan Sosial Perkotaan Menggunakan Protokol PRISMA',
-                'section_title' => 'Inovasi Daerah & Kebijakan Publik',
-                'corresponding_author' => [
-                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'proofreader' => 'Drs. H. Anwar Kasim, M.Pd.',
-                'due_at' => '04 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'status' => 'drafting',
-                'status_label' => 'Perlu Draf Galai PDF',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'galley_format' => 'PDF (Belum Ada Galai)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00105'),
-            ],
-            [
-                'id' => 'SUB-2026-00106',
-                'number' => 'SUB-2026-00106',
-                'title' => 'Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time pada Kawasan Industri Biringkanaya Makassar',
-                'section_title' => 'Inovasi Daerah & Kebijakan Publik',
-                'corresponding_author' => [
-                    'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'due_at' => '02 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'status' => 'drafting',
-                'status_label' => 'Perlu Draf Galai PDF',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'galley_format' => 'PDF (Belum Ada Galai)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00106'),
-            ],
-            [
-                'id' => 'SUB-2026-00107',
-                'number' => 'SUB-2026-00107',
-                'title' => 'Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu Pemerintah Daerah Kota Makassar',
-                'section_title' => 'Sosial Humaniora & Tata Kelola',
-                'corresponding_author' => [
-                    'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
-                    'affiliation' => 'Politeknik Negeri Ujung Pandang',
-                ],
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'due_at' => '28 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'status' => 'proofreading',
-                'status_label' => '2 Catatan Proofreading',
-                'status_badge_class' => 'bg-blue-50 text-blue-800 border-blue-200',
-                'galley_format' => 'PDF Full Text (v1)',
-                'unresolved_notes_count' => 2,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00107'),
-            ],
-            [
-                'id' => 'SUB-2026-00108',
-                'number' => 'SUB-2026-00108',
-                'title' => 'Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar terhadap APBD Kota Makassar Periode 2020-2024',
-                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
-                    'affiliation' => 'Fakultas Teknik Universitas Hasanuddin',
-                ],
-                'proofreader' => 'Drs. H. Anwar Kasim, M.Pd.',
-                'due_at' => '31 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'status' => 'proofreading',
-                'status_label' => '1 Catatan Mayor',
-                'status_badge_class' => 'bg-purple-50 text-purple-800 border-purple-200',
-                'galley_format' => 'PDF Full Text (v1)',
-                'unresolved_notes_count' => 1,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00108'),
-            ],
-            [
-                'id' => 'SUB-2026-00109',
-                'number' => 'SUB-2026-00109',
-                'title' => 'Observasi Awal Distribusi Mikroplastik pada Sedimen Muara Sungai Jeneberang Makassar',
-                'section_title' => 'Ekonomi Pembangunan & Pemberdayaan Masyarakat',
-                'corresponding_author' => [
-                    'name' => 'Hj. Fatmawati, S.E., M.Si.',
-                    'affiliation' => 'Universitas Fajar Makassar',
-                ],
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'due_at' => '05 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'status' => 'ready',
-                'status_label' => 'Galai Disetujui EIC',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'galley_format' => 'PDF + HTML (v2 Final)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00109'),
-            ],
-            [
-                'id' => 'SUB-2026-00110',
-                'number' => 'SUB-2026-00110',
-                'title' => 'Strategi Pengelolaan Sampah Berbasis Komunitas di Kawasan Pesisir Tallo',
-                'section_title' => 'Lingkungan & Ketahanan Kota',
-                'corresponding_author' => [
-                    'name' => 'Dr. Muh. Ridwan, S.Kel., M.Si.',
-                    'affiliation' => 'Pusat Riset Kebencanaan BRIDA',
-                ],
-                'proofreader' => 'Drs. H. Anwar Kasim, M.Pd.',
-                'due_at' => '07 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'status' => 'drafting',
-                'status_label' => 'Perlu Draf Galai PDF',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'galley_format' => 'PDF (Belum Ada Galai)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00110'),
-            ],
-            [
-                'id' => 'SUB-2026-00111',
-                'number' => 'SUB-2026-00111',
-                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
-                'section_title' => 'Kesehatan Masyarakat & Gizi',
-                'corresponding_author' => [
-                    'name' => 'Dr. dr. Risnah, S.Kep., Ns., M.Kes.',
-                    'affiliation' => 'UIN Alauddin Makassar',
-                ],
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'due_at' => '29 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'status' => 'ready',
-                'status_label' => 'Siap Terbit',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'galley_format' => 'PDF Full Text (v2 Final)',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('layouteditor.submissions.show', 'SUB-2026-00111'),
-            ],
         ];
     }
 }

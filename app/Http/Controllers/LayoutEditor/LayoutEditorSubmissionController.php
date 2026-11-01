@@ -49,6 +49,10 @@ class LayoutEditorSubmissionController extends Controller
         $viewModel = new LayoutEditorDetailViewModel($id);
         $submission = $viewModel->submission();
 
+        if (! $submission) {
+            abort(404, "Naskah penugasan tata letak '{$id}' tidak ditemukan.");
+        }
+
         return view('layouteditor.submissions.show', compact('submission', 'id'));
     }
 

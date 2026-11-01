@@ -49,6 +49,10 @@ class ProofreaderSubmissionController extends Controller
         $viewModel = new ProofreaderDetailViewModel($id);
         $submission = $viewModel->submission();
 
+        if (! $submission) {
+            abort(404, "Naskah penugasan pemeriksaan bukti baca '{$id}' tidak ditemukan.");
+        }
+
         return view('proofreader.submissions.show', compact('viewModel', 'submission', 'id'));
     }
 

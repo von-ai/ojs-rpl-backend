@@ -34,6 +34,7 @@ class LayoutEditorNavigationTest extends TestCase
             'user_id' => $this->layoutEditor->id,
             'role_code' => 'layout_editor',
         ]);
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
         $this->actingAs($this->layoutEditor);
     }
 
@@ -102,16 +103,16 @@ class LayoutEditorNavigationTest extends TestCase
         $responseResolve->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
         $responseResolve->assertSessionHas('status');
 
-        $responseProofread = $this->post('/layouteditor/request-proofread', ['submission_id' => 'SUB-2026-00106']);
-        $responseProofread->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
+        $responseProofread = $this->post('/layouteditor/request-proofread', ['submission_id' => 'SUB-2026-00107']);
+        $responseProofread->assertRedirect('/layouteditor/submissions/SUB-2026-00107');
         $responseProofread->assertSessionHas('status');
 
         $responseEscalate = $this->post('/layouteditor/escalate', ['submission_id' => 'SUB-2026-00106']);
         $responseEscalate->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
         $responseEscalate->assertSessionHas('status');
 
-        $responseApproval = $this->post('/layouteditor/request-final-approval', ['submission_id' => 'SUB-2026-00106']);
-        $responseApproval->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
+        $responseApproval = $this->post('/layouteditor/request-final-approval', ['submission_id' => 'SUB-2026-00109']);
+        $responseApproval->assertRedirect('/layouteditor/submissions/SUB-2026-00109');
         $responseApproval->assertSessionHas('status');
     }
 }

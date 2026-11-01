@@ -24,6 +24,14 @@ class LayoutEditorSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Submission::count() === 0) {
+            $this->call([
+                JournalSeeder::class,
+                SectionSeeder::class,
+                SubmissionSeeder::class,
+            ]);
+        }
+
         // 1. User Layout Editor Utama
         $layoutEditor = User::firstOrCreate(
             ['email' => 'rahmat.hidayat@brida.makassar.go.id'],
@@ -273,6 +281,7 @@ class LayoutEditorSeeder extends Seeder
             ProductionEscalation::updateOrCreate(
                 ['submission_id' => $sub108->id, 'status' => 'open'],
                 [
+                    'id' => 'ESC-2026-0071',
                     'copyedit_id' => null,
                     'galley_id' => $galley108->id,
                     'opened_by' => $layoutEditor->id,

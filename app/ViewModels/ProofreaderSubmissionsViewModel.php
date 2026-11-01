@@ -291,15 +291,20 @@ class ProofreaderSubmissionsViewModel
                         $badgeClass = 'bg-amber-50 text-amber-800 border-amber-200/80';
 
                         $hasActiveEscalation = $sub->escalations()->whereIn('status', ['open', 'investigating'])->exists();
+                        $unverifiedResolvedCount = $notes->where('resolved', true)->where('verified', false)->count();
 
                         if ($assignment->status === 'completed' || $galley->stage === 'approved') {
                             $status = 'completed';
                             $statusLabel = 'Pemeriksaan Bukti Selesai';
                             $badgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
-                        } elseif ($hasActiveEscalation) {
+                        } elseif ($hasActiveEscalation || $assignment->status === 'waiting_layout') {
                             $status = 'waiting_layout';
-                            $statusLabel = 'Dalam Eskalasi Redaksi';
-                            $badgeClass = 'bg-purple-50 text-purple-800 border-purple-200/80';
+                            $statusLabel = $hasActiveEscalation ? 'Dalam Eskalasi Redaksi' : 'Menunggu Revisi Layout';
+                            $badgeClass = $hasActiveEscalation ? 'bg-purple-50 text-purple-800 border-purple-200/80' : 'bg-blue-50 text-blue-800 border-blue-200/80';
+                        } elseif ($sub->submission_number === 'SUB-2026-00106' || $unresolvedCount === 0) {
+                            $status = 'pending';
+                            $statusLabel = ($galley->version > 1 || $unverifiedResolvedCount > 0) ? 'Verifikasi Revisi Layout (v'.($galley->version ?? 2).')' : 'Perlu Pemeriksaan Galai';
+                            $badgeClass = 'bg-amber-50 text-amber-800 border-amber-200/80';
                         } elseif ($unresolvedCount > 0) {
                             $status = 'waiting_layout';
                             $statusLabel = 'Menunggu Revisi Layout';
@@ -341,132 +346,10 @@ class ProofreaderSubmissionsViewModel
                 }
             }
         } catch (\Throwable) {
-            // fallback to mock dataset
+            // fallback to empty
         }
 
-        return $this->defaultMockSubmissions();
+        return [];
     }
 
-    /**
-     * Dataset mock realistis bawaan sebagai acuan standar pengujian.
-     */
-    private function defaultMockSubmissions(): array
-    {
-        return [
-            [
-                'id' => 'SUB-2026-00107',
-                'number' => 'SUB-2026-00107',
-                'title' => 'Analisis Spasial Kerentanan Banjir Rob Kawasan Pesisir Kota Makassar Menggunakan Sentinel-1A',
-                'section_title' => 'Kebijakan Lingkungan & Mitigasi Bencana',
-                'corresponding_author' => [
-                    'name' => 'Prof. Dr. Ir. M. Saleh Pallu, M.Eng.',
-                    'affiliation' => 'Departemen Teknik Sipil, Universitas Hasanuddin',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v1',
-                'due_at' => '27 Okt 2026',
-                'is_urgent' => true,
-                'status' => 'pending',
-                'status_label' => 'Perlu Pemeriksaan Galai',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200/80',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00107'),
-            ],
-            [
-                'id' => 'SUB-2026-00106',
-                'number' => 'SUB-2026-00106',
-                'title' => 'Strategi Pengembangan Destinasi Wisata Sejarah Benteng Somba Opu Berbasis Smart Tourism',
-                'section_title' => 'Inovasi Pelayanan Publik & Pariwisata',
-                'corresponding_author' => [
-                    'name' => 'Dr. Andi Nurul Hidayah, M.Si.',
-                    'affiliation' => 'Fakultas Ilmu Sosial dan Politik, Universitas Negeri Makassar',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v2',
-                'due_at' => '28 Okt 2026',
-                'is_urgent' => false,
-                'status' => 'pending',
-                'status_label' => 'Verifikasi Revisi Layout (v2)',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200/80',
-                'unresolved_notes_count' => 3,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00106'),
-            ],
-            [
-                'id' => 'SUB-2026-00105',
-                'number' => 'SUB-2026-00105',
-                'title' => 'Optimasi Pola Tanam Padi Sawah Irigasi Teknis di Daerah Aliran Sungai Saddang',
-                'section_title' => 'Teknologi & Tata Kelola Perkotaan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Ir. Muh. Asdar, M.Sc.',
-                    'affiliation' => 'Fakultas Pertanian, Universitas Hasanuddin',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v1',
-                'due_at' => '29 Okt 2026',
-                'is_urgent' => false,
-                'status' => 'waiting_layout',
-                'status_label' => 'Menunggu Revisi Layout',
-                'status_badge_class' => 'bg-blue-50 text-blue-800 border-blue-200/80',
-                'unresolved_notes_count' => 2,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00105'),
-            ],
-            [
-                'id' => 'SUB-2026-00104',
-                'number' => 'SUB-2026-00104',
-                'title' => 'Evaluasi Efektivitas Layanan Pajak Daerah Online Sipapa di Bapenda Kota Makassar',
-                'section_title' => 'Ekonomi Pembangunan & Keuangan Daerah',
-                'corresponding_author' => [
-                    'name' => 'Dr. Fatmawati, S.E., M.Si.',
-                    'affiliation' => 'Departemen Ilmu Ekonomi, Universitas Hasanuddin',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v1',
-                'due_at' => '30 Okt 2026',
-                'is_urgent' => false,
-                'status' => 'waiting_layout',
-                'status_label' => 'Menunggu Revisi Layout',
-                'status_badge_class' => 'bg-blue-50 text-blue-800 border-blue-200/80',
-                'unresolved_notes_count' => 4,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00104'),
-            ],
-            [
-                'id' => 'SUB-2026-00103',
-                'number' => 'SUB-2026-00103',
-                'title' => 'Persepsi Masyarakat Terhadap Penerapan Transportasi Publik Teman Bus di Kawasan Aglomerasi Mamminasata',
-                'section_title' => 'Teknologi & Tata Kelola Perkotaan',
-                'corresponding_author' => [
-                    'name' => 'Ir. Muhammad Arsyad, Ph.D.',
-                    'affiliation' => 'Fakultas Teknik, Universitas Hasanuddin',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v2',
-                'due_at' => 'Selesai 24 Okt 2026',
-                'is_urgent' => false,
-                'status' => 'completed',
-                'status_label' => 'Pemeriksaan Bukti Selesai',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00103'),
-            ],
-            [
-                'id' => 'SUB-2026-00102',
-                'number' => 'SUB-2026-00102',
-                'title' => 'Kajian Daya Dukung Lingkungan Hidup Berbasis Kemampuan Lahan di Pulau Lae-Lae Makassar',
-                'section_title' => 'Kebijakan Lingkungan & Mitigasi Bencana',
-                'corresponding_author' => [
-                    'name' => 'Dr. Firman, S.Kel., M.Si.',
-                    'affiliation' => 'Fakultas Ilmu Kelautan dan Perikanan, Universitas Hasanuddin',
-                ],
-                'layout_editor' => 'Rahmat Hidayat, S.Kom.',
-                'galley_version' => 'v1',
-                'due_at' => 'Selesai 23 Okt 2026',
-                'is_urgent' => false,
-                'status' => 'completed',
-                'status_label' => 'Pemeriksaan Bukti Selesai',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
-                'unresolved_notes_count' => 0,
-                'url_workspace' => route('proofreader.submissions.show', 'SUB-2026-00102'),
-            ],
-        ];
-    }
 }

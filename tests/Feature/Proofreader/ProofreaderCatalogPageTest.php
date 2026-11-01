@@ -34,6 +34,7 @@ class ProofreaderCatalogPageTest extends TestCase
             'user_id' => $this->proofreader->id,
             'role_code' => 'proofreader',
         ]);
+        $this->seed(\Database\Seeders\ProofreaderSeeder::class);
         $this->actingAs($this->proofreader);
     }
 
