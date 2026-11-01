@@ -60,7 +60,16 @@ class CopyeditSeeder extends Seeder
             ]
         );
 
+        \App\Models\UserRole::firstOrCreate([
+            'user_id' => $copyEditor->id,
+            'role_code' => 'copyeditor',
+        ]);
+
         // Pastikan submission dasar ada
+        if (Submission::whereIn('submission_number', ['SUB-2026-00106', 'SUB-2026-00107'])->count() === 0) {
+            $this->call(SubmissionSeeder::class);
+        }
+
         $submissions = Submission::whereIn('submission_number', [
             'SUB-2026-00106',
             'SUB-2026-00107',
@@ -204,6 +213,7 @@ class CopyeditSeeder extends Seeder
             ProductionEscalation::firstOrCreate(
                 ['copyedit_id' => $copyedit108->id],
                 [
+                    'id' => 'ESC-2026-0042',
                     'submission_id' => $sub108->id,
                     'opened_by' => $copyEditor->id,
                     'reason' => '[Perbedaan Pendapat Substansi] Ketidaksepakatan format tabel statistik multivariat.',

@@ -47,6 +47,10 @@ class CopyeditorSubmissionController extends Controller
         $viewModel = new CopyeditorSubmissionDetailViewModel($id);
         $submission = $viewModel->submission();
 
+        if (! $submission) {
+            abort(404, "Naskah penugasan copyediting '{$id}' tidak ditemukan.");
+        }
+
         return view('copyeditor.submissions.show', compact('submission'));
     }
 

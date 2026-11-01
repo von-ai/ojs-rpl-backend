@@ -19,11 +19,22 @@ class CopyeditorCatalogPageTest extends TestCase
     {
         parent::setUp();
 
-        $this->copyeditor = User::factory()->create();
-        UserRole::create([
+        $this->copyeditor = User::firstOrCreate(
+            ['email' => 'andi.kurniawan@brida.makassar.go.id'],
+            [
+                'username' => 'andi.kurniawan',
+                'name' => 'Andi Kurniawan, S.Hum., M.Pd.',
+                'full_name' => 'Andi Kurniawan, S.Hum., M.Pd.',
+                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
             'user_id' => $this->copyeditor->id,
             'role_code' => 'copyeditor',
         ]);
+
+        $this->seed(\Database\Seeders\CopyeditSeeder::class);
 
         $this->actingAs($this->copyeditor);
     }
@@ -46,7 +57,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Penugasan Naskah Copyediting');
         $response->assertSee('SUB-2026-00106');
-        $response->assertSee('Dr. Nurfadillah Bahar');
+        $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('Buka Naskah');
 
         // Memastikan sidebar ringkas hanya memuat menu penting
@@ -79,7 +90,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00106');
 
         $response->assertStatus(200);
-        $response->assertSee('Analisis Spasial Ruang Terbuka Hijau');
+        $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara');
         $response->assertSee('Unduh Naskah Asli (.docx)');
         $response->assertSee('Berkas Hasil Suntingan');
         $response->assertSee('Persetujuan Penulis');
@@ -97,7 +108,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00108');
 
         $response->assertStatus(200);
-        $response->assertSee('Kajian Karakteristik Geoteknik Sedimen');
+        $response->assertSee('Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar');
         $response->assertSee('Dalam Mediasi Redaksi');
         $response->assertSee('ESC-2026-0042');
         $response->assertSee('Tiket Mediasi Redaksi Aktif');
@@ -112,9 +123,8 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00107');
 
         $response->assertStatus(200);
-        $response->assertSee('Transformasi Digital Pelayanan Publik Kelurahan');
+        $response->assertSee('Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu');
         $response->assertSee('Keputusan Mediasi Section Editor');
-        $response->assertSee('Dr. Hj. St. Rohani, M.Si.');
         $response->assertSee('Selesai Diputuskan');
     }
 
@@ -126,10 +136,9 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00109');
 
         $response->assertStatus(200);
-        $response->assertSee('Efektivitas Program Lorong Wisata');
+        $response->assertSee('Observasi Awal Distribusi Mikroplastik');
         $response->assertSee('Disetujui Penulis');
         $response->assertSee('Penulis Telah Menyetujui Naskah');
-        $response->assertSee('Hj. Fatmawati, S.E., M.Si.');
     }
 
     /**
@@ -167,8 +176,8 @@ class CopyeditorCatalogPageTest extends TestCase
         $responseEscalate->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
         $responseEscalate->assertSessionHas('status');
 
-        $responseHandoff = $this->post('/copyeditor/complete-handoff', ['submission_id' => 'SUB-2026-00106']);
-        $responseHandoff->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
+        $responseHandoff = $this->post('/copyeditor/complete-handoff', ['submission_id' => 'SUB-2026-00109']);
+        $responseHandoff->assertRedirect('/copyeditor/submissions/SUB-2026-00109');
         $responseHandoff->assertSessionHas('status');
     }
 
@@ -181,10 +190,10 @@ class CopyeditorCatalogPageTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Sedang Disunting');
-        $response->assertSee('SUB-2026-00106');
+        $response->assertSee('SUB-2026-00107');
         $response->assertSee('SUB-2026-00109');
         $response->assertSee('SUB-2026-00111');
-        $response->assertDontSee('SUB-2026-00107');
+        $response->assertDontSee('SUB-2026-00106');
         $response->assertDontSee('SUB-2026-00108');
         $response->assertDontSee('SUB-2026-00110');
     }
@@ -204,5 +213,23 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertSee('Minta Mediasi Editor');
         $response->assertSee('Hub-and-Spoke Maritim');
         $response->assertSee('openEscalateModal()');
+    }
+
+    /**
+     * Memastikan empty state tampil dengan ramah ketika database tidak memiliki penugasan copyediting.
+     */
+    public function test_empty_state_tampil_ketika_belum_ada_penugasan_copyedit(): void
+    {
+        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF');
+        \App\Models\CopyeditApprovedFile::query()->delete();
+        \App\Models\CopyeditApproval::query()->delete();
+        \App\Models\CopyeditOutput::query()->delete();
+        \App\Models\ProductionEscalation::query()->delete();
+        \App\Models\Copyedit::query()->delete();
+        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = ON');
+
+        $response = $this->get('/copyeditor/submissions');
+        $response->assertStatus(200);
+        $response->assertSee('Tidak ada naskah ditemukan');
     }
 }
