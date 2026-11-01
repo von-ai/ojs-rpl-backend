@@ -6,9 +6,6 @@ namespace Tests\Feature;
 
 use App\Jobs\CheckReviewDeadlinesJob;
 use App\Jobs\PruneExpiredChallengesJob;
-use App\Models\ReviewAssignment;
-use App\Models\ReviewRound;
-use App\Models\Submission;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -79,7 +76,7 @@ class SchedulerQueuePatternTest extends TestCase
         ]);
 
         // Jalankan job
-        (new PruneExpiredChallengesJob())->handle();
+        (new PruneExpiredChallengesJob)->handle();
 
         // Pastikan record kedaluwarsa dihapus dan record aktif dipertahankan
         $this->assertEquals(1, DB::table('identity_challenges')->count());
