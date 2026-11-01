@@ -53,7 +53,7 @@ resource "azurerm_monitor_action_group" "action_group" {
 resource "azurerm_monitor_metric_alert" "sla_alert" {
   name                = "alert-${var.project_name}-availability-sla"
   resource_group_name = azurerm_resource_group.rg.name
-  scopes              = [azurerm_application_insights.appinsights.id, azurerm_application_insights_standard_web_test.availability.id]
+  scopes              = [azurerm_application_insights.appinsights.id]
   description         = "Peringatan otomatis saat ketersediaan layanan SLA turun di bawah 99.5% (NF-05)"
   severity            = 1
   frequency           = "PT5M"

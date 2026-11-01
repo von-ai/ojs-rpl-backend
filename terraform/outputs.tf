@@ -27,9 +27,9 @@ output "worker_app_name" {
   value       = azurerm_container_app.worker.name
 }
 
-output "scheduler_job_name" {
-  description = "Nama Container App Scheduled Job"
-  value       = azurerm_container_app_job.scheduler.name
+output "scheduler_app_name" {
+  description = "Nama Container App untuk Scheduler Daemon"
+  value       = azurerm_container_app.scheduler.name
 }
 
 output "storage_account_name" {
