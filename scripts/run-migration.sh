@@ -45,27 +45,38 @@ if [ -n "$WEB_URL" ] && [ "$WEB_URL" != "N/A" ]; then
     sleep 5
 fi
 
-echo -e "${BLUE}--> Menjalankan 'php /var/www/html/artisan migrate --force' di Container '${WEB_NAME}'...${NC}"
+FRESH=false
+SEED=false
+
+for arg in "$@"; do
+    case $arg in
+        --fresh)
+            FRESH=true
+            ;;
+        --seed)
+            SEED=true
+            ;;
+        *)
+            ;;
+    esac
+done
+
+CMD="php /var/www/html/artisan migrate"
+if [ "$FRESH" = true ]; then
+    CMD="php /var/www/html/artisan migrate:fresh"
+fi
+
+if [ "$SEED" = true ]; then
+    CMD="${CMD} --seed"
+fi
+
+CMD="${CMD} --force"
+
+echo -e "${BLUE}--> Menjalankan '${CMD}' di Container '${WEB_NAME}'...${NC}"
 az containerapp exec \
     --name "${WEB_NAME}" \
     --resource-group "${RG_NAME}" \
     --container "web" \
-    --command "php /var/www/html/artisan migrate --force"
-
-SEED=false
-for arg in "$@"; do
-    if [ "$arg" == "--seed" ]; then
-        SEED=true
-    fi
-done
-
-if [ "$SEED" = true ]; then
-    echo -e "${BLUE}--> Menjalankan 'php /var/www/html/artisan db:seed --force' di Container '${WEB_NAME}'...${NC}"
-    az containerapp exec \
-        --name "${WEB_NAME}" \
-        --resource-group "${RG_NAME}" \
-        --container "web" \
-        --command "php /var/www/html/artisan db:seed --force"
-fi
+    --command "${CMD}"
 
 echo -e "\n${GREEN}[SUCCESS] Migrasi database berhasil dieksekusi di Azure Container Apps!${NC}"
