@@ -42,8 +42,10 @@ resource "azurerm_storage_account" "storage" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_container" "manuscripts" {
   name                  = var.storage_container_name
-  storage_account_id    = azurerm_storage_account.storage.id
+  storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -51,8 +53,10 @@ resource "azurerm_storage_container" "manuscripts" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_container" "backups" {
   name                  = "sirida-backups"
-  storage_account_id    = azurerm_storage_account.storage.id
+  storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -61,8 +65,10 @@ resource "azurerm_storage_container" "backups" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_share" "app_share" {
   name                 = "sirida-app-data"
-  storage_account_id   = azurerm_storage_account.storage.id
+  storage_account_name = azurerm_storage_account.storage.name
   quota                = 5 # 5 GB
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -84,13 +90,16 @@ resource "azurerm_storage_management_policy" "lifecycle" {
       }
     }
   }
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
 # Microsoft Defender for Storage (Malware Scanning)
+# Otomatis dinonaktifkan di indonesiacentral karena layanan belum didukung di region ini
 # -----------------------------------------------------------------------------
 resource "azurerm_security_center_storage_defender" "defender" {
-  count                                       = var.enable_storage_defender ? 1 : 0
+  count                                       = var.enable_storage_defender && var.azure_location != "indonesiacentral" ? 1 : 0
   storage_account_id                          = azurerm_storage_account.storage.id
   malware_scanning_on_upload_enabled          = true
   malware_scanning_on_upload_cap_gb_per_month = 50

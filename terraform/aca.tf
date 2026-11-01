@@ -145,16 +145,14 @@ resource "azurerm_container_app" "worker" {
 }
 
 # -----------------------------------------------------------------------------
-# ACA Scheduled Job (Cron Pemicu: * * * * *)
-# Hidup hanya beberapa detik per menit untuk `php artisan schedule:run`
+# ACA Scheduler Daemon Container (php artisan schedule:work)
+# Berjalan sebagai background daemon yang mengeksekusi scheduler tiap menit
 # -----------------------------------------------------------------------------
-resource "azurerm_container_app_job" "scheduler" {
-  name                         = "caj-${var.project_name}-scheduler-${var.environment}"
-  location                     = azurerm_resource_group.rg.location
-  resource_group_name          = azurerm_resource_group.rg.name
+resource "azurerm_container_app" "scheduler" {
+  name                         = "ca-${var.project_name}-scheduler-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.env.id
-  replica_timeout_in_seconds   = 60
-  replica_retry_limit          = 1
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Single"
   tags                         = var.tags
 
   dynamic "secret" {
@@ -174,17 +172,16 @@ resource "azurerm_container_app_job" "scheduler" {
     }
   }
 
-  schedule_trigger_config {
-    cron_expression = "* * * * *"
-  }
-
   template {
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name    = "scheduler"
       image   = var.container_image
       cpu     = var.aca_job_cpu
       memory  = var.aca_job_memory
-      command = ["php", "artisan", "schedule:run"]
+      command = ["php", "artisan", "schedule:work"]
 
       dynamic "env" {
         for_each = local.common_env_vars
