@@ -11,21 +11,10 @@ resource "azurerm_container_app_environment" "env" {
 }
 
 # -----------------------------------------------------------------------------
-# Storage Mount untuk Kontainer ACA (Persistensi /var/www/html/storage/app)
-# -----------------------------------------------------------------------------
-resource "azurerm_container_app_environment_storage" "storage" {
-  name                         = "appdata"
-  container_app_environment_id = azurerm_container_app_environment.env.id
-  account_name                 = azurerm_storage_account.storage.name
-  share_name                   = azurerm_storage_share.app_share.name
-  access_key                   = azurerm_storage_account.storage.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
-# -----------------------------------------------------------------------------
 # ACA Web Application Container (Laravel 13 + PHP 8.4-FPM + Nginx)
 # Scale-to-zero saat idle (0 - 5 replika, KEDA concurrent HTTP requests > 30)
 # -----------------------------------------------------------------------------
+
 resource "azurerm_container_app" "web" {
   name                         = "ca-${var.project_name}-web-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.env.id
