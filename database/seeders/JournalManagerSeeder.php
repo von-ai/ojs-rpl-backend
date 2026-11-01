@@ -82,7 +82,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'prof.hamka',
                 'name' => 'Prof. Hamka, Ph.D.',
                 'affiliation' => 'Fakultas Ilmu Sosial & Ilmu Politik UNHAS',
-                'roles' => ['section_editor', 'reviewer'],
+                'roles' => ['section_editor'],
                 'expertise' => ['Inovasi Pemerintahan', 'Sosial Humaniora'],
             ],
             [
@@ -118,6 +118,14 @@ class JournalManagerSeeder extends Seeder
                 'expertise' => ['Koreksi Galai', 'Tipografi'],
             ],
             [
+                'email' => 'm.basri@poliupg.ac.id',
+                'username' => 'm.basri',
+                'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
+                'affiliation' => 'Politeknik Negeri Ujung Pandang',
+                'roles' => ['author'],
+                'expertise' => ['Sistem Informasi Publik', 'Smart City'],
+            ],
+            [
                 'email' => 'budi.hartono@eng.unhas.ac.id',
                 'username' => 'budi.hartono',
                 'name' => 'Dr. Ir. Budi Hartono, M.Eng.',
@@ -138,7 +146,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'andi.ilyas',
                 'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
                 'affiliation' => 'Departemen Ilmu Administrasi Publik UNHAS',
-                'roles' => ['author', 'editor_in_chief', 'reviewer'],
+                'roles' => ['author', 'reviewer'],
                 'expertise' => ['Administrasi Publik', 'Kebijakan Daerah'],
             ],
         ];

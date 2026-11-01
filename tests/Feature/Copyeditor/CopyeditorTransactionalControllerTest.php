@@ -37,6 +37,10 @@ class CopyeditorTransactionalControllerTest extends TestCase
 
         $this->author = User::factory()->create(['name' => 'Prof. Penulis Korespondensi']);
         $this->copyEditor = User::factory()->create(['name' => 'Budi Copyeditor']);
+        \App\Models\UserRole::create([
+            'user_id' => $this->copyEditor->id,
+            'role_code' => 'copyeditor',
+        ]);
         $this->layoutEditor = User::factory()->create(['name' => 'Rudi Layout Editor']);
 
         $journal = Journal::create([

@@ -4,10 +4,36 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\User;
+use App\Models\UserRole;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class JournalManagerNavigationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(\Database\Seeders\JournalManagerSeeder::class);
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
+        $this->manager->update(['name' => 'Andi M. Yusuf, M.Si.']);
+        $this->actingAs($this->manager);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_journal_manager_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/journalmanager/issues');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman katalog edisi & terbitan dapat diakses dengan respons 200 OK.
      */
@@ -87,9 +113,9 @@ class JournalManagerNavigationTest extends TestCase
     {
         // 1. Simpan edisi baru
         $resStoreIssue = $this->post('/journalmanager/issues', [
-            'volume' => '6',
-            'number' => '2',
-            'year' => '2026',
+            'volume' => '7',
+            'number' => '1',
+            'year' => '2027',
         ]);
         $resStoreIssue->assertRedirect('/journalmanager/issues');
         $resStoreIssue->assertSessionHas('status');
@@ -120,7 +146,7 @@ class JournalManagerNavigationTest extends TestCase
 
         // 6. Reset password pengguna
         $resReset = $this->post('/journalmanager/users/reset-password', [
-            'email' => 'reviewer@unhas.ac.id',
+            'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resReset->assertRedirect('/journalmanager/users');
         $resReset->assertSessionHas('status');

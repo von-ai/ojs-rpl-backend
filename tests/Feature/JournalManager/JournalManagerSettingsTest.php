@@ -4,10 +4,47 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\User;
+use App\Models\UserRole;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class JournalManagerSettingsTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->manager = User::firstOrCreate(
+            ['email' => 'yusuf.brida@makassar.go.id'],
+            [
+                'username' => 'yusuf.brida',
+                'name' => 'Drs. Muhammad Yusuf, M.Si.',
+                'full_name' => 'Drs. Muhammad Yusuf, M.Si.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
+            'user_id' => $this->manager->id,
+            'role_code' => 'manager',
+        ]);
+        $this->actingAs($this->manager);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_pengaturan_journal_manager_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/journalmanager/settings');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman seksi naskah (sections) menampilkan 3 kartu metrik dan tabel bidang riset.
      */

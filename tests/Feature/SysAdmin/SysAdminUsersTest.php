@@ -19,6 +19,17 @@ class SysAdminUsersTest extends TestCase
         parent::setUp();
 
         $this->seed(SysAdminSeeder::class);
+
+        $admin = User::where('email', 'fahri.azis@makassar.go.id')->firstOrFail();
+        $this->actingAs($admin);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_sysadmin_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/sysadmin/users');
+        $response->assertRedirect(route('login'));
     }
 
     /**

@@ -4,10 +4,38 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Copyeditor;
 
+use App\Models\User;
+use App\Models\UserRole;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CopyeditorCatalogPageTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $copyeditor;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->copyeditor = User::factory()->create();
+        UserRole::create([
+            'user_id' => $this->copyeditor->id,
+            'role_code' => 'copyeditor',
+        ]);
+
+        $this->actingAs($this->copyeditor);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_copyeditor_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/copyeditor/submissions');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman daftar penugasan copyediting dapat diakses dengan UX yang simpel dan bersih.
      */

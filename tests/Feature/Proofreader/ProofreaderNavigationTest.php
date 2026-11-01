@@ -4,11 +4,48 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Proofreader;
 
+use App\Models\User;
+use App\Models\UserRole;
 use App\ViewModels\ProofreaderSubmissionsViewModel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ProofreaderNavigationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $proofreader;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->proofreader = User::firstOrCreate(
+            ['email' => 'sitti.aminah@brida.makassar.go.id'],
+            [
+                'username' => 'sitti.aminah',
+                'name' => 'Dra. Sitti Aminah, M.Hum.',
+                'full_name' => 'Dra. Sitti Aminah, M.Hum.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
+            'user_id' => $this->proofreader->id,
+            'role_code' => 'proofreader',
+        ]);
+        $this->actingAs($this->proofreader);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_proofreader_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/proofreader/submissions');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Rute dashboard proofreader dialihkan ke daftar penugasan.
      */
