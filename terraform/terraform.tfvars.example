@@ -7,8 +7,9 @@
 # Penamaan & Region
 project_name   = "sirida"
 environment    = "poc"
-azure_location = "indonesiacentral" # Jakarta, Indonesia
-redis_sku_name = "Balanced_B0"
+azure_location   = "indonesiacentral" # Jakarta, Indonesia (Compute, ACA, Redis)
+storage_location = "southeastasia"    # Singapore (Azure Blob Storage + Defender)
+redis_sku_name   = "Balanced_B0"
 
 # Container Image (GitHub Container Registry)
 container_image             = "ghcr.io/von-ai/ojs-rpl-backend:latest"
