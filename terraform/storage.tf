@@ -33,7 +33,7 @@ resource "azurerm_storage_account" "storage" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_container" "manuscripts" {
   name                  = var.storage_container_name
-  storage_account_name  = azurerm_storage_account.storage.name
+  storage_account_id    = azurerm_storage_account.storage.id
   container_access_type = "private"
 }
 
@@ -42,7 +42,7 @@ resource "azurerm_storage_container" "manuscripts" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_container" "backups" {
   name                  = "sirida-backups"
-  storage_account_name  = azurerm_storage_account.storage.name
+  storage_account_id    = azurerm_storage_account.storage.id
   container_access_type = "private"
 }
 
@@ -52,7 +52,7 @@ resource "azurerm_storage_container" "backups" {
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_share" "app_share" {
   name                 = "sirida-app-data"
-  storage_account_name = azurerm_storage_account.storage.name
+  storage_account_id   = azurerm_storage_account.storage.id
   quota                = 5 # 5 GB
 }
 
