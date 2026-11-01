@@ -1,22 +1,20 @@
 # -----------------------------------------------------------------------------
-# Azure Cache for Redis (Basic C0 ~250MB, dedicated low-latency broker/cache)
-# Digunakan untuk Laravel Session, Cache, Atomic Locks, & Queue
+# Azure Managed Redis (AMR) - Balanced_B0 (~500MB, Redis Enterprise Engine)
+# Dedicated low-latency broker/cache untuk Laravel Session, Cache, & Atomic Locks
 # -----------------------------------------------------------------------------
-resource "azurerm_redis_cache" "redis" {
-  name                = "redis-${var.project_name}-${var.environment}-${random_string.suffix.result}"
+resource "azurerm_managed_redis" "redis" {
+  name                = "amr-${var.project_name}-${var.environment}-${random_string.suffix.result}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  capacity            = var.redis_capacity
-  family              = var.redis_family
   sku_name            = var.redis_sku_name
-  enable_non_ssl_port = false
-  minimum_tls_version = "1.2"
 
-  redis_configuration {
-    maxmemory_reserved = 10
-    maxmemory_delta    = 10
-    maxmemory_policy   = "volatile-lru"
+  default_database {
+    client_protocol                    = "Encrypted"
+    clustering_policy                  = "EnterpriseCluster"
+    eviction_policy                    = "VolatileLRU"
+    access_keys_authentication_enabled = true
   }
 
   tags = var.tags
 }
+

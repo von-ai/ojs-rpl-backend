@@ -58,14 +58,15 @@ output "storage_file_share_name" {
 }
 
 output "redis_hostname" {
-  description = "Hostname Azure Cache for Redis"
-  value       = azurerm_redis_cache.redis.hostname
+  description = "Hostname Azure Managed Redis"
+  value       = azurerm_managed_redis.redis.hostname
 }
 
 output "redis_ssl_port" {
-  description = "Port SSL Azure Cache for Redis (TLS)"
-  value       = azurerm_redis_cache.redis.ssl_port
+  description = "Port TLS Azure Managed Redis"
+  value       = azurerm_managed_redis.redis.default_database[0].port
 }
+
 
 output "log_analytics_workspace_name" {
   description = "Nama Log Analytics Workspace"
@@ -80,6 +81,7 @@ output "application_insights_name" {
 output "custom_domain_verification_id" {
   description = "Token verifikasi kepemilikan custom domain ACA"
   value       = azurerm_container_app.web.custom_domain_verification_id
+  sensitive   = true
 }
 
 output "cli_stream_web_logs" {

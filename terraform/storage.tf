@@ -78,13 +78,8 @@ resource "azurerm_storage_management_policy" "lifecycle" {
 }
 
 # -----------------------------------------------------------------------------
-# Advanced Threat Protection & Microsoft Defender for Storage (Malware Scanning)
+# Microsoft Defender for Storage (Malware Scanning)
 # -----------------------------------------------------------------------------
-resource "azurerm_advanced_threat_protection" "atp" {
-  target_resource_id = azurerm_storage_account.storage.id
-  enabled            = true
-}
-
 resource "azurerm_security_center_storage_defender" "defender" {
   count                                       = var.enable_storage_defender ? 1 : 0
   storage_account_id                          = azurerm_storage_account.storage.id
@@ -92,3 +87,4 @@ resource "azurerm_security_center_storage_defender" "defender" {
   malware_scanning_on_upload_cap_gb_per_month = 50
   sensitive_data_discovery_enabled            = false
 }
+

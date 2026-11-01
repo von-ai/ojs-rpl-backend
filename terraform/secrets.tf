@@ -15,7 +15,7 @@ locals {
       },
       {
         name  = "redis-password"
-        value = azurerm_redis_cache.redis.primary_access_key
+        value = azurerm_managed_redis.redis.default_database[0].primary_access_key
       },
       {
         name  = "azure-storage-key"
@@ -38,7 +38,7 @@ locals {
     { name = "APP_NAME", value = "SIRIDA" },
     { name = "APP_ENV", value = var.environment },
     { name = "APP_DEBUG", value = tostring(var.app_debug) },
-    { name = "APP_URL", value = var.app_url != "" ? var.app_url : "https://ca-${var.project_name}-web-${var.environment}.${azurerm_container_app_environment.env.default_domain}" },
+    { name = "APP_URL", value = var.app_url != "" ? var.app_url : (var.enable_cloudflare ? "https://${var.subdomain}.${var.domain_name}" : "https://ca-${var.project_name}-web-${var.environment}.${azurerm_container_app_environment.env.default_domain}") },
     { name = "APP_KEY", secret_name = "app-key" },
     { name = "LOG_CHANNEL", value = "stderr" },
     { name = "DB_CONNECTION", value = "mysql" },
@@ -48,14 +48,16 @@ locals {
     { name = "DB_USERNAME", value = var.db_username },
     { name = "DB_PASSWORD", secret_name = "db-password" },
     { name = "DB_SSL_MODE", value = var.db_ssl_mode },
+    { name = "MYSQL_ATTR_SSL_CA", value = "/etc/ssl/certs/ca-certificates.crt" },
     { name = "SESSION_DRIVER", value = "redis" },
     { name = "CACHE_STORE", value = "redis" },
     { name = "QUEUE_CONNECTION", value = "database" },
     { name = "REDIS_CLIENT", value = "phpredis" },
-    { name = "REDIS_HOST", value = azurerm_redis_cache.redis.hostname },
-    { name = "REDIS_PORT", value = tostring(azurerm_redis_cache.redis.ssl_port) },
+    { name = "REDIS_HOST", value = azurerm_managed_redis.redis.hostname },
+    { name = "REDIS_PORT", value = tostring(azurerm_managed_redis.redis.default_database[0].port) },
     { name = "REDIS_PASSWORD", secret_name = "redis-password" },
     { name = "REDIS_SCHEME", value = "tls" },
+    { name = "REDIS_DB", value = "0" },
     { name = "FILESYSTEM_DISK", value = var.filesystem_disk },
     { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },
     { name = "AZURE_STORAGE_KEY", secret_name = "azure-storage-key" },
