@@ -3,7 +3,7 @@
 @section('title', $article->title . ' — SIRIDA BRIDA Kota Makassar')
 
 @push('meta')
-    <!-- Google Scholar & Dublin Core Meta Tags for Academic Indexing -->
+    <!-- Google Scholar Meta Tags for Academic Indexing -->
     <meta name="citation_title" content="{{ $article->title }}">
     @foreach($article->contributors as $contributor)
         <meta name="citation_author" content="{{ $contributor->full_name }}">
@@ -19,6 +19,22 @@
     @if($article->galleys->first())
         <meta name="citation_pdf_url" content="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $article->galleys->first()->id]) }}">
     @endif
+
+    <!-- Dublin Core (DC) Metadata -->
+    <meta name="DC.Title" content="{{ $article->title }}">
+    @foreach($article->contributors as $contributor)
+        <meta name="DC.Creator.PersonalName" content="{{ $contributor->full_name }}">
+    @endforeach
+    <meta name="DC.Subject" content="{{ is_array($article->keywords) ? implode(', ', $article->keywords) : '' }}">
+    <meta name="DC.Description" content="{{ Str::limit($article->abstract, 500) }}">
+    <meta name="DC.Publisher" content="Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar">
+    <meta name="DC.Date.created" scheme="ISO8601" content="{{ $article->created_at ? $article->created_at->toIso8601String() : '' }}">
+    <meta name="DC.Date.issued" scheme="ISO8601" content="{{ $article->published_at ? $article->published_at->toIso8601String() : '' }}">
+    <meta name="DC.Type" content="Text.Serial.Journal">
+    <meta name="DC.Format" scheme="IMT" content="application/pdf">
+    <meta name="DC.Identifier" content="{{ $article->slug }}">
+    <meta name="DC.Identifier.URI" content="{{ url()->current() }}">
+    <meta name="DC.Language" scheme="ISO639-1" content="id">
 @endpush
 
 @section('content')
@@ -37,7 +53,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Kolom Konten Utama (2/3) -->
-        <article class="lg:col-span-2 space-y-8 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs">
+        <article class="lg:col-span-2 space-y-8 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
             
             <!-- Metadata Edisi & Kategori -->
             <div class="space-y-3 border-b border-gray-100 pb-6">
@@ -170,7 +186,7 @@
         <aside class="lg:col-span-1 space-y-6">
             
             <!-- Card Unduh Galai PDF Utama -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 shadow-xs">
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Berkas Galai Resmi</h3>
                 
                 @if($article->galleys->isNotEmpty())
@@ -194,6 +210,18 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
                         </a>
+
+                        <a 
+                            href="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $galley->id]) }}" 
+                            target="_blank"
+                            class="w-full inline-flex items-center justify-center gap-2 p-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold transition"
+                        >
+                            <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Buka Pembaca PDF</span>
+                        </a>
                     @endforeach
                 @else
                     <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-center text-xs text-gray-500">
@@ -207,7 +235,7 @@
             </div>
 
             <!-- Card Statistik Metrik COUNTER -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 shadow-xs text-xs">
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 text-xs">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Statistik Pembaca</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
@@ -226,14 +254,14 @@
             </div>
 
             <!-- Card Hak Cipta & Lisensi Open Access -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-3 shadow-xs text-xs text-gray-600">
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Lisensi Publikasi</h3>
                 <div class="flex items-start gap-2.5">
                     <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
                         <span class="font-bold text-[10px]">CC</span>
                     </div>
                     <p class="text-[11px] leading-relaxed">
-                        Artikel ini dilisensikan di bawah <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>. Hak cipta naskah tetap dipegang oleh penulis.
+                        Artikel ini dilisensikan di bawah <strong>{{ $journal->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)' }}</strong>. Hak cipta naskah tetap dipegang oleh penulis.
                     </p>
                 </div>
             </div>

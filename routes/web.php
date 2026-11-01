@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\Auth\RoleSwitchController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
 use App\Http\Controllers\Eic\EditorInChiefController;
@@ -14,14 +15,33 @@ use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
-Route::get('/', [PublicJournalController::class, 'index'])->name('journal.index');
-Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('journal.articles.search');
-Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('journal.articles.show');
-Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('journal.articles.galleys.download');
-Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('journal.articles.cite');
+Route::name('journal.')->group(function () {
+    Route::get('/', [PublicJournalController::class, 'index'])->name('index');
+    Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
+    Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('articles.show');
+    Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('articles.galleys.download');
+    Route::get('/articles/{slugOrId}/cite/{format}', [PublicJournalController::class, 'exportCitation'])->name('articles.cite');
+
+    // Edisi & Arsip Publik (Issues & Archives)
+    Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
+    Route::get('/issues/{id}', [PublicJournalController::class, 'showIssue'])->name('issues.show');
+    Route::get('/archives', [PublicJournalController::class, 'archives'])->name('archives');
+
+    // Informasi Jurnal & Kebijakan Redaksi (About & Policies)
+    Route::get('/about', [PublicJournalController::class, 'about'])->name('about');
+    Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
+    Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');
+    Route::get('/about/submissions', [PublicJournalController::class, 'submissionsGuide'])->name('about.submissions');
+    Route::get('/about/contact', [PublicJournalController::class, 'contact'])->name('about.contact');
+
+    // Pengumuman Publik (Announcements)
+    Route::get('/announcements', [PublicJournalController::class, 'announcements'])->name('announcements.index');
+    Route::get('/announcements/{id}', [PublicJournalController::class, 'showAnnouncement'])->name('announcements.show');
+});
 
 // Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {
@@ -40,10 +60,11 @@ Route::middleware('throttle:identity')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('/auth/switch-role', [RoleSwitchController::class, 'switchRole'])->name('role.switch');
 });
 
 // Portal Penulis (Author Submissions & Management) - Wajib Autentikasi
-Route::middleware('auth')->prefix('author')->name('author.')->group(function () {
+Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('author.')->group(function () {
     Route::get('/submissions', [AuthorSubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/create', [AuthorSubmissionController::class, 'create'])->name('submissions.create');
     Route::get('/submissions/sections', [AuthorSubmissionController::class, 'sectionsApi'])->name('submissions.sections');
@@ -52,28 +73,33 @@ Route::middleware('auth')->prefix('author')->name('author.')->group(function () 
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
+    Route::post('/submissions/{id}/payment', [AuthorSubmissionController::class, 'uploadPayment'])->name('submissions.payment.store');
+    Route::get('/submissions/{id}/payment/proof', [AuthorSubmissionController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
     Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
 });
 
 // Portal Editor-in-Chief (Pemimpin Redaksi) - Wajib Autentikasi (UC-10, UC-11, UC-12)
-Route::middleware('auth')->prefix('eic')->name('eic.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('eic.submissions.index');
-    })->name('dashboard');
+Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name('eic.')->group(function () {
+    Route::get('/', [EditorInChiefController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [EditorInChiefController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/files/{fileId}/download', [EditorInChiefController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
     Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
+    Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
+    Route::get('/submissions/{id}/payment/proof', [EditorInChiefController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::post('/submissions/{id}/payment/verify', [EditorInChiefController::class, 'verifyPayment'])->name('submissions.payment.verify');
 });
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
-Route::middleware('auth')->prefix('section-editor')->name('section-editor.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('section-editor.submissions.index');
-    })->name('dashboard');
+Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-editor')->name('section-editor.')->group(function () {
+    Route::get('/', [SectionEditorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [SectionEditorController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [SectionEditorController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [SectionEditorController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/files/{fileId}/download', [SectionEditorController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/rounds', [SectionEditorController::class, 'storeRound'])->name('rounds.store');
     Route::post('/rounds/{roundId}/assign-reviewer', [SectionEditorController::class, 'assignReviewer'])->name('reviewers.assign');
     Route::post('/assignments/{assignmentId}/cancel', [SectionEditorController::class, 'cancelAssignment'])->name('assignments.cancel');
@@ -83,12 +109,12 @@ Route::middleware('auth')->prefix('section-editor')->name('section-editor.')->gr
 });
 
 // Portal Mitra Bestari (Peer Reviewer - UC-08 Undangan & UC-09 Evaluasi Telaah)
-Route::middleware('auth')->prefix('reviewer')->name('reviewer.')->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('reviewer.assignments.index');
-    })->name('dashboard');
+Route::middleware(['auth', 'role.access:reviewer'])->prefix('reviewer')->name('reviewer.')->group(function () {
+    Route::get('/', [ReviewerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guidelines', [ReviewerController::class, 'guidelines'])->name('guidelines');
     Route::get('/assignments', [ReviewerController::class, 'index'])->name('assignments.index');
     Route::get('/assignments/{id}', [ReviewerController::class, 'show'])->name('assignments.show');
+    Route::get('/assignments/{id}/files/{fileId}/download', [ReviewerController::class, 'downloadFile'])->name('files.download');
     Route::post('/assignments/{id}/respond', [ReviewerController::class, 'respond'])->name('assignments.respond');
     Route::post('/assignments/{id}/extension', [ReviewerController::class, 'requestExtension'])->name('assignments.extension');
     Route::post('/assignments/{id}/draft', [ReviewerController::class, 'saveDraft'])->name('assignments.draft');
@@ -96,7 +122,7 @@ Route::middleware('auth')->prefix('reviewer')->name('reviewer.')->group(function
 });
 
 // Portal Copy Editor (Ruang Kerja Produksi & Dialog Transaksional)
-Route::prefix('copyeditor')->name('copyeditor.')->group(function () {
+Route::middleware('role.access:copyeditor')->prefix('copyeditor')->name('copyeditor.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('copyeditor.submissions.index');
     })->name('dashboard');
@@ -108,13 +134,13 @@ Route::prefix('copyeditor')->name('copyeditor.')->group(function () {
     Route::post('/request-approval', [CopyeditorSubmissionController::class, 'requestApproval'])->name('request-approval');
     Route::post('/escalate', [CopyeditorSubmissionController::class, 'submitEscalation'])->name('escalate');
     Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
-    Route::get('/files/{id}/download', [CopyeditorSubmissionController::class, 'downloadFile'])->name('files.download');
-    Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->name('author-decision');
+    Route::get('/files/{id}/download', [CopyeditorSubmissionController::class, 'downloadFile'])->withoutMiddleware('role.access:copyeditor')->name('files.download');
+    Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->withoutMiddleware('role.access:copyeditor')->name('author-decision');
     Route::post('/resolve-escalation', [CopyeditorSubmissionController::class, 'resolveEscalation'])->name('resolve-escalation');
 });
 
 // Portal Layout Editor (Produksi Galai Publikasi & Proofreading)
-Route::prefix('layouteditor')->name('layouteditor.')->group(function () {
+Route::middleware('role.access:layout_editor')->prefix('layouteditor')->name('layouteditor.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('layouteditor.submissions.index');
     })->name('dashboard');
@@ -131,7 +157,7 @@ Route::prefix('layouteditor')->name('layouteditor.')->group(function () {
 });
 
 // Portal Journal Manager (Tata Kelola Edisi, Tim Redaksi & Kebijakan)
-Route::prefix('journalmanager')->name('journalmanager.')->group(function () {
+Route::middleware('role.access:manager')->prefix('journalmanager')->name('journalmanager.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('journalmanager.issues.index');
     })->name('dashboard');
@@ -156,10 +182,16 @@ Route::prefix('journalmanager')->name('journalmanager.')->group(function () {
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
     Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
+
+    // 5. Verifikasi & Pengelolaan Pembayaran APC Naskah
+    Route::post('/submissions/{id}/payment/verify', [JournalManagerController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [JournalManagerController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [JournalManagerController::class, 'waivePayment'])->name('submissions.payment.waive');
+    Route::get('/submissions/{id}/payment/proof', [JournalManagerController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
 });
 
 // Portal Proofreader (Verifikasi Bukti Baca Galai & Catatan Koreksi)
-Route::prefix('proofreader')->name('proofreader.')->group(function () {
+Route::middleware('role.access:proofreader')->prefix('proofreader')->name('proofreader.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('proofreader.submissions.index');
     })->name('dashboard');
@@ -179,7 +211,7 @@ Route::prefix('proofreader')->name('proofreader.')->group(function () {
 });
 
 // Portal System Administrator (Tata Kelola Multi-Jurnal, Pengguna Global & Platform)
-Route::prefix('sysadmin')->name('sysadmin.')->group(function () {
+Route::middleware('role.access:sysadmin')->prefix('sysadmin')->name('sysadmin.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('sysadmin.journals.index');
     })->name('dashboard');
@@ -208,5 +240,7 @@ Route::prefix('sysadmin')->name('sysadmin.')->group(function () {
 
 Route::redirect('/submissions', '/author/submissions');
 Route::get('/dashboard', function () {
-    return redirect()->route('author.submissions.index');
+    $user = Auth::user();
+
+    return redirect()->route($user ? $user->defaultPortalRoute() : 'author.submissions.index');
 })->middleware('auth')->name('dashboard');

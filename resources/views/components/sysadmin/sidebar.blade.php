@@ -65,8 +65,8 @@
         <!-- 2. Pengguna & Hak Akses Global -->
         <a 
             href="{{ route('sysadmin.users.index') }}" 
-            title="Direktori Pengguna & Peran Sistem" 
-            class="group relative flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition duration-150 sidebar-nav-item {{ $isUsersActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
+            title="Direktori Pengguna & Penugasan Peran" 
+            class="group relative flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-lg transition duration-150 sidebar-nav-item {{ $isUsersActive ? 'bg-brand-maroon text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
         >
             <div class="flex items-center gap-3 min-w-0">
                 <svg class="w-5 h-5 shrink-0 {{ $isUsersActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">

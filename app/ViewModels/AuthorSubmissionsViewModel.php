@@ -277,7 +277,7 @@ class AuthorSubmissionsViewModel
 
         try {
             if (Schema::hasTable('submissions')) {
-                $submissions = Submission::with(['section', 'contributors'])
+                $submissions = Submission::with(['section', 'contributors', 'journal', 'latestPayment'])
                     ->latest('updated_at')
                     ->get();
 
@@ -321,10 +321,15 @@ class AuthorSubmissionsViewModel
                         default => 'bg-gray-100 text-gray-700 border border-gray-200',
                     };
 
+                    $isPaidJournal = (bool) ($sub->journal?->isPaidApc() ?? false);
+                    $payment = $sub->latestPayment;
+
                     $statusSubtitle = match ($sub->status) {
                         'revisions_requested' => 'Batas Waktu: 15 Nov 2026',
                         'in_review' => 'Putaran 1 Review',
-                        'in_production', 'accepted' => 'Tata Letak & Galai',
+                        'in_production', 'accepted' => $isPaidJournal
+                            ? ($payment && $payment->isVerified() ? 'Pembayaran Lunas • Tata Letak' : ($payment && $payment->isPendingVerification() ? 'Verifikasi Bukti Bayar' : ($payment && $payment->isRejected() ? 'Bukti Bayar Perlu Diperbaiki' : 'Menunggu Bukti Bayar APC')))
+                            : 'Tata Letak & Galai',
                         'published' => 'Terbit Resmi Open Access',
                         'declined' => 'Keputusan Redaksi',
                         'archived' => 'Arsip Naskah Resmi',
@@ -336,6 +341,7 @@ class AuthorSubmissionsViewModel
                         'revisions_requested' => 'text-red-700 font-medium',
                         'declined' => 'text-rose-700 font-medium',
                         'published' => 'text-emerald-700 font-medium',
+                        'in_production', 'accepted' => $isPaidJournal && (! $payment || ! $payment->isVerified()) ? 'text-amber-800 font-semibold' : 'text-slate-500 font-medium',
                         default => 'text-slate-500 font-medium',
                     };
 

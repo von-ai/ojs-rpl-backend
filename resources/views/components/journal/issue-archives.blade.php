@@ -11,7 +11,7 @@
                 Arsip Edisi Terdahulu
             </h2>
         </div>
-        <a href="#" class="text-xs font-bold text-brand-maroon hover:underline flex items-center gap-1">
+        <a href="{{ route('journal.archives') }}" class="text-xs font-bold text-brand-maroon hover:underline flex items-center gap-1">
             <span>Lihat Seluruh Arsip</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
@@ -22,7 +22,7 @@
     <!-- Archives Cards 3-Column Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         @forelse ($archives as $arc)
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs hover:border-brand-maroon/40 transition-all flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-maroon/40 transition-all flex flex-col justify-between space-y-3">
                 <div class="space-y-2">
                     <div class="bg-gray-100 p-4 rounded-lg text-center border border-gray-200/80">
                         <svg class="w-8 h-8 text-brand-maroon mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

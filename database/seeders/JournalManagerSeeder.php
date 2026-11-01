@@ -66,7 +66,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'yusuf.brida',
                 'name' => 'Andi Muhammad Yusuf, M.Si.',
                 'affiliation' => 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar',
-                'roles' => ['manager'],
+                'roles' => ['manager', 'sysadmin'],
                 'expertise' => ['Kebijakan Publik', 'Manajemen Riset Daerah'],
             ],
             [
@@ -74,7 +74,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'nasaruddin.eic',
                 'name' => 'Prof. Dr. Ir. H. Nasaruddin, M.T.',
                 'affiliation' => 'Universitas Hasanuddin',
-                'roles' => ['editor_in_chief'],
+                'roles' => ['editor_in_chief', 'section_editor', 'author'],
                 'expertise' => ['Infrastruktur Perkotaan', 'Teknologi Lingkungan'],
             ],
             [
@@ -82,7 +82,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'prof.hamka',
                 'name' => 'Prof. Hamka, Ph.D.',
                 'affiliation' => 'Fakultas Ilmu Sosial & Ilmu Politik UNHAS',
-                'roles' => ['section_editor'],
+                'roles' => ['section_editor', 'reviewer'],
                 'expertise' => ['Inovasi Pemerintahan', 'Sosial Humaniora'],
             ],
             [
@@ -90,7 +90,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'rohani.editor',
                 'name' => 'Dr. Hj. St. Rohani, M.Si.',
                 'affiliation' => 'Universitas Negeri Makassar',
-                'roles' => ['section_editor'],
+                'roles' => ['section_editor', 'author'],
                 'expertise' => ['Pemberdayaan Masyarakat', 'Ekonomi Kerakyatan'],
             ],
             [
@@ -138,7 +138,7 @@ class JournalManagerSeeder extends Seeder
                 'username' => 'andi.ilyas',
                 'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
                 'affiliation' => 'Departemen Ilmu Administrasi Publik UNHAS',
-                'roles' => ['author'],
+                'roles' => ['author', 'editor_in_chief', 'reviewer'],
                 'expertise' => ['Administrasi Publik', 'Kebijakan Daerah'],
             ],
         ];
@@ -163,6 +163,12 @@ class JournalManagerSeeder extends Seeder
                     'country_code' => 'ID',
                 ]
             );
+
+            // Hapus peran lama yang tidak lagi termasuk dalam daftar hak akses pengguna ini
+            UserRole::where('user_id', $user->id)
+                ->where('journal_id', $journal->id)
+                ->whereNotIn('role_code', $ud['roles'])
+                ->delete();
 
             foreach ($ud['roles'] as $roleCode) {
                 UserRole::firstOrCreate(

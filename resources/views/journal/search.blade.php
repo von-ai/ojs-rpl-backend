@@ -1,18 +1,18 @@
 @extends('layouts.public', ['topbarData' => $viewModel->topbarData(), 'navLinks' => $viewModel->navLinks(), 'footerData' => $viewModel->footerData()])
 
-@section('title', 'Pencarian Artikel Ilmiah Terbit — SIRIDA BRIDA Kota Makassar')
+@section('title', 'Pencarian Artikel Ilmiah Terbit — ' . ($journal->name ?? 'SIRIDA BRIDA Kota Makassar'))
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
 
     <!-- Header & Hero Search Box -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-6 shadow-xs">
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-6">
         <div class="space-y-2">
             <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
                 Katalog & Pencarian Artikel Ilmiah Publik
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 max-w-2xl leading-relaxed">
-                Telusuri seluruh artikel penelitian terapan, kajian kebijakan daerah, dan inovasi perkotaan yang telah melalui proses penelaahan mitra bestari (*peer-review*) dan terbit secara resmi.
+                Telusuri seluruh artikel penelitian terapan, kajian kebijakan daerah, dan inovasi perkotaan yang telah melalui proses penelaahan mitra bestari (peer-review) dan terbit secara resmi.
             </p>
         </div>
 
@@ -49,7 +49,7 @@
 
                     <button 
                         type="submit" 
-                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-xl transition duration-150 flex items-center gap-2 cursor-pointer shadow-xs"
+                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-xl transition duration-150 flex items-center gap-2 cursor-pointer border border-brand-maroon"
                     >
                         <span>Cari</span>
                     </button>
@@ -84,7 +84,7 @@
                             ? route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $firstGalley->id])
                             : null;
                     @endphp
-                    <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 space-y-3 shadow-xs hover:border-gray-300 transition duration-150">
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 space-y-3 hover:border-gray-300 transition duration-150">
                         <div class="flex items-center gap-2 text-xs flex-wrap">
                             <span class="px-2 py-0.5 rounded font-semibold bg-brand-maroon/10 text-brand-maroon">
                                 {{ $article->section?->name ?? 'Artikel Riset Orisinil' }}
@@ -148,8 +148,8 @@
                 </div>
             </div>
         @else
-            <!-- Empty State Informatif (Sesuai UC-04) -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center space-y-4 shadow-xs">
+            <!-- Empty State Informatif -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center space-y-4">
                 <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

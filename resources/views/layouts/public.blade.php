@@ -22,7 +22,7 @@
 <body class="font-sans antialiased text-gray-900 bg-canvas selection:bg-brand-maroon selection:text-white min-h-screen flex flex-col justify-between">
 
     <!-- Topbar & Main Navigation Header -->
-    <header class="w-full bg-white border-b border-gray-200 shadow-2xs sticky top-0 z-40">
+    <header class="w-full bg-white border-b border-gray-200 sticky top-0 z-40">
         <x-journal.topbar :topbarData="$topbarData ?? null" />
         <x-journal.navbar :navLinks="$navLinks ?? null" />
     </header>

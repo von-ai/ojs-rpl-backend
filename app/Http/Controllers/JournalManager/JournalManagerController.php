@@ -11,6 +11,7 @@ use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Services\JournalManager\JournalManagerService;
+use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\JournalManagerIssueDetailViewModel;
 use App\ViewModels\JournalManagerIssuesViewModel;
 use App\ViewModels\JournalManagerSectionsViewModel;
@@ -21,13 +22,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class JournalManagerController extends Controller
 {
     public function __construct(
-        protected JournalManagerService $journalManagerService
+        protected JournalManagerService $journalManagerService,
+        protected ArticlePaymentService $articlePaymentService
     ) {}
 
     /**
@@ -297,6 +302,120 @@ class JournalManagerController extends Controller
             return redirect()->route('journalmanager.settings.index')
                 ->withErrors(['settings' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Memverifikasi dan menyetujui bukti pembayaran APC naskah (Lunas).
+     */
+    public function verifyPayment(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->withErrors(['payment' => 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.']);
+        }
+
+        $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Manajer Jurnal.');
+        $verifier = Auth::user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
+
+        return back()->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi (Status: Lunas).");
+    }
+
+    /**
+     * Menolak bukti pembayaran naskah yang tidak sesuai.
+     */
+    public function rejectPayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->withErrors(['payment' => 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.']);
+        }
+
+        $reason = (string) $request->input('reason');
+        $verifier = Auth::user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->rejectPayment($payment, $verifier, $reason);
+
+        return back()->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.");
+    }
+
+    /**
+     * Memberikan pembebasan biaya publikasi (Waiver).
+     */
+    public function waivePayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'waiver_reason.required' => 'Alasan pembebasan biaya wajib diisi.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            $payment = $this->articlePaymentService->resolveOrCreatePayment($submission, Auth::user());
+        }
+
+        if (! $payment) {
+            return back()->withErrors(['payment' => 'Gagal menginisialisasi catatan pembayaran naskah.']);
+        }
+
+        $reason = (string) $request->input('waiver_reason');
+        $verifier = Auth::user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->waivePayment($payment, $verifier, $reason);
+
+        return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC untuk ditinjau redaksi.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        $fileEntry = $payment->fileEntry;
+        $disk = Storage::disk($fileEntry->storage_disk);
+
+        if (! $disk->exists($fileEntry->storage_path)) {
+            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
+        }
+
+        return $disk->download(
+            $fileEntry->storage_path,
+            $fileEntry->original_name,
+            ['Content-Type' => $fileEntry->mime_type]
+        );
     }
 
     /**

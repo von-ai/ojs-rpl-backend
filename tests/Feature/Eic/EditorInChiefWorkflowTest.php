@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Eic;
 
+use App\Models\FileEntry;
+use App\Models\Galley;
+use App\Models\GalleyApproval;
 use App\Models\Journal;
+use App\Models\ProofAssignment;
+use App\Models\ProofreadingNote;
+use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -251,6 +257,270 @@ class EditorInChiefWorkflowTest extends TestCase
             'submission_id' => $this->submission->id,
             'decision' => 'accept',
             'status' => 'sent',
+        ]);
+    }
+
+    /**
+     * EIC dapat menjalankan desk review lolos sekaligus langsung menugaskan Section Editor (UC-10 & UC-11).
+     */
+    public function test_eic_dapat_desk_review_lolos_sekaligus_assign_section_editor(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->post(route('eic.submissions.desk-review', $this->submission->id), [
+            'scope_fit' => 1,
+            'files_complete' => 1,
+            'guidelines_compliant' => 1,
+            'similarity_score' => 10.2,
+            'notes' => 'Lolos skrining awal dan langsung didelegasikan ke Section Editor.',
+            'status' => 'passed',
+            'section_editor_id' => $this->sectionEditor->id,
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('editor_assignments', [
+            'submission_id' => $this->submission->id,
+            'editor_id' => $this->sectionEditor->id,
+            'role' => 'section_editor',
+        ]);
+    }
+
+    /**
+     * Halaman detail ruang kerja EIC menampilkan ringkasan rekomendasi SE, hasil review, dan riwayat audit.
+     */
+    public function test_halaman_detail_eic_menampilkan_ringkasan_review_dan_audit(): void
+    {
+        $this->actingAs($this->eic);
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'minimum_completed_reviews' => 2,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'se_recommendation' => 'accept',
+            'se_recommendation_note' => 'Kedua reviewer sepakat naskah sangat berkualitas.',
+            'se_recommended_at' => now(),
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Analisis Kebijakan Smart City Makassar');
+        $response->assertSee('Kedua reviewer sepakat naskah sangat berkualitas.');
+        $response->assertSee('Skrining Awal');
+        $response->assertSee('Penugasan Section Editor');
+        $response->assertSee('Keputusan Editorial Resmi');
+        $response->assertDontSee('UC-10');
+        $response->assertDontSee('UC-11');
+        $response->assertDontSee('UC-12');
+        $response->assertDontSee('text-justify');
+        $response->assertDontSee('font-serif');
+    }
+
+    /**
+     * EIC dapat mengakses halaman Dashboard Pemimpin Redaksi.
+     */
+    public function test_eic_dapat_mengakses_halaman_dashboard(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->get(route('eic.dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Dashboard Pemimpin Redaksi');
+        $response->assertSee('Naskah Prioritas Menunggu Tindakan');
+        $response->assertSee('Analisis Kebijakan Smart City Makassar');
+    }
+
+    /**
+     * Tahap yang sudah dilewati tidak dapat diubah kembali (penguncian tahapan alur kerja).
+     */
+    public function test_tahap_yang_sudah_dilewati_tidak_dapat_diubah_kembali(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Naskah sudah berada di tahap telaah (in_review) -> Skrining Awal terkunci
+        $this->submission->update(['status' => 'in_review']);
+
+        $deskResponse = $this->post(route('eic.submissions.desk-review', $this->submission->id), [
+            'scope_fit' => 1,
+            'files_complete' => 1,
+            'guidelines_compliant' => 1,
+            'similarity_score' => 10.0,
+            'status' => 'rejected',
+        ]);
+
+        $deskResponse->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $deskResponse->assertSessionHas('error');
+        $this->assertSame('in_review', $this->submission->fresh()->status);
+
+        // Naskah sudah berada di tahap diterima/produksi -> Penugasan SE & Keputusan Akhir terkunci
+        $this->submission->update(['status' => 'accepted']);
+
+        $assignResponse = $this->post(route('eic.submissions.assign-editor', $this->submission->id), [
+            'section_editor_id' => $this->sectionEditor->id,
+        ]);
+        $assignResponse->assertSessionHas('error');
+
+        $decisionResponse = $this->post(route('eic.submissions.decision', $this->submission->id), [
+            'decision' => 'decline',
+            'note_for_author' => 'Percobaan ubah keputusan final.',
+        ]);
+        $decisionResponse->assertSessionHas('error');
+        $this->assertSame('accepted', $this->submission->fresh()->status);
+    }
+
+    /**
+     * EIC dapat mengakses halaman Pedoman Keputusan Redaksi & COPE.
+     */
+    public function test_eic_dapat_mengakses_halaman_pedoman_redaksi(): void
+    {
+        $this->actingAs($this->eic);
+
+        $response = $this->get(route('eic.guidelines'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Pedoman Keputusan Redaksi');
+        $response->assertSee('Matriks Standar Pengambilan Keputusan Editorial Akhir');
+    }
+
+    /**
+     * EIC dapat mengesahkan galai final dan sistem mengotomasi status naskah ke ready_for_issue.
+     */
+    public function test_eic_dapat_mengesahkan_galai_final_dan_mengotomasi_status_ke_ready_for_issue(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Siapkan naskah pada tahap in_production
+        $this->submission->update(['status' => 'in_production']);
+
+        $file = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'galleys/test-sample.pdf',
+            'original_name' => 'Galley-Final.pdf',
+            'mime_type' => 'application/pdf',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'sample-pdf-content'),
+            'virus_scan_status' => 'clean',
+            'created_by' => $this->eic->id,
+        ]);
+
+        $galley = Galley::create([
+            'submission_id' => $this->submission->id,
+            'file_id' => $file->id,
+            'format' => 'pdf',
+            'stage' => 'proofreading',
+            'status' => 'active',
+            'checksum_sha256' => $file->checksum_sha256,
+            'version' => 1,
+            'label' => 'PDF Full Text',
+        ]);
+
+        // Buat penugasan proofreading yang sudah diselesaikan
+        ProofAssignment::create([
+            'galley_id' => $galley->id,
+            'proofreader_id' => $this->sectionEditor->id,
+            'due_at' => now()->addDays(7),
+            'status' => 'completed',
+            'assigned_at' => now()->subDays(2),
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+        ]);
+
+        // Post pengesahan galai oleh EIC
+        $response = $this->post(route('eic.submissions.approve-galley', $this->submission->id), [
+            'note' => 'Galai telah diperiksa dan disetujui untuk penjadwalan terbitan berkala.',
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        // Verifikasi otomatisasi status naskah berubah ke ready_for_issue
+        $freshSubmission = $this->submission->fresh();
+        $this->assertSame('ready_for_issue', $freshSubmission->status);
+
+        // Verifikasi rekod GalleyApproval dengan stage editor_final
+        $this->assertDatabaseHas('galley_approvals', [
+            'galley_id' => $galley->id,
+            'approved_by' => $this->eic->id,
+            'stage' => 'editor_final',
+            'checksum_sha256' => $galley->checksum_sha256,
+        ]);
+
+        // Verifikasi status galai terkunci menjadi approved
+        $this->assertSame('approved', $galley->fresh()->stage);
+        $this->assertSame($galley->checksum_sha256, $galley->fresh()->approved_checksum);
+    }
+
+    /**
+     * EIC gagal mengesahkan galai jika masih ada catatan proofreading yang belum diselesaikan.
+     */
+    public function test_eic_gagal_mengesahkan_galai_jika_catatan_proofreading_belum_selesai(): void
+    {
+        $this->actingAs($this->eic);
+
+        $this->submission->update(['status' => 'in_production']);
+
+        $file = FileEntry::create([
+            'storage_disk' => 'local',
+            'storage_path' => 'galleys/test-sample-unresolved.pdf',
+            'original_name' => 'Galley-Unresolved.pdf',
+            'mime_type' => 'application/pdf',
+            'byte_size' => 1024,
+            'checksum_sha256' => hash('sha256', 'sample-unresolved-content'),
+            'virus_scan_status' => 'clean',
+            'created_by' => $this->eic->id,
+        ]);
+
+        $galley = Galley::create([
+            'submission_id' => $this->submission->id,
+            'file_id' => $file->id,
+            'format' => 'pdf',
+            'stage' => 'proofreading',
+            'status' => 'active',
+            'checksum_sha256' => $file->checksum_sha256,
+            'version' => 1,
+            'label' => 'PDF Full Text',
+        ]);
+
+        $proofAssignment = ProofAssignment::create([
+            'galley_id' => $galley->id,
+            'proofreader_id' => $this->sectionEditor->id,
+            'due_at' => now()->addDays(7),
+            'status' => 'in_progress',
+            'assigned_at' => now()->subDays(2),
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+        ]);
+
+        // Tambahkan catatan koreksi yang belum diselesaikan (resolved = false)
+        ProofreadingNote::create([
+            'proof_assignment_id' => $proofAssignment->id,
+            'galley_id' => $galley->id,
+            'file_id' => $file->id,
+            'checksum_sha256' => $file->checksum_sha256,
+            'category' => 'typo',
+            'severity' => 'major',
+            'description' => 'Kesalahan penulisan nama instansi pada halaman 2.',
+            'resolved' => false,
+        ]);
+
+        $response = $this->post(route('eic.submissions.approve-galley', $this->submission->id), [
+            'note' => 'Coba sahkan galai yang belum tuntas.',
+        ]);
+
+        $response->assertRedirect(route('eic.submissions.show', $this->submission->id));
+        $response->assertSessionHas('error');
+
+        // Status naskah tetap in_production, tidak beralih ke ready_for_issue
+        $this->assertSame('in_production', $this->submission->fresh()->status);
+        $this->assertDatabaseMissing('galley_approvals', [
+            'galley_id' => $galley->id,
+            'stage' => 'editor_final',
         ]);
     }
 }

@@ -22,7 +22,7 @@ class AuthorSubmissionDetailViewModel
         // 1. Cek di Database Relasional
         try {
             if (Schema::hasTable('submissions')) {
-                $query = Submission::with(['section', 'journal', 'contributors', 'files.file'])
+                $query = Submission::with(['section', 'journal', 'contributors', 'files.file', 'latestPayment.fileEntry'])
                     ->where('id', $id)
                     ->orWhere('submission_number', $id);
 
@@ -45,6 +45,9 @@ class AuthorSubmissionDetailViewModel
             }
             if (! isset($mock['cannot_withdraw_reason'])) {
                 $mock['cannot_withdraw_reason'] = $this->cannotWithdrawReason($mock, $stage);
+            }
+            if (! isset($mock['payment_info'])) {
+                $mock['payment_info'] = $this->buildMockPaymentInfo($mock);
             }
 
             return $mock;
@@ -203,6 +206,7 @@ class AuthorSubmissionDetailViewModel
             'can_withdraw' => $this->canWithdrawSubmission($sub, $stageNumber),
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
+            'payment_info' => $this->buildPaymentInfo($sub),
         ];
     }
 
@@ -1251,5 +1255,86 @@ class AuthorSubmissionDetailViewModel
             'submitted' => 'Naskah telah ditindaklanjuti oleh dewan redaksi untuk proses evaluasi.',
             default => 'Naskah sedang dalam proses penanganan oleh dewan redaksi/mitra bestari sehingga tidak dapat ditarik kembali.',
         };
+    }
+
+    /**
+     * Membangun struktur informasi tagihan dan bukti pembayaran APC naskah.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildPaymentInfo(Submission $sub): array
+    {
+        $journal = $sub->journal ?? Journal::first();
+        $isPaid = $journal ? $journal->isPaidApc() : false;
+        $payment = $sub->latestPayment;
+
+        if (! $isPaid) {
+            return [
+                'is_free' => true,
+                'has_payment' => false,
+                'status' => 'free',
+                'status_label' => 'Bebas Biaya (Diamond Open Access)',
+                'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'apc_fee_text' => (string) ($journal?->apc_fee ?? 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah)'),
+                'instructions' => 'Naskah ini diterbitkan secara bebas biaya (Diamond Open Access) tanpa pungutan biaya pemrosesan kepada penulis.',
+                'can_upload' => false,
+                'has_proof' => false,
+                'proof_download_url' => null,
+            ];
+        }
+
+        $canUpload = in_array($sub->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)
+            && (! $payment || in_array($payment->status, ['pending_payment', 'rejected'], true));
+
+        $amount = $payment ? (float) $payment->amount : (float) ($journal->apc_amount ?? 500000.00);
+
+        return [
+            'is_free' => false,
+            'has_payment' => (bool) $payment,
+            'status' => $payment ? $payment->status : 'pending_payment',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
+            'invoice_number' => (string) ($payment?->invoice_number ?? ('INV-'.date('Y').'-APC'.substr(preg_replace('/[^0-9]/', '', (string) $sub->submission_number) ?: '00001', -5))),
+            'amount' => $amount,
+            'amount_formatted' => 'Rp '.number_format($amount, 0, ',', '.'),
+            'amount_paid' => $payment?->amount_paid ? (float) $payment->amount_paid : null,
+            'amount_paid_formatted' => $payment?->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : null,
+            'bank_name' => (string) ($journal->payment_bank_name ?: 'Bank Sulselbar'),
+            'account_number' => (string) ($journal->payment_account_number ?: '130-001-009876-5'),
+            'account_holder' => (string) ($journal->payment_account_holder ?: 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar'),
+            'instructions' => (string) ($journal->payment_instructions ?: 'Sertakan ID Naskah pada berita transfer. Unggah foto atau berkas PDF bukti transfer yang sah.'),
+            'sender_bank_name' => $payment?->sender_bank_name,
+            'sender_account_name' => $payment?->sender_account_name,
+            'transfer_date_formatted' => $payment?->transfer_date?->format('d M Y'),
+            'author_notes' => $payment?->author_notes,
+            'verification_notes' => $payment?->verification_notes,
+            'uploaded_at_formatted' => $payment?->uploaded_at ? $payment->uploaded_at->format('d M Y, H:i').' WITA' : null,
+            'verified_at_formatted' => $payment?->verified_at ? $payment->verified_at->format('d M Y, H:i').' WITA' : null,
+            'can_upload' => $canUpload,
+            'has_proof' => (bool) ($payment && $payment->file_entry_id),
+            'proof_download_url' => ($payment && $payment->file_entry_id) ? route('author.submissions.payment.proof', $sub->id) : null,
+        ];
+    }
+
+    /**
+     * Membangun fallback informasi pembayaran untuk mock data.
+     *
+     * @param  array<string, mixed>  $mock
+     * @return array<string, mixed>
+     */
+    public function buildMockPaymentInfo(array $mock): array
+    {
+        return [
+            'is_free' => true,
+            'has_payment' => false,
+            'status' => 'free',
+            'status_label' => 'Bebas Biaya (Diamond Open Access)',
+            'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'apc_fee_text' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+            'instructions' => 'Naskah ini diterbitkan secara bebas biaya (Diamond Open Access) tanpa pungutan biaya pemrosesan kepada penulis.',
+            'can_upload' => false,
+            'has_proof' => false,
+            'proof_download_url' => null,
+        ];
     }
 }

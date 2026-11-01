@@ -36,6 +36,26 @@ class ReviewerWorkspaceViewModel
             ?? $this->assignment->reviewRound->submission->abstract;
     }
 
+    /**
+     * Daftar kata kunci naskah telaah.
+     *
+     * @return array<int, string>
+     */
+    public function keywords(): array
+    {
+        $keywords = $this->assignment->reviewRound?->submission?->keywords;
+
+        if (is_array($keywords)) {
+            return array_values(array_filter(array_map('trim', $keywords)));
+        }
+
+        if (is_string($keywords) && trim($keywords) !== '') {
+            return array_values(array_filter(array_map('trim', explode(',', $keywords))));
+        }
+
+        return [];
+    }
+
     public function sectionName(): string
     {
         $submission = $this->assignment->reviewRound->submission;
@@ -70,6 +90,11 @@ class ReviewerWorkspaceViewModel
             && $this->assignment->status !== 'completed';
     }
 
+    public function canDownloadManuscript(): bool
+    {
+        return in_array($this->assignment->status, ['accepted', 'overdue', 'completed'], true);
+    }
+
     public function existingReview()
     {
         return $this->assignment->review;
@@ -78,5 +103,51 @@ class ReviewerWorkspaceViewModel
     public function pendingExtension()
     {
         return $this->assignment->pendingExtension;
+    }
+
+    public function daysRemaining(): ?int
+    {
+        if (! $this->assignment->review_due_at) {
+            return null;
+        }
+
+        return (int) now()->diffInDays($this->assignment->review_due_at, false);
+    }
+
+    /**
+     * @return array{label: string, badge_class: string}
+     */
+    public function statusInfo(): array
+    {
+        return match ($this->assignment->status) {
+            'invited' => [
+                'label' => 'Undangan Masuk',
+                'badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+            ],
+            'accepted' => [
+                'label' => 'Sedang Ditelaah',
+                'badge_class' => 'bg-blue-50 text-blue-800 border-blue-200',
+            ],
+            'overdue' => [
+                'label' => 'Melewati Batas Waktu',
+                'badge_class' => 'bg-rose-50 text-rose-800 border-rose-200',
+            ],
+            'completed' => [
+                'label' => 'Telaah Selesai',
+                'badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            ],
+            'declined' => [
+                'label' => 'Undangan Ditolak',
+                'badge_class' => 'bg-gray-100 text-gray-700 border-gray-300',
+            ],
+            'cancelled' => [
+                'label' => 'Dibatalkan',
+                'badge_class' => 'bg-gray-100 text-gray-700 border-gray-300',
+            ],
+            default => [
+                'label' => ucfirst($this->assignment->status),
+                'badge_class' => 'bg-gray-100 text-gray-700 border-gray-200',
+            ],
+        };
     }
 }

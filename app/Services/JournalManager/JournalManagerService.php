@@ -246,6 +246,12 @@ class JournalManagerService
             'focus_scope',
             'frequency',
             'apc_fee',
+            'apc_enabled',
+            'apc_amount',
+            'payment_bank_name',
+            'payment_account_number',
+            'payment_account_holder',
+            'payment_instructions',
             'open_access_policy',
             'peer_review_policy',
             'license',
@@ -253,7 +259,11 @@ class JournalManagerService
 
         foreach ($fields as $field) {
             if (array_key_exists($field, $data)) {
-                $updateData[$field] = $data[$field];
+                $val = $data[$field];
+                if ($field === 'apc_enabled') {
+                    $val = filter_var($val, FILTER_VALIDATE_BOOLEAN);
+                }
+                $updateData[$field] = $val;
             }
         }
 

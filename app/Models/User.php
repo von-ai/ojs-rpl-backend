@@ -153,6 +153,116 @@ class User extends Authenticatable
     }
 
     /**
+     * Mengambil daftar kode peran unik yang dimiliki pengguna, diurutkan sesuai katalog.
+     * Setiap pengguna terautentikasi minimal memiliki akses 'author' sebagai fallback dasar.
+     *
+     * @return array<int, string>
+     */
+    public function availableRoleCodes(): array
+    {
+        $catalogKeys = array_keys(UserRole::roleCatalog());
+
+        try {
+            $dbRoles = $this->userRoles()
+                ->pluck('role_code')
+                ->filter(fn ($code) => is_string($code) && isset(UserRole::roleCatalog()[$code]))
+                ->unique()
+                ->values()
+                ->all();
+        } catch (\Throwable) {
+            $dbRoles = [];
+        }
+
+        if (empty($dbRoles)) {
+            return ['author'];
+        }
+
+        // Urutkan sesuai urutan prioritas di roleCatalog()
+        return array_values(array_intersect($catalogKeys, $dbRoles));
+    }
+
+    /**
+     * Mengambil daftar metadata peran lengkap yang dimiliki pengguna.
+     *
+     * @return array<int, array{
+     *     code: string,
+     *     label: string,
+     *     portal_label: string,
+     *     description: string,
+     *     route: string,
+     *     prefix: string,
+     *     badge_class: string
+     * }>
+     */
+    public function availableRolesMeta(): array
+    {
+        return array_map(
+            fn (string $code): array => UserRole::roleMeta($code),
+            $this->availableRoleCodes()
+        );
+    }
+
+    /**
+     * Memeriksa apakah pengguna memiliki peran tertentu.
+     */
+    public function hasRole(string $roleCode): bool
+    {
+        return in_array($roleCode, $this->availableRoleCodes(), true);
+    }
+
+    /**
+     * Menentukan kode peran yang sedang aktif berdasarkan sesi atau path URL saat ini.
+     */
+    public function activeRoleCode(?string $currentPath = null): string
+    {
+        $available = $this->availableRoleCodes();
+
+        // 1. Jika URL saat ini berada di dalam prefix salah satu portal yang dimiliki pengguna, prioritaskan portal tersebut
+        $path = $currentPath ?? (app()->bound('request') ? request()->path() : '');
+        $firstSegment = strtolower((string) strtok(trim($path, '/'), '/'));
+
+        foreach (UserRole::roleCatalog() as $code => $meta) {
+            if ($firstSegment !== '' && $firstSegment === $meta['prefix'] && in_array($code, $available, true)) {
+                return $code;
+            }
+        }
+
+        // 2. Gunakan active_role dari session apabila masih valid dimiliki oleh pengguna
+        try {
+            $sessionRole = session('active_role');
+            if (is_string($sessionRole) && in_array($sessionRole, $available, true)) {
+                return $sessionRole;
+            }
+        } catch (\Throwable) {
+            // Abaikan jika session belum terinisialisasi
+        }
+
+        // 3. Fallback ke peran pertama yang dimiliki pengguna
+        return $available[0] ?? 'author';
+    }
+
+    /**
+     * Menentukan nama rute beranda portal default saat pengguna masuk atau mengakses /dashboard.
+     */
+    public function defaultPortalRoute(): string
+    {
+        $available = $this->availableRoleCodes();
+
+        try {
+            $sessionRole = session('active_role');
+            if (is_string($sessionRole) && in_array($sessionRole, $available, true)) {
+                return UserRole::roleMeta($sessionRole)['route'];
+            }
+        } catch (\Throwable) {
+            // Abaikan
+        }
+
+        $primaryRole = $available[0] ?? 'author';
+
+        return UserRole::roleMeta($primaryRole)['route'];
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

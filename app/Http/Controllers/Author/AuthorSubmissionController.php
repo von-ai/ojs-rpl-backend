@@ -14,6 +14,7 @@ use App\Models\SubmissionContributor;
 use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Services\Author\AuthorSubmissionService;
+use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
 use DomainException;
@@ -22,6 +23,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -29,7 +31,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AuthorSubmissionController extends Controller
 {
     public function __construct(
-        protected AuthorSubmissionService $authorSubmissionService
+        protected AuthorSubmissionService $authorSubmissionService,
+        protected ArticlePaymentService $articlePaymentService
     ) {}
 
     /**
@@ -495,5 +498,83 @@ class AuthorSubmissionController extends Controller
                 ->route('author.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Mengunggah berkas bukti transfer pembayaran biaya publikasi artikel (APC).
+     */
+    public function uploadPayment(Request $request, string $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_proof' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'sender_bank_name' => ['nullable', 'string', 'max:100'],
+            'sender_account_name' => ['nullable', 'string', 'max:191'],
+            'transfer_date' => ['nullable', 'date'],
+            'amount_paid' => ['nullable', 'numeric', 'min:0'],
+            'author_notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'payment_proof.required' => 'Berkas bukti pembayaran wajib diunggah.',
+            'payment_proof.mimes' => 'Format berkas bukti pembayaran harus berupa PDF, JPG, JPEG, atau PNG.',
+            'payment_proof.max' => 'Ukuran berkas bukti pembayaran tidak boleh melebihi 5 MB.',
+        ]);
+
+        $user = $request->user() ?? User::firstOrFail();
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->first();
+
+        if (! $submission) {
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('error', 'Naskah ilmiah tidak ditemukan.');
+        }
+
+        try {
+            $this->articlePaymentService->uploadPaymentProof(
+                submission: $submission,
+                author: $user,
+                file: $request->file('payment_proof'),
+                data: $validated
+            );
+
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('success', 'Bukti pembayaran berhasil diunggah dan sedang dalam proses verifikasi oleh tim redaksi.');
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('author.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC naskah.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        $fileEntry = $payment->fileEntry;
+        $disk = Storage::disk($fileEntry->storage_disk);
+
+        if (! $disk->exists($fileEntry->storage_path)) {
+            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
+        }
+
+        return $disk->download(
+            $fileEntry->storage_path,
+            $fileEntry->original_name,
+            ['Content-Type' => $fileEntry->mime_type]
+        );
     }
 }

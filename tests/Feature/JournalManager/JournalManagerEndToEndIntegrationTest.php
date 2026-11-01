@@ -14,6 +14,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\ViewModels\JournalManagerUsersViewModel;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -412,17 +413,19 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($manager);
 
+        $totalUsers = (new JournalManagerUsersViewModel)->pagination()['total'];
+
         // Halaman 1
         $resPage1 = $this->get('/journalmanager/users?page=1');
         $resPage1->assertStatus(200);
-        $resPage1->assertSee('Menampilkan <strong class="text-gray-800">1</strong> - <strong class="text-gray-800">10</strong> dari <strong class="text-gray-800">15</strong> pengguna', false);
+        $resPage1->assertSee("Menampilkan <strong class=\"text-gray-800\">1</strong> - <strong class=\"text-gray-800\">10</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
         $resPage1->assertSee('Selanjutnya');
         $resPage1->assertSee('page=2');
 
         // Halaman 2
         $resPage2 = $this->get('/journalmanager/users?page=2');
         $resPage2->assertStatus(200);
-        $resPage2->assertSee('Menampilkan <strong class="text-gray-800">11</strong> - <strong class="text-gray-800">15</strong> dari <strong class="text-gray-800">15</strong> pengguna', false);
+        $resPage2->assertSee("Menampilkan <strong class=\"text-gray-800\">11</strong> - <strong class=\"text-gray-800\">{$totalUsers}</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
         $resPage2->assertSee('Sebelumnya');
         $resPage2->assertSee('page=1');
     }

@@ -1,6 +1,6 @@
 @extends('layouts.public', ['topbarData' => $viewModel->topbarData(), 'navLinks' => $viewModel->navLinks(), 'footerData' => $viewModel->footerData()])
 
-@section('title', 'Jurnal Riset & Inovasi BRIDA Makassar (JRID-MKS) — Beranda')
+@section('title', ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar') . ' — Beranda')
 
 @section('content')
     <!-- Call For Papers Announcement Banner -->
@@ -20,8 +20,10 @@
             <!-- Left Main Content Column (Span 2) -->
             <div class="lg:col-span-2 space-y-8">
                 
-                <!-- Current Issue Highlight (Vol. 3 No. 2) -->
-                <x-journal.current-issue :issue="$viewModel->currentIssue()" />
+                <!-- Current Issue Highlight (Dari Database) -->
+                @if (!empty($viewModel->currentIssue()))
+                    <x-journal.current-issue :issue="$viewModel->currentIssue()" />
+                @endif
 
                 <!-- Search/Category Filter Active State Banner (If filtering) -->
                 @if ($viewModel->searchQuery || $viewModel->selectedCategory)

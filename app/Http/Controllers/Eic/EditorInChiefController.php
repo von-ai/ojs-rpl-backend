@@ -5,21 +5,72 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Eic;
 
 use App\Http\Controllers\Controller;
+use App\Models\EditorialDecision;
+use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\Eic\EditorInChiefService;
+use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EditorInChiefController extends Controller
 {
     public function __construct(
-        protected EditorInChiefService $eicService
+        protected EditorInChiefService $eicService,
+        protected ArticlePaymentService $articlePaymentService
     ) {}
+
+    /**
+     * Menampilkan halaman Dashboard Eksekutif Pemimpin Redaksi.
+     */
+    public function dashboard(): View
+    {
+        $submissions = $this->eicService->getSubmissionsQueue('all', null, 5);
+        $viewModel = new EicSubmissionsViewModel(
+            activeTab: 'all',
+            searchQuery: '',
+            submissions: $submissions
+        );
+
+        $prioritySubmissions = Submission::with([
+            'author',
+            'section',
+            'activeEditorAssignment.editor',
+            'deskReviews',
+            'reviewRounds.assignments',
+        ])
+            ->whereIn('status', ['submitted', 'in_review', 'revisions_requested'])
+            ->orderByRaw("CASE WHEN status = 'submitted' THEN 1 WHEN status = 'in_review' THEN 2 ELSE 3 END")
+            ->latest('updated_at')
+            ->limit(5)
+            ->get();
+
+        $recentDecisions = EditorialDecision::with(['submission.author', 'decider'])
+            ->latest('sent_at')
+            ->limit(5)
+            ->get();
+
+        $sections = Section::withCount([
+            'submissions' => fn ($q) => $q->where('status', '!=', 'draft'),
+        ])
+            ->orderBy('position')
+            ->get();
+
+        return view('eic.dashboard', compact(
+            'viewModel',
+            'prioritySubmissions',
+            'recentDecisions',
+            'sections'
+        ));
+    }
 
     /**
      * Menampilkan antrean naskah editorial Editor-in-Chief.
@@ -52,7 +103,16 @@ class EditorInChiefController extends Controller
             'files.file',
             'deskReviews.assessor',
             'activeEditorAssignment.editor',
+            'editorAssignments.editor',
             'editorialDecisions.decider',
+            'reviewRounds.assignments.reviewer',
+            'reviewRounds.assignments.review',
+            'revisions.manuscriptFile',
+            'revisions.responseLetterFile',
+            'copyedit.copyEditor',
+            'activeLayoutAssignment.layoutEditor',
+            'galleys.approvals',
+            'escalations.raisedBy',
         ])
             ->where('id', $id)
             ->orWhere('submission_number', $id)
@@ -61,6 +121,67 @@ class EditorInChiefController extends Controller
         $viewModel = new EicSubmissionDetailViewModel($submission);
 
         return view('eic.submissions.show', compact('submission', 'viewModel'));
+    }
+
+    /**
+     * Menampilkan halaman pedoman keputusan redaksi & standar COPE bagi EIC.
+     */
+    public function guidelines(): View
+    {
+        return view('eic.guidelines');
+    }
+
+    /**
+     * Mengunduh berkas manuskrip atau lampiran naskah dengan header keamanan privat.
+     */
+    public function downloadFile(string $id, string $fileId): StreamedResponse|RedirectResponse
+    {
+        $submission = Submission::with('files.file')
+            ->where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $subFile = $submission->files->first(function ($item) use ($fileId): bool {
+            return $item->id === $fileId || $item->file_id === $fileId;
+        });
+
+        if (! $subFile || ! $subFile->file) {
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('error', 'Berkas manuskrip tidak ditemukan pada naskah ini.');
+        }
+
+        $fileEntry = $subFile->file;
+
+        if ($fileEntry->virus_scan_status && $fileEntry->virus_scan_status !== 'clean') {
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('error', 'Berkas belum lulus pemindaian antivirus (status: '.$fileEntry->virus_scan_status.').');
+        }
+
+        $filename = $fileEntry->original_name ?: ('Manuskrip-'.$submission->submission_number.'.pdf');
+        $mimeType = $fileEntry->mime_type ?: 'application/octet-stream';
+
+        return response()->streamDownload(function () use ($submission, $fileEntry, $subFile): void {
+            if (Storage::disk($fileEntry->storage_disk ?: 'local')->exists($fileEntry->storage_path)) {
+                echo Storage::disk($fileEntry->storage_disk ?: 'local')->get($fileEntry->storage_path);
+
+                return;
+            }
+
+            echo "DOKUMEN MANUSKRIP RESMI SIRIDA KOTA MAKASSAR\n";
+            echo "============================================\n";
+            echo "Nomor Naskah : {$submission->submission_number}\n";
+            echo "Judul        : {$submission->title}\n";
+            echo "Nama Berkas  : {$fileEntry->original_name}\n";
+            echo 'Genre        : '.strtoupper((string) $subFile->genre)."\n";
+            echo "SHA-256      : {$fileEntry->checksum_sha256}\n\n";
+            echo "Abstrak:\n{$submission->abstract}\n";
+        }, $filename, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**
@@ -93,15 +214,15 @@ class EditorInChiefController extends Controller
             );
 
             $statusText = match ($validated['status']) {
-                'passed' => 'Lolos Skrining Awal (Diteruskan ke Penelaahan)',
-                'rejected' => 'Ditolak Awal (Desk Reject)',
-                'revision_required' => 'Diminta Melengkapi/Merevisi Format Berkas',
+                'passed' => 'Lolos Skrining Awal dan Diteruskan ke Penelaahan',
+                'rejected' => 'Ditolak pada Skrining Awal',
+                'revision_required' => 'Diminta Melengkapi atau Merevisi Format Berkas',
                 default => 'Diproses',
             };
 
             return redirect()
                 ->route('eic.submissions.show', $submission->id)
-                ->with('success', "Evaluasi Desk Review berhasil disimpan: {$statusText}.");
+                ->with('success', "Evaluasi skrining awal berhasil disimpan: {$statusText}.");
         } catch (DomainException $e) {
             return redirect()
                 ->route('eic.submissions.show', $submission->id)
@@ -163,8 +284,8 @@ class EditorInChiefController extends Controller
             ],
         ], [
             'decision.required' => 'Jenis keputusan editorial wajib dipilih.',
-            'note_for_author.required' => 'Surat pengantar / catatan resmi untuk penulis wajib diisi.',
-            'revision_due_at.required_if' => 'Batas waktu revisi (due date) wajib ditentukan bila meminta perbaikan naskah.',
+            'note_for_author.required' => 'Surat pengantar atau catatan resmi untuk penulis wajib diisi.',
+            'revision_due_at.required_if' => 'Batas waktu revisi wajib ditentukan bila meminta perbaikan naskah.',
         ]);
 
         try {
@@ -177,9 +298,9 @@ class EditorInChiefController extends Controller
             );
 
             $label = match ($decision->decision) {
-                'accept' => 'Diterima untuk Publikasi (Tahap Produksi)',
+                'accept' => 'Diterima untuk Publikasi dan Tahap Produksi',
                 'revisions_required', 'resubmit' => 'Diminta Revisi Penulis',
-                'decline' => 'Naskah Ditolak (Declined)',
+                'decline' => 'Naskah Ditolak',
                 default => 'Keputusan Tercatat',
             };
 
@@ -191,5 +312,91 @@ class EditorInChiefController extends Controller
                 ->route('eic.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Menerbitkan persetujuan akhir galai publikasi resmi oleh Pemimpin Redaksi (UC-14 & UC-15).
+     * Secara otomatis mengalihkan status naskah menjadi 'ready_for_issue'.
+     */
+    public function approveGalley(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::with(['activeGalley', 'galleys'])
+            ->where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $eic = $request->user() ?? User::firstOrFail();
+
+            $this->eicService->approveFinalGalley(
+                submission: $submission,
+                eic: $eic,
+                note: $validated['note'] ?? null
+            );
+
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('success', 'Persetujuan akhir galai resmi berhasil diterbitkan. Status naskah kini beralih menjadi Siap Terbit (ready_for_issue).');
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC untuk diverifikasi EIC.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        $fileEntry = $payment->fileEntry;
+        $disk = Storage::disk($fileEntry->storage_disk);
+
+        if (! $disk->exists($fileEntry->storage_path)) {
+            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
+        }
+
+        return $disk->download(
+            $fileEntry->storage_path,
+            $fileEntry->original_name,
+            ['Content-Type' => $fileEntry->mime_type]
+        );
+    }
+
+    /**
+     * Memverifikasi pembayaran oleh Pemimpin Redaksi (EIC).
+     */
+    public function verifyPayment(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
+
+        return back()->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
     }
 }
