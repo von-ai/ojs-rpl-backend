@@ -25,7 +25,7 @@ resource "azurerm_application_insights_standard_web_test" "availability" {
   enabled                 = true
 
   request {
-    url = var.app_url != "" ? "${var.app_url}/up" : "https://${azurerm_container_app.web.ingress[0].fqdn}/up"
+    url = var.enable_cloudflare ? (var.app_url != "" ? (startswith(var.app_url, "http") ? "${var.app_url}/up" : "https://${var.app_url}/up") : "https://${var.subdomain}.${var.domain_name}/up") : "https://${azurerm_container_app.web.ingress[0].fqdn}/up"
   }
 
   tags = var.tags

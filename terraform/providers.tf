@@ -24,7 +24,10 @@ provider "azurerm" {
   resource_provider_registrations = "core"
   resource_providers_to_register = [
     "Microsoft.App",
-    "Microsoft.Cache"
+    "Microsoft.Cache",
+    "Microsoft.OperationalInsights",
+    "Microsoft.Insights",
+    "Microsoft.Security"
   ]
   features {
     resource_group {

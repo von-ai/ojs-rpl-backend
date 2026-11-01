@@ -56,7 +56,7 @@ resource "azurerm_container_app" "web" {
 
     http_scale_rule {
       name                = "http-concurrency-rule"
-      concurrent_requests = 30
+      concurrent_requests = "30"
     }
 
     container {
