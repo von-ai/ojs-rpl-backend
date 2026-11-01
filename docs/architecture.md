@@ -19,8 +19,8 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Aset dan build | Vite 8; Node 22+; Tailwind CSS 4 | Dependency build/asset bundling tersedia. Produksi hanya menerima hasil build aset, tanpa proses Node di runtime. |
 | Database | MySQL 8.0 / TiDB Cloud Serverless, Eloquent, migrations | TiDB Serverless untuk produksi/PoC; MySQL 8.0 Compose untuk pengembangan lokal. |
 | Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment. Document root hanya `public/`. |
-| Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Redis Container di ACA (redis:7-alpine) pada produksi untuk antrean dan locking. |
-| Session/cache/locks | Redis Container di ACA (redis:7-alpine) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review (Internal TCP Ingress Port 6379). |
+| Queue dan jadwal | Laravel queue pada Redis / Database; supervised worker (ACA); cron scheduler setiap menit; transactional outbox | Didukung Azure Managed Redis (AMR Balanced_B0) / Database pada produksi untuk antrean dan locking. |
+| Session/cache/locks | Azure Managed Redis (AMR Balanced_B0) pada produksi; Redis/Database store pada lokal | Memastikan latensi < 1 ms dan atomic locks untuk konkurensi review (Redis Enterprise Engine). |
 | Berkas | Azure Blob Storage melalui Laravel Filesystem/Flysystem | Adapter Azure Blob teruji, container privat, direct upload melalui SAS (Shared Access Signature) URL, enkripsi server-side bawaan. Azurite untuk dev lokal. |
 | Pemeriksaan berkas | Microsoft Defender for Storage (Malware Scanning), inspeksi MIME/checksum, sanitizer HTML/XML | Pemindaian malware otomatis near real-time oleh Microsoft Defender for Storage di cloud; mock scanner pada dev lokal; berkas berstatus karantina jika terdeteksi ancaman. |
 | Autentikasi & Sesi | Stateful Session Cookie (`auth:web`), CSRF token, HttpOnly, SameSite=Lax | Menggunakan sistem session bawaan Laravel dengan proteksi lockout 15 menit dan audit log. Disederhanakan tanpa JWT/Bearer token. |
