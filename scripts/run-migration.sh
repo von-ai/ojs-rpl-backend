@@ -45,12 +45,12 @@ if [ -n "$WEB_URL" ] && [ "$WEB_URL" != "N/A" ]; then
     sleep 5
 fi
 
-echo -e "${BLUE}--> Menjalankan 'php artisan migrate --force' di Container '${WEB_NAME}'...${NC}"
+echo -e "${BLUE}--> Menjalankan 'php /var/www/html/artisan migrate --force' di Container '${WEB_NAME}'...${NC}"
 az containerapp exec \
     --name "${WEB_NAME}" \
     --resource-group "${RG_NAME}" \
     --container "web" \
-    --command "php artisan migrate --force"
+    --command "php /var/www/html/artisan migrate --force"
 
 SEED=false
 for arg in "$@"; do
@@ -60,12 +60,12 @@ for arg in "$@"; do
 done
 
 if [ "$SEED" = true ]; then
-    echo -e "${BLUE}--> Menjalankan 'php artisan db:seed --force' di Container '${WEB_NAME}'...${NC}"
+    echo -e "${BLUE}--> Menjalankan 'php /var/www/html/artisan db:seed --force' di Container '${WEB_NAME}'...${NC}"
     az containerapp exec \
         --name "${WEB_NAME}" \
         --resource-group "${RG_NAME}" \
         --container "web" \
-        --command "php artisan db:seed --force"
+        --command "php /var/www/html/artisan db:seed --force"
 fi
 
 echo -e "\n${GREEN}[SUCCESS] Migrasi database berhasil dieksekusi di Azure Container Apps!${NC}"
