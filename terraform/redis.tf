@@ -1,20 +1,53 @@
 # -----------------------------------------------------------------------------
-# Azure Managed Redis (AMR) - Balanced_B0 (~500MB, Redis Enterprise Engine)
-# Dedicated low-latency broker/cache untuk Laravel Session, Cache, & Atomic Locks
+# Dedicated Redis 7 In-Memory Cache & Broker Container di Azure Container Apps
+# Berjalan sebagai internal microservice di dalam ACA Environment ($0 / Free Tier)
 # -----------------------------------------------------------------------------
-resource "azurerm_managed_redis" "redis" {
-  name                = "amr-${var.project_name}-${var.environment}-${random_string.suffix.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  sku_name            = var.redis_sku_name
+resource "random_password" "redis_password" {
+  length  = 32
+  special = false
+}
 
-  default_database {
-    client_protocol                    = "Encrypted"
-    clustering_policy                  = "EnterpriseCluster"
-    eviction_policy                    = "VolatileLRU"
-    access_keys_authentication_enabled = true
+resource "azurerm_container_app" "redis" {
+  name                         = "ca-${var.project_name}-redis-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.env.id
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Single"
+  tags                         = var.tags
+
+  secret {
+    name  = "redis-password"
+    value = random_password.redis_password.result
   }
 
-  tags = var.tags
+  ingress {
+    external_enabled = false
+    target_port      = 6379
+    transport        = "tcp"
+    exposed_port     = 6379
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+
+  template {
+    min_replicas = 1
+    max_replicas = 1
+
+    container {
+      name    = "redis"
+      image   = "redis:7-alpine"
+      cpu     = 0.25
+      memory  = "0.5Gi"
+      command = ["sh", "-c", "exec redis-server --requirepass \"$REDIS_PASSWORD\""]
+
+      env {
+        name        = "REDIS_PASSWORD"
+        secret_name = "redis-password"
+      }
+    }
+  }
 }
+
 

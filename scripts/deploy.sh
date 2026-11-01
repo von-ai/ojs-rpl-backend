@@ -99,28 +99,8 @@ if [ "$PLAN_ONLY" = true ]; then
 fi
 
 echo -e "\n${BLUE}--> [Step 3/3] Menerapkan konfigurasi infrastruktur (${TF_BIN} apply)...${NC}"
-APPLY_LOG=$(mktemp)
-set +e
-${TF_BIN} apply ${AUTO_APPROVE} 2>&1 | tee "${APPLY_LOG}"
-APPLY_EXIT_CODE=${PIPESTATUS[0]}
-set -e
+${TF_BIN} apply ${AUTO_APPROVE}
 
-# Evaluasi kegagalan apply dan smart fallback otomatis jika SKU kehabisan kapasitas di region target
-if [ ${APPLY_EXIT_CODE} -ne 0 ]; then
-    if grep -q "CacheCapacityUnavailable.*Balanced_B0" "${APPLY_LOG}" || grep -q "Balanced_B0 is not currently available" "${APPLY_LOG}"; then
-        echo -e "\n${YELLOW}===================================================================${NC}"
-        echo -e "${YELLOW}[NOTICE] Kapasitas 'Balanced_B0' sedang penuh di region ini.${NC}"
-        echo -e "${YELLOW}[FALLBACK] Mengaktifkan Smart Fallback otomatis ke SKU 'Balanced_B1'...${NC}"
-        echo -e "${YELLOW}===================================================================${NC}\n"
-        rm -f "${APPLY_LOG}"
-        ${TF_BIN} apply ${AUTO_APPROVE} -var="redis_sku_name=Balanced_B1"
-    else
-        echo -e "\n${RED}[ERROR] Deployment Terraform gagal! Periksa rincian log di atas.${NC}"
-        rm -f "${APPLY_LOG}"
-        exit ${APPLY_EXIT_CODE}
-    fi
-fi
-rm -f "${APPLY_LOG}"
 
 echo -e "\n${GREEN}===================================================================${NC}"
 echo -e "${GREEN}             DEPLOYMENT INFRASTRUKTUR BERHASIL!                    ${NC}"

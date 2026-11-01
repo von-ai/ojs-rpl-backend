@@ -15,7 +15,7 @@ locals {
       },
       {
         name  = "redis-password"
-        value = azurerm_managed_redis.redis.default_database[0].primary_access_key
+        value = random_password.redis_password.result
       },
       {
         name  = "azure-storage-key"
@@ -53,10 +53,10 @@ locals {
     { name = "CACHE_STORE", value = "redis" },
     { name = "QUEUE_CONNECTION", value = "database" },
     { name = "REDIS_CLIENT", value = "phpredis" },
-    { name = "REDIS_HOST", value = azurerm_managed_redis.redis.hostname },
-    { name = "REDIS_PORT", value = tostring(azurerm_managed_redis.redis.default_database[0].port) },
+    { name = "REDIS_HOST", value = azurerm_container_app.redis.ingress[0].fqdn },
+    { name = "REDIS_PORT", value = "6379" },
     { name = "REDIS_PASSWORD", secret_name = "redis-password" },
-    { name = "REDIS_SCHEME", value = "tls" },
+    { name = "REDIS_SCHEME", value = "tcp" },
     { name = "REDIS_DB", value = "0" },
     { name = "FILESYSTEM_DISK", value = var.filesystem_disk },
     { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },

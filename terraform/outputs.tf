@@ -58,14 +58,15 @@ output "storage_file_share_name" {
 }
 
 output "redis_hostname" {
-  description = "Hostname Azure Managed Redis"
-  value       = azurerm_managed_redis.redis.hostname
+  description = "Hostname Redis Container di ACA (Internal Ingress FQDN)"
+  value       = azurerm_container_app.redis.ingress[0].fqdn
 }
 
-output "redis_ssl_port" {
-  description = "Port TLS Azure Managed Redis"
-  value       = azurerm_managed_redis.redis.default_database[0].port
+output "redis_port" {
+  description = "Port Redis Container di ACA (Internal Port 6379)"
+  value       = 6379
 }
+
 
 
 output "log_analytics_workspace_name" {
