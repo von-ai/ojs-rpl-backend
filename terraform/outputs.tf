@@ -14,7 +14,7 @@ output "web_app_direct_fqdn" {
 
 output "public_app_url" {
   description = "URL publik aplikasi web jurnal"
-  value       = var.enable_cloudflare ? "https://${var.subdomain}.${var.domain_name}" : "https://${azurerm_container_app.web.ingress[0].fqdn}"
+  value       = var.enable_cloudflare ? (var.subdomain == "@" ? "https://${var.domain_name}" : "https://${var.subdomain}.${var.domain_name}") : "https://${azurerm_container_app.web.ingress[0].fqdn}"
 }
 
 output "web_app_name" {
@@ -27,9 +27,9 @@ output "worker_app_name" {
   value       = azurerm_container_app.worker.name
 }
 
-output "scheduler_job_name" {
-  description = "Nama Container App Scheduled Job"
-  value       = azurerm_container_app_job.scheduler.name
+output "scheduler_app_name" {
+  description = "Nama Container App untuk Scheduler Daemon"
+  value       = azurerm_container_app.scheduler.name
 }
 
 output "storage_account_name" {
@@ -58,14 +58,16 @@ output "storage_file_share_name" {
 }
 
 output "redis_hostname" {
-  description = "Hostname Azure Cache for Redis"
-  value       = azurerm_redis_cache.redis.hostname
+  description = "Hostname Azure Managed Redis"
+  value       = azurerm_managed_redis.redis.hostname
 }
 
-output "redis_ssl_port" {
-  description = "Port SSL Azure Cache for Redis (TLS)"
-  value       = azurerm_redis_cache.redis.ssl_port
+output "redis_port" {
+  description = "Port Azure Managed Redis default database"
+  value       = azurerm_managed_redis.redis.default_database[0].port
 }
+
+
 
 output "log_analytics_workspace_name" {
   description = "Nama Log Analytics Workspace"
@@ -80,6 +82,7 @@ output "application_insights_name" {
 output "custom_domain_verification_id" {
   description = "Token verifikasi kepemilikan custom domain ACA"
   value       = azurerm_container_app.web.custom_domain_verification_id
+  sensitive   = true
 }
 
 output "cli_stream_web_logs" {
@@ -95,4 +98,9 @@ output "cli_stream_worker_logs" {
 output "cli_exec_bash_web" {
   description = "Perintah Azure CLI untuk membuka terminal interaktif di Web Container"
   value       = "az containerapp exec --name ${azurerm_container_app.web.name} --resource-group ${azurerm_resource_group.rg.name} --container web"
+}
+
+output "cloudflare_origin_host_header" {
+  description = "FQDN Ingress ACA yang harus di-rewrite sebagai Host Header di Cloudflare Origin Rule"
+  value       = azurerm_container_app.web.ingress[0].fqdn
 }

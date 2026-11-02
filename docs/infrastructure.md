@@ -26,7 +26,7 @@ Berdasarkan analisis kebutuhan proposal SRS dan evaluasi berbagai opsi layanan c
 | 2 | **Komputasi Worker** | Azure VM, Celery/Supervisor, Dedicated ACA | **ACA Dedicated Worker** | Docker Container | Menjalankan `php artisan queue:work` secara asinkron (pemrosesan PDF dan pemindaian berkas), isolasi proses dari traffic web. |
 | 3 | **Komputasi Scheduler** | Cron VM, Azure Function, ACA Scheduled Job | **ACA Scheduled Job** | Host Cron / Artisan | Menjalankan `php artisan schedule:run` setiap 1 menit untuk deadline review & outbox retry tanpa server standby 24/7. |
 | 4 | **RDBMS** | Azure Database for MySQL, TiDB Serverless, AWS RDS | **TiDB Cloud Serverless** | Container MySQL 8.0 | 100% MySQL 8.0 wire protocol, *scale-to-zero*, bebas biaya sewa disk tetap, kuota gratis 5 GB storage & 50M Request Units/bln. |
-| 5 | **In-Memory Cache & Broker** | Azure Cache for Redis, Upstash, DB Store | **Azure Cache for Redis (Basic C0)** | Container Redis | Latensi sub-milidetik (< 1 ms, collocated di region Azure yang sama dengan ACA), tanpa batasan kuota command (menangani query masif, rate limiting, atomic lock, queue broker), dan biaya on-demand per jam sangat murah (~$0.022/jam atau ~Rp 700 untuk demo 2 jam). |
+| 5 | **In-Memory Cache & Broker** | Azure Managed Redis, Upstash, DB Store | **Azure Managed Redis (AMR Balanced_B0)** | Container Redis | Layanan Redis Enterprise terkelola native Azure dengan mesin multi-threading performa tinggi, dedicated in-memory store untuk session, atomic locking naskah, dan cache layer (~Rp 210 rb/bln saat aktif atau Rp 0 saat di-destroy). |
 | 6 | **Object Storage** | Azure Blob Storage, AWS S3, Cloudflare R2 | **Azure Blob Storage** | Azurite Container (Port 10000) | Penyimpanan objek terkelola native Azure dengan integrasi langsung Microsoft Defender for Storage (Malware Scanning). Enkripsi data at-rest otomatis (AES-256), integrasi SAS (Shared Access Signature) token, dan manajemen lifecycle versi berkas 30 hari. |
 | 7 | **Container Registry** | Azure Container Registry (ACR), GHCR, DockerHub | **GitHub Container Registry (GHCR)** | Local Docker Engine | Terintegrasi langsung dengan GitHub Actions CI/CD, gratis private container image (kuota 500 MB & 1 GB transfer). |
 | 8 | **DNS** | Azure DNS, Cloudflare DNS | **Cloudflare DNS** | `/etc/hosts` lokal | Resolusi DNS Anycast tercepat di dunia, pembaruan propagasi instan, 100% gratis. |
@@ -99,8 +99,8 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
 2. Request dikirimkan melalui protokol **HTTPS (TLS 1.3)** menuju Cloudflare Edge.
 3. **Cloudflare WAF** memeriksa request; lalu lintas mencurigakan (SQLi/XSS/bot) langsung diblokir.
 4. Jika request meminta aset statis yang ter-cache, Cloudflare CDN langsung merespons dari *edge cache*.
-5. Request dinamis aplikasi web diteruskan (*proxied*) ke alamat Ingress publik **Azure Container Apps**.
-6. Envoy Proxy di ACA meneruskan request ke replika **Web App Container (Laravel)** yang sedang aktif.
+5. Request dinamis aplikasi web diproses oleh **Cloudflare Worker Edge Proxy** (`cloudflare-worker.js`) untuk melakukan *Host Header Rewrite* secara transparan dari domain kustom publik (`sirida.web.id`) ke FQDN dinamis internal Azure Container Apps (`ca-sirida-web-poc...`). Pola ini menyelesaikan batasan Express Environment pada Azure Container Apps dan batasan lisensi paket Cloudflare Free tanpa biaya tambahan.
+6. Envoy Proxy di ACA menerima request dengan Host Header yang sesuai, lalu meneruskannya ke replika **Web App Container (Laravel)** yang sedang aktif.
 
 ### 4.2 Aliran Penyimpanan & Pengunduhan Berkas (*Direct Azure Blob SAS URL*)
 Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 MB berlangsung cepat tanpa membebani memori web server):
@@ -124,7 +124,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 | **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
 | **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
 | **ACA Scheduled Job** | 0.25 vCPU | 0.5 GiB | Trigger cron `* * * * *` (Maks durasi eksekusi: 60 detik) | Hidup hanya beberapa detik tiap menit untuk `schedule:run`. |
-| **Azure Cache for Redis**| Dedicated (Shared) | 250 MB (Basic C0) | On-Demand (Per jam: ~$0.022/jam) | Collocated di region Azure (latensi < 1 ms), tanpa batas QPS/kuota query. |
+| **Redis Container (ACA)**| 0.25 vCPU | 0.5 GiB | Min 1 replika (Internal TCP Ingress Port 6379) | Collocated di dalam ACA Environment (latensi < 1 ms), $0 gratis masuk kuota ACA. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
 | **Azure Blob Storage** | - | Pay-as-you-go | Unlimited kapasitas | Hot Tier dengan enkripsi AES-256 bawaan; kuota gratis 100 GB egress/bulan dari Azure. |
 | **Defender for Storage** | - | Cloud-native Security | On-demand scan | Pemindaian malware near real-time ($0.15/GB dipindai), menandai Blob Index Tags otomatis. |
@@ -168,12 +168,12 @@ Seluruh infrastruktur cloud dikelola secara deklaratif melalui Terraform. Strukt
 
 ```text
 terraform/
-├── providers.tf       # Definisi provider azurerm (~> 3.0) dan cloudflare (~> 4.0)
+├── providers.tf       # Definisi provider azurerm (~> 4.0) dan cloudflare (~> 4.0)
 ├── variables.tf       # Variabel konfigurasi lingkungan (region, domain, credentials)
 ├── main.tf            # Azure Resource Group & Log Analytics Workspace
 ├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduled Job
 ├── storage.tf         # Azure Storage Account, Blob Container, dan Defender for Storage
-├── redis.tf           # Azure Cache for Redis (Basic C0)
+├── redis.tf           # Azure Managed Redis (AMR Balanced_B0, Redis Enterprise Engine)
 ├── monitoring.tf      # Azure Monitor Application Insights & Availability Web Test
 ├── cloudflare.tf      # DNS records, Cloudflare WAF ruleset, TLS configuration
 ├── secrets.tf         # Pemetaan ACA built-in secrets

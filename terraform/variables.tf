@@ -11,7 +11,13 @@ variable "environment" {
 }
 
 variable "azure_location" {
-  description = "Wilayah/region Azure untuk menempatkan resource (direkomendasikan Southeast Asia / Singapore)"
+  description = "Wilayah/region Azure untuk menempatkan resource (default: indonesiacentral / Jakarta)"
+  type        = string
+  default     = "indonesiacentral"
+}
+
+variable "storage_location" {
+  description = "Wilayah/region Azure khusus untuk Storage Account (default: southeastasia / Singapore agar mendukung Microsoft Defender for Storage)"
   type        = string
   default     = "southeastasia"
 }
@@ -64,8 +70,26 @@ variable "enable_cloudflare" {
   default     = false
 }
 
+variable "enable_cloudflare_origin_rule" {
+  description = "Aktifkan otomatisasi Cloudflare Origin Rule untuk rewrite Host Header ke ACA Ingress FQDN (memerlukan izin Zone.Rulesets:Edit pada Cloudflare API Token dan paket Enterprise)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cloudflare_worker" {
+  description = "Gunakan Cloudflare Worker Edge Proxy untuk Host Header Rewrite otomatis (Solusi gratis tanpa perlu Enterprise plan)"
+  type        = bool
+  default     = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Account ID Cloudflare (dibutuhkan untuk mengelola Worker dan Worker Custom Domain)"
+  type        = string
+  default     = ""
+}
+
 variable "cloudflare_api_token" {
-  description = "API Token Cloudflare dengan izin Zone.DNS dan Zone.WAF"
+  description = "API Token Cloudflare dengan izin Zone.DNS, Zone.WAF, Workers Scripts:Edit, dan Workers Routes:Edit"
   type        = string
   sensitive   = true
   default     = ""
@@ -178,23 +202,26 @@ variable "enable_storage_defender" {
 # -----------------------------------------------------------------------------
 # Azure Cache for Redis
 # -----------------------------------------------------------------------------
+# Azure Managed Redis (AMR)
+# -----------------------------------------------------------------------------
+variable "redis_sku_name" {
+  description = "SKU Azure Managed Redis (AMR): Balanced_B0 (~500MB untuk PoC/Dev), Balanced_B1 (~1GB), Balanced_B3 (~3GB)"
+  type        = string
+  default     = "Balanced_B0"
+}
+
 variable "redis_capacity" {
-  description = "Kapasitas cache Redis (0 untuk Basic C0 ~250MB)"
+  description = "Kapasitas cache Redis (Deprecated di AMR, dipertahankan untuk kompatibilitas konfigurasi lama)"
   type        = number
   default     = 0
 }
 
 variable "redis_family" {
-  description = "Family SKU Redis (C untuk Basic/Standard)"
+  description = "Family SKU Redis (Deprecated di AMR, dipertahankan untuk kompatibilitas konfigurasi lama)"
   type        = string
   default     = "C"
 }
 
-variable "redis_sku_name" {
-  description = "Nama SKU Redis (Basic / Standard / Premium)"
-  type        = string
-  default     = "Basic"
-}
 
 # -----------------------------------------------------------------------------
 # Transactional Email (Azure Communication Services / SMTP)

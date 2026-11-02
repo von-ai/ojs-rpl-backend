@@ -1,64 +1,65 @@
 # -----------------------------------------------------------------------------
-# Cloudflare Edge: DNS, CDN Caching, TLS 1.3, & WAF (NF-01, NF-02)
+# Cloudflare Edge: DNS CNAME Mapping
+# Mengarahkan domain publik ke Azure Container Apps Ingress FQDN
+# (Hanya aktif jika Worker dinonaktifkan, karena Worker Custom Domain mengelola
+# DNS routing secara otomatis di edge Cloudflare dan melarang record CNAME ganda)
 # -----------------------------------------------------------------------------
 
-# DNS CNAME Record: Mengarahkan subdomain jurnal.makassar.go.id ke ACA Ingress FQDN
+# DNS CNAME Record: Mengarahkan domain/subdomain ke ACA Ingress FQDN
 resource "cloudflare_record" "cname_web" {
-  count   = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
+  count   = var.enable_cloudflare && !var.enable_cloudflare_worker && var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
-  name    = var.subdomain
-  value   = azurerm_container_app.web.ingress[0].fqdn
+  name    = var.subdomain == "@" ? var.domain_name : var.subdomain
+  content = azurerm_container_app.web.ingress[0].fqdn
   type    = "CNAME"
-  proxied = true # Mengaktifkan Cloudflare CDN & WAF
+  proxied = true # Mengaktifkan Cloudflare CDN, TLS, & Proteksi DDoS/WAF
   ttl     = 1    # Automatic jika proxied
   comment = "SIRIDA Web Ingress ACA diarahkan ke Cloudflare Edge"
 }
 
-# DNS TXT Record: Verifikasi Kepemilikan Domain untuk Azure Container Apps
-resource "cloudflare_record" "asuid_txt" {
-  count   = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = "asuid.${var.subdomain}"
-  value   = azurerm_container_app.web.custom_domain_verification_id
-  type    = "TXT"
-  proxied = false
-  ttl     = 300
-  comment = "Azure Container Apps Custom Domain Verification Token"
+# -----------------------------------------------------------------------------
+# Cloudflare Worker Edge Proxy
+# Solusi Otomatis Gratis untuk Dynamic Host Header Rewrite ke ACA Ingress FQDN
+# Menghindari batasan Enterprise Plan pada Cloudflare Origin Rules
+# -----------------------------------------------------------------------------
+resource "cloudflare_workers_script" "proxy" {
+  count      = var.enable_cloudflare && var.enable_cloudflare_worker && var.cloudflare_account_id != "" ? 1 : 0
+  account_id = var.cloudflare_account_id
+  name       = "sirida-proxy"
+  content    = templatefile("${path.module}/cloudflare-worker.js.tpl", {
+    origin_fqdn = azurerm_container_app.web.ingress[0].fqdn
+  })
+}
+
+resource "cloudflare_workers_domain" "custom_domain" {
+  count      = var.enable_cloudflare && var.enable_cloudflare_worker && var.cloudflare_account_id != "" && var.cloudflare_zone_id != "" ? 1 : 0
+  account_id = var.cloudflare_account_id
+  zone_id    = var.cloudflare_zone_id
+  hostname   = var.subdomain == "@" ? var.domain_name : "${var.subdomain}.${var.domain_name}"
+  service    = cloudflare_workers_script.proxy[0].name
 }
 
 # -----------------------------------------------------------------------------
-# Konfigurasi Keamanan TLS & Optimasi HTTP/3 di Cloudflare Edge
+# Cloudflare Origin Rule: Otomasi Host Header Rewrite ke ACA FQDN Dinamis
+# (Hanya untuk paket Cloudflare Enterprise)
 # -----------------------------------------------------------------------------
-resource "cloudflare_zone_settings_override" "zone_settings" {
-  count   = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-
-  settings {
-    ssl              = "full"
-    tls_1_3          = "on"
-    min_tls_version  = "1.2"
-    always_use_https = "on"
-    http3            = "on"
-    security_level   = "medium"
-    browser_check    = "on"
-  }
-}
-
-# -----------------------------------------------------------------------------
-# Cloudflare WAF Ruleset: Mitigasi Serangan OWASP Top 10 & High Threat Score
-# -----------------------------------------------------------------------------
-resource "cloudflare_ruleset" "waf" {
-  count       = var.enable_cloudflare && var.cloudflare_zone_id != "" ? 1 : 0
+resource "cloudflare_ruleset" "origin_rules" {
+  count       = var.enable_cloudflare && var.enable_cloudflare_origin_rule && var.cloudflare_zone_id != "" ? 1 : 0
   zone_id     = var.cloudflare_zone_id
-  name        = "SIRIDA WAF Security Ruleset"
-  description = "Proteksi DDoS, mitigasi bot jahat, dan inspeksi Layer 7"
+  name        = "SIRIDA Dynamic Host Header Rewrite"
+  description = "Otomatis mengarahkan Host Header ke ACA Ingress FQDN yang dinamis"
   kind        = "zone"
-  phase       = "http_request_firewall_custom"
+  phase       = "http_request_origin"
 
   rules {
-    action      = "block"
-    expression  = "(cf.threat_score gt 40) or (http.request.uri.path contains \"/etc/passwd\")"
-    description = "Blokir ancaman dengan skor reputasi buruk dan percobaan LFI"
+    ref         = "route_to_aca"
+    description = "Rewrite Host Header to dynamic ACA Ingress FQDN"
+    expression  = "(http.host eq \"${var.subdomain == "@" ? var.domain_name : "${var.subdomain}.${var.domain_name}"}\")"
     enabled     = true
+    action      = "route"
+
+    action_parameters {
+      host_header = azurerm_container_app.web.ingress[0].fqdn
+    }
   }
 }
