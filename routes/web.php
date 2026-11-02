@@ -85,6 +85,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::get('/guidelines', [EditorInChiefController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/editors/search', [EditorInChiefController::class, 'searchEditors'])->name('submissions.editors.search');
     Route::get('/submissions/{id}/files/{fileId}/download', [EditorInChiefController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');

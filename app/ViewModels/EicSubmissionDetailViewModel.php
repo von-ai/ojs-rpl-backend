@@ -152,28 +152,77 @@ class EicSubmissionDetailViewModel
     }
 
     /**
-     * Mengambil daftar calon Section Editor yang dapat ditugaskan.
-     * Memprioritaskan pemegang role section_editor dengan fallback daftar pengguna non-penulis.
+     * Mengambil daftar calon Section Editor yang dapat ditugaskan untuk inisialisasi awal.
+     * Dibatasi agar rendering SSR tetap ringan meski database memiliki ribuan editor.
+     * Pencarian interaktif selanjutnya dilayani via asynchronous combobox.
      *
      * @return Collection<int, User>
      */
-    public function availableSectionEditors(): Collection
+    public function availableSectionEditors(?int $limit = 20): Collection
     {
-        $roleEditors = User::where('id', '!=', $this->submission->author_id)
+        $authorIds = array_filter(array_merge(
+            [$this->submission->author_id],
+            $this->submission->contributors()->pluck('user_id')->all()
+        ));
+        $authorEmails = array_filter(array_merge(
+            [$this->submission->author?->email],
+            $this->submission->contributors()->pluck('email')->all()
+        ));
+
+        $roleEditorsQuery = User::whereNotIn('id', $authorIds)
+            ->whereNotIn('email', $authorEmails)
+            ->where('status', 'active')
             ->whereHas('userRoles', function ($q): void {
-                $q->whereIn('role_code', ['section_editor', 'editor_in_chief']);
+                $q->whereIn('role_code', ['section_editor', 'editor_in_chief'])
+                    ->where(function ($qj): void {
+                        $qj->where('journal_id', $this->submission->journal_id)
+                            ->orWhereNull('journal_id');
+                    });
             })
-            ->orderBy('full_name', 'asc')
-            ->get();
+            ->withCount([
+                'editorAssignments as active_assignments_count' => function ($q): void {
+                    $q->whereNull('revoked_at');
+                },
+            ])
+            ->with([
+                'userRoles' => function ($q): void {
+                    $q->whereIn('role_code', ['section_editor', 'editor_in_chief'])
+                        ->where(function ($qj): void {
+                            $qj->where('journal_id', $this->submission->journal_id)
+                                ->orWhereNull('journal_id');
+                        });
+                },
+            ])
+            ->orderBy('full_name', 'asc');
+
+        if ($limit !== null) {
+            $roleEditors = (clone $roleEditorsQuery)->limit($limit)->get();
+            $assignedId = $this->submission->activeEditorAssignment?->editor_id;
+            if ($assignedId && ! $roleEditors->contains('id', $assignedId)) {
+                $assignedUser = User::find($assignedId);
+                if ($assignedUser) {
+                    $roleEditors->prepend($assignedUser);
+                }
+            }
+        } else {
+            $roleEditors = $roleEditorsQuery->get();
+        }
 
         if ($roleEditors->isNotEmpty()) {
             return $roleEditors;
         }
 
-        return User::where('id', '!=', $this->submission->author_id)
-            ->orderBy('full_name', 'asc')
-            ->limit(20)
-            ->get();
+        $fallbackQuery = User::whereNotIn('id', $authorIds)
+            ->whereNotIn('email', $authorEmails)
+            ->where('status', 'active')
+            ->withCount([
+                'editorAssignments as active_assignments_count' => function ($q): void {
+                    $q->whereNull('revoked_at');
+                },
+            ])
+            ->orderBy('full_name', 'asc');
+
+        return $limit !== null ? $fallbackQuery->limit($limit)->get() : $fallbackQuery->get();
     }
 
     /**

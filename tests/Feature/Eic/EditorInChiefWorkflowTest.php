@@ -536,4 +536,69 @@ class EditorInChiefWorkflowTest extends TestCase
             'stage' => 'editor_final',
         ]);
     }
+
+    /**
+     * EIC dapat melakukan pencarian asynchronous calon Editor Bagian untuk combobox.
+     */
+    public function test_eic_can_search_editors_asynchronously_for_combobox(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Buat satu editor tambahan dengan assignment aktif
+        $anotherEditor = User::factory()->create([
+            'name' => 'Dr. Hasan Basri, S.Kom., M.T.',
+            'email' => 'hasan.basri@makassar.go.id',
+        ]);
+        UserRole::create([
+            'user_id' => $anotherEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
+        ]);
+
+        $response = $this->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+            'q' => 'Ridwan',
+        ]));
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'email',
+                        'active_assignments',
+                        'role_label',
+                    ],
+                ],
+                'pagination' => [
+                    'current_page',
+                    'has_more',
+                    'total',
+                    'per_page',
+                ],
+            ]);
+
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        $this->assertSame($this->sectionEditor->id, $data[0]['id']);
+
+        // Pastikan penulis naskah tidak muncul dalam hasil pencarian untuk mencegah conflict of interest
+        $allIds = collect($data)->pluck('id');
+        $this->assertFalse($allIds->contains($this->author->id));
+    }
+
+    /**
+     * Pengguna tanpa role EIC tidak dapat mengakses endpoint pencarian editor.
+     */
+    public function test_unauthorized_user_cannot_access_editor_search(): void
+    {
+        $this->actingAs($this->author);
+
+        $response = $this->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+        ]));
+
+        $response->assertForbidden();
+    }
 }

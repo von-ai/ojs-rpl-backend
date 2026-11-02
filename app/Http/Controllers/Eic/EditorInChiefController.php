@@ -14,6 +14,7 @@ use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -228,6 +229,94 @@ class EditorInChiefController extends Controller
                 ->route('eic.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Pencarian asynchronous daftar calon Section Editor untuk penugasan naskah.
+     * Mengembalikan response JSON yang teroptimasi untuk combobox remote search dan infinite scroll.
+     */
+    public function searchEditors(Request $request, string $id): JsonResponse
+    {
+        $submission = Submission::where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $query = trim((string) $request->input('q', ''));
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = min(50, max(1, (int) $request->input('per_page', 15)));
+
+        $authorIds = array_filter(array_merge(
+            [$submission->author_id],
+            $submission->contributors()->pluck('user_id')->all()
+        ));
+        $authorEmails = array_filter(array_merge(
+            [$submission->author?->email],
+            $submission->contributors()->pluck('email')->all()
+        ));
+
+        $builder = User::query()
+            ->select(['id', 'full_name', 'email', 'status'])
+            ->whereNotIn('id', $authorIds)
+            ->whereNotIn('email', $authorEmails)
+            ->where('status', 'active')
+            ->whereHas('userRoles', function ($q) use ($submission): void {
+                $q->whereIn('role_code', ['section_editor', 'editor_in_chief'])
+                    ->where(function ($qj) use ($submission): void {
+                        $qj->where('journal_id', $submission->journal_id)
+                            ->orWhereNull('journal_id');
+                    });
+            })
+            ->withCount([
+                'editorAssignments as active_assignments_count' => function ($q): void {
+                    $q->whereNull('revoked_at');
+                },
+            ]);
+
+        // Fallback jika belum ada user berkode role section_editor/eic
+        if (! (clone $builder)->exists()) {
+            $builder = User::query()
+                ->select(['id', 'full_name', 'email', 'status'])
+                ->whereNotIn('id', $authorIds)
+                ->whereNotIn('email', $authorEmails)
+                ->where('status', 'active')
+                ->withCount([
+                    'editorAssignments as active_assignments_count' => function ($q): void {
+                        $q->whereNull('revoked_at');
+                    },
+                ]);
+        }
+
+        if ($query !== '') {
+            $builder->where(function ($q) use ($query): void {
+                $q->where('full_name', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%")
+                    ->orWhere('username', 'like', "%{$query}%");
+            });
+        }
+
+        $paginator = $builder
+            ->orderBy('full_name', 'asc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $items = collect($paginator->items())->map(function (User $user) {
+            return [
+                'id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'active_assignments' => (int) ($user->active_assignments_count ?? 0),
+                'role_label' => 'Editor Bagian',
+            ];
+        });
+
+        return response()->json([
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'has_more' => $paginator->hasMorePages(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+            ],
+        ]);
     }
 
     /**

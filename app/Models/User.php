@@ -117,6 +117,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<EditorAssignment, $this>
+     */
+    public function editorAssignments(): HasMany
+    {
+        return $this->hasMany(EditorAssignment::class, 'editor_id');
+    }
+
+    /**
      * @return HasMany<UserRole, $this>
      */
     public function userRoles(): HasMany

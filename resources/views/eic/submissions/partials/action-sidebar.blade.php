@@ -194,61 +194,126 @@
                     </div>
                 </div>
 
-                <!-- Custom Dropdown: Delegasikan Langsung ke Editor Bagian -->
+                <!-- Combobox: Delegasikan Langsung ke Editor Bagian -->
                 <div id="direct_se_wrapper" class="space-y-1.5 {{ $currentDeskStatus === 'passed' ? '' : 'hidden' }}">
                     <div class="flex items-center justify-between">
-                        <label class="font-bold text-gray-700">Delegasikan ke Editor Bagian</label>
+                        <label for="desk_se_search_input" class="font-bold text-gray-700">Delegasikan ke Editor Bagian</label>
                         <span class="text-[11px] text-gray-400">Opsional</span>
                     </div>
-                    <div class="relative custom-dropdown-container" data-dropdown="desk-se">
+
+                    <div class="editor-combobox-container relative"
+                         data-endpoint="{{ route('eic.submissions.editors.search', $submission->id) }}"
+                         data-input-id="desk_section_editor_id"
+                         data-optional="true">
+                        
                         <select id="desk_section_editor_id" name="section_editor_id" class="sr-only" tabindex="-1">
                             <option value="">Tugaskan Nanti Secara Terpisah</option>
+                            @if($selectedEditorObj)
+                                <option value="{{ $selectedEditorObj->id }}" selected>{{ $selectedEditorObj->name }}</option>
+                            @endif
                             @foreach($availableEditors as $editor)
-                                <option value="{{ $editor->id }}" {{ $currentEditorId === (string) $editor->id ? 'selected' : '' }}>
-                                    {{ $editor->name }}
-                                </option>
+                                @if(!$selectedEditorObj || (string)$selectedEditorObj->id !== (string)$editor->id)
+                                    <option value="{{ $editor->id }}">{{ $editor->name }}</option>
+                                @endif
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
-                            class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-800 font-medium flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
-                            aria-haspopup="listbox"
-                            aria-expanded="false"
-                        >
-                            <span class="custom-dropdown-label truncate">
-                                {{ $selectedEditorObj ? $selectedEditorObj->name : 'Tugaskan Nanti Secara Terpisah' }}
-                            </span>
-                            <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
-                            <div 
-                                class="custom-dropdown-item flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $currentEditorId === '' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
-                                data-value=""
-                                data-label="Tugaskan Nanti Secara Terpisah"
-                            >
-                                <span>Tugaskan Nanti Secara Terpisah</span>
-                                <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 {{ $currentEditorId === '' ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+
+                        <div class="relative flex items-center">
+                            <div class="absolute left-3 pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            @foreach($availableEditors as $editor)
-                                @php $isEdSelected = ($currentEditorId === (string) $editor->id); @endphp
-                                <div 
-                                    class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
-                                    data-value="{{ $editor->id }}"
-                                    data-label="{{ $editor->name }}"
+
+                            <input 
+                                id="desk_se_search_input"
+                                type="text" 
+                                class="editor-combobox-input w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 focus:bg-white border border-gray-300 focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 rounded-lg pl-9 pr-16 py-2.5 text-gray-900 font-semibold placeholder:font-normal placeholder:text-gray-400 transition cursor-text focus:outline-hidden"
+                                placeholder="Ketik nama atau pilih editor..."
+                                value="{{ $selectedEditorObj ? $selectedEditorObj->name : '' }}"
+                                autocomplete="off"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-expanded="false"
+                                aria-controls="desk-se-listbox"
+                            >
+
+                            <div class="absolute right-2 flex items-center gap-1">
+                                <button 
+                                    type="button" 
+                                    class="editor-combobox-clear p-1 text-gray-400 hover:text-gray-600 rounded transition cursor-pointer {{ $selectedEditorObj ? '' : 'hidden' }}"
+                                    title="Hapus pilihan"
+                                    tabindex="-1"
                                 >
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-semibold truncate">{{ $editor->name }}</div>
-                                        <div class="text-[11px] text-gray-500 font-normal truncate">{{ $editor->email }}</div>
-                                    </div>
-                                    <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isEdSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+
+                                <div class="editor-combobox-spinner hidden animate-spin text-brand-maroon p-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                </div>
+
+                                <button type="button" class="editor-combobox-toggle p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer" tabindex="-1">
+                                    <svg class="editor-combobox-chevron w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="desk-se-listbox" role="listbox" class="editor-combobox-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-40 space-y-1 absolute">
+                            <div class="editor-combobox-items space-y-1">
+                                <div 
+                                    class="editor-combobox-item flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $currentEditorId === '' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                    data-value=""
+                                    data-name=""
+                                    role="option"
+                                    aria-selected="{{ $currentEditorId === '' ? 'true' : 'false' }}"
+                                >
+                                    <span>Tugaskan Nanti Secara Terpisah</span>
+                                    <svg class="editor-check w-4 h-4 text-brand-maroon shrink-0 {{ $currentEditorId === '' ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                     </svg>
                                 </div>
-                            @endforeach
+                                @foreach($availableEditors as $editor)
+                                    @php 
+                                        $isEdSelected = ($currentEditorId === (string) $editor->id);
+                                    @endphp
+                                    <div 
+                                        class="editor-combobox-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                        data-value="{{ $editor->id }}"
+                                        data-name="{{ $editor->name }}"
+                                        data-email="{{ $editor->email }}"
+                                        role="option"
+                                        aria-selected="{{ $isEdSelected ? 'true' : 'false' }}"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="editor-name font-semibold truncate">{{ $editor->name }}</span>
+                                            </div>
+                                            <div class="editor-email text-[11px] text-gray-500 font-normal truncate">{{ $editor->email }}</div>
+                                        </div>
+                                        <svg class="editor-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isEdSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="editor-combobox-footer px-2 py-1.5 text-center text-[11px] text-gray-400 border-t border-gray-100 hidden">
+                                <span class="editor-combobox-meta"></span>
+                                <button type="button" class="editor-combobox-load-more block w-full mt-1 text-brand-maroon font-semibold hover:underline">
+                                    Muat lebih banyak editor...
+                                </button>
+                            </div>
+
+                            <div class="editor-combobox-empty p-4 text-center text-xs text-gray-500 hidden">
+                                Tidak ada Editor Bagian yang cocok dengan pencarian.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -370,48 +435,119 @@
             <form action="{{ route('eic.submissions.assign-editor', $submission->id) }}" method="POST" class="space-y-4">
                 @csrf
 
-                <!-- Custom Dropdown: Pilih Editor Bagian -->
+                <!-- Combobox: Pilih Editor Bagian -->
                 <div class="space-y-1.5">
-                    <label class="font-bold text-gray-700 block">Pilih Editor Bagian <span class="text-rose-500">*</span></label>
-                    <div class="relative custom-dropdown-container" data-dropdown="assign-se">
+                    <div class="flex items-center justify-between">
+                        <label for="section_editor_search_input" class="font-bold text-gray-700 block">Pilih Editor Bagian <span class="text-rose-500">*</span></label>
+                        <span class="text-[11px] text-gray-400">Pencarian instan</span>
+                    </div>
+
+                    <div class="editor-combobox-container relative"
+                         data-endpoint="{{ route('eic.submissions.editors.search', $submission->id) }}"
+                         data-input-id="section_editor_id">
+                        
+                        <!-- Form Select Standar (Tersembunyi untuk kompatibilitas form submission) -->
                         <select id="section_editor_id" name="section_editor_id" class="sr-only" tabindex="-1" required>
                             <option value="">Pilih Editor Penanggung Jawab</option>
+                            @if($selectedEditorObj)
+                                <option value="{{ $selectedEditorObj->id }}" selected>{{ $selectedEditorObj->name }}</option>
+                            @endif
                             @foreach($availableEditors as $editor)
-                                <option value="{{ $editor->id }}" {{ $currentEditorId === (string) $editor->id ? 'selected' : '' }}>
-                                    {{ $editor->name }}
-                                </option>
+                                @if(!$selectedEditorObj || (string)$selectedEditorObj->id !== (string)$editor->id)
+                                    <option value="{{ $editor->id }}">{{ $editor->name }}</option>
+                                @endif
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
-                            class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
-                            aria-haspopup="listbox"
-                            aria-expanded="false"
-                        >
-                            <span class="custom-dropdown-label truncate">
-                                {{ $selectedEditorObj ? $selectedEditorObj->name : 'Pilih Editor Penanggung Jawab' }}
-                            </span>
-                            <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
-                            @foreach($availableEditors as $editor)
-                                @php $isEdSelected = ($currentEditorId === (string) $editor->id); @endphp
-                                <div 
-                                    class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
-                                    data-value="{{ $editor->id }}"
-                                    data-label="{{ $editor->name }}"
+
+                        <!-- Input Pencarian Combobox Interaktif -->
+                        <div class="relative flex items-center">
+                            <div class="absolute left-3 pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <input 
+                                id="section_editor_search_input"
+                                type="text" 
+                                class="editor-combobox-input w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 focus:bg-white border border-gray-300 focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 rounded-lg pl-9 pr-16 py-2.5 text-gray-900 font-semibold placeholder:font-normal placeholder:text-gray-400 transition cursor-text focus:outline-hidden"
+                                placeholder="Ketik nama atau email editor bagian..."
+                                value="{{ $selectedEditorObj ? $selectedEditorObj->name : '' }}"
+                                autocomplete="off"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-expanded="false"
+                                aria-controls="assign-se-listbox"
+                            >
+
+                            <!-- Kontrol Kanan: Clear, Spinner, Toggle Chevron -->
+                            <div class="absolute right-2 flex items-center gap-1">
+                                <button 
+                                    type="button" 
+                                    class="editor-combobox-clear p-1 text-gray-400 hover:text-gray-600 rounded transition cursor-pointer {{ $selectedEditorObj ? '' : 'hidden' }}"
+                                    title="Hapus pilihan"
+                                    tabindex="-1"
                                 >
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-semibold truncate">{{ $editor->name }}</div>
-                                        <div class="text-[11px] text-gray-500 font-normal truncate">{{ $editor->email }}</div>
-                                    </div>
-                                    <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isEdSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+
+                                <div class="editor-combobox-spinner hidden animate-spin text-brand-maroon p-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
                                 </div>
-                            @endforeach
+
+                                <button type="button" class="editor-combobox-toggle p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer" tabindex="-1">
+                                    <svg class="editor-combobox-chevron w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Panel Dropdown Listbox (Floating Popover) -->
+                        <div id="assign-se-listbox" role="listbox" class="editor-combobox-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-40 space-y-1 absolute">
+                            <div class="editor-combobox-items space-y-1">
+                                @foreach($availableEditors as $editor)
+                                    @php 
+                                        $isEdSelected = ($currentEditorId === (string) $editor->id);
+                                    @endphp
+                                    <div 
+                                        class="editor-combobox-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                        data-value="{{ $editor->id }}"
+                                        data-name="{{ $editor->name }}"
+                                        data-email="{{ $editor->email }}"
+                                        role="option"
+                                        aria-selected="{{ $isEdSelected ? 'true' : 'false' }}"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="editor-name font-semibold truncate">{{ $editor->name }}</span>
+                                            </div>
+                                            <div class="editor-email text-[11px] text-gray-500 font-normal truncate">{{ $editor->email }}</div>
+                                        </div>
+                                        <svg class="editor-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isEdSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <!-- Footer Pagination / Infinite scroll hint -->
+                            <div class="editor-combobox-footer px-2 py-1.5 text-center text-[11px] text-gray-400 border-t border-gray-100 hidden">
+                                <span class="editor-combobox-meta"></span>
+                                <button type="button" class="editor-combobox-load-more block w-full mt-1 text-brand-maroon font-semibold hover:underline">
+                                    Muat lebih banyak editor...
+                                </button>
+                            </div>
+
+                            <!-- Empty state -->
+                            <div class="editor-combobox-empty p-4 text-center text-xs text-gray-500 hidden">
+                                Tidak ada Editor Bagian yang cocok dengan pencarian.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -754,8 +890,12 @@
 
                 <button 
                     type="submit" 
-                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition duration-150 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 focus:ring-offset-1"
-                    onclick="return confirm('Apakah Anda yakin ingin mengesahkan galai naskah ini? Status naskah akan otomatis beralih menjadi Siap Terbit (ready_for_issue).')"
+                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition duration-150 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 focus:ring-offset-1 cursor-pointer"
+                    data-confirm="Apakah Anda yakin ingin mengesahkan galai naskah ini? Status naskah akan otomatis beralih menjadi Siap Terbit (ready_for_issue)."
+                    data-confirm-title="Sahkan Persetujuan Galai?"
+                    data-confirm-btn="Sahkan Galai"
+                    data-confirm-cancel="Batal"
+                    data-confirm-type="primary"
                 >
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -931,7 +1071,366 @@
         }
     }
 
+    function initEditorComboboxes() {
+        const containers = document.querySelectorAll('.editor-combobox-container');
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        containers.forEach(container => {
+            const endpoint = container.getAttribute('data-endpoint');
+            const hiddenSelect = container.querySelector('select');
+            const input = container.querySelector('.editor-combobox-input');
+            const clearBtn = container.querySelector('.editor-combobox-clear');
+            const spinner = container.querySelector('.editor-combobox-spinner');
+            const toggleBtn = container.querySelector('.editor-combobox-toggle');
+            const chevron = container.querySelector('.editor-combobox-chevron');
+            const panel = container.querySelector('.editor-combobox-panel');
+            const itemsWrapper = container.querySelector('.editor-combobox-items');
+            const emptyState = container.querySelector('.editor-combobox-empty');
+            const footer = container.querySelector('.editor-combobox-footer');
+            const metaSpan = container.querySelector('.editor-combobox-meta');
+            const loadMoreBtn = container.querySelector('.editor-combobox-load-more');
+            const isOptional = container.getAttribute('data-optional') === 'true';
+
+            let searchTimeout = null;
+            let currentAbort = null;
+            const cache = new Map();
+            let currentPage = 1;
+            let hasMore = false;
+            let currentQuery = '';
+            let activeIndex = -1;
+
+            function openPanel() {
+                // Tutup panel lain
+                document.querySelectorAll('.editor-combobox-panel').forEach(p => {
+                    if (p !== panel) {
+                        p.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                        p.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                    }
+                });
+                document.querySelectorAll('.editor-combobox-chevron').forEach(c => {
+                    if (c !== chevron) c.classList.remove('rotate-180');
+                });
+
+                panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                input.setAttribute('aria-expanded', 'true');
+                if (chevron) chevron.classList.add('rotate-180');
+            }
+
+            function closePanel() {
+                panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                input.setAttribute('aria-expanded', 'false');
+                if (chevron) chevron.classList.remove('rotate-180');
+                activeIndex = -1;
+            }
+
+            function isOpen() {
+                return panel.classList.contains('visible');
+            }
+
+            function updateClearBtn() {
+                if (clearBtn) {
+                    if (hiddenSelect.value || input.value) {
+                        clearBtn.classList.remove('hidden');
+                    } else {
+                        clearBtn.classList.add('hidden');
+                    }
+                }
+            }
+
+            function selectItem(val, name) {
+                let opt = hiddenSelect.querySelector(`option[value="${val}"]`);
+                if (!opt && val) {
+                    opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = name;
+                    hiddenSelect.appendChild(opt);
+                }
+                hiddenSelect.value = val;
+                input.value = val ? name : '';
+
+                const allItems = itemsWrapper.querySelectorAll('.editor-combobox-item');
+                allItems.forEach(it => {
+                    const isMatch = it.getAttribute('data-value') === val;
+                    const check = it.querySelector('.editor-check');
+                    if (isMatch) {
+                        it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
+                        it.classList.remove('text-gray-700', 'hover:bg-gray-50');
+                        it.setAttribute('aria-selected', 'true');
+                        if (check) check.classList.remove('hidden');
+                    } else {
+                        it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
+                        it.classList.add('text-gray-700', 'hover:bg-gray-50');
+                        it.setAttribute('aria-selected', 'false');
+                        if (check) check.classList.add('hidden');
+                    }
+                });
+
+                updateClearBtn();
+                closePanel();
+            }
+
+            function renderItems(items, append = false, query = '') {
+                if (!append) {
+                    itemsWrapper.innerHTML = '';
+                }
+
+                if (isOptional && !append && query === '') {
+                    const noneSelected = !hiddenSelect.value;
+                    const noneDiv = document.createElement('div');
+                    noneDiv.className = `editor-combobox-item flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition ${noneSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50'}`;
+                    noneDiv.setAttribute('data-value', '');
+                    noneDiv.setAttribute('data-name', '');
+                    noneDiv.setAttribute('role', 'option');
+                    noneDiv.setAttribute('aria-selected', noneSelected ? 'true' : 'false');
+                    noneDiv.innerHTML = `
+                        <span>Tugaskan Nanti Secara Terpisah</span>
+                        <svg class="editor-check w-4 h-4 text-brand-maroon shrink-0 ${noneSelected ? '' : 'hidden'}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                    `;
+                    noneDiv.addEventListener('click', () => selectItem('', ''));
+                    itemsWrapper.appendChild(noneDiv);
+                }
+
+                if (items.length === 0 && !append && (!isOptional || query !== '')) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+
+                items.forEach(editor => {
+                    const isSelected = String(editor.id) === String(hiddenSelect.value);
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `editor-combobox-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition ${isSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50'}`;
+                    itemDiv.setAttribute('data-value', editor.id);
+                    itemDiv.setAttribute('data-name', editor.name);
+                    itemDiv.setAttribute('data-email', editor.email);
+                    itemDiv.setAttribute('role', 'option');
+                    itemDiv.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+                    let displayName = escapeHtml(editor.name);
+                    if (query.trim() !== '') {
+                        const reg = new RegExp(`(${escapeRegExp(query.trim())})`, 'gi');
+                        displayName = displayName.replace(reg, '<mark class="bg-amber-100 text-amber-900 font-bold px-0.5 rounded">$1</mark>');
+                    }
+
+                    itemDiv.innerHTML = `
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="editor-name font-semibold truncate">${displayName}</span>
+                            </div>
+                            <div class="editor-email text-[11px] text-gray-500 font-normal truncate">${escapeHtml(editor.email)}</div>
+                        </div>
+                        <svg class="editor-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 ${isSelected ? '' : 'hidden'}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                    `;
+
+                    itemDiv.addEventListener('click', () => {
+                        selectItem(editor.id, editor.name);
+                    });
+
+                    itemsWrapper.appendChild(itemDiv);
+                });
+            }
+
+            async function fetchEditors(query = '', page = 1, append = false) {
+                const cacheKey = `${query.toLowerCase()}_p${page}`;
+                if (cache.has(cacheKey)) {
+                    const res = cache.get(cacheKey);
+                    currentPage = res.pagination.current_page;
+                    hasMore = res.pagination.has_more;
+                    renderItems(res.data, append, query);
+                    updatePaginationUI(res.pagination);
+                    return;
+                }
+
+                if (currentAbort) {
+                    currentAbort.abort();
+                }
+                currentAbort = new AbortController();
+
+                if (spinner) spinner.classList.remove('hidden');
+
+                try {
+                    const url = new URL(endpoint, window.location.origin);
+                    if (query) url.searchParams.set('q', query);
+                    url.searchParams.set('page', page);
+                    url.searchParams.set('per_page', 15);
+
+                    const response = await fetch(url.toString(), {
+                        signal: currentAbort.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error('Gagal memuat editor');
+                    const json = await response.json();
+
+                    cache.set(cacheKey, json);
+                    currentPage = json.pagination.current_page;
+                    hasMore = json.pagination.has_more;
+
+                    renderItems(json.data, append, query);
+                    updatePaginationUI(json.pagination);
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Combobox fetch error:', err);
+                    }
+                } finally {
+                    if (spinner) spinner.classList.add('hidden');
+                }
+            }
+
+            function updatePaginationUI(pagination) {
+                if (!footer) return;
+                if (pagination && pagination.has_more) {
+                    footer.classList.remove('hidden');
+                    if (metaSpan) {
+                        metaSpan.textContent = `Menampilkan ${pagination.current_page * pagination.per_page} dari ${pagination.total} editor`;
+                    }
+                } else {
+                    footer.classList.add('hidden');
+                }
+            }
+
+            // Pasang event ke elemen SSR bawaan
+            itemsWrapper.querySelectorAll('.editor-combobox-item').forEach(it => {
+                it.addEventListener('click', () => {
+                    selectItem(it.getAttribute('data-value'), it.getAttribute('data-name') || it.innerText.trim());
+                });
+            });
+
+            // Pencarian debounced saat mengetik
+            input.addEventListener('input', () => {
+                openPanel();
+                updateClearBtn();
+                const q = input.value.trim();
+                currentQuery = q;
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    fetchEditors(q, 1, false);
+                }, 250);
+            });
+
+            // Klik input fokus & buka panel
+            input.addEventListener('focus', () => {
+                openPanel();
+                input.select();
+                if (itemsWrapper.children.length === 0) {
+                    fetchEditors(input.value.trim(), 1, false);
+                }
+            });
+
+            // Tombol bersihkan (Clear)
+            if (clearBtn) {
+                clearBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectItem('', '');
+                    input.focus();
+                    fetchEditors('', 1, false);
+                });
+            }
+
+            // Tombol chevron toggle
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isOpen()) {
+                        closePanel();
+                    } else {
+                        input.focus();
+                    }
+                });
+            }
+
+            // Tombol muat lebih banyak
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (hasMore) {
+                        fetchEditors(currentQuery, currentPage + 1, true);
+                    }
+                });
+            }
+
+            // Infinite scroll saat scroll mencapai bawah panel
+            panel.addEventListener('scroll', () => {
+                if (panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 25) {
+                    if (hasMore && spinner && spinner.classList.contains('hidden')) {
+                        fetchEditors(currentQuery, currentPage + 1, true);
+                    }
+                }
+            });
+
+            // Navigasi keyboard (ArrowDown, ArrowUp, Enter, Escape)
+            input.addEventListener('keydown', (e) => {
+                const items = itemsWrapper.querySelectorAll('.editor-combobox-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!isOpen()) openPanel();
+                    activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                    highlightItem(items, activeIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (!isOpen()) openPanel();
+                    activeIndex = Math.max(activeIndex - 1, 0);
+                    highlightItem(items, activeIndex);
+                } else if (e.key === 'Enter') {
+                    if (isOpen() && activeIndex >= 0 && items[activeIndex]) {
+                        e.preventDefault();
+                        items[activeIndex].click();
+                    }
+                } else if (e.key === 'Escape') {
+                    if (isOpen()) {
+                        e.preventDefault();
+                        closePanel();
+                    }
+                }
+            });
+
+            function highlightItem(items, idx) {
+                items.forEach((it, i) => {
+                    if (i === idx) {
+                        it.classList.add('bg-gray-100');
+                        it.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        it.classList.remove('bg-gray-100');
+                    }
+                });
+            }
+
+            updateClearBtn();
+        });
+
+        // Tutup semua combobox ketika klik di luar
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.editor-combobox-container')) {
+                document.querySelectorAll('.editor-combobox-panel').forEach(p => {
+                    p.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                    p.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                });
+                document.querySelectorAll('.editor-combobox-chevron').forEach(c => c.classList.remove('rotate-180'));
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        initEditorComboboxes();
         const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
 
         function openDropdown(panel, btn, chevron) {
