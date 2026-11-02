@@ -21,6 +21,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -36,13 +37,25 @@ class AuthorSubmissionController extends Controller
     ) {}
 
     /**
-     * Menampilkan formulir wizard pengajuan naskah baru.
+     * Menampilkan formulir wizard pengajuan naskah baru atau melanjutkan draf tersimpan.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $viewModel = new AuthorSubmissionsViewModel;
+        $draft = null;
+        $draftId = $request->query('draft_id') ?? $request->query('id');
 
-        return view('author.submissions.create', compact('viewModel'));
+        if ($draftId && Auth::check()) {
+            $draft = Submission::with(['files.file', 'contributors', 'section'])
+                ->where('author_id', Auth::id())
+                ->where('status', 'draft')
+                ->where(function ($q) use ($draftId) {
+                    $q->where('id', $draftId)->orWhere('submission_number', $draftId);
+                })
+                ->first();
+        }
+
+        return view('author.submissions.create', compact('viewModel', 'draft'));
     }
 
     /**
@@ -116,8 +129,11 @@ class AuthorSubmissionController extends Controller
     {
         $validated = $request->validated();
         $isDraft = ($validated['action'] ?? 'submit') === 'draft';
+        $author = $request->user() ?? User::first();
+        $authorId = $author?->id;
+        $draftId = $request->input('draft_id') ?? ($validated['draft_id'] ?? null);
 
-        $submission = DB::transaction(function () use ($request, $validated, $isDraft): Submission {
+        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $author, $authorId, $draftId): Submission {
             // 1. Dapatkan atau inisialisasi Journal default
             $journal = Journal::first() ?? Journal::create([
                 'slug' => 'sirida-makassar',
@@ -129,9 +145,12 @@ class AuthorSubmissionController extends Controller
             ]);
 
             // 2. Dapatkan Section berdasarkan id ULID atau slug
-            $section = Section::where('id', $validated['section_id'])
-                ->orWhere('slug', $validated['section_id'])
-                ->first();
+            $section = null;
+            if (! empty($validated['section_id'])) {
+                $section = Section::where('id', $validated['section_id'])
+                    ->orWhere('slug', $validated['section_id'])
+                    ->first();
+            }
 
             if (! $section) {
                 $section = Section::firstOrCreate(
@@ -150,38 +169,82 @@ class AuthorSubmissionController extends Controller
                 );
             }
 
-            // 3. Dapatkan author aktif atau default user
-            $author = $request->user() ?? User::first();
-            $authorId = $author?->id;
+            // 3. Checklist & Guidelines Acceptance
+            $checklistItems = $request->input('checklist_items', []);
+            $hasAccepted = ! empty($validated['author_guidelines_accepted']) || count($checklistItems) >= 5;
+            $guidelineData = $hasAccepted ? [
+                'accepted' => true,
+                'checklist' => $checklistItems,
+                'timestamp' => now()->toIso8601String(),
+            ] : (! empty($checklistItems) ? [
+                'accepted' => false,
+                'checklist' => $checklistItems,
+                'timestamp' => now()->toIso8601String(),
+            ] : null);
 
-            // 4. Nomor pengajuan unik berformat SUB-YYYY-XXXXX
-            $year = date('Y');
-            $count = Submission::whereYear('created_at', $year)->count() + 1;
-            $submissionNumber = 'SUB-'.$year.'-'.str_pad((string) $count, 5, '0', STR_PAD_LEFT);
+            // 4. Judul dan Abstrak (fleksibel untuk draf tanpa memblokir input parsial)
+            $titleInput = trim((string) ($validated['title'] ?? ''));
+            $title = $titleInput !== '' ? $titleInput : ($isDraft ? 'Draf Naskah Belum Diberi Judul' : 'Naskah Baru');
 
-            // 5. Simpan record pengajuan (Submission)
-            $submission = Submission::create([
-                'journal_id' => $journal->id,
-                'section_id' => $section->id,
-                'author_id' => $authorId,
-                'submission_number' => $submissionNumber,
-                'title' => $validated['title'],
-                'abstract' => $validated['abstract'],
-                'keywords' => $validated['keywords'] ?? [],
-                'references' => $validated['references'] ?? null,
-                'subject_area' => $validated['subject_area'] ?? null,
-                'comments_for_editor' => $validated['comments_for_editor'] ?? null,
-                'status' => $isDraft ? 'draft' : 'submitted',
-                'guideline_acceptance' => ! empty($validated['author_guidelines_accepted'])
-                    ? ['accepted' => true, 'timestamp' => now()->toIso8601String()]
-                    : null,
-                'submitted_at' => $isDraft ? null : now(),
-                'version' => 1,
-            ]);
+            $abstractInput = trim((string) ($validated['abstract'] ?? ''));
+            $abstract = $abstractInput !== '' ? $abstractInput : ($isDraft ? 'Draf naskah belum dilengkapi abstrak.' : null);
+
+            // 5. Cek apakah ini pembaruan draf yang sudah ada di database
+            $existingDraft = null;
+            if ($draftId && $authorId) {
+                $existingDraft = Submission::where('author_id', $authorId)
+                    ->where('status', 'draft')
+                    ->where('id', $draftId)
+                    ->first();
+            }
+
+            if ($existingDraft) {
+                $existingDraft->update([
+                    'journal_id' => $journal->id,
+                    'section_id' => $section->id,
+                    'title' => $title,
+                    'abstract' => $abstract,
+                    'keywords' => $validated['keywords'] ?? ($existingDraft->keywords ?? []),
+                    'references' => $validated['references'] ?? $existingDraft->references,
+                    'subject_area' => $validated['subject_area'] ?? $existingDraft->subject_area,
+                    'comments_for_editor' => $validated['comments_for_editor'] ?? $existingDraft->comments_for_editor,
+                    'status' => $isDraft ? 'draft' : 'submitted',
+                    'guideline_acceptance' => $guidelineData ?? $existingDraft->guideline_acceptance,
+                    'submitted_at' => $isDraft ? null : now(),
+                ]);
+                $submission = $existingDraft;
+            } else {
+                // Nomor pengajuan unik berformat SUB-YYYY-XXXXX
+                $year = date('Y');
+                $count = Submission::whereYear('created_at', $year)->count() + 1;
+                $submissionNumber = 'SUB-'.$year.'-'.str_pad((string) $count, 5, '0', STR_PAD_LEFT);
+
+                // Simpan record pengajuan baru (Submission)
+                $submission = Submission::create([
+                    'journal_id' => $journal->id,
+                    'section_id' => $section->id,
+                    'author_id' => $authorId,
+                    'submission_number' => $submissionNumber,
+                    'title' => $title,
+                    'abstract' => $abstract,
+                    'keywords' => $validated['keywords'] ?? [],
+                    'references' => $validated['references'] ?? null,
+                    'subject_area' => $validated['subject_area'] ?? null,
+                    'comments_for_editor' => $validated['comments_for_editor'] ?? null,
+                    'status' => $isDraft ? 'draft' : 'submitted',
+                    'guideline_acceptance' => $guidelineData,
+                    'submitted_at' => $isDraft ? null : now(),
+                    'version' => 1,
+                ]);
+            }
 
             // 6. Simpan daftar kontributor naskah
             $contributors = $validated['contributors'] ?? [];
             if (! empty($contributors)) {
+                if ($existingDraft) {
+                    SubmissionContributor::where('submission_id', $submission->id)->delete();
+                }
+
                 foreach ($contributors as $index => $c) {
                     $isCorr = filter_var($c['corresponding'] ?? false, FILTER_VALIDATE_BOOLEAN);
                     $givenName = $c['given_name'] ?? ($c['name'] ?? 'Penulis');
@@ -219,26 +282,37 @@ class AuthorSubmissionController extends Controller
                     'created_by' => $authorId,
                 ]);
 
+                // Hapus berkas manuskrip utama sebelumnya pada naskah ini agar tidak terjadi duplikat berkas
+                if ($existingDraft) {
+                    SubmissionFile::where('submission_id', $submission->id)
+                        ->where('genre', 'manuscript')
+                        ->delete();
+                }
+
                 SubmissionFile::create([
                     'submission_id' => $submission->id,
                     'file_id' => $fileEntry->id,
                     'genre' => 'manuscript',
                     'version' => 1,
                 ]);
+            } elseif ($existingDraft && $request->boolean('remove_manuscript')) {
+                SubmissionFile::where('submission_id', $submission->id)
+                    ->where('genre', 'manuscript')
+                    ->delete();
             }
 
             return $submission;
         });
 
         if ($isDraft) {
-            $message = "Draf pengajuan naskah berhasil disimpan (ID: {$submission->submission_number}). Anda dapat melanjutkan pengisian kapan saja.";
-        } else {
-            $message = "Naskah ilmiah Anda (ID: {$submission->submission_number}) berhasil diajukan dan saat ini berada pada tahap Pemeriksaan Awal redaksi.";
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('success', "Draf pengajuan naskah ({$submission->submission_number}) berhasil disimpan.");
         }
 
         return redirect()
             ->route('author.submissions.index')
-            ->with('success', $message);
+            ->with('success', "Naskah ilmiah Anda ({$submission->submission_number}) berhasil diajukan dan saat ini berada pada tahap Pemeriksaan Awal redaksi.");
     }
 
     /**
@@ -246,7 +320,7 @@ class AuthorSubmissionController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
-        $viewModel = new AuthorSubmissionsViewModel;
+        $viewModel = new AuthorSubmissionsViewModel($request->user());
 
         $filters = [
             'tab' => $request->query('tab', 'semua'),
@@ -279,7 +353,7 @@ class AuthorSubmissionController extends Controller
      */
     public function exportCsv(Request $request): StreamedResponse
     {
-        $viewModel = new AuthorSubmissionsViewModel;
+        $viewModel = new AuthorSubmissionsViewModel($request->user());
 
         $filters = [
             'tab' => $request->query('tab', 'semua'),
@@ -339,16 +413,25 @@ class AuthorSubmissionController extends Controller
     /**
      * Menampilkan halaman detail naskah/artikel ilmiah untuk peran Author.
      */
-    public function show(Request $request, string $id): View
+    public function show(Request $request, string $id): View|JsonResponse
     {
+        $user = $request->user();
         $detailViewModel = new AuthorSubmissionDetailViewModel;
-        $submission = $detailViewModel->find($id, $request->user());
+        $submission = $detailViewModel->find($id, $user);
 
         if (! $submission) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Naskah ilmiah yang Anda cari tidak ditemukan atau Anda tidak memiliki hak akses.'], 404);
+            }
+
             abort(404, 'Naskah ilmiah yang Anda cari tidak ditemukan atau Anda tidak memiliki hak akses.');
         }
 
-        $viewModel = new AuthorSubmissionsViewModel;
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $submission]);
+        }
+
+        $viewModel = new AuthorSubmissionsViewModel($user);
 
         return view('author.submissions.show', compact('submission', 'viewModel'));
     }
@@ -360,13 +443,7 @@ class AuthorSubmissionController extends Controller
     public function withdraw(Request $request, string $id): RedirectResponse
     {
         $user = $request->user();
-
-        $submission = Submission::where(function ($query) use ($id): void {
-            $query->where('id', $id)
-                ->orWhere('submission_number', $id);
-        })
-            ->when($user, fn ($q) => $q->where('author_id', $user->id))
-            ->first();
+        $submission = $user ? $this->findAuthorSubmission($id, $user) : null;
 
         $detailViewModel = new AuthorSubmissionDetailViewModel;
 
@@ -506,16 +583,12 @@ class AuthorSubmissionController extends Controller
         ]);
 
         $user = $request->user() ?? User::firstOrFail();
-
-        $submission = Submission::where(function ($query) use ($id): void {
-            $query->where('id', $id)
-                ->orWhere('submission_number', $id);
-        })->first();
+        $submission = $this->findAuthorSubmission($id, $user);
 
         if (! $submission) {
             return redirect()
                 ->route('author.submissions.index')
-                ->with('error', 'Naskah ilmiah tidak ditemukan.');
+                ->with('error', 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');
         }
 
         try {
@@ -534,6 +607,25 @@ class AuthorSubmissionController extends Controller
                 ->route('author.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Mengambil naskah yang dimiliki penulis atau di mana pengguna terdaftar sebagai kontributor.
+     */
+    private function findAuthorSubmission(string $id, User $user): ?Submission
+    {
+        return Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })
+            ->where(function ($q) use ($user): void {
+                $q->where('author_id', $user->id)
+                    ->orWhereHas('contributors', function ($cq) use ($user): void {
+                        $cq->where('user_id', $user->id)
+                            ->orWhere('email', $user->email);
+                    });
+            })
+            ->first();
     }
 
     /**

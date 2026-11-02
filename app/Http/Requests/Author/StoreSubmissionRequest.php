@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Author;
 
+use App\Models\SubmissionFile;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -75,21 +76,35 @@ class StoreSubmissionRequest extends FormRequest
     {
         $isSubmit = $this->input('action') === 'submit';
 
+        $hasExistingManuscript = false;
+        if ($this->filled('draft_id')) {
+            $hasExistingManuscript = SubmissionFile::where('submission_id', $this->input('draft_id'))
+                ->where('genre', 'manuscript')
+                ->exists();
+        }
+
         $rules = [
             'action' => ['required', 'string', 'in:draft,submit'],
-            'section_id' => ['required', 'string', 'max:50'],
-            'title' => ['required', 'string', 'min:1', 'max:500'],
-            'abstract' => ['required', 'string', 'min:1', 'max:10000'],
-            'keywords' => ['required', 'array', 'min:1', 'max:20'],
-            'keywords.*' => ['required', 'string', 'max:100'],
+            'draft_id' => ['nullable', 'string', 'max:50'],
+            'existing_manuscript_id' => ['nullable', 'string', 'max:50'],
+            'remove_manuscript' => ['nullable'],
+            'section_id' => $isSubmit ? ['required', 'string', 'max:50'] : ['nullable', 'string', 'max:50'],
+            'title' => $isSubmit ? ['required', 'string', 'min:1', 'max:500'] : ['nullable', 'string', 'max:500'],
+            'abstract' => $isSubmit ? ['required', 'string', 'min:1', 'max:10000'] : ['nullable', 'string', 'max:10000'],
+            'keywords' => $isSubmit ? ['required', 'array', 'min:1', 'max:20'] : ['nullable', 'array', 'max:20'],
+            'keywords.*' => ['nullable', 'string', 'max:100'],
             'subject_area' => ['nullable', 'string', 'max:255'],
             'references' => ['nullable', 'string'],
             'comments_for_editor' => ['nullable', 'string', 'max:2000'],
+            'checklist_items' => ['nullable', 'array'],
+            'checklist_items.*' => ['nullable', 'string'],
         ];
 
         if ($isSubmit) {
             $rules['author_guidelines_accepted'] = ['accepted'];
-            $rules['manuscript_file'] = ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
+            $rules['manuscript_file'] = ($hasExistingManuscript && ! $this->boolean('remove_manuscript'))
+                ? ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480']
+                : ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
             $rules['contributors'] = ['required', 'array', 'min:1', 'max:100'];
             $rules['contributors.*.given_name'] = ['required', 'string', 'min:1', 'max:100'];
             $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];
@@ -99,8 +114,8 @@ class StoreSubmissionRequest extends FormRequest
             $rules['contributors.*.sequence'] = ['nullable', 'integer', 'min:1'];
             $rules['contributors.*.corresponding'] = ['required'];
         } else {
-            // Mode Draf: aturan lebih fleksibel untuk mendukung penyimpanan parsial
-            $rules['author_guidelines_accepted'] = ['nullable', 'boolean'];
+            // Mode Draf: aturan fleksibel untuk mendukung penyimpanan progresif kapan saja
+            $rules['author_guidelines_accepted'] = ['nullable'];
             $rules['manuscript_file'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
             $rules['contributors'] = ['nullable', 'array', 'max:100'];
             $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];

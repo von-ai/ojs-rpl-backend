@@ -256,7 +256,7 @@
         }
     });
 
-    // Tampilkan toast otomatis dari flash session (mis. saat beralih peran)
+    // Tampilkan toast otomatis dari flash session (mis. saat berhasil aksi atau beralih peran)
     document.addEventListener('DOMContentLoaded', function() {
         @if(session('role_switched_toast'))
             showToast({
@@ -267,12 +267,39 @@
             });
         @endif
 
+        @if(session('success'))
+            showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: @json(session('success')),
+                duration: 4500
+            });
+        @endif
+
+        @if(session('status'))
+            showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: @json(session('status')),
+                duration: 4500
+            });
+        @endif
+
         @if(session('toast_success'))
             showToast({
                 type: 'success',
                 title: 'Berhasil',
                 message: @json(session('toast_success')),
                 duration: 4000
+            });
+        @endif
+
+        @if(session('error'))
+            showToast({
+                type: 'error',
+                title: 'Pemberitahuan',
+                message: @json(session('error')),
+                duration: 5000
             });
         @endif
 

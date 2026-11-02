@@ -8,11 +8,11 @@
             <span>Portal Penulis</span>
         </a>
         <span class="text-gray-300">/</span>
-        <a href="{{ route('author.submissions.index') }}" class="hover:text-brand-maroon transition duration-150 font-medium truncate">
+        <a href="{{ route('author.submissions.index') }}" class="hover:text-brand-maroon transition duration-150 font-medium truncate" title="Daftar Naskah Saya">
             Daftar Naskah Saya
         </a>
         <span class="text-gray-300">/</span>
-        <span class="text-gray-900 font-semibold tabular-nums truncate" aria-current="page">
+        <span class="text-gray-900 font-semibold tabular-nums truncate" aria-current="page" title="{{ $submission['submission_number'] }}">
             {{ $submission['submission_number'] }}
         </span>
     </nav>
@@ -49,12 +49,12 @@
             </button>
 
             <!-- Rubrik / Seksi -->
-            <span class="inline-flex items-center px-2.5 py-1 rounded-md font-medium text-gray-700 bg-gray-50 border border-gray-200 shrink-0">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md font-medium text-gray-700 bg-gray-50 border border-gray-200 shrink-0" title="Kategori Rubrik / Seksi: {{ $submission['section'] }}">
                 {{ $submission['section'] }}
             </span>
 
             <!-- Status Alur Kerja -->
-            <span class="inline-flex items-center px-2.5 py-1 rounded-md font-semibold {{ $submission['status_badge_class'] }} border shrink-0">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md font-semibold {{ $submission['status_badge_class'] }} border shrink-0" title="Status Naskah: {{ $submission['status_label'] }}">
                 <span>{{ $submission['status_label'] }}</span>
             </span>
 
@@ -89,23 +89,10 @@
                 <span>Tautan</span>
             </button>
 
-            <!-- Cetak Lembar Metadata -->
-            <button 
-                type="button" 
-                onclick="window.print()"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition duration-150 cursor-pointer"
-                title="Cetak lembar ringkasan naskah"
-            >
-                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span>Cetak</span>
-            </button>
-
             <!-- Aksi Kontekstual Primer -->
             @if($submission['status'] === 'draft')
                 <a 
-                    href="{{ route('author.submissions.create') }}" 
+                    href="{{ route('author.submissions.create', ['draft_id' => $submission['id']]) }}" 
                     class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg transition duration-150"
                 >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +125,7 @@
     </div>
 
     <!-- Judul Manuskrip Akademik (Font Sans Inter Bersih & Konsisten) -->
-    <h1 class="font-sans text-2xl sm:text-[26px] lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight break-words [overflow-wrap:anywhere] pt-1">
+    <h1 class="font-sans text-2xl sm:text-[26px] lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight break-words [overflow-wrap:anywhere] pt-1" title="{{ $submission['title'] }}">
         {{ $submission['title'] }}
     </h1>
 
@@ -160,7 +147,7 @@
 
         <div class="hidden sm:flex items-center gap-1.5 text-gray-400">
             <span class="text-gray-300">/</span>
-            <span class="text-gray-600 font-medium truncate max-w-sm">{{ $submission['journal_name'] }}</span>
+            <span class="text-gray-600 font-medium truncate max-w-sm" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
         </div>
     </div>
 </header>

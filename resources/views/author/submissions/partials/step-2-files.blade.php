@@ -1,6 +1,9 @@
 <!-- ========================================== -->
 <!-- LANGKAH 2: UNGGAH BERKAS MANUSKRIP -->
 <!-- ========================================== -->
+@php
+    $existingManuscript = ($draft && $draft->files) ? $draft->files->where('genre', 'manuscript')->last()?->file : null;
+@endphp
 <div id="step-panel-2" class="wizard-step-panel hidden bg-white rounded-xl border border-gray-200 p-5 sm:p-7 shadow-2xs space-y-6">
     <div class="border-b border-gray-100 pb-4">
         <span class="text-xs font-bold uppercase tracking-wider text-brand-maroon">Langkah 2 dari 5</span>
@@ -16,11 +19,14 @@
             Berkas Naskah Utama <span class="text-red-600">*</span>
         </label>
         
+        <input type="hidden" name="existing_manuscript_id" id="existing_manuscript_id" value="{{ $existingManuscript?->id ?? '' }}">
+        <input type="hidden" name="remove_manuscript" id="remove_manuscript" value="0">
+
         <div class="relative">
             <!-- State 1: Tampilan Dropzone Sebelum Berkas Dipilih -->
             <div 
                 id="dropzone-prompt" 
-                class="group relative rounded-xl border-2 border-dashed border-gray-300 hover:border-brand-maroon/70 transition-all duration-200 bg-gray-50/50 hover:bg-red-50/10 text-center py-5 px-4 cursor-pointer"
+                class="{{ $existingManuscript ? 'hidden ' : '' }}group relative rounded-xl border-2 border-dashed border-gray-300 hover:border-brand-maroon/70 transition-all duration-200 bg-gray-50/50 hover:bg-red-50/10 text-center py-5 px-4 cursor-pointer"
             >
                 <input 
                     type="file" 
@@ -50,7 +56,7 @@
             <!-- State 2: Kartu Berkas Terpilih -->
             <div 
                 id="dropzone-selected" 
-                class="hidden rounded-xl border border-gray-200 bg-white py-3 px-4 sm:px-5 items-center justify-between gap-3.5 shadow-2xs transition-all duration-200"
+                class="{{ $existingManuscript ? 'flex ' : 'hidden ' }}rounded-xl border border-gray-200 bg-white py-3 px-4 sm:px-5 items-center justify-between gap-3.5 shadow-2xs transition-all duration-200"
             >
                 <div class="flex items-center gap-3 min-w-0 flex-1 text-left">
                     <div class="w-9 h-9 rounded-lg bg-red-50 text-brand-maroon ring-1 ring-red-200/70 flex items-center justify-center shrink-0 shadow-2xs">
@@ -60,16 +66,16 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <p id="selected-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">naskah-ilmiah.pdf</p>
+                            <p id="selected-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $existingManuscript?->original_name ?? 'naskah-ilmiah.pdf' }}</p>
                             <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                Siap Diunggah
+                                <span id="file-status-text">{{ $existingManuscript ? 'Tersimpan di Draf' : 'Siap Diunggah' }}</span>
                             </span>
                         </div>
                         <div class="flex items-center gap-2 mt-0.5 text-gray-500 text-[11px]">
-                            <span id="selected-file-size" class="tabular-nums font-medium">0 KB</span>
+                            <span id="selected-file-size" class="tabular-nums font-medium">{{ $existingManuscript ? number_format(($existingManuscript->byte_size ?? 0) / 1024, 1) . ' KB' : '0 KB' }}</span>
                             <span class="text-gray-300">&bull;</span>
                             <span class="text-gray-400">Berkas Naskah Utama</span>
                         </div>

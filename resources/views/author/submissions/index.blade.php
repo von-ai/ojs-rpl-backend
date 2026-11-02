@@ -5,22 +5,6 @@
 @section('content')
 <div class="space-y-6 max-w-7xl mx-auto">
 
-    @if(session('success'))
-        <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-4 transition-all duration-200 shadow-2xs" role="alert">
-            <div class="flex items-start gap-3">
-                <div class="shrink-0 text-emerald-600 mt-0.5">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-sm font-bold text-emerald-900">Berhasil!</h3>
-                    <p class="mt-0.5 text-xs text-emerald-800 leading-relaxed">{{ session('success') }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
-
     <!-- Header Halaman & Tombol Aksi -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="min-w-0 flex-1">

@@ -365,4 +365,57 @@ class AuthorSubmissionDetailTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertEquals('in_review', $submission->fresh()->status);
     }
+
+    /**
+     * Penulis dapat mengakses halaman detail naskah baru berstatus submitted via submission_number.
+     */
+    public function test_penulis_dapat_mengakses_detail_naskah_baru_status_submitted(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-test-new-sub'],
+            ['name' => 'Jurnal Uji Naskah Baru', 'status' => 'active', 'version' => 1]
+        );
+
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-new-test'],
+            ['name' => 'Seksi Naskah Baru', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00099',
+            'title' => 'Naskah Baru Mandiri Penulis',
+            'abstract' => 'Abstrak naskah baru mandiri penulis.',
+            'comments_for_editor' => 'Catatan khusus pengantar untuk dewan redaksi jurnal.',
+            'status' => 'submitted',
+            'submitted_at' => now(),
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00099'));
+
+        $response->assertStatus(200);
+        $response->assertSee('SUB-2026-00099');
+        $response->assertSee('Naskah Baru Mandiri Penulis');
+        $response->assertSee('Pemeriksaan Awal');
+        $response->assertSee('Catatan Pengantar untuk Dewan Redaksi');
+        $response->assertSee('Catatan khusus pengantar untuk dewan redaksi jurnal.');
+    }
+
+    /**
+     * Penulis lain tidak dapat mengakses halaman detail naskah milik penulis lain (404 Not Found / Unauthorized).
+     */
+    public function test_penulis_lain_tidak_dapat_mengakses_detail_naskah_bukan_miliknya(): void
+    {
+        $otherAuthor = User::factory()->create([
+            'email' => 'penulis.lain@example.com',
+            'full_name' => 'Penulis Asing',
+        ]);
+
+        $response = $this->actingAs($otherAuthor)->get(route('author.submissions.show', 'SUB-2026-00104'));
+
+        $response->assertStatus(404);
+    }
 }

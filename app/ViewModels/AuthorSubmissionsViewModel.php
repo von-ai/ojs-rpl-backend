@@ -6,6 +6,8 @@ namespace App\ViewModels;
 
 use App\Models\Section;
 use App\Models\Submission;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class AuthorSubmissionsViewModel
@@ -16,6 +18,13 @@ class AuthorSubmissionsViewModel
      * @var array<int, array<string, mixed>>|null
      */
     private ?array $cachedRawSubmissions = null;
+
+    protected ?User $user = null;
+
+    public function __construct(?User $user = null)
+    {
+        $this->user = $user ?? Auth::user();
+    }
 
     /**
      * Data profil pengguna aktif dengan konteks peran Author.
@@ -32,10 +41,12 @@ class AuthorSubmissionsViewModel
      */
     public function userProfile(): array
     {
+        $u = $this->user ?? Auth::user();
+
         return [
-            'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-            'title' => 'Dr. Andi Muhammad Ilyas, M.Si.',
-            'affiliation' => 'Universitas Hasanuddin',
+            'name' => $u?->full_name ?? $u?->name ?? 'Dr. Andi Muhammad Ilyas, M.Si.',
+            'title' => $u?->full_name ?? $u?->name ?? 'Dr. Andi Muhammad Ilyas, M.Si.',
+            'affiliation' => $u?->profile?->affiliation ?? 'Universitas Hasanuddin',
             'role_label' => 'Portal Penulis OJS 3.4',
             'academic_year' => 'Tahun Akademik 2026/2027',
             'unread_messages' => 1,
@@ -277,9 +288,33 @@ class AuthorSubmissionsViewModel
 
         try {
             if (Schema::hasTable('submissions')) {
-                $submissions = Submission::with(['section', 'contributors', 'journal', 'latestPayment'])
-                    ->latest('updated_at')
-                    ->get();
+                $user = $this->user ?? Auth::user();
+                $userId = $user?->id;
+                $userEmail = $user?->email;
+
+                // Jika tidak ada user login dan bukan di environment testing, kembalikan array kosong
+                if (! $userId && ! app()->environment('testing')) {
+                    return $this->cachedRawSubmissions = [];
+                }
+
+                $query = Submission::with(['section', 'contributors', 'journal', 'latestPayment']);
+
+                // Isolasi Akses Data Peran Penulis:
+                // Penulis hanya dapat melihat naskah miliknya (author_id)
+                // atau di mana penulis tersebut terdaftar sebagai kontributor/co-author.
+                if ($userId) {
+                    $query->where(function ($q) use ($userId, $userEmail): void {
+                        $q->where('author_id', $userId)
+                            ->orWhereHas('contributors', function ($cq) use ($userId, $userEmail): void {
+                                $cq->where('user_id', $userId);
+                                if ($userEmail) {
+                                    $cq->orWhere('email', $userEmail);
+                                }
+                            });
+                    });
+                }
+
+                $submissions = $query->latest('updated_at')->get();
 
                 foreach ($submissions as $sub) {
                     $sectionName = $sub->section?->name ?? 'Artikel Riset Orisinil';

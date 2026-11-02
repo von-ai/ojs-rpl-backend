@@ -92,7 +92,7 @@
                         </h3>
 
                         <!-- Sub-keterangan Singkat -->
-                        <p class="text-[10px] text-gray-400 mt-0.5 line-clamp-1 max-w-[90px] sm:max-w-none">
+                        <p class="text-[10px] text-gray-400 mt-0.5 line-clamp-1 max-w-[90px] sm:max-w-none" title="{{ $stg['desc'] }}">
                             {{ $stg['desc'] }}
                         </p>
                     </div>
@@ -104,7 +104,7 @@
     <!-- Ringkasan Status Tahap Aktif -->
     <div class="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-600 bg-gray-50 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 px-5 sm:px-6 py-3 rounded-b-xl">
         <div class="flex items-center gap-1.5 min-w-0">
-            <span class="truncate">
+            <span class="truncate" title="{{ ($currentStage['title'] ?? 'Draf Submisi') }} &mdash; {{ ($currentStage['desc'] ?? '') }}">
                 <strong class="text-gray-900">Tahap Aktif:</strong> {{ $currentStage['title'] ?? 'Draf Submisi' }} &mdash; 
                 <span class="text-gray-500">{{ $currentStage['desc'] ?? '' }}</span>
             </span>

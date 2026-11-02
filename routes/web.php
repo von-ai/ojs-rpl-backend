@@ -15,6 +15,7 @@ use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -240,7 +241,9 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
 
 Route::redirect('/submissions', '/author/submissions');
 Route::get('/dashboard', function () {
+    /** @var User|null $user */
     $user = Auth::user();
 
+    // Redirect to the user's default portal route or fallback to author submissions
     return redirect()->route($user ? $user->defaultPortalRoute() : 'author.submissions.index');
 })->middleware('auth')->name('dashboard');

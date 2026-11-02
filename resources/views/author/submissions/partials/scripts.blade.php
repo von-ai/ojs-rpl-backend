@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
     const STORAGE_KEY = 'sirida_submission_draft_v1';
     let currentStep = 1;
@@ -458,8 +458,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateMasterChecklist() {
-        const allChecked = Array.from(checklistItems).every(cb => cb.checked);
-        masterAccepted.checked = allChecked;
+        const allChecked = Array.from(checklistItems).length > 0 && Array.from(checklistItems).every(cb => cb.checked);
+        if (masterAccepted) masterAccepted.checked = allChecked;
         updateCheckAllButtonState();
     }
 
@@ -478,6 +478,9 @@ document.addEventListener('DOMContentLoaded', function () {
             saveDraftToStorage();
         });
     }
+
+    // Inisialisasi state checklist saat load (termasuk jika data dari draf server tercentang)
+    updateMasterChecklist();
 
     // ==========================================
     // INDEXEDDB FILE STORAGE UNTUK DRAF
@@ -569,6 +572,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Helper untuk mengecek apakah ada berkas naskah yang terlampir (baik baru dipilih atau dari draf tersimpan)
+    function hasManuscriptAttached() {
+        const hasNewlySelected = !!(manuscriptInput && manuscriptInput.files && manuscriptInput.files[0]);
+        const existingIdInput = document.getElementById('existing_manuscript_id');
+        const removeInput = document.getElementById('remove_manuscript');
+        const hasExisting = !!(existingIdInput && existingIdInput.value.trim() !== '' && (!removeInput || removeInput.value !== '1'));
+        return hasNewlySelected || hasExisting;
+    }
+
     // Helper fungsi update status visual dropzone naskah
     function updateDropzoneUI(hasFile, fileName = '', fileSize = 0) {
         if (hasFile) {
@@ -619,6 +631,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 updateDropzoneUI(true, file.name, file.size);
+                const removeManuscriptInput = document.getElementById('remove_manuscript');
+                if (removeManuscriptInput) removeManuscriptInput.value = '0';
+                const statusBadgeText = document.getElementById('file-status-text');
+                if (statusBadgeText) statusBadgeText.textContent = 'Siap Diunggah';
 
                 // Simpan berkas ke IndexedDB & perbarui draf
                 await saveFileToDraftDB(file);
@@ -642,6 +658,10 @@ document.addEventListener('DOMContentLoaded', function () {
             manuscriptInput.value = '';
             updateDropzoneUI(false);
             fileErrorMsg.classList.add('hidden');
+            const removeManuscriptInput = document.getElementById('remove_manuscript');
+            if (removeManuscriptInput) removeManuscriptInput.value = '1';
+            const existingManuscriptId = document.getElementById('existing_manuscript_id');
+            if (existingManuscriptId) existingManuscriptId.value = '';
 
             await clearFileFromDraftDB();
             saveDraftToStorage();
@@ -1181,10 +1201,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const sectionTitle = selectedOpt && selectedOpt.value ? (selectedOpt.getAttribute('data-name') || selectedOpt.text) : 'Belum dipilih';
         document.getElementById('review-section-title').textContent = sectionTitle;
 
-        const fileName = (manuscriptInput.files && manuscriptInput.files[0]) 
+        const fileName = (manuscriptInput && manuscriptInput.files && manuscriptInput.files[0]) 
             ? manuscriptInput.files[0].name 
-            : (selectedFileName && dropzoneSelected && !dropzoneSelected.classList.contains('hidden') ? selectedFileName.textContent : 'Belum ada berkas diunggah (Draf)');
-        document.getElementById('review-file-name').textContent = fileName;
+            : (hasManuscriptAttached() && selectedFileName ? selectedFileName.textContent.trim() : 'Belum ada berkas diunggah (Draf)');
+        const reviewFileEl = document.getElementById('review-file-name');
+        if (reviewFileEl) reviewFileEl.textContent = fileName;
 
         document.getElementById('review-title').textContent = titleInput.value.trim() || '(Judul belum diisi)';
         document.getElementById('review-abstract').textContent = abstractInput.value.trim() || '(Abstrak belum diisi)';
@@ -1338,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } else if (step === 2) {
             // Manuscript file is required for final submit, warning here if empty
-            if (!manuscriptInput.files || !manuscriptInput.files[0]) {
+            if (!hasManuscriptAttached()) {
                 const proceedWithoutFile = await window.showConfirmModal({
                     title: 'Lanjutkan Tanpa Berkas?',
                     message: 'Berkas naskah utama belum diunggah. Anda tetap dapat melanjutkan pengisian draf, namun berkas wajib diunggah sebelum pengiriman final.',
@@ -1462,18 +1483,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!confirmSave) return;
 
-        isDraftDiscarded = true;
         clearDraftStorage();
         formAction.value = 'draft';
         // Make sure manuscript file is not required during draft submit
-        manuscriptInput.required = false;
+        if (manuscriptInput) manuscriptInput.required = false;
         form.submit();
     });
+
+    // Validasi klik tombol kirim naskah untuk Pernyataan Integritas
+    if (btnFinalSubmit) {
+        btnFinalSubmit.addEventListener('click', function (e) {
+            if (formAction.value === 'submit') {
+                const declaration = document.getElementById('confirm-declaration');
+                if (declaration && !declaration.checked) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const declContainer = document.getElementById('declaration-container') || declaration.closest('label');
+                    if (declContainer) {
+                        declContainer.classList.add('ring-2', 'ring-brand-maroon', 'border-brand-maroon', 'bg-red-100/70');
+                        declContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => {
+                            declContainer.classList.remove('ring-2', 'ring-brand-maroon', 'border-brand-maroon', 'bg-red-100/70');
+                        }, 3500);
+                    }
+
+                    if (window.toast && typeof window.toast.warning === 'function') {
+                        window.toast.warning(
+                            'Harap setujui dan centang Pernyataan Integritas Ilmiah sebelum Anda dapat mengirim naskah ke dewan redaksi.',
+                            'Pernyataan Integritas Wajib Dicentang'
+                        );
+                    } else if (typeof window.showAlertModal === 'function') {
+                        window.showAlertModal({
+                            title: 'Pernyataan Integritas Ilmiah',
+                            message: 'Harap setujui dan centang Pernyataan Integritas Ilmiah sebelum Anda dapat mengirim naskah ke dewan redaksi.',
+                            type: 'warning'
+                        });
+                    }
+                    declaration.focus();
+                }
+            }
+        });
+    }
 
     // Form final submit protection
     form.addEventListener('submit', async function (e) {
         if (formAction.value === 'submit') {
-            if (!manuscriptInput.files || !manuscriptInput.files[0]) {
+            if (!hasManuscriptAttached()) {
                 e.preventDefault();
                 await window.showAlertModal({
                     title: 'Berkas Naskah Wajib Diunggah',
@@ -1486,11 +1542,29 @@ document.addEventListener('DOMContentLoaded', function () {
             const declaration = document.getElementById('confirm-declaration');
             if (declaration && !declaration.checked) {
                 e.preventDefault();
-                await window.showAlertModal({
-                    title: 'Pernyataan Integritas Ilmiah',
-                    message: 'Anda wajib mencentang persetujuan pernyataan integritas dan etika publikasi ilmiah sebelum mengirim naskah.',
-                    type: 'warning'
-                });
+                e.stopPropagation();
+
+                const declContainer = document.getElementById('declaration-container') || declaration.closest('label');
+                if (declContainer) {
+                    declContainer.classList.add('ring-2', 'ring-brand-maroon', 'border-brand-maroon', 'bg-red-100/70');
+                    declContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        declContainer.classList.remove('ring-2', 'ring-brand-maroon', 'border-brand-maroon', 'bg-red-100/70');
+                    }, 3500);
+                }
+
+                if (window.toast && typeof window.toast.warning === 'function') {
+                    window.toast.warning(
+                        'Harap setujui dan centang Pernyataan Integritas Ilmiah sebelum Anda dapat mengirim naskah ke dewan redaksi.',
+                        'Pernyataan Integritas Wajib Dicentang'
+                    );
+                } else if (typeof window.showAlertModal === 'function') {
+                    await window.showAlertModal({
+                        title: 'Pernyataan Integritas Ilmiah',
+                        message: 'Harap setujui dan centang Pernyataan Integritas Ilmiah sebelum Anda dapat mengirim naskah ke dewan redaksi.',
+                        type: 'warning'
+                    });
+                }
                 declaration.focus();
                 return;
             }
@@ -1597,6 +1671,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function restoreDraftFromStorage() {
         if (isDraftDiscarded) return;
+        const currentDraftId = document.getElementById('draft_id')?.value;
+        if (currentDraftId) {
+            clearDraftStorage();
+            if (draftAlert) draftAlert.classList.add('hidden');
+            return;
+        }
         try {
             const saved = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
             if (!saved) return;
