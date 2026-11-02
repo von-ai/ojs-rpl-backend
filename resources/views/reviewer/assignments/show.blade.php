@@ -280,7 +280,7 @@
 
                 <!-- Modal Penolakan Undangan -->
                 <div id="modalDecline" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-                    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+                    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
                         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                             <h3 class="font-bold text-gray-900 text-sm">Konfirmasi Penolakan Undangan Telaah</h3>
                             <button type="button" onclick="document.getElementById('modalDecline').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
@@ -416,26 +416,21 @@
                             <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
                                 4. Rekomendasi Putusan Ilmiah <span class="text-rose-500">*</span>
                             </label>
-                            <select 
-                                name="recommendation" 
-                                required 
-                                {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                class="w-full rounded-lg border border-gray-300 p-2.5 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon"
-                            >
-                                <option value="">-- Pilih Rekomendasi --</option>
-                                <option value="accept" {{ old('recommendation', $viewModel->existingReview()?->recommendation) === 'accept' ? 'selected' : '' }}>
-                                    Diterima (Accept Submission) — Naskah layak terbit tanpa revisi mayor
-                                </option>
-                                <option value="revisions_required" {{ old('recommendation', $viewModel->existingReview()?->recommendation) === 'revisions_required' ? 'selected' : '' }}>
-                                    Perlu Revisi (Revisions Required) — Penulis wajib melakukan revisi minor
-                                </option>
-                                <option value="resubmit" {{ old('recommendation', $viewModel->existingReview()?->recommendation) === 'resubmit' ? 'selected' : '' }}>
-                                    Kirim Ulang untuk Telaah (Resubmit for Review) — Perlu perombakan besar dan putaran telaah baru
-                                </option>
-                                <option value="decline" {{ old('recommendation', $viewModel->existingReview()?->recommendation) === 'decline' ? 'selected' : '' }}>
-                                    Ditolak (Decline Submission) — Naskah tidak memenuhi standar ilmiah jurnal
-                                </option>
-                            </select>
+                            <x-custom-dropdown
+                                name="recommendation"
+                                :value="old('recommendation', $viewModel->existingReview()?->recommendation)"
+                                :disabled="$viewModel->isCompleted()"
+                                :required="true"
+                                :options="[
+                                    '' => '-- Pilih Rekomendasi --',
+                                    'accept' => 'Diterima (Accept Submission) — Naskah layak terbit tanpa revisi mayor',
+                                    'revisions_required' => 'Perlu Revisi (Revisions Required) — Penulis wajib melakukan revisi minor',
+                                    'resubmit' => 'Kirim Ulang untuk Telaah (Resubmit for Review) — Perlu perombakan besar dan putaran telaah baru',
+                                    'decline' => 'Ditolak (Decline Submission) — Naskah tidak memenuhi standar ilmiah jurnal',
+                                ]"
+                                button-class="w-full bg-white border-gray-300 text-gray-900 rounded-lg p-2.5"
+                                panel-class="w-full max-w-full"
+                            />
                         </div>
 
                         <!-- 5. Unggah Berkas Manuskrip Beranotasi (Optional) -->
@@ -503,7 +498,7 @@
 <!-- MODAL: Permohonan Perpanjangan Waktu (Extension Request) -->
 @if($viewModel->canSubmit() && ! $viewModel->pendingExtension())
     <div id="modalExtension" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <h3 class="font-bold text-gray-900 text-sm">Permohonan Perpanjangan Batas Waktu</h3>
                 <button type="button" onclick="document.getElementById('modalExtension').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-lg">&times;</button>

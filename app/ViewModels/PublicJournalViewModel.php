@@ -44,11 +44,6 @@ class PublicJournalViewModel
         return [
             'p_issn' => $this->journal?->issn ?: '2746-8194',
             'e_issn' => $this->journal?->eissn ?: '2746-8208',
-            'accreditation_badges' => [
-                ['label' => 'SINTA 2', 'class' => 'bg-amber-100 text-amber-800 border-amber-300/60'],
-                ['label' => 'GARUDA', 'class' => 'bg-sky-100 text-sky-800 border-sky-300/60'],
-                ['label' => 'DOAJ', 'class' => 'bg-emerald-100 text-emerald-800 border-emerald-300/60'],
-            ],
             'languages' => [
                 ['code' => 'id', 'label' => 'ID', 'active' => true],
                 ['code' => 'en', 'label' => 'EN', 'active' => false],

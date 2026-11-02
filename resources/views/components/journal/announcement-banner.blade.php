@@ -1,11 +1,14 @@
 @props(['announcement' => null])
 
-<div class="bg-red-50/80 border-y border-red-200/80 px-4 sm:px-8 py-2.5 text-xs text-red-900">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+<div class="bg-gray-50 border-b border-gray-200/90 px-4 sm:px-8 py-2 text-xs text-gray-700">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
         <div class="flex items-center gap-2.5 overflow-hidden">
-            <p class="truncate text-red-950 font-medium">
-                {{ $announcement['title'] ?? 'Volume 4 Nomor 1 (Edisi Juni 2026): Fokus Inovasi Ekosistem Digital Maritim dan Kebijakan Publik Berkelanjutan.' }}
-                <span class="font-bold text-brand-maroon ml-1">Batas Akhir: {{ $announcement['deadline'] ?? '30 April 2026' }}</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-maroon text-white tracking-wider uppercase shrink-0">
+                Warta
+            </span>
+            <p class="truncate text-gray-800 font-medium">
+                {{ $announcement['title'] ?? 'Volume 6 Nomor 2 (Edisi Desember 2026): Inovasi Kebijakan Publik & Ketahanan Perkotaan' }}
+                <span class="font-bold text-brand-maroon ml-1">Batas Akhir: {{ $announcement['deadline'] ?? '15 November 2026' }}</span>
             </p>
         </div>
         <a href="#pengumuman" class="inline-flex items-center gap-1 text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover shrink-0 hover:underline">

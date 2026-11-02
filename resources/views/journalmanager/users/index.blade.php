@@ -310,7 +310,7 @@
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs" onclick="closeAssignRoleModal()"></div>
 
         <!-- Panel Konten -->
-        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center">
@@ -360,13 +360,22 @@
 
                 <div>
                     <label for="role_code" class="block text-xs font-semibold text-gray-700 mb-1">Pilih Peran yang Diberikan <span class="text-red-500">*</span></label>
-                    <select name="role_code" id="role_code" required class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon bg-white">
-                        <option value="section_editor">Section Editor (Editor Bagian)</option>
-                        <option value="reviewer">Peer Reviewer (Mitra Bestari)</option>
-                        <option value="copyeditor">Copy Editor (Penyunting Bahasa)</option>
-                        <option value="layout_editor">Layout Editor (Penata Letak Galai)</option>
-                        <option value="proofreader">Proofreader (Korektor Akhir)</option>
-                    </select>
+                    <x-custom-dropdown
+                        name="role_code"
+                        id="role_code"
+                        :required="true"
+                        :value="'section_editor'"
+                        :options="[
+                            'section_editor' => 'Section Editor (Editor Bagian)',
+                            'reviewer' => 'Peer Reviewer (Mitra Bestari)',
+                            'copyeditor' => 'Copy Editor (Penyunting Bahasa)',
+                            'layout_editor' => 'Layout Editor (Penata Letak Galai)',
+                            'proofreader' => 'Proofreader (Korektor Akhir)',
+                        ]"
+                        container-class="w-full"
+                        button-class="w-full px-3 py-2 text-xs border-gray-300 bg-white"
+                        panel-class="w-full"
+                    />
                 </div>
 
                 <div>
@@ -394,7 +403,7 @@
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs" onclick="closeResetPasswordModal()"></div>
 
         <!-- Panel Konten -->
-        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">

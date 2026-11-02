@@ -53,7 +53,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Kolom Konten Utama (2/3) -->
-        <article class="lg:col-span-2 space-y-8 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+        <article class="lg:col-span-2 space-y-8 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
             
             <!-- Metadata Edisi & Kategori -->
             <div class="space-y-3 border-b border-gray-100 pb-6">
@@ -186,7 +186,7 @@
         <aside class="lg:col-span-1 space-y-6">
             
             <!-- Card Unduh Galai PDF Utama -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Berkas Galai Resmi</h3>
                 
                 @if($article->galleys->isNotEmpty())
@@ -235,7 +235,7 @@
             </div>
 
             <!-- Card Statistik Metrik COUNTER -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 text-xs">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4 text-xs">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Statistik Pembaca</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
@@ -254,7 +254,7 @@
             </div>
 
             <!-- Card Hak Cipta & Lisensi Open Access -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Lisensi Publikasi</h3>
                 <div class="flex items-start gap-2.5">
                     <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">

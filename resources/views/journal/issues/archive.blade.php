@@ -13,7 +13,7 @@
     </nav>
 
     <!-- Header Arsip Edisi -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                 PUSTAKA BERKALA ILMIAH
