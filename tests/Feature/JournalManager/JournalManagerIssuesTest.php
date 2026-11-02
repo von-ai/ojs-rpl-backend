@@ -140,8 +140,8 @@ class JournalManagerIssuesTest extends TestCase
         $response->assertSee('Draf Kurasi Naskah');
         $response->assertSee('10.61234/sirida.v6i2');
 
-        // Daftar Isi Naskah (Table of Contents)
-        $response->assertSee('Daftar Isi Edisi (Table of Contents)');
+        // Daftar Isi Naskah
+        $response->assertSee('Daftar Isi Edisi');
         $response->assertSee('Efektivitas Program Lorong Wisata');
         $response->assertSee('Halaman: 1-14');
         $response->assertSee('Inovasi Pelayanan Kesehatan Terpadu');

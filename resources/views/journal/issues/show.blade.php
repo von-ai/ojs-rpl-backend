@@ -50,7 +50,7 @@
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     @if($isCurrent ?? false)
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider border border-emerald-300/60">
-                            Edisi Terkini (Current Issue)
+                            Edisi Terkini
                         </span>
                     @else
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase tracking-wider border border-gray-300/60">
@@ -102,7 +102,7 @@
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    <span>Daftar Isi Naskah Ilmiah (Table of Contents)</span>
+                    <span>Daftar Isi Naskah Ilmiah</span>
                 </h2>
                 <span class="text-xs text-gray-500 font-medium">{{ $issue->articles->count() }} Artikel</span>
             </div>

@@ -196,7 +196,7 @@
                                             <button 
                                                 type="submit" 
                                                 class="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition"
-                                                title="Tetapkan sebagai Terbitan Berjalan (Current Issue)"
+                                                title="Tetapkan sebagai Terbitan Berjalan"
                                             >
                                                 Jadikan Current
                                             </button>

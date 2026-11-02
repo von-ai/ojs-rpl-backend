@@ -70,7 +70,7 @@
                         </span>
                         <div>
                             <h2 class="text-sm sm:text-base font-bold text-gray-900">
-                                Daftar Isi Edisi (Table of Contents)
+                                Daftar Isi Edisi
                             </h2>
                             <p class="text-xs text-gray-500 mt-0.5">
                                 Susunan urutan naskah resmi dan rentang penomoran halaman artikel.
