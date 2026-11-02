@@ -358,14 +358,24 @@ class AuthorSubmissionDetailViewModel
         // 3. Desk Review / Pemeriksaan Awal (HANYA JIKA RECORD DESK REVIEW BENAR-BENAR ADA)
         foreach ($sub->deskReviews as $dr) {
             $scoreText = $dr->similarity_score !== null ? 'Skor uji kesamaan teks (similarity): '.$dr->similarity_score.'%. ' : '';
-            $statusLabel = $dr->status === 'passed' ? 'Lolos' : ($dr->status === 'rejected' ? 'Ditolak' : ucfirst((string) $dr->status));
+            $statusLabel = match ($dr->status) {
+                'passed' => 'Lolos',
+                'rejected' => 'Ditolak',
+                'revision_required' => 'Perbaikan Format',
+                default => ucfirst(str_replace('_', ' ', (string) $dr->status)),
+            };
+            $badgeColor = match ($dr->status) {
+                'rejected' => 'bg-rose-50 text-rose-700',
+                'revision_required' => 'bg-amber-50 text-amber-800',
+                default => 'bg-indigo-50 text-indigo-700',
+            };
             $events[] = [
                 'timestamp' => $dr->created_at?->timestamp ?? ($submittedAt->timestamp + 3600),
                 'date' => $dr->created_at ? $dr->created_at->format('d M Y, H:i').' WITA' : $submittedAt->format('d M Y, H:i').' WITA',
                 'title' => 'Pemeriksaan Awal Redaksi ('.$statusLabel.')',
                 'actor' => $dr->assessor?->name ?? 'Dewan Redaksi BRIDA',
                 'description' => $scoreText.($dr->notes ?: 'Evaluasi kelengkapan format struktur naskah dan ruang lingkup jurnal.'),
-                'badge_class' => $dr->status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700',
+                'badge_class' => $badgeColor,
             ];
         }
 
@@ -514,37 +524,71 @@ class AuthorSubmissionDetailViewModel
 
     /**
      * Membentuk catatan resmi editorial untuk naskah yang berstatus perlu revisi.
-     * Terhubung langsung dengan keputusan editorial di database.
+     * Terhubung langsung dengan keputusan editorial atau evaluasi desk review di database.
      *
      * @return array<string, mixed>
      */
     protected function buildEditorialFeedback(Submission $sub): array
     {
+        // 1. Cek apakah ada keputusan editorial resmi (Tahap 3 pasca review)
         $decision = $sub->editorialDecisions
-            ->whereIn('decision', ['revisions_required', 'revise'])
+            ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
             ->sortByDesc('created_at')
             ->first();
 
-        $comments = $decision?->note_for_author ?: ($sub->comments_for_editor ?: 'Dewan redaksi meminta perbaikan naskah sesuai catatan telaah mitra bestari.');
+        // 2. Cek apakah revisi berasal dari pemeriksaan awal (Desk Review / Tahap 2)
+        $latestDesk = $sub->deskReviews
+            ->where('status', 'revision_required')
+            ->sortByDesc('created_at')
+            ->first();
 
-        $deadlineStr = $decision?->revision_due_at
-            ? $decision->revision_due_at->format('d M Y')
-            : now()->addDays(14)->format('d M Y');
+        $isDeskRevision = (! $decision && $latestDesk !== null);
+
+        if ($isDeskRevision) {
+            $comments = $latestDesk->notes
+                ?: ($sub->comments_for_editor ?: 'Dewan redaksi meminta penulis untuk merevisi format naskah atau melengkapi berkas yang belum memenuhi panduan penulisan jurnal.');
+
+            return [
+                'is_desk_revision' => true,
+                'badge_label' => 'Perbaikan Format Berkas',
+                'badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'decision' => 'Perbaikan Format Naskah (Pemeriksaan Awal)',
+                'deadline' => null, // Tidak ada kolom batas waktu pada tabel desk_reviews
+                'days_remaining' => null,
+                'is_urgent' => false,
+                'comments' => $comments,
+                'peer_reviews' => [],
+            ];
+        }
+
+        $comments = $decision?->note_for_author
+            ?: ($sub->comments_for_editor ?: 'Dewan redaksi meminta perbaikan naskah sesuai catatan telaah mitra bestari.');
+
+        $deadlineStr = $decision?->revision_due_at?->format('d M Y');
 
         $daysRemaining = $decision?->revision_due_at
             ? max(0, (int) now()->diffInDays($decision->revision_due_at, false))
-            : 14;
+            : null;
 
         $decisionLabel = match ($decision?->decision) {
             'revisions_required', 'revise' => 'Revisi Diperlukan (Revisions Required)',
+            'resubmit' => 'Kirim Ulang untuk Review (Resubmit for Review)',
             default => 'Revisi Naskah',
         };
 
+        $badgeLabel = match ($decision?->decision) {
+            'resubmit' => 'Kirim Ulang',
+            default => 'Revisi Mayor',
+        };
+
         return [
+            'is_desk_revision' => false,
+            'badge_label' => $badgeLabel,
+            'badge_class' => 'bg-red-50 text-red-700 border-red-200',
             'decision' => $decisionLabel,
             'deadline' => $deadlineStr,
             'days_remaining' => $daysRemaining,
-            'is_urgent' => $daysRemaining <= 3,
+            'is_urgent' => $daysRemaining !== null && $daysRemaining <= 3,
             'comments' => $comments,
             'peer_reviews' => $this->buildAnonymousPeerReviews($sub),
         ];

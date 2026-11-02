@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\DeskReview;
 use App\Models\Journal;
 use App\Models\Section;
 use App\Models\Submission;
@@ -417,5 +418,65 @@ class AuthorSubmissionDetailTest extends TestCase
         $response = $this->actingAs($otherAuthor)->get(route('author.submissions.show', 'SUB-2026-00104'));
 
         $response->assertStatus(404);
+    }
+
+    /**
+     * Saat EIC meminta perbaikan format pada skrining awal, catatan desk review muncul dan batas waktu revisi tidak ditampilkan.
+     */
+    public function test_catatan_perbaikan_format_skrining_awal_ditampilkan_tanpa_batas_waktu(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-makassar'],
+            ['name' => 'Jurnal SIRIDA', 'status' => 'active', 'version' => 1]
+        );
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-format-test'],
+            ['name' => 'Seksi Format Test', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00888',
+            'title' => 'Naskah Evaluasi Perbaikan Format Skrining Awal',
+            'abstract' => 'Abstrak naskah dengan perbaikan format.',
+            'status' => 'revisions_requested',
+            'submitted_at' => now()->subDays(2),
+            'version' => 2,
+        ]);
+
+        // EIC melakukan desk review dengan permintaan perbaikan format dan catatan khusus
+        DeskReview::create([
+            'submission_id' => $submission->id,
+            'assessed_by' => $this->author->id,
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 12.5,
+            'notes' => 'Format daftar pustaka belum mengikuti gaya APA 7th dan abstrak belum memuat kata kunci bahasa Inggris.',
+            'status' => 'revision_required',
+            'version' => 1,
+        ]);
+
+        // Buka halaman detail naskah author
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00888'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Perbaikan Format Berkas');
+        $response->assertSee('Perbaikan Format Naskah (Pemeriksaan Awal)');
+        // Memastikan catatan yang diinput EIC tampil persis
+        $response->assertSee('Format daftar pustaka belum mengikuti gaya APA 7th dan abstrak belum memuat kata kunci bahasa Inggris.');
+        // Memastikan tidak muncul kalimat default mitra bestari
+        $response->assertDontSee('Dewan redaksi meminta perbaikan naskah sesuai catatan telaah mitra bestari.');
+        // Memastikan baris Batas Waktu Revisi tidak muncul (karena di ERD desk_reviews tidak ada kolom batas waktu)
+        $response->assertDontSee('Batas Waktu Revisi:');
+
+        // Buka halaman katalog naskah author
+        $indexResponse = $this->get(route('author.submissions.index', ['tab' => 'perlu-revisi']));
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertSee('SUB-2026-00888');
+        $indexResponse->assertSee('Perbaikan Format Berkas');
+        $indexResponse->assertDontSee('15 Nov 2026');
     }
 }

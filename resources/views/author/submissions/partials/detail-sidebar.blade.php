@@ -15,8 +15,8 @@
                     </div>
                     <h3 class="text-xs sm:text-sm font-bold leading-tight truncate" title="Perlu Tindakan Penulis">Perlu Tindakan Penulis</h3>
                 </div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 tabular-nums shrink-0">
-                    Revisi Mayor
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold {{ $submission['editorial_feedback']['badge_class'] ?? 'bg-red-50 text-red-700 border border-red-200' }} tabular-nums shrink-0">
+                    {{ $submission['editorial_feedback']['badge_label'] ?? 'Revisi Mayor' }}
                 </span>
             </div>
 
@@ -25,10 +25,12 @@
                     <span class="text-gray-500 shrink-0">Keputusan Redaksi:</span>
                     <strong class="text-gray-900 font-bold text-right break-words">{{ $submission['editorial_feedback']['decision'] }}</strong>
                 </div>
-                <div class="flex items-start justify-between gap-2">
-                    <span class="text-gray-500 shrink-0">Batas Waktu Revisi:</span>
-                    <span class="font-bold text-red-700 tabular-nums text-right shrink-0">{{ $submission['editorial_feedback']['deadline'] }}</span>
-                </div>
+                @if(!empty($submission['editorial_feedback']['deadline']))
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-gray-500 shrink-0">Batas Waktu Revisi:</span>
+                        <span class="font-bold text-red-700 tabular-nums text-right shrink-0">{{ $submission['editorial_feedback']['deadline'] }}</span>
+                    </div>
+                @endif
             </div>
 
             <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700 leading-relaxed space-y-1.5">

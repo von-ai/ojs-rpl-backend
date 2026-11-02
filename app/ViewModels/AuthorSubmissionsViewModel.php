@@ -297,7 +297,7 @@ class AuthorSubmissionsViewModel
                     return $this->cachedRawSubmissions = [];
                 }
 
-                $query = Submission::with(['section', 'contributors', 'journal', 'latestPayment']);
+                $query = Submission::with(['section', 'contributors', 'journal', 'latestPayment', 'editorialDecisions', 'deskReviews']);
 
                 // Isolasi Akses Data Peran Penulis:
                 // Penulis hanya dapat melihat naskah miliknya (author_id)
@@ -360,7 +360,27 @@ class AuthorSubmissionsViewModel
                     $payment = $sub->latestPayment;
 
                     $statusSubtitle = match ($sub->status) {
-                        'revisions_requested' => 'Batas Waktu: 15 Nov 2026',
+                        'revisions_requested' => (function () use ($sub): string {
+                            $decision = $sub->editorialDecisions
+                                ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
+                                ->sortByDesc('created_at')
+                                ->first();
+
+                            if ($decision?->revision_due_at) {
+                                return 'Batas Waktu: '.$decision->revision_due_at->format('d M Y');
+                            }
+
+                            $desk = $sub->deskReviews
+                                ->where('status', 'revision_required')
+                                ->sortByDesc('created_at')
+                                ->first();
+
+                            if ($desk) {
+                                return 'Perbaikan Format Berkas';
+                            }
+
+                            return 'Menunggu Respons Penulis';
+                        })(),
                         'in_review' => 'Putaran 1 Review',
                         'in_production', 'accepted' => $isPaidJournal
                             ? ($payment && $payment->isVerified() ? 'Pembayaran Lunas • Tata Letak' : ($payment && $payment->isPendingVerification() ? 'Verifikasi Bukti Bayar' : ($payment && $payment->isRejected() ? 'Bukti Bayar Perlu Diperbaiki' : 'Menunggu Bukti Bayar APC')))
