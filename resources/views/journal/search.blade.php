@@ -6,13 +6,13 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
 
     <!-- Header & Hero Search Box -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-6">
-        <div class="space-y-2">
+    <div class="bg-white rounded-md border border-gray-200 p-6 sm:p-8 space-y-6">
+        <div class="space-y-1">
             <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                Katalog & Pencarian Artikel Ilmiah Publik
+                Pencarian Artikel
             </h1>
-            <p class="text-xs sm:text-sm text-gray-500 max-w-2xl leading-relaxed">
-                Telusuri seluruh artikel penelitian terapan, kajian kebijakan daerah, dan inovasi perkotaan yang telah melalui proses penelaahan mitra bestari (peer-review) dan terbit secara resmi.
+            <p class="text-xs sm:text-sm text-gray-500 max-w-2xl">
+                Telusuri artikel penelitian dan inovasi daerah yang telah terbit.
             </p>
         </div>
 
@@ -30,26 +30,25 @@
                         name="q" 
                         value="{{ request('q') }}"
                         placeholder="Cari berdasarkan judul naskah, abstrak, kata kunci, atau nama penulis..."
-                        class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon text-gray-900"
+                        class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon text-gray-900"
                     >
                 </div>
 
                 <div class="flex gap-2">
-                    <select 
-                        name="category" 
-                        class="px-3 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-maroon bg-white text-gray-700"
-                    >
-                        <option value="">Semua Seksi / Kategori</option>
-                        @foreach($viewModel->categories() as $cat)
-                            <option value="{{ $cat['name'] }}" {{ request('category') === $cat['name'] ? 'selected' : '' }}>
-                                {{ $cat['name'] }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @php
+                        $categoryOptions = array_merge(['' => 'Semua Seksi / Kategori'], collect($viewModel->categories())->pluck('name', 'name')->all());
+                    @endphp
+                    <x-custom-dropdown
+                        name="category"
+                        :value="request('category')"
+                        :options="$categoryOptions"
+                        button-class="py-2.5 px-3 text-xs bg-white border-gray-300 text-gray-700 rounded-md"
+                        panel-class="rounded-md min-w-56"
+                    />
 
                     <button 
                         type="submit" 
-                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-xl transition duration-150 flex items-center gap-2 cursor-pointer border border-brand-maroon"
+                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-md transition duration-150 flex items-center gap-2 cursor-pointer border border-brand-maroon"
                     >
                         <span>Cari</span>
                     </button>
@@ -84,7 +83,7 @@
                             ? route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $firstGalley->id])
                             : null;
                     @endphp
-                    <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 space-y-3 hover:border-gray-300 transition duration-150">
+                    <div class="bg-white rounded-md border border-gray-200 p-5 sm:p-6 space-y-3 hover:border-gray-300 transition duration-150">
                         <div class="flex items-center gap-2 text-xs flex-wrap">
                             <span class="px-2 py-0.5 rounded font-semibold bg-brand-maroon/10 text-brand-maroon">
                                 {{ $article->section?->name ?? 'Artikel Riset Orisinil' }}
@@ -149,7 +148,7 @@
             </div>
         @else
             <!-- Empty State Informatif -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center space-y-4">
+            <div class="bg-white rounded-md border border-gray-200 p-12 text-center space-y-4">
                 <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

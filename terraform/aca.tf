@@ -8,24 +8,18 @@ resource "azurerm_container_app_environment" "env" {
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
   tags                       = var.tags
-}
 
-# -----------------------------------------------------------------------------
-# Storage Mount untuk Kontainer ACA (Persistensi /var/www/html/storage/app)
-# -----------------------------------------------------------------------------
-resource "azurerm_container_app_environment_storage" "storage" {
-  name                         = "appdata"
-  container_app_environment_id = azurerm_container_app_environment.env.id
-  account_name                 = azurerm_storage_account.storage.name
-  share_name                   = azurerm_storage_share.app_share.name
-  access_key                   = azurerm_storage_account.storage.primary_access_key
-  access_mode                  = "ReadWrite"
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+  }
 }
 
 # -----------------------------------------------------------------------------
 # ACA Web Application Container (Laravel 13 + PHP 8.4-FPM + Nginx)
 # Scale-to-zero saat idle (0 - 5 replika, KEDA concurrent HTTP requests > 30)
 # -----------------------------------------------------------------------------
+
 resource "azurerm_container_app" "web" {
   name                         = "ca-${var.project_name}-web-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.env.id
@@ -67,25 +61,15 @@ resource "azurerm_container_app" "web" {
 
     http_scale_rule {
       name                = "http-concurrency-rule"
-      concurrent_requests = 30
-    }
-
-    volume {
-      name         = "app-data-vol"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.storage.name
+      concurrent_requests = "30"
     }
 
     container {
-      name   = "web"
-      image  = var.container_image
-      cpu    = var.aca_web_cpu
-      memory = var.aca_web_memory
-
-      volume_mounts {
-        name = "app-data-vol"
-        path = "/var/www/html/storage/app"
-      }
+      name    = "web"
+      image   = var.container_image
+      cpu     = var.aca_web_cpu
+      memory  = var.aca_web_memory
+      command = ["/bin/sh", "-c", "mkdir -p /run/nginx && sed -i '/::/d' /etc/nginx/http.d/default.conf 2>/dev/null || true; exec /usr/local/bin/entrypoint.sh"]
 
       dynamic "env" {
         for_each = local.common_env_vars
@@ -147,23 +131,12 @@ resource "azurerm_container_app" "worker" {
     min_replicas = var.aca_worker_min_replicas
     max_replicas = var.aca_worker_max_replicas
 
-    volume {
-      name         = "app-data-vol"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.storage.name
-    }
-
     container {
       name    = "worker"
       image   = var.container_image
       cpu     = var.aca_worker_cpu
       memory  = var.aca_worker_memory
-      command = ["php", "artisan", "queue:work", "--queue=default,identity", "--verbose", "--tries=3", "--timeout=90"]
-
-      volume_mounts {
-        name = "app-data-vol"
-        path = "/var/www/html/storage/app"
-      }
+      command = ["php", "/var/www/html/artisan", "queue:work", "--queue=default,identity", "--verbose", "--tries=3", "--timeout=90"]
 
       dynamic "env" {
         for_each = local.common_env_vars
@@ -178,16 +151,14 @@ resource "azurerm_container_app" "worker" {
 }
 
 # -----------------------------------------------------------------------------
-# ACA Scheduled Job (Cron Pemicu: * * * * *)
-# Hidup hanya beberapa detik per menit untuk `php artisan schedule:run`
+# ACA Scheduler Daemon Container (php artisan schedule:work)
+# Berjalan sebagai background daemon yang mengeksekusi scheduler tiap menit
 # -----------------------------------------------------------------------------
-resource "azurerm_container_app_job" "scheduler" {
-  name                         = "caj-${var.project_name}-scheduler-${var.environment}"
-  location                     = azurerm_resource_group.rg.location
-  resource_group_name          = azurerm_resource_group.rg.name
+resource "azurerm_container_app" "scheduler" {
+  name                         = "ca-${var.project_name}-scheduler-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.env.id
-  replica_timeout_in_seconds   = 60
-  replica_retry_limit          = 1
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Single"
   tags                         = var.tags
 
   dynamic "secret" {
@@ -207,17 +178,16 @@ resource "azurerm_container_app_job" "scheduler" {
     }
   }
 
-  schedule_trigger_config {
-    cron_expression = "* * * * *"
-  }
-
   template {
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name    = "scheduler"
       image   = var.container_image
       cpu     = var.aca_job_cpu
       memory  = var.aca_job_memory
-      command = ["php", "artisan", "schedule:run"]
+      command = ["php", "/var/www/html/artisan", "schedule:work"]
 
       dynamic "env" {
         for_each = local.common_env_vars

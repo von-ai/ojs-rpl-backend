@@ -27,7 +27,7 @@
 
                 <!-- Search/Category Filter Active State Banner (If filtering) -->
                 @if ($viewModel->searchQuery || $viewModel->selectedCategory)
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between text-xs text-amber-900">
+                    <div class="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-center justify-between text-xs text-amber-900">
                         <div class="flex items-center gap-2">
                             <span class="font-bold">Filter Aktif:</span>
                             @if ($viewModel->searchQuery)
@@ -47,17 +47,17 @@
                 <section class="space-y-4">
                     <div class="flex items-center justify-between border-b border-gray-200 pb-2">
                         <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                            <span>Daftar Artikel Edisi Ini</span>
-                            <span class="text-xs font-normal text-gray-500">({{ count($viewModel->articles()) }} Artikel)</span>
+                            <span>Artikel Terbit</span>
+                            <span class="text-xs font-normal text-gray-500">({{ count($viewModel->articles()) }})</span>
                         </h2>
-                        <span class="text-xs text-gray-500 font-medium">Urutkan: Terbaru</span>
+                        <span class="text-xs text-gray-500 font-medium">Terbaru</span>
                     </div>
 
                     <div class="space-y-4">
                         @forelse ($viewModel->articles() as $article)
                             <x-journal.article-card :article="$article" />
                         @empty
-                            <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-xs">
+                            <div class="bg-white rounded-md border border-gray-200 p-8 text-center text-gray-500 text-xs">
                                 <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>

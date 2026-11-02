@@ -14,10 +14,11 @@ Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas `r
 
 | Nama Token Tailwind v4 | Variabel CSS | Nilai Hex | Peruntukan & Hierarki Visual |
 | :--- | :--- | :--- | :--- |
-| `bg-brand-maroon` | `--color-brand-maroon` | `#6A020A` | **Warna Primer Merek.** Digunakan pada tombol CTA utama, tombol submit naskah, active state sidebar, dan ring fokus formulir. |
-| `hover:bg-brand-maroon-hover` | `--color-brand-maroon-hover` | `#520208` | State *hover* interaktif pada tombol primer dan tautan penting. |
-| `active:bg-brand-maroon-active` | `--color-brand-maroon-active` | `#3d0106` | State *active / pressed* saat elemen diklik. |
-| `bg-brand-maroon-light` | `--color-brand-maroon-light` | `#FFDAD6` | Latar belakang aksen halus untuk notifikasi error validasi dan container penolakan. |
+| `text-brand-logo` | `--color-brand-logo` | `#ED1C24` | **Warna Merah Standar BRIN.** Identitas warna resmi Badan Riset dan Inovasi Nasional (brin.go.id). |
+| `bg-brand-maroon` | `--color-brand-maroon` | `#ED1C24` | **Warna Primer Merek BRIN.** Digunakan pada tombol CTA utama, tombol submit naskah, active state sidebar, dan ring fokus formulir. |
+| `hover:bg-brand-maroon-hover` | `--color-brand-maroon-hover` | `#C8102E` | State *hover* interaktif pada tombol primer dan tautan penting. |
+| `active:bg-brand-maroon-active` | `--color-brand-maroon-active` | `#9E0012` | State *active / pressed* saat elemen diklik. |
+| `bg-brand-maroon-light` | `--color-brand-maroon-light` | `#FEE2E2` | Latar belakang aksen halus untuk notifikasi, badge, dan kontainer seleksi. |
 | `text-brand-navy` | `--color-brand-navy` | `#002E72` | **Warna Sekunder Merek.** Identitas aksen publikasi akademik dan header portal OJS. |
 | `hover:text-brand-navy-hover` | `--color-brand-navy-hover` | `#001F54` | State *hover* untuk tautan beraksen navy. |
 | `bg-canvas` | `--color-canvas` | `#F8F9FA` | Latar belakang canvas utama seluruh halaman aplikasi. |

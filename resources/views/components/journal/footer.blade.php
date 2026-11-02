@@ -7,7 +7,7 @@
             <div class="space-y-3">
                 <a href="/" class="flex items-center gap-3">
                     <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-9 h-9 object-contain shrink-0">
-                    <span class="font-extrabold text-brand-maroon text-base tracking-tight block">
+                    <span class="font-extrabold text-brand-logo text-base tracking-tight block">
                         {{ $footerData['publisher_name'] ?? 'BRIDA KOTA MAKASSAR' }}
                     </span>
                 </a>

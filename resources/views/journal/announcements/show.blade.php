@@ -18,7 +18,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Konten Pengumuman (2 Kolom Kiri) -->
-        <article class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-6">
+        <article class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-6">
             
             <div class="border-b border-gray-100 pb-5 space-y-3">
                 <div class="flex items-center justify-between gap-2 text-xs">

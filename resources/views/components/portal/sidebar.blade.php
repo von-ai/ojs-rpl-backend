@@ -14,7 +14,7 @@
         <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="{{ $roleLabel }} — BRIDA Kota Makassar">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Kota Makassar" class="w-8 h-8 object-contain shrink-0 sidebar-logo transition-transform duration-200 group-hover:scale-105">
             <div class="flex flex-col min-w-0 sidebar-brand-text text-left">
-                <span class="text-xs font-bold tracking-wide text-brand-maroon leading-tight truncate">BRIDA MAKASSAR</span>
+                <span class="text-xs font-bold tracking-wide text-brand-logo leading-tight truncate">BRIDA MAKASSAR</span>
                 <span class="text-[11px] font-medium text-gray-500 leading-tight truncate">{{ $roleLabel }}</span>
             </div>
         </a>

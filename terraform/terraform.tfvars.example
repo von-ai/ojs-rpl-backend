@@ -7,7 +7,9 @@
 # Penamaan & Region
 project_name   = "sirida"
 environment    = "poc"
-azure_location = "southeastasia" # Singapore
+azure_location   = "indonesiacentral" # Jakarta, Indonesia (Compute, ACA, Redis)
+storage_location = "southeastasia"    # Singapore (Azure Blob Storage + Defender)
+redis_sku_name   = "Balanced_B0"
 
 # Container Image (GitHub Container Registry)
 container_image             = "ghcr.io/von-ai/ojs-rpl-backend:latest"
@@ -28,12 +30,15 @@ db_username = "xxxxxx.root"
 db_password = "YOUR_TIDB_PASSWORD_HERE"
 db_ssl_mode = "REQUIRED"
 
-# Cloudflare (DNS, WAF, SSL)
-enable_cloudflare    = false # Set true jika ingin mengaktifkan Cloudflare DNS & WAF otomatis
-cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN"
-cloudflare_zone_id   = "YOUR_CLOUDFLARE_ZONE_ID"
-domain_name          = "makassar.go.id"
-subdomain            = "jurnal"
+# Cloudflare (DNS, WAF, SSL, Worker Edge Proxy)
+enable_cloudflare             = false # Set true jika ingin mengaktifkan Cloudflare otomatis
+enable_cloudflare_worker      = true  # Gunakan Cloudflare Worker untuk Host Header Rewrite gratis
+enable_cloudflare_origin_rule = false # Set true hanya jika akun Cloudflare memiliki lisensi Enterprise
+cloudflare_account_id         = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+cloudflare_api_token          = "YOUR_CLOUDFLARE_API_TOKEN"
+cloudflare_zone_id            = "YOUR_CLOUDFLARE_ZONE_ID"
+domain_name                   = "makassar.go.id"
+subdomain                     = "jurnal"
 
 # Azure Communication Services / SMTP Relay
 mail_host         = "smtp.azurecomm.net"
@@ -45,3 +50,7 @@ mail_from_name    = "SIRIDA - Jurnal Kota Makassar"
 
 # Monitoring & Alert
 alert_email = "benediktus.gianto.jarod@gmail.com"
+
+# Azure Managed Redis (AMR)
+# redis_sku_name = "Balanced_B0" # Default: Balanced_B0 (~500MB, ~$0.02/jam on-demand)
+

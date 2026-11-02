@@ -1,11 +1,20 @@
 # -----------------------------------------------------------------------------
+# Random Suffix Khusus Storage Account (Menghindari Name Collision Global Azure)
+# -----------------------------------------------------------------------------
+resource "random_string" "storage_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+# -----------------------------------------------------------------------------
 # Azure Blob Storage Account
 # Enkripsi AES-256 bawaan, TLS 1.2+, versioning & soft delete (NF-02, NF-08)
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_account" "storage" {
-  name                     = "st${var.project_name}${var.environment}${random_string.suffix.result}"
+  name                     = "st${var.project_name}${var.environment}${random_string.storage_suffix.result}"
   resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
+  location                 = var.storage_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
@@ -35,6 +44,8 @@ resource "azurerm_storage_container" "manuscripts" {
   name                  = var.storage_container_name
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -44,6 +55,8 @@ resource "azurerm_storage_container" "backups" {
   name                  = "sirida-backups"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -54,6 +67,8 @@ resource "azurerm_storage_share" "app_share" {
   name                 = "sirida-app-data"
   storage_account_name = azurerm_storage_account.storage.name
   quota                = 5 # 5 GB
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
@@ -75,20 +90,21 @@ resource "azurerm_storage_management_policy" "lifecycle" {
       }
     }
   }
+
+  depends_on = [azurerm_storage_account.storage]
 }
 
 # -----------------------------------------------------------------------------
-# Advanced Threat Protection & Microsoft Defender for Storage (Malware Scanning)
+# Microsoft Defender for Storage (Malware Scanning)
+# Berjalan aktif di Singapore (southeastasia) untuk pemindaian malware naskah otomatis
 # -----------------------------------------------------------------------------
-resource "azurerm_advanced_threat_protection" "atp" {
-  target_resource_id = azurerm_storage_account.storage.id
-  enabled            = true
-}
-
 resource "azurerm_security_center_storage_defender" "defender" {
   count                                       = var.enable_storage_defender ? 1 : 0
   storage_account_id                          = azurerm_storage_account.storage.id
   malware_scanning_on_upload_enabled          = true
   malware_scanning_on_upload_cap_gb_per_month = 50
   sensitive_data_discovery_enabled            = false
+
+  depends_on = [azurerm_storage_account.storage]
 }
+

@@ -24,7 +24,7 @@
                 <a href="/" class="flex items-center gap-3 group">
                     <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-9 h-9 object-contain shrink-0 transition-transform group-hover:scale-105">
                     <div class="flex flex-col justify-center">
-                        <span class="text-xs sm:text-sm font-bold text-brand-maroon leading-tight tracking-tight">
+                        <span class="text-xs sm:text-sm font-bold text-brand-logo leading-tight tracking-tight">
                             Jurnal Riset & Inovasi
                         </span>
                         <span class="text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider leading-tight">

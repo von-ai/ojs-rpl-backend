@@ -12,11 +12,11 @@ Arsitektur ini menerapkan pola **The Ephemeral Cloud Pattern**:
 
 ```text
 terraform/
-├── providers.tf            # Definisi provider azurerm (~> 3.100), cloudflare (~> 4.0), random
+├── providers.tf            # Definisi provider azurerm (~> 4.0), cloudflare (~> 4.0), random
 ├── variables.tf            # Deklarasi variabel konfigurasi (region, domain, sizing, credentials)
 ├── main.tf                 # Azure Resource Group & Log Analytics Workspace
 ├── storage.tf              # Azure Storage Account, Blob Container, Lifecycle, Defender
-├── redis.tf                # Azure Cache for Redis (Basic C0 ~250MB, TLS Port 6380)
+├── redis.tf                # Azure Managed Redis (AMR) - Balanced_B0 (~500MB, Redis Enterprise Engine)
 ├── secrets.tf              # Pemetaan ACA built-in secrets & variabel environment container
 ├── aca.tf                  # ACA Environment, Web Container, Queue Worker, Scheduled Job
 ├── monitoring.tf           # Azure Application Insights, Web Test (5 Probe), Alert SLA 99.5%
@@ -98,7 +98,42 @@ Setelah deployment sukses, terminal akan menampilkan output FQDN Web App, Resour
 
 ---
 
-## 5. Penghancuran Infrastruktur (*Ephemeral Teardown*)
+## 5. Integrasi Custom Domain Publik (`sirida.web.id`) via Cloudflare Worker
+
+### Mengapa Cloudflare Worker?
+1. **Kebijakan Azure Container Apps Express Environment**: Azure menolak pendaftaran custom domain secara langsung pada tingkat ingress Container App (`ExpressCustomDomainsNotSupported`).
+2. **Batasan Lisensi Cloudflare Free Plan**: Fitur penulisan ulang Host Header (*HostHeader override*) pada Cloudflare Origin Rules dikunci khusus untuk pelanggan paket Enterprise.
+3. **Solusi Standar Industri**: Menggunakan **Cloudflare Worker** (gratis hingga 100.000 req/hari) yang bertindak sebagai Edge Reverse Proxy untuk menerima trafik `https://sirida.web.id` dan menulis ulang Host Header ke FQDN ACA secara otomatis.
+
+### Otomasi Penuh via Terraform (Rekomendasi)
+Integrasi ini sekarang **100% terotomasi** di dalam Terraform ([`cloudflare.tf`](cloudflare.tf)):
+1. Pastikan variabel berikut terisi di `terraform.tfvars`:
+   ```hcl
+   enable_cloudflare        = true
+   enable_cloudflare_worker = true
+   cloudflare_account_id    = "<CLOUDFLARE_ACCOUNT_ID>"
+   cloudflare_api_token     = "<CLOUDFLARE_API_TOKEN>"
+   cloudflare_zone_id       = "<CLOUDFLARE_ZONE_ID>"
+   domain_name              = "sirida.web.id"
+   subdomain                = "@"
+   ```
+2. Saat `terraform apply` dijalankan:
+   - Terraform membaca template [`terraform/cloudflare-worker.js.tpl`](cloudflare-worker.js.tpl) dan menginjeksi FQDN dinamis ACA Ingress (`azurerm_container_app.web.ingress[0].fqdn`).
+   - Terraform membuat atau memperbarui resource Worker Script (`cloudflare_workers_script.proxy`).
+   - Terraform mengaitkan custom domain publik (`cloudflare_workers_domain.custom_domain`) ke Worker secara otomatis.
+   - Tidak diperlukan pembuatan CNAME manual ataupun klik pada dashboard Cloudflare.
+
+### Konfigurasi Manual Dashboard (Opsional / Fallback)
+Jika tidak menggunakan Terraform untuk mengelola Cloudflare:
+1. Buka [dash.cloudflare.com](https://dash.cloudflare.com) ➔ pilih **Workers & Pages**.
+2. Klik **Create Application** ➔ tab **Workers** ➔ **Create Worker** (beri nama: `sirida-proxy`) ➔ klik **Deploy**.
+3. Klik **Edit Code** dan masukkan kode dari [`terraform/cloudflare-worker.js.tpl`](cloudflare-worker.js.tpl) dengan mengganti `${origin_fqdn}` dengan nilai output Terraform `web_app_direct_fqdn`.
+4. Buka tab **Settings** ➔ **Domains & Routes** ➔ klik **Add** ➔ pilih **Custom Domain**.
+5. Masukkan: **`sirida.web.id`** ➔ klik **Add Custom Domain**.
+
+---
+
+## 6. Penghancuran Infrastruktur (*Ephemeral Teardown*)
 
 Setelah sesi presentasi, pengujian, atau evaluasi expo selesai, jalankan script teardown untuk menghapus seluruh komponen cloud secara tuntas:
 
