@@ -29,7 +29,14 @@
             </span>
 
             @if(!$isFinalized && $submission->revisions->isNotEmpty() && $completedCount >= $minReq)
-                <form action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" class="inline m-0">
+                <form action="{{ route('section-editor.rounds.store', $submission->id) }}" 
+                      method="POST" 
+                      class="inline m-0"
+                      data-confirm="Apakah Anda yakin ingin membuka putaran telaah baru untuk naskah ini? Putaran evaluasi berikutnya akan diaktifkan."
+                      data-confirm-title="Buka Putaran Telaah Baru?"
+                      data-confirm-btn="Buka Putaran Baru"
+                      data-confirm-cancel="Batal"
+                      data-confirm-type="primary">
                     @csrf
                     <button 
                         type="submit" 
@@ -186,14 +193,28 @@
                                     Alasan: <span class="italic">"{{ $pendingExt->reason }}"</span>
                                 </p>
                                 <div class="flex items-center gap-2 pt-1">
-                                    <form action="{{ route('section-editor.extensions.decide', $pendingExt->id) }}" method="POST" class="inline m-0">
+                                    <form action="{{ route('section-editor.extensions.decide', $pendingExt->id) }}" 
+                                          method="POST" 
+                                          class="inline m-0"
+                                          data-confirm="Apakah Anda yakin ingin menyetujui permohonan perpanjangan waktu telaah hingga {{ $pendingExt->requested_due_at->format('d M Y') }}?"
+                                          data-confirm-title="Setujui Perpanjangan Waktu?"
+                                          data-confirm-btn="Setujui Perpanjangan"
+                                          data-confirm-cancel="Batal"
+                                          data-confirm-type="primary">
                                         @csrf
                                         <input type="hidden" name="decision" value="approved">
                                         <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition cursor-pointer text-xs">
                                             Setujui Perpanjangan
                                         </button>
                                     </form>
-                                    <form action="{{ route('section-editor.extensions.decide', $pendingExt->id) }}" method="POST" class="inline m-0">
+                                    <form action="{{ route('section-editor.extensions.decide', $pendingExt->id) }}" 
+                                          method="POST" 
+                                          class="inline m-0"
+                                          data-confirm="Apakah Anda yakin ingin menolak permohonan perpanjangan waktu telaah dari mitra bestari ini?"
+                                          data-confirm-title="Tolak Perpanjangan Waktu?"
+                                          data-confirm-btn="Tolak Perpanjangan"
+                                          data-confirm-cancel="Batal"
+                                          data-confirm-type="danger">
                                         @csrf
                                         <input type="hidden" name="decision" value="rejected">
                                         <button type="submit" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition cursor-pointer text-xs">
@@ -247,7 +268,14 @@
                             <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 text-xs">
                                 <!-- Kirim Pengingat -->
                                 @if(in_array($assignment->effective_status, ['invited', 'accepted', 'overdue']))
-                                    <form action="{{ route('section-editor.assignments.reminder', $assignment->id) }}" method="POST" class="inline m-0">
+                                    <form action="{{ route('section-editor.assignments.reminder', $assignment->id) }}" 
+                                          method="POST" 
+                                          class="inline m-0"
+                                          data-confirm="Kirimkan notifikasi surel pengingat batas waktu telaah kepada mitra bestari ini?"
+                                          data-confirm-title="Kirim Pengingat Mitra Bestari?"
+                                          data-confirm-btn="Kirim Pengingat"
+                                          data-confirm-cancel="Batal"
+                                          data-confirm-type="primary">
                                         @csrf
                                         <button type="submit" class="px-3 py-1.5 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5">
                                             <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -260,7 +288,14 @@
 
                                 <!-- Batalkan Undangan (Hanya status invited) -->
                                 @if($assignment->status === 'invited')
-                                    <form action="{{ route('section-editor.assignments.cancel', $assignment->id) }}" method="POST" class="inline m-0" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan undangan mitra bestari ini?');">
+                                    <form action="{{ route('section-editor.assignments.cancel', $assignment->id) }}" 
+                                          method="POST" 
+                                          class="inline m-0"
+                                          data-confirm="Apakah Anda yakin ingin membatalkan undangan mitra bestari ini?"
+                                          data-confirm-title="Batalkan Undangan Mitra Bestari?"
+                                          data-confirm-btn="Batalkan Undangan"
+                                          data-confirm-cancel="Batal"
+                                          data-confirm-type="danger">
                                         @csrf
                                         <button type="submit" class="px-3 py-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg font-medium transition cursor-pointer">
                                             Batalkan Undangan

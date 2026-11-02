@@ -281,7 +281,13 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('journalmanager.issues.publish', $issue['id']) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mempublikasikan edisi terbitan ini ke publik?');">
+                        <form action="{{ route('journalmanager.issues.publish', $issue['id']) }}" 
+                              method="POST"
+                              data-confirm="Apakah Anda yakin ingin mempublikasikan edisi terbitan ini ke publik?"
+                              data-confirm-title="Publikasikan Edisi Terbitan?"
+                              data-confirm-btn="Publikasikan Sekarang"
+                              data-confirm-cancel="Batal"
+                              data-confirm-type="primary">
                             @csrf
                             <button 
                                 type="submit" 

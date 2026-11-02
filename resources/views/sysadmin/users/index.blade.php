@@ -555,7 +555,14 @@
                             ${r.role_label}
                         </span>
                     </div>
-                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" method="POST" class="inline shrink-0" onsubmit="return confirm('Apakah Anda yakin ingin mencabut peran ini?');">
+                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" 
+                          method="POST" 
+                          class="inline shrink-0"
+                          data-confirm="Apakah Anda yakin ingin mencabut peran ini?"
+                          data-confirm-title="Cabut Peran Pengguna?"
+                          data-confirm-btn="Cabut Peran"
+                          data-confirm-cancel="Batal"
+                          data-confirm-type="danger">
                         @csrf
                         <input type="hidden" name="user_id" value="${userId}">
                         <input type="hidden" name="journal_id" value="${r.journal_id}">

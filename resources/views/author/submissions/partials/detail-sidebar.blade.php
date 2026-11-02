@@ -795,21 +795,11 @@
                         cancelText: 'Batalkan',
                         type: 'danger'
                     });
-                    if (confirmed) {
-                        if (withdrawalForm) {
-                            withdrawalForm.submit();
-                        } else if (window.toast) {
-                            window.toast.info('Permohonan penarikan naskah telah diajukan ke dewan redaksi.', 'Pengajuan Diterima');
-                        }
+                    if (confirmed && withdrawalForm) {
+                        withdrawalForm.submit();
                     }
-                } else {
-                    if (confirm('Apakah Anda yakin ingin mengajukan penarikan naskah ini? Tindakan ini hanya dapat dilakukan sebelum naskah masuk tahap review.')) {
-                        if (withdrawalForm) {
-                            withdrawalForm.submit();
-                        } else {
-                            alert('Permohonan penarikan naskah telah diajukan.');
-                        }
-                    }
+                } else if (withdrawalForm) {
+                    withdrawalForm.submit();
                 }
             }
         </script>

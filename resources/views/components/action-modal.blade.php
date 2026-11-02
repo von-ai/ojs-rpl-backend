@@ -166,15 +166,19 @@
         message = 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
         confirmText = 'Lanjutkan',
         cancelText = 'Batal',
-        type = 'danger', // 'danger' | 'warning' | 'primary' | 'info'
+        type = 'danger', // 'danger' | 'warning' | 'primary' | 'info' | 'logout'
         showCancel = true
     } = {}) {
         return new Promise((resolve) => {
             if (!modal) {
-                // Fallback graceful jika elemen modal tidak ada
-                const fallback = window.confirm(message);
-                resolve(fallback);
+                console.warn('Action confirmation modal element not found.');
+                resolve(true);
                 return;
+            }
+
+            if (typeof activeResolve === 'function') {
+                activeResolve(false);
+                activeResolve = null;
             }
 
             activeResolve = resolve;
@@ -257,17 +261,63 @@
         });
     };
 
-    // Global interceptor untuk konfirmasi keluar (Logout)
+    // Pastikan tidak ada alert di window browser native
+    window.alert = function(msg) {
+        window.showAlertModal({
+            title: 'Pemberitahuan',
+            message: (msg !== undefined && msg !== null) ? String(msg) : '',
+            buttonText: 'Mengerti',
+            type: 'primary'
+        });
+    };
+
+    // Auto-upgrade atribut legacy onsubmit/onclick yang menggunakan confirm()
+    function upgradeLegacyConfirms() {
+        document.querySelectorAll('form[onsubmit*="confirm("]').forEach(form => {
+            const onsubmitAttr = form.getAttribute('onsubmit') || '';
+            const match = onsubmitAttr.match(/confirm\(\s*['"]([\s\S]*?)['"]\s*\)/);
+            if (match && match[1]) {
+                form.removeAttribute('onsubmit');
+                form.setAttribute('data-confirm', match[1]);
+                if (!form.getAttribute('data-confirm-title')) {
+                    form.setAttribute('data-confirm-title', 'Konfirmasi Tindakan');
+                }
+            }
+        });
+
+        document.querySelectorAll('button[onclick*="confirm("], a[onclick*="confirm("]').forEach(el => {
+            const onclickAttr = el.getAttribute('onclick') || '';
+            const match = onclickAttr.match(/confirm\(\s*['"]([\s\S]*?)['"]\s*\)/);
+            if (match && match[1]) {
+                el.removeAttribute('onclick');
+                el.setAttribute('data-confirm', match[1]);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', upgradeLegacyConfirms);
+    } else {
+        upgradeLegacyConfirms();
+    }
+
+    // Global interceptor untuk formulir dengan konfirmasi modal yang konsisten
     document.addEventListener('submit', async function(e) {
         const form = e.target;
         if (!form || !(form instanceof HTMLFormElement)) return;
+        if (form.dataset.confirmed === 'true') {
+            return;
+        }
 
+        const submitter = e.submitter;
         const action = form.getAttribute('action') || '';
-        if (action.endsWith('/logout') && !form.dataset.confirmed) {
+
+        // 1. Interceptor konfirmasi keluar (Logout)
+        if (action.endsWith('/logout')) {
             e.preventDefault();
             const confirmed = await window.showConfirmModal({
                 title: 'Konfirmasi Keluar Akun',
-                message: 'Apakah Anda yakin ingin keluar dari Portal Penulis BRIDA Kota Makassar?',
+                message: 'Apakah Anda yakin ingin keluar dari sesi akun Anda di BRIDA Kota Makassar?',
                 confirmText: 'Ya, Keluar',
                 cancelText: 'Batal',
                 type: 'logout'
@@ -275,8 +325,62 @@
 
             if (confirmed) {
                 form.dataset.confirmed = 'true';
-                form.submit();
+                if (typeof form.requestSubmit === 'function' && submitter) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.submit();
+                }
             }
+            return;
+        }
+
+        // 2. Interceptor deklaratif via atribut data-confirm (pada submitter button atau form)
+        const confirmMsg = (submitter && submitter.getAttribute('data-confirm')) || form.getAttribute('data-confirm');
+        if (confirmMsg) {
+            e.preventDefault();
+            const targetEl = (submitter && submitter.hasAttribute('data-confirm')) ? submitter : form;
+            const title = targetEl.getAttribute('data-confirm-title') || 'Konfirmasi Tindakan';
+            const confirmBtn = targetEl.getAttribute('data-confirm-btn') || targetEl.getAttribute('data-confirm-button') || 'Lanjutkan';
+            const cancelBtn = targetEl.getAttribute('data-confirm-cancel') || 'Batal';
+            const confirmType = targetEl.getAttribute('data-confirm-type') || 'danger';
+
+            const confirmed = await window.showConfirmModal({
+                title: title,
+                message: confirmMsg,
+                confirmText: confirmBtn,
+                cancelText: cancelBtn,
+                type: confirmType
+            });
+
+            if (confirmed) {
+                form.dataset.confirmed = 'true';
+                if (typeof form.requestSubmit === 'function' && submitter) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.submit();
+                }
+            }
+            return;
+        }
+    });
+
+    // Interceptor deklaratif untuk link atau tombol di luar form
+    document.addEventListener('click', async function(e) {
+        const trigger = e.target.closest('a[data-confirm], button[data-confirm]:not([type="submit"])');
+        if (!trigger || trigger.dataset.confirmed === 'true') return;
+
+        e.preventDefault();
+        const confirmed = await window.showConfirmModal({
+            title: trigger.getAttribute('data-confirm-title') || 'Konfirmasi Tindakan',
+            message: trigger.getAttribute('data-confirm'),
+            confirmText: trigger.getAttribute('data-confirm-btn') || 'Lanjutkan',
+            cancelText: trigger.getAttribute('data-confirm-cancel') || 'Batal',
+            type: trigger.getAttribute('data-confirm-type') || 'danger'
+        });
+
+        if (confirmed) {
+            trigger.dataset.confirmed = 'true';
+            trigger.click();
         }
     });
 })();
