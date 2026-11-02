@@ -84,6 +84,21 @@ class ReviewerWorkspaceViewModel
         return $this->assignment->status === 'completed';
     }
 
+    public function isDeclined(): bool
+    {
+        return $this->assignment->status === 'declined';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->assignment->status === 'cancelled';
+    }
+
+    public function isNoResponse(): bool
+    {
+        return $this->assignment->effective_status === 'no_response';
+    }
+
     public function canSubmit(): bool
     {
         return in_array($this->assignment->status, ['accepted', 'overdue'], true)

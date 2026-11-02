@@ -104,7 +104,15 @@
                     <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
                         <p class="font-semibold">Unduhan Terkunci</p>
                         <p class="text-[11px] text-amber-800">
-                            Sesuai protokol double-blind, berkas manuskrip baru dapat diunduh setelah Anda menerima surat undangan penugasan naskah ini.
+                            @if($viewModel->isDeclined())
+                                Penugasan telah ditolak. Akses berkas naskah dinonaktifkan.
+                            @elseif($viewModel->isCancelled())
+                                Penugasan telah dibatalkan oleh dewan redaksi.
+                            @elseif($viewModel->isNoResponse())
+                                Batas waktu respon undangan telah berakhir tanpa konfirmasi.
+                            @else
+                                Sesuai protokol double-blind, berkas manuskrip baru dapat diunduh setelah Anda menerima surat undangan penugasan naskah ini.
+                            @endif
                         </p>
                     </div>
                 @else
@@ -190,6 +198,15 @@
                             {{ $viewModel->assignment->review_due_at ? $viewModel->assignment->review_due_at->format('d M Y') : '-' }}
                         </span>
                     </div>
+
+                    @if($viewModel->assignment->responded_at)
+                        <div class="flex justify-between items-center py-1 border-t border-gray-50">
+                            <span class="text-gray-500">Waktu Respon:</span>
+                            <span class="font-semibold text-gray-800 tabular-nums">
+                                {{ $viewModel->assignment->responded_at->format('d M Y H:i') }}
+                            </span>
+                        </div>
+                    @endif
 
                     @if($viewModel->daysRemaining() !== null && $viewModel->canSubmit())
                         @php $days = $viewModel->daysRemaining(); @endphp
@@ -307,7 +324,109 @@
                     </div>
                 </div>
 
-            <!-- KASUS 2 & 3: Undangan Diterima (Status: accepted, overdue, completed) -->
+            <!-- KASUS 2: Undangan Ditolak (Status: declined) -->
+            @elseif($viewModel->isDeclined())
+                <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-2xs space-y-5 text-center">
+                    <div class="w-14 h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Undangan Penelaahan Ditolak
+                        </h2>
+                        <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
+                            Anda telah menolak undangan penelaahan untuk naskah ini. Akses pengisian lembar evaluasi dan unduhan berkas manuskrip dinonaktifkan.
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl max-w-md mx-auto text-xs text-left space-y-2">
+                        <div class="flex items-center justify-between text-gray-500 text-[11px]">
+                            <span>Status Penugasan:</span>
+                            <span class="font-bold text-gray-700">Undangan Ditolak</span>
+                        </div>
+                        @if($viewModel->assignment->responded_at)
+                            <div class="flex items-center justify-between text-gray-500 text-[11px]">
+                                <span>Waktu Konfirmasi:</span>
+                                <span class="font-semibold text-gray-800 tabular-nums">
+                                    {{ $viewModel->assignment->responded_at->format('d M Y, H:i') }} UTC
+                                </span>
+                            </div>
+                        @endif
+                        <p class="text-[11px] text-gray-500 pt-1 border-t border-gray-200 leading-relaxed">
+                            Dewan Redaksi telah menerima tanggapan Anda dan akan menugaskan mitra bestari pengganti. Terima kasih atas konfirmasi Anda.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <a href="{{ route('reviewer.assignments.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>Kembali ke Daftar Penugasan</span>
+                        </a>
+                    </div>
+                </div>
+
+            <!-- KASUS 3: Penugasan Dibatalkan (Status: cancelled) -->
+            @elseif($viewModel->isCancelled())
+                <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-2xs space-y-5 text-center">
+                    <div class="w-14 h-14 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center mx-auto border border-gray-200">
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Penugasan Telaah Dibatalkan
+                        </h2>
+                        <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
+                            Penugasan penelaahan untuk naskah ini telah dibatalkan oleh Dewan Redaksi. Anda tidak perlu lagi melakukan evaluasi terhadap naskah ini.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <a href="{{ route('reviewer.assignments.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>Kembali ke Daftar Penugasan</span>
+                        </a>
+                    </div>
+                </div>
+
+            <!-- KASUS 4: Batas Waktu Respon Telah Berakhir (Status: no_response) -->
+            @elseif($viewModel->isNoResponse())
+                <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-2xs space-y-5 text-center">
+                    <div class="w-14 h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mx-auto border border-orange-200">
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Batas Waktu Respon Undangan Telah Berakhir
+                        </h2>
+                        <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
+                            Batas waktu konfirmasi undangan penelaahan naskah ini telah berakhir tanpa konfirmasi. Akses lembar evaluasi dinonaktifkan.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <a href="{{ route('reviewer.assignments.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>Kembali ke Daftar Penugasan</span>
+                        </a>
+                    </div>
+                </div>
+
+            <!-- KASUS 5: Undangan Diterima (Status: accepted, overdue, completed) -->
             @else
                 <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-2xs space-y-6">
                     <div class="border-b border-gray-100 pb-4">

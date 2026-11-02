@@ -141,6 +141,10 @@ class ReviewerService
             throw new InvalidArgumentException('Anda tidak berhak mengakses ruang telaah ini.');
         }
 
+        if (! in_array($assignment->status, ['accepted', 'overdue'], true)) {
+            throw new InvalidArgumentException('Penelaahan hanya dapat disimpan untuk penugasan yang telah diterima.');
+        }
+
         if ($assignment->status === 'completed') {
             throw new InvalidArgumentException('Hasil telaah yang sudah di-submit bersifat tetap (immutable) dan tidak dapat diubah.');
         }
@@ -168,6 +172,10 @@ class ReviewerService
     {
         if ($assignment->reviewer_id !== $reviewer->id) {
             throw new InvalidArgumentException('Anda tidak berhak mengakses ruang telaah ini.');
+        }
+
+        if (! in_array($assignment->status, ['accepted', 'overdue'], true)) {
+            throw new InvalidArgumentException('Penelaahan hanya dapat dikirimkan untuk penugasan yang telah diterima.');
         }
 
         if ($assignment->status === 'completed') {

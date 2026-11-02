@@ -396,4 +396,42 @@ class ReviewerWorkflowTest extends TestCase
         $acceptedResponse->assertOk();
         $acceptedResponse->assertHeader('Content-Type', 'application/pdf');
     }
+
+    public function test_halaman_penugasan_ditolak_tidak_menampilkan_lembar_evaluasi(): void
+    {
+        $this->assignment->update([
+            'status' => 'declined',
+            'responded_at' => Carbon::now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $response->assertOk();
+        $response->assertSee('Undangan Penelaahan Ditolak');
+        $response->assertSee('Akses pengisian lembar evaluasi dan unduhan berkas manuskrip dinonaktifkan');
+        $response->assertDontSee('Lembar Evaluasi Penelaahan Sejawat');
+        $response->assertDontSee('Rubrik Penilaian Kualitas Naskah');
+    }
+
+    public function test_reviewer_tidak_dapat_mengirim_telaah_jika_undangan_ditolak(): void
+    {
+        $this->assignment->update([
+            'status' => 'declined',
+            'responded_at' => Carbon::now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->post(route('reviewer.assignments.submit', $this->assignment->id), [
+                'scores' => ['originality' => 80],
+                'comments_for_author' => 'Catatan telaah yang seharusnya tidak bisa terkirim.',
+                'recommendation' => 'accept',
+                'certify_no_conflict' => '1',
+            ]);
+
+        $response->assertSessionHasErrors('submit');
+        $this->assertDatabaseMissing('reviews', [
+            'assignment_id' => $this->assignment->id,
+        ]);
+    }
 }
