@@ -13,7 +13,7 @@
     </nav>
 
     <!-- Header Halaman -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
             INFORMASI RESMI PENERBITAN
         </span>
@@ -29,7 +29,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-8">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
             
             <x-journal.about-subnav />
 

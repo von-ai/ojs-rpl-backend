@@ -119,10 +119,19 @@
                     </div>
                     <div>
                         <label for="apc_enabled" class="block font-semibold text-gray-700 mb-1">Skema Pembiayaan Publikasi</label>
-                        <select name="apc_enabled" id="apc_enabled" onchange="toggleApcFields(this.value)" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon bg-white font-semibold">
-                            <option value="0" {{ ! $policies['apc_enabled'] ? 'selected' : '' }}>Bebas Biaya (Diamond Open Access - Gratis)</option>
-                            <option value="1" {{ $policies['apc_enabled'] ? 'selected' : '' }}>Berbayar (Gold Open Access - Penulis Bayar APC)</option>
-                        </select>
+                        <x-custom-dropdown
+                            name="apc_enabled"
+                            id="apc_enabled"
+                            :value="$policies['apc_enabled'] ? '1' : '0'"
+                            :options="[
+                                '0' => 'Bebas Biaya (Diamond Open Access - Gratis)',
+                                '1' => 'Berbayar (Gold Open Access - Penulis Bayar APC)',
+                            ]"
+                            onchange="toggleApcFields(this.value)"
+                            container-class="w-full"
+                            button-class="w-full px-3 py-2 text-xs border-gray-300 bg-white font-semibold"
+                            panel-class="w-full"
+                        />
                     </div>
                 </div>
 
