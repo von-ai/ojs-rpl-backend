@@ -32,6 +32,9 @@
         </aside>
     </div>
 
+    <!-- Modals Interaktif Penulis (Unggah Revisi & Bukti Pembayaran) di Level Root agar Bebas Stacking Context -->
+    @include('author.submissions.partials.detail-modals', ['submission' => $submission])
+
 </div>
 
 @push('scripts')
