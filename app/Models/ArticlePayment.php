@@ -109,7 +109,7 @@ class ArticlePayment extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'pending_payment' => 'Menunggu Pembayaran Penulis',
+            'pending_payment' => 'Menunggu Pembayaran',
             'pending_verification' => 'Menunggu Verifikasi Redaksi',
             'verified' => 'Lunas / Terverifikasi',
             'rejected' => 'Bukti Ditolak (Perlu Perbaikan)',

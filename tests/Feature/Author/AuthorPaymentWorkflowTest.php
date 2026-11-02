@@ -209,7 +209,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         $pageResponse->assertSee('Bank Sulselbar');
         $pageResponse->assertSee('130-001-009876-5');
         $pageResponse->assertSee('Rp 750.000');
-        $pageResponse->assertSee('Menunggu Pembayaran Penulis');
+        $pageResponse->assertSee('Menunggu Pembayaran');
 
         // 2. Author mengunggah berkas bukti transfer
         $proofFile = UploadedFile::fake()->create('bukti_transfer_apc.jpg', 800, 'image/jpeg');

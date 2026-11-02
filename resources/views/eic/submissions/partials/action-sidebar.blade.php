@@ -777,21 +777,27 @@
         $paymentInfo = $viewModel->paymentInfo();
     @endphp
     <section class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-4 shadow-2xs">
-        <div class="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
-            <div class="flex items-center gap-2.5 min-w-0">
+        <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <div 
+                class="flex items-center gap-2.5 min-w-0 flex-1 cursor-help"
+                data-tooltip="Status Pembiayaan & APC"
+                data-tooltip-desc="Status tagihan biaya pemrosesan artikel (APC) dan verifikasi bukti transfer pembayaran"
+            >
                 <div class="w-7 h-7 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 </div>
-                <div class="min-w-0">
-                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-snug">
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-tight truncate" title="Status Pembiayaan & APC">
                         Status Pembiayaan & APC
                     </h3>
-                    <span class="text-[11px] text-gray-400 font-medium block">Biaya Pengelolaan Publikasi</span>
+                    <span class="text-[11px] text-gray-400 font-medium block truncate" title="Biaya Pengelolaan Publikasi">
+                        Biaya Pengelolaan Publikasi
+                    </span>
                 </div>
             </div>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 text-center leading-tight {{ $paymentInfo['status_badge'] }}">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 text-center leading-tight whitespace-nowrap {{ $paymentInfo['status_badge'] }}">
                 {{ $paymentInfo['status_label'] }}
             </span>
         </div>

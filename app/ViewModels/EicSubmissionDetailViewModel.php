@@ -406,7 +406,7 @@ class EicSubmissionDetailViewModel
         return [
             'is_free' => false,
             'status' => $payment ? $payment->status : 'pending_payment',
-            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran',
             'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
             'invoice_number' => $payment?->invoice_number ?? '-',
             'amount_formatted' => $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : 'Rp '.number_format((float) ($journal?->apc_amount ?? 500000), 0, ',', '.')),

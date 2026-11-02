@@ -935,7 +935,7 @@ class AuthorSubmissionDetailViewModel
             'is_free' => false,
             'has_payment' => (bool) $payment,
             'status' => $payment ? $payment->status : 'pending_payment',
-            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran',
             'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
             'invoice_number' => (string) ($payment?->invoice_number ?? ('INV-'.date('Y').'-APC'.substr(preg_replace('/[^0-9]/', '', (string) $sub->submission_number) ?: '00001', -5))),
             'amount' => $amount,
