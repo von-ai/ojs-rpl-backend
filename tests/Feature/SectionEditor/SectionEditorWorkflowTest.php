@@ -15,6 +15,7 @@ use App\Models\Submission;
 use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\SectionEditor\SectionEditorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -89,9 +90,23 @@ class SectionEditorWorkflowTest extends TestCase
             'email' => 'hasanuddin.rev@unhas.ac.id',
         ]);
 
+        UserRole::create([
+            'user_id' => $this->reviewerA->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+            'expertise_keywords' => ['IoT', 'Sensor Cerdas', 'Mitigasi Banjir'],
+        ]);
+
         $this->reviewerB = User::factory()->create([
             'name' => 'Dr. Fatimah Zuhra, M.Kom.',
             'email' => 'fatimah.rev@unm.ac.id',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->reviewerB->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+            'expertise_keywords' => ['Kecerdasan Buatan', 'Smart City'],
         ]);
 
         $this->submission = Submission::create([
@@ -444,5 +459,66 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertDontSee('text-justify');
         $response->assertDontSee('UC-11');
         $response->assertDontSee('UC-08');
+    }
+
+    public function test_get_available_reviewers_hanya_menampilkan_mitra_bestari_sah_sesuai_jurnal(): void
+    {
+        // 1. Buat pengguna tanpa peran reviewer (misal: hanya penulis atau staf)
+        $nonReviewer = User::factory()->create([
+            'name' => 'Staf Tata Usaha',
+            'email' => 'tu@makassarkota.go.id',
+        ]);
+
+        // 2. Buat reviewer dari jurnal lain
+        $otherJournal = Journal::create([
+            'name' => 'Jurnal Ekologi Maritim',
+            'slug' => 'jurnal-ekologi-maritim',
+        ]);
+        $otherJournalReviewer = User::factory()->create([
+            'name' => 'Dr. Reviewer Ekologi',
+            'email' => 'ekologi.rev@unhas.ac.id',
+        ]);
+        UserRole::create([
+            'user_id' => $otherJournalReviewer->id,
+            'journal_id' => $otherJournal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        // 3. Buat reviewer C di jurnal ini
+        $reviewerC = User::factory()->create([
+            'name' => 'Zulfa Reviewer, M.Si.',
+            'email' => 'zulfa.rev@unhas.ac.id',
+        ]);
+        UserRole::create([
+            'user_id' => $reviewerC->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        /** @var SectionEditorService $service */
+        $service = app(SectionEditorService::class);
+        $reviewers = $service->getAvailableReviewers($this->submission);
+
+        // Hanya reviewer terdaftar di jurnal ini yang muncul
+        $reviewerIds = $reviewers->pluck('id')->all();
+        $this->assertContains($this->reviewerA->id, $reviewerIds);
+        $this->assertContains($this->reviewerB->id, $reviewerIds);
+        $this->assertContains($reviewerC->id, $reviewerIds);
+        $this->assertNotContains($this->author->id, $reviewerIds); // Penulis harus dikecualikan
+        $this->assertNotContains($nonReviewer->id, $reviewerIds); // Bukan reviewer
+        $this->assertNotContains($otherJournalReviewer->id, $reviewerIds); // Reviewer jurnal lain
+    }
+
+    public function test_halaman_detail_section_editor_merender_combobox_mitra_bestari(): void
+    {
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('reviewer-combobox-container');
+        $response->assertSee('reviewer-combobox-input');
+        $response->assertSee('Kategori:');
+        $response->assertSee($this->section->name);
+        $response->assertSee($this->reviewerA->name);
     }
 }

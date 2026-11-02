@@ -65,10 +65,19 @@
             <form action="{{ route('section-editor.reviewers.assign', $activeRound->id) }}" method="POST" class="space-y-4">
                 @csrf
 
-                <!-- Custom Dropdown: Pilih Mitra Bestari -->
+                <!-- Combobox: Pilih Mitra Bestari (Standar Jurnal OJS) -->
                 <div class="space-y-1.5">
-                    <label class="font-bold text-gray-700 block">Pilih Mitra Bestari <span class="text-rose-500">*</span></label>
-                    <div class="relative custom-dropdown-container" data-dropdown="assign-reviewer">
+                    <div class="flex items-center justify-between gap-1">
+                        <label for="reviewer-combobox-input" class="font-bold text-gray-700 block">
+                            Pilih Mitra Bestari <span class="text-rose-500">*</span>
+                        </label>
+                        <span class="text-[10px] font-semibold text-brand-maroon bg-red-50 px-2 py-0.5 rounded border border-red-100 truncate max-w-[190px]" title="Kategori Naskah: {{ $viewModel->sectionName() }}">
+                            Kategori: {{ $viewModel->sectionName() }}
+                        </span>
+                    </div>
+
+                    <div class="relative reviewer-combobox-container" data-combobox="assign-reviewer">
+                        <!-- Hidden native select for standard HTML5 validation & form submit -->
                         <select id="reviewer_id" name="reviewer_id" class="sr-only" tabindex="-1" required>
                             <option value="">-- Pilih dari Direktori Reviewer --</option>
                             @foreach($availableReviewers as $reviewer)
@@ -77,39 +86,123 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
-                            class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
-                            aria-haspopup="listbox"
-                            aria-expanded="false"
-                        >
-                            <span class="custom-dropdown-label truncate">
-                                {{ $selectedReviewerObj ? $selectedReviewerObj->name : 'Pilih Mitra Bestari' }}
-                            </span>
-                            <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
-                            @foreach($availableReviewers as $reviewer)
-                                @php $isRevSelected = ($selectedReviewerId === (string) $reviewer->id); @endphp
-                                <div 
-                                    class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isRevSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
-                                    data-value="{{ $reviewer->id }}"
-                                    data-label="{{ $reviewer->name }}"
+
+                        <!-- Combobox Input Bar -->
+                        <div class="relative flex items-center">
+                            <!-- Magnifier Icon -->
+                            <div class="absolute left-3 pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <input 
+                                type="text" 
+                                id="reviewer-combobox-input"
+                                class="reviewer-combobox-input w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 focus:bg-white border border-gray-300 focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 rounded-lg pl-9 pr-16 py-2.5 text-gray-900 font-semibold placeholder:font-normal placeholder:text-gray-400 transition cursor-text focus:outline-hidden"
+                                placeholder="Ketik nama atau email mitra bestari..."
+                                value="{{ $selectedReviewerObj ? $selectedReviewerObj->name : '' }}"
+                                autocomplete="off"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-expanded="false"
+                                aria-controls="reviewer-listbox"
+                            >
+
+                            <!-- Right Controls: Clear and Chevron -->
+                            <div class="absolute right-2 flex items-center gap-1">
+                                <button 
+                                    type="button" 
+                                    class="reviewer-combobox-clear p-1 text-gray-400 hover:text-gray-600 rounded transition cursor-pointer {{ $selectedReviewerObj ? '' : 'hidden' }}"
+                                    title="Hapus pilihan mitra bestari"
+                                    tabindex="-1"
                                 >
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-semibold truncate">{{ $reviewer->name }}</div>
-                                        <div class="text-[11px] text-gray-500 font-normal truncate">{{ $reviewer->email }}</div>
-                                    </div>
-                                    <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isRevSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    class="reviewer-combobox-toggle p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer" 
+                                    tabindex="-1"
+                                    title="Tampilkan daftar mitra bestari"
+                                >
+                                    <svg class="reviewer-combobox-chevron w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Panel -->
+                        <div id="reviewer-listbox" role="listbox" class="reviewer-combobox-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-80 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-40 space-y-1 absolute">
+                            <!-- Info Bar Kategori Naskah & Jurnal (Sesuai ERD) -->
+                            <div class="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg space-y-0.5 text-[11px] text-gray-600 mb-1">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="font-medium text-gray-500">Kategori:</span>
+                                    <span class="font-bold text-gray-900 truncate max-w-[180px]" title="{{ $viewModel->sectionName() }}">{{ $viewModel->sectionName() }}</span>
                                 </div>
-                            @endforeach
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="font-medium text-gray-500">Jurnal:</span>
+                                    <span class="font-semibold text-brand-maroon truncate max-w-[180px]" title="{{ $submission->journal?->name }}">{{ $submission->journal?->name }}</span>
+                                </div>
+                            </div>
+
+                            <!-- List Items -->
+                            <div class="reviewer-combobox-items space-y-1">
+                                @forelse($availableReviewers as $reviewer)
+                                    @php 
+                                        $isRevSelected = ($selectedReviewerId === (string) $reviewer->id);
+                                        $searchKeywords = implode(' ', [$reviewer->name, $reviewer->email]);
+                                    @endphp
+                                    <div 
+                                        class="reviewer-combobox-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isRevSelected ? 'bg-red-50 text-brand-maroon font-semibold is-selected' : 'text-gray-700 hover:bg-gray-50' }}"
+                                        data-value="{{ $reviewer->id }}"
+                                        data-name="{{ $reviewer->name }}"
+                                        data-email="{{ $reviewer->email }}"
+                                        data-search="{{ strtolower($searchKeywords) }}"
+                                        role="option"
+                                        aria-selected="{{ $isRevSelected ? 'true' : 'false' }}"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="reviewer-name font-semibold text-gray-900 leading-tight">{{ $reviewer->name }}</span>
+                                            </div>
+
+                                            <div class="reviewer-email text-[11px] text-gray-500 font-normal truncate mt-0.5">
+                                                {{ $reviewer->email }}
+                                            </div>
+                                        </div>
+
+                                        <svg class="reviewer-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isRevSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                @empty
+                                    <div class="p-4 text-center text-xs text-gray-500">
+                                        Belum ada mitra bestari yang terdaftar untuk jurnal ini.
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <!-- State ketika filter tidak menemukan hasil -->
+                            <div class="reviewer-combobox-empty p-4 text-center text-xs text-gray-500 hidden">
+                                <svg class="w-6 h-6 mx-auto text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <span>Tidak ada mitra bestari yang sesuai dengan pencarian.</span>
+                            </div>
+
+                            <!-- Footer Info Count -->
+                            @if(count($availableReviewers) > 0)
+                                <div class="reviewer-combobox-footer px-2.5 py-1 text-center text-[11px] text-gray-400 border-t border-gray-100">
+                                    Menampilkan <span class="reviewer-count-visible font-semibold text-gray-600">{{ count($availableReviewers) }}</span> dari {{ count($availableReviewers) }} mitra bestari terdaftar
+                                </div>
+                            @endif
                         </div>
                     </div>
-                    <p class="text-[11px] text-gray-500">Penulis naskah otomatis dikecualikan guna mencegah konflik kepentingan.</p>
+                    <p class="text-[11px] text-gray-500">Hanya menampilkan mitra bestari terdaftar di jurnal ini. Penulis dan kontributor otomatis dikecualikan guna kepatuhan etika telaah sejawat (COPE/OJS).</p>
                 </div>
 
                 <!-- Batas Waktu Respon & Batas Waktu Telaah -->
@@ -208,7 +301,14 @@
         @endif
 
         @if(!$isFinalized)
-            <form action="{{ route('section-editor.rounds.recommendation', $activeRound->id) }}" method="POST" class="space-y-4">
+            <form action="{{ route('section-editor.rounds.recommendation', $activeRound->id) }}" 
+                  method="POST" 
+                  class="space-y-4"
+                  data-confirm="Apakah Anda yakin ingin menyerahkan rekomendasi editorial ini kepada Pemimpin Redaksi (EIC)?"
+                  data-confirm-title="Kirim Rekomendasi Editorial ke EIC?"
+                  data-confirm-btn="Kirim Rekomendasi"
+                  data-confirm-cancel="Batal"
+                  data-confirm-type="primary">
                 @csrf
 
                 <!-- Custom Dropdown: Rekomendasi Keputusan -->
@@ -288,10 +388,222 @@
 @pushOnce('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // --- 1. Reviewer Searchable Combobox (OJS Standard) ---
+        function initReviewerCombobox() {
+            const container = document.querySelector('.reviewer-combobox-container');
+            if (!container) return;
+
+            const input = container.querySelector('.reviewer-combobox-input');
+            const clearBtn = container.querySelector('.reviewer-combobox-clear');
+            const toggleBtn = container.querySelector('.reviewer-combobox-toggle');
+            const chevron = container.querySelector('.reviewer-combobox-chevron');
+            const panel = container.querySelector('.reviewer-combobox-panel');
+            const items = container.querySelectorAll('.reviewer-combobox-item');
+            const emptyState = container.querySelector('.reviewer-combobox-empty');
+            const countVisible = container.querySelector('.reviewer-count-visible');
+            const hiddenSelect = container.querySelector('select[name="reviewer_id"]');
+
+            let activeIndex = -1;
+
+            function openPanel() {
+                closeAllDropdowns();
+                panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                input.setAttribute('aria-expanded', 'true');
+                if (chevron) chevron.classList.add('rotate-180');
+            }
+
+            function closePanel() {
+                panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
+                panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                input.setAttribute('aria-expanded', 'false');
+                if (chevron) chevron.classList.remove('rotate-180');
+                activeIndex = -1;
+                clearHighlight();
+            }
+
+            function filterReviewers(query) {
+                const q = query.trim().toLowerCase();
+                let visibleCount = 0;
+
+                items.forEach(item => {
+                    const searchData = item.getAttribute('data-search') || '';
+                    const match = (q === '') || searchData.includes(q);
+
+                    if (match) {
+                        item.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+
+                if (countVisible) countVisible.textContent = visibleCount;
+                if (emptyState) {
+                    if (visibleCount === 0) {
+                        emptyState.classList.remove('hidden');
+                    } else {
+                        emptyState.classList.add('hidden');
+                    }
+                }
+            }
+
+            function selectReviewer(item) {
+                const val = item.getAttribute('data-value') || '';
+                const name = item.getAttribute('data-name') || '';
+
+                if (hiddenSelect) {
+                    hiddenSelect.value = val;
+                    hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                input.value = name;
+                if (clearBtn) clearBtn.classList.remove('hidden');
+
+                items.forEach(it => {
+                    const check = it.querySelector('.reviewer-check');
+                    if (it === item) {
+                        it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold', 'is-selected');
+                        it.classList.remove('text-gray-700');
+                        if (check) check.classList.remove('hidden');
+                        it.setAttribute('aria-selected', 'true');
+                    } else {
+                        it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold', 'is-selected');
+                        it.classList.add('text-gray-700');
+                        if (check) check.classList.add('hidden');
+                        it.setAttribute('aria-selected', 'false');
+                    }
+                });
+
+                closePanel();
+            }
+
+            function clearSelection() {
+                if (hiddenSelect) {
+                    hiddenSelect.value = '';
+                    hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                input.value = '';
+                if (clearBtn) clearBtn.classList.add('hidden');
+
+                items.forEach(it => {
+                    const check = it.querySelector('.reviewer-check');
+                    it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold', 'is-selected');
+                    it.classList.add('text-gray-700');
+                    if (check) check.classList.add('hidden');
+                    it.setAttribute('aria-selected', 'false');
+                });
+
+                filterReviewers('');
+                input.focus();
+            }
+
+            function getVisibleItems() {
+                return Array.from(items).filter(it => !it.classList.contains('hidden'));
+            }
+
+            function clearHighlight() {
+                items.forEach(it => it.classList.remove('ring-1', 'ring-brand-maroon'));
+            }
+
+            function highlightItem(index) {
+                clearHighlight();
+                const visible = getVisibleItems();
+                if (visible.length === 0) return;
+
+                if (index < 0) index = 0;
+                if (index >= visible.length) index = visible.length - 1;
+
+                activeIndex = index;
+                const target = visible[activeIndex];
+                target.classList.add('ring-1', 'ring-brand-maroon');
+                target.scrollIntoView({ block: 'nearest' });
+            }
+
+            // Event Listeners
+            input.addEventListener('focus', function () {
+                openPanel();
+                filterReviewers(input.value);
+            });
+
+            input.addEventListener('input', function () {
+                openPanel();
+                filterReviewers(input.value);
+                if (input.value.trim() !== '') {
+                    if (clearBtn) clearBtn.classList.remove('hidden');
+                } else if (!hiddenSelect.value) {
+                    if (clearBtn) clearBtn.classList.add('hidden');
+                }
+            });
+
+            input.addEventListener('keydown', function (e) {
+                const visible = getVisibleItems();
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!panel.classList.contains('visible')) {
+                        openPanel();
+                    }
+                    highlightItem(activeIndex + 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (!panel.classList.contains('visible')) {
+                        openPanel();
+                    }
+                    highlightItem(activeIndex - 1);
+                } else if (e.key === 'Enter') {
+                    if (panel.classList.contains('visible') && activeIndex >= 0 && visible[activeIndex]) {
+                        e.preventDefault();
+                        selectReviewer(visible[activeIndex]);
+                    }
+                } else if (e.key === 'Escape') {
+                    closePanel();
+                }
+            });
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (panel.classList.contains('visible')) {
+                        closePanel();
+                    } else {
+                        openPanel();
+                        filterReviewers(input.value);
+                        input.focus();
+                    }
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    clearSelection();
+                });
+            }
+
+            items.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    selectReviewer(item);
+                });
+            });
+
+            // Tutup combobox jika klik di luar
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.reviewer-combobox-container')) {
+                    closePanel();
+                }
+            });
+
+            window.closeReviewerCombobox = closePanel;
+        }
+
+        // --- 2. Custom Dropdown untuk Rekomendasi EIC ---
         const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
 
         function openDropdown(panel, btn, chevron) {
             closeAllDropdowns();
+            if (window.closeReviewerCombobox) window.closeReviewerCombobox();
             panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
             panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
             btn.setAttribute('aria-expanded', 'true');
@@ -368,6 +680,9 @@
                 closeAllDropdowns();
             }
         });
+
+        // Initialize Reviewer Combobox
+        initReviewerCombobox();
     });
 </script>
 @endpushOnce

@@ -11,6 +11,7 @@ use App\Models\ReviewReminder;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -126,13 +127,37 @@ class SectionEditorService
             throw new InvalidArgumentException('Tidak dapat menugaskan reviewer pada putaran review yang telah ditutup atau dibatalkan.');
         }
 
-        // 2. Guard: Pencegahan konflik kepentingan / self-review (Penulis tidak boleh menelaah naskahnya sendiri)
-        $authorId = $round->submission->author_id;
-        if ($reviewer->id === $authorId) {
-            throw new InvalidArgumentException('Penulis naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
+        // 2. Guard: Pencegahan konflik kepentingan / self-review (Penulis & kontributor tidak boleh menelaah naskah)
+        $submission = $round->submission;
+        $excludedUserIds = array_filter(array_merge(
+            [$submission->author_id],
+            $submission->contributors()->pluck('user_id')->all()
+        ));
+        $excludedEmails = array_filter(array_merge(
+            [$submission->author?->email],
+            $submission->contributors()->pluck('email')->all()
+        ));
+
+        if (in_array($reviewer->id, $excludedUserIds, true) || in_array($reviewer->email, $excludedEmails, true)) {
+            throw new InvalidArgumentException('Penulis atau kontributor naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
         }
 
-        // 3. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
+        // 3. Guard: Peran Reviewer harus sah untuk jurnal terkait (standar OJS)
+        if (Schema::hasTable('user_roles') && UserRole::where('role_code', 'reviewer')->exists()) {
+            $hasReviewerRole = $reviewer->userRoles()
+                ->where('role_code', 'reviewer')
+                ->where(function ($q) use ($submission) {
+                    $q->where('journal_id', $submission->journal_id)
+                        ->orWhereNull('journal_id');
+                })
+                ->exists();
+
+            if (! $hasReviewerRole && $reviewer->userRoles()->exists()) {
+                throw new InvalidArgumentException('Pengguna yang dipilih tidak memiliki peran mitra bestari (reviewer) yang sah untuk jurnal naskah ini.');
+            }
+        }
+
+        // 4. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
         $existingActive = $round->assignments()
             ->where('reviewer_id', $reviewer->id)
             ->whereIn('status', ['invited', 'accepted', 'overdue'])
@@ -283,22 +308,71 @@ class SectionEditorService
     }
 
     /**
-     * Mengambil daftar calon reviewer yang memenuhi syarat untuk naskah ini.
+     * Mengambil daftar calon reviewer yang memenuhi syarat untuk naskah ini
+     * sesuai standar OJS & COPE:
+     * 1. Pengguna aktif dengan peran 'reviewer' terdaftar pada jurnal naskah (atau peran global).
+     * 2. Pencegahan konflik kepentingan (COI): Penulis utama dan seluruh kontributor/ko-penulis dikecualikan.
+     * 3. Pemetaan & relevansi ke Section / Kategori Naskah, Bidang Kepakaran, dan Kata Kunci.
      *
      * @return Collection<int, User>
      */
     public function getAvailableReviewers(Submission $submission)
     {
-        return User::query()
-            ->where('id', '!=', $submission->author_id)
-            ->where(function ($q) {
-                if (Schema::hasTable('user_roles')) {
-                    $q->whereHas('userRoles', function ($qr) {
-                        $qr->where('role_code', 'reviewer');
-                    })->orWhereDoesntHave('userRoles');
-                }
-            })
-            ->orderBy('full_name')
-            ->get();
+        // 1. Kumpulkan seluruh ID & email penulis / kontributor naskah guna pencegahan COI
+        $excludedUserIds = array_filter(array_merge(
+            [$submission->author_id],
+            $submission->contributors()->pluck('user_id')->all()
+        ));
+
+        $excludedEmails = array_filter(array_merge(
+            [$submission->author?->email],
+            $submission->contributors()->pluck('email')->all()
+        ));
+
+        // 2. Query calon mitra bestari yang sah untuk jurnal ini
+        $query = User::query()
+            ->whereNotIn('id', $excludedUserIds)
+            ->whereNotIn('email', $excludedEmails)
+            ->where('status', 'active');
+
+        $hasRolesTable = Schema::hasTable('user_roles');
+        $hasReviewerRoleData = $hasRolesTable && UserRole::where('role_code', 'reviewer')->exists();
+
+        if ($hasReviewerRoleData) {
+            $query->whereHas('userRoles', function ($q) use ($submission): void {
+                $q->where('role_code', 'reviewer')
+                    ->where(function ($qj) use ($submission): void {
+                        $qj->where('journal_id', $submission->journal_id)
+                            ->orWhereNull('journal_id');
+                    });
+            })->with([
+                'userRoles' => function ($q) use ($submission): void {
+                    $q->where('role_code', 'reviewer')
+                        ->where(function ($qj) use ($submission): void {
+                            $qj->where('journal_id', $submission->journal_id)
+                                ->orWhereNull('journal_id');
+                        });
+                },
+            ]);
+        } elseif ($hasRolesTable) {
+            $query->where(function ($q): void {
+                $q->whereHas('userRoles', function ($qr): void {
+                    $qr->where('role_code', 'reviewer');
+                })->orWhereDoesntHave('userRoles');
+            });
+        }
+
+        if (Schema::hasTable('review_assignments')) {
+            $query->withCount([
+                'reviewAssignments as active_reviews_count' => function ($q): void {
+                    $q->whereIn('status', ['invited', 'accepted', 'overdue']);
+                },
+                'reviewAssignments as completed_reviews_count' => function ($q): void {
+                    $q->where('status', 'completed');
+                },
+            ]);
+        }
+
+        return $query->orderBy('full_name')->get();
     }
 }
