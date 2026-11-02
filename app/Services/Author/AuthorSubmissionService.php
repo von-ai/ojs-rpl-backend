@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Author;
 
 use App\Models\FileEntry;
+use App\Models\ReviewAnnotation;
 use App\Models\Revision;
 use App\Models\Submission;
 use App\Models\SubmissionFile;
@@ -12,6 +13,7 @@ use App\Models\User;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -158,17 +160,51 @@ class AuthorSubmissionService
             throw new DomainException('Berkas naskah tidak ditemukan.');
         }
 
+        // Cek apakah berkas ini merupakan berkas anotasi reviewer pada naskah ini
+        $reviewAnnotation = null;
+        if (class_exists(ReviewAnnotation::class) && Schema::hasTable('review_annotations')) {
+            $reviewAnnotation = ReviewAnnotation::where('file_id', $fileEntry->id)
+                ->whereHas('review.assignment.reviewRound', function ($q) use ($submission) {
+                    $q->where('submission_id', $submission->id);
+                })
+                ->first();
+        }
+
+        // Validasi bahwa berkas ini terhubung secara sah dengan naskah pemohon
+        $isSubmissionFile = $submission->files()->where('file_id', $fileEntry->id)->exists();
+        if (! $isSubmissionFile && ! $reviewAnnotation) {
+            throw new DomainException('Anda tidak memiliki hak akses untuk mengunduh berkas pada naskah ini.');
+        }
+
+        // Sanitasi nama berkas unduhan jika berasal dari telaah reviewer agar identitas reviewer tidak bocor lewat nama file
+        $downloadFileName = $fileEntry->original_name;
+        if ($reviewAnnotation) {
+            $round = $reviewAnnotation->review?->assignment?->reviewRound;
+            $letter = 'A';
+            if ($round) {
+                $completedAssignments = $round->assignments()->where('status', 'completed')->orderBy('created_at')->get();
+                foreach ($completedAssignments as $idx => $asgn) {
+                    if ($asgn->id === $reviewAnnotation->review?->assignment_id) {
+                        $letter = chr(65 + $idx);
+                        break;
+                    }
+                }
+            }
+            $ext = pathinfo($fileEntry->original_name, PATHINFO_EXTENSION) ?: 'pdf';
+            $downloadFileName = "Catatan_Telaah_Reviewer_{$letter}.{$ext}";
+        }
+
         $disk = Storage::disk($fileEntry->storage_disk ?: 'local');
 
         // Pastikan berkas fisik ada di storage disk
         if (! $disk->exists($fileEntry->storage_path)) {
             // Buat berkas placeholder jika file belum ada di storage lokal saat pengujian
-            $disk->put($fileEntry->storage_path, "SIRIDA Manuscript File: {$fileEntry->original_name}\nChecksum: {$fileEntry->checksum_sha256}");
+            $disk->put($fileEntry->storage_path, "SIRIDA Manuscript File: {$downloadFileName}\nChecksum: {$fileEntry->checksum_sha256}");
         }
 
         return $disk->download(
             $fileEntry->storage_path,
-            $fileEntry->original_name,
+            $downloadFileName,
             [
                 'Content-Type' => $fileEntry->mime_type ?: 'application/octet-stream',
                 'X-Checksum-SHA256' => (string) $fileEntry->checksum_sha256,

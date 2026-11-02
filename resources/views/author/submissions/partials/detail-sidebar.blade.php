@@ -13,7 +13,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold leading-tight truncate">Perlu Tindakan Penulis</h3>
+                    <h3 class="text-xs sm:text-sm font-bold leading-tight truncate" title="Perlu Tindakan Penulis">Perlu Tindakan Penulis</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 tabular-nums shrink-0">
                     Revisi Mayor
@@ -37,6 +37,40 @@
                     {!! nl2br(e(str_replace(['<br>', '<br/>', '<br />'], "\n", $submission['editorial_feedback']['comments']))) !!}
                 </div>
             </div>
+
+            @if(!empty($submission['editorial_feedback']['peer_reviews']))
+                <div class="space-y-3 pt-1">
+                    <span class="block font-bold text-gray-900 text-[11px] uppercase tracking-wider">Catatan Evaluasi Mitra Bestari (Double-Blind):</span>
+                    @foreach($submission['editorial_feedback']['peer_reviews'] as $peerReview)
+                        <div class="p-3 bg-sky-50/70 rounded-lg border border-sky-200 text-xs text-gray-800 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-sky-950 inline-flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-sky-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    {{ $peerReview['reviewer_label'] }}
+                                </span>
+                            </div>
+                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line break-words">
+                                {{ $peerReview['comments_for_author'] }}
+                            </div>
+                            @if(!empty($peerReview['files']))
+                                <div class="pt-1 space-y-1 border-t border-sky-100">
+                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">Berkas Lampiran Anotasi:</span>
+                                    @foreach($peerReview['files'] as $annFile)
+                                        <a href="{{ $annFile['download_url'] }}" class="inline-flex items-center gap-1.5 text-xs text-sky-700 hover:text-sky-900 font-semibold hover:underline">
+                                            <svg class="w-3.5 h-3.5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span>{{ $annFile['name'] }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
             <div class="pt-1 space-y-2">
                 <button 
@@ -184,7 +218,7 @@
                 Naskah ini tersimpan sebagai draf dan belum diajukan secara resmi ke dewan redaksi. Anda dapat melanjutkan melengkapi berkas dan metadata kapan saja.
             </p>
             <a 
-                href="{{ route('author.submissions.create') }}" 
+                href="{{ route('author.submissions.create', ['draft_id' => $submission['id']]) }}" 
                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg transition duration-150"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -205,7 +239,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">Telah Terbit Resmi</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="Telah Terbit Resmi">Telah Terbit Resmi</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
                     Open Access
@@ -356,7 +390,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">{{ $submission['initial_screening']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['initial_screening']['stage_title'] }}">{{ $submission['initial_screening']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
                     Desk Review
@@ -371,7 +405,11 @@
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Uji Kesamaan:</span>
                     <div class="text-right shrink-0">
-                        <span class="font-bold text-emerald-700 block">{{ $submission['initial_screening']['similarity_score'] }}</span>
+                        @if($submission['initial_screening']['has_desk_review'] ?? false)
+                            <span class="font-bold text-emerald-700 block">{{ $submission['initial_screening']['similarity_score'] }}</span>
+                        @else
+                            <span class="font-semibold text-amber-700 text-xs block">{{ $submission['initial_screening']['similarity_score'] }}</span>
+                        @endif
                         <span class="text-[10px] text-gray-400 block">{{ $submission['initial_screening']['similarity_tool'] }}</span>
                     </div>
                 </div>
@@ -397,7 +435,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">{{ $submission['review_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['review_info']['stage_title'] }}">{{ $submission['review_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-sky-800 border border-sky-200 shrink-0">
                     Putaran {{ $submission['review_info']['round'] }}
@@ -436,7 +474,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">{{ $submission['production_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['production_info']['stage_title'] }}">{{ $submission['production_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 shrink-0">
                     Penerbitan
@@ -815,7 +853,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">{{ $submission['declined_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['declined_info']['stage_title'] }}">{{ $submission['declined_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200 shrink-0">
                     Arsip
@@ -840,6 +878,40 @@
                 </div>
             </div>
 
+            @if(!empty($submission['declined_info']['peer_reviews']))
+                <div class="space-y-3 pt-1">
+                    <span class="block font-bold text-gray-900 text-[11px] uppercase tracking-wider">Catatan Evaluasi Mitra Bestari (Double-Blind):</span>
+                    @foreach($submission['declined_info']['peer_reviews'] as $peerReview)
+                        <div class="p-3 bg-rose-50/60 rounded-lg border border-rose-200 text-xs text-gray-800 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-rose-950 inline-flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    {{ $peerReview['reviewer_label'] }}
+                                </span>
+                            </div>
+                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line break-words">
+                                {{ $peerReview['comments_for_author'] }}
+                            </div>
+                            @if(!empty($peerReview['files']))
+                                <div class="pt-1 space-y-1 border-t border-rose-100">
+                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">Berkas Lampiran Anotasi:</span>
+                                    @foreach($peerReview['files'] as $annFile)
+                                        <a href="{{ $annFile['download_url'] }}" class="inline-flex items-center gap-1.5 text-xs text-rose-700 hover:text-rose-900 font-semibold hover:underline">
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span>{{ $annFile['name'] }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             <p class="text-[11px] text-gray-500 leading-tight break-words [overflow-wrap:anywhere]">
                 {{ $submission['declined_info']['guidance'] }}
             </p>
@@ -856,7 +928,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate">{{ $submission['withdrawn_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['withdrawn_info']['stage_title'] }}">{{ $submission['withdrawn_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-100 text-zinc-800 border border-zinc-200 shrink-0">
                     {{ $submission['status'] === 'archived' ? 'Arsip' : 'Ditarik' }}
@@ -892,7 +964,7 @@
         <div class="space-y-2.5 text-xs">
             <div>
                 <span class="text-gray-400 block text-[11px]">Jurnal:</span>
-                <span class="font-bold text-gray-900 leading-snug block pt-0.5">{{ $submission['journal_name'] }}</span>
+                <span class="font-bold text-gray-900 leading-snug block pt-0.5 truncate" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px]">e-ISSN:</span>
@@ -900,7 +972,7 @@
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px]">Seksi Rubrik:</span>
-                <span class="font-semibold text-gray-800">{{ $submission['section'] }}</span>
+                <span class="font-semibold text-gray-800 truncate" title="{{ $submission['section'] }}">{{ $submission['section'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px]">Penerbit Resmi:</span>
@@ -942,11 +1014,11 @@
             @foreach($submission['timeline'] as $event)
                 <div class="relative text-xs space-y-1">
                     <div class="flex items-center justify-between gap-1">
-                        <span class="font-bold text-gray-900 leading-tight">{{ $event['title'] }}</span>
+                        <span class="font-bold text-gray-900 leading-tight" title="{{ $event['title'] }}">{{ $event['title'] }}</span>
                     </div>
                     <p class="text-[11px] text-gray-400 tabular-nums">{{ $event['date'] }}</p>
-                    <p class="text-[11px] text-gray-600 leading-snug">{{ $event['description'] }}</p>
-                    <span class="inline-block text-[10px] font-semibold text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 mt-0.5">
+                    <p class="text-[11px] text-gray-600 leading-snug" title="{{ $event['description'] }}">{{ $event['description'] }}</p>
+                    <span class="inline-block text-[10px] font-semibold text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 mt-0.5" title="Aktor: {{ $event['actor'] }}">
                         Aktor: {{ $event['actor'] }}
                     </span>
                 </div>
