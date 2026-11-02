@@ -112,7 +112,7 @@ class AuthorSubmissionService
                 'status' => 'submitted',
                 'manuscript_file_id' => $manuscriptEntry->id,
                 'response_letter_file_id' => $responseLetterEntry?->id,
-                'due_at' => now()->addDays(14),
+                'due_at' => $latestDecision?->revision_due_at,
                 'submitted_at' => now(),
                 'note' => $note ? trim($note) : null,
                 'version' => 1,
