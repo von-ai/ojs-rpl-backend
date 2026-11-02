@@ -44,6 +44,11 @@ class CopyeditorSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $copyedit = $this->findCopyedit($id);
+        if ($copyedit) {
+            $this->authorizeCopyeditorForCopyedit($copyedit);
+        }
+
         $viewModel = new CopyeditorSubmissionDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -107,6 +112,7 @@ class CopyeditorSubmissionController extends Controller
 
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit && $request->hasFile('copyedit_file') && $request->file('copyedit_file')->isValid()) {
             $user = Auth::user() ?? $copyedit->copyEditor;
@@ -124,6 +130,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             try {
@@ -147,6 +154,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             $user = Auth::user() ?? $copyedit->copyEditor;
@@ -172,6 +180,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             $user = Auth::user() ?? $copyedit->copyEditor;
@@ -262,6 +271,21 @@ class CopyeditorSubmissionController extends Controller
                 ->first();
         } catch (\Throwable) {
             return null;
+        }
+    }
+
+    /**
+     * Otorisasi ketat hak akses penugasan copyediting.
+     */
+    private function authorizeCopyeditorForCopyedit(?Copyedit $copyedit): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
+        }
+
+        if (! $copyedit || (string) $copyedit->copy_editor_id !== (string) $userId) {
+            abort(403, 'Anda tidak ditugaskan sebagai Copy Editor pada naskah ini.');
         }
     }
 }

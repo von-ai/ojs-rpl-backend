@@ -142,6 +142,31 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertDontSee('Naskah Lain Milik Editor Lain');
     }
 
+    public function test_section_editor_dilarang_mengakses_workspace_naskah_editor_lain(): void
+    {
+        $otherSubmission = Submission::create([
+            'submission_number' => 'SUB-2026-SE-099',
+            'journal_id' => $this->journal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'title' => 'Naskah Rahasia Editor Lain',
+            'abstract' => 'Abstrak naskah rahasia.',
+            'status' => 'in_review',
+        ]);
+
+        EditorAssignment::create([
+            'submission_id' => $otherSubmission->id,
+            'editor_id' => $this->otherEditor->id,
+            'role' => 'section_editor',
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $otherSubmission->id));
+
+        $response->assertStatus(403);
+    }
+
     public function test_section_editor_dapat_membuka_workspace_dan_memastikan_review_round_aktif(): void
     {
         $response = $this->actingAs($this->sectionEditor)

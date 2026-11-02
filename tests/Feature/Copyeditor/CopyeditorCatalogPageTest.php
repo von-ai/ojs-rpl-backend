@@ -240,4 +240,40 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Tidak ada naskah ditemukan');
     }
+
+    /**
+     * Copyeditor lain yang tidak ditugaskan tidak dapat melihat atau mengedit naskah copyedit.
+     */
+    public function test_copyeditor_lain_dilarang_mengakses_naskah_bukan_tanggung_jawabnya(): void
+    {
+        $otherCopyeditor = User::create([
+            'username' => 'copyeditor.lain',
+            'name' => 'Copy Editor Eksternal',
+            'full_name' => 'Copy Editor Eksternal',
+            'email' => 'copyeditor.lain@brida.makassar.go.id',
+            'password' => Hash::make('password123'),
+            'email_verified_at' => now(),
+        ]);
+        UserRole::create([
+            'user_id' => $otherCopyeditor->id,
+            'role_code' => 'copyeditor',
+        ]);
+
+        $this->actingAs($otherCopyeditor);
+
+        // Di halaman daftar penugasan, copyeditor lain tidak melihat naskah Andi Kurniawan
+        $listResponse = $this->get('/copyeditor/submissions');
+        $listResponse->assertStatus(200);
+        $listResponse->assertDontSee('SUB-2026-00106');
+
+        // Mengakses ruang kerja naskah orang lain ditolak 403 Forbidden
+        $showResponse = $this->get('/copyeditor/submissions/SUB-2026-00106');
+        $showResponse->assertStatus(403);
+
+        // Mengunggah berkas pada naskah orang lain ditolak 403 Forbidden
+        $uploadResponse = $this->post('/copyeditor/upload', [
+            'submission_id' => 'SUB-2026-00106',
+        ]);
+        $uploadResponse->assertStatus(403);
+    }
 }

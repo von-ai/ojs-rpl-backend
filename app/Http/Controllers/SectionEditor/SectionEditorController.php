@@ -136,6 +136,8 @@ class SectionEditorController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $activeRound = $this->sectionEditorService->ensureActiveReviewRound($submission);
         $activeRound->load([
             'assignments.reviewer',
@@ -155,10 +157,15 @@ class SectionEditorController extends Controller
      */
     public function downloadFile(string $id, string $fileId): StreamedResponse|RedirectResponse
     {
+        /** @var User $editor */
+        $editor = Auth::user();
+
         $submission = Submission::with('files.file')
             ->where('id', $id)
             ->orWhere('submission_number', $id)
             ->firstOrFail();
+
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
 
         $subFile = $submission->files->first(function ($item) use ($fileId): bool {
             return $item->id === $fileId || $item->file_id === $fileId;
@@ -208,7 +215,11 @@ class SectionEditorController extends Controller
      */
     public function storeRound(Request $request, string $id): RedirectResponse
     {
+        /** @var User $editor */
+        $editor = Auth::user();
         $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $note = $request->input('note');
 
         $this->sectionEditorService->ensureActiveReviewRound($submission, $note);
@@ -231,7 +242,9 @@ class SectionEditorController extends Controller
 
         /** @var User $editor */
         $editor = Auth::user();
-        $round = ReviewRound::findOrFail($roundId);
+        $round = ReviewRound::with('submission')->findOrFail($roundId);
+        $this->authorizeSectionEditorForSubmission($round->submission, $editor);
+
         $reviewer = User::findOrFail($validated['reviewer_id']);
 
         try {
@@ -261,8 +274,11 @@ class SectionEditorController extends Controller
     {
         /** @var User $editor */
         $editor = Auth::user();
-        $assignment = ReviewAssignment::findOrFail($assignmentId);
-        $submissionId = $assignment->reviewRound->submission_id;
+        $assignment = ReviewAssignment::with('reviewRound.submission')->findOrFail($assignmentId);
+        $submission = $assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $submissionId = $submission->id;
 
         try {
             $this->sectionEditorService->cancelInvitation($assignment, $editor);
@@ -282,12 +298,15 @@ class SectionEditorController extends Controller
     {
         /** @var User $editor */
         $editor = Auth::user();
-        $assignment = ReviewAssignment::findOrFail($assignmentId);
+        $assignment = ReviewAssignment::with('reviewRound.submission')->findOrFail($assignmentId);
+        $submission = $assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $message = $request->input('message');
 
         $this->sectionEditorService->sendReminder($assignment, $editor, $message);
 
-        return redirect()->route('section-editor.submissions.show', $assignment->reviewRound->submission_id)
+        return redirect()->route('section-editor.submissions.show', $submission->id)
             ->with('success', "Surat pengingat telaah berhasil dikirimkan kepada {$assignment->reviewer->name}.");
     }
 
@@ -303,8 +322,11 @@ class SectionEditorController extends Controller
 
         /** @var User $editor */
         $editor = Auth::user();
-        $extension = ReviewExtension::findOrFail($extensionId);
-        $submissionId = $extension->assignment->reviewRound->submission_id;
+        $extension = ReviewExtension::with('assignment.reviewRound.submission')->findOrFail($extensionId);
+        $submission = $extension->assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $submissionId = $submission->id;
 
         try {
             $this->sectionEditorService->decideExtension(
@@ -338,7 +360,8 @@ class SectionEditorController extends Controller
 
         /** @var User $editor */
         $editor = Auth::user();
-        $round = ReviewRound::findOrFail($roundId);
+        $round = ReviewRound::with('submission')->findOrFail($roundId);
+        $this->authorizeSectionEditorForSubmission($round->submission, $editor);
 
         try {
             $this->sectionEditorService->submitRecommendation(
@@ -353,6 +376,25 @@ class SectionEditorController extends Controller
         } catch (InvalidArgumentException $e) {
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
                 ->withErrors(['recommendation' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Memastikan bahwa editor yang sedang login secara sah ditugaskan ke naskah terkait.
+     */
+    private function authorizeSectionEditorForSubmission(Submission $submission, User $editor): void
+    {
+        if ($editor->isSysAdmin() || in_array('editor_in_chief', $editor->availableRoleCodes(), true)) {
+            return;
+        }
+
+        $isAssigned = $submission->editorAssignments()
+            ->where('editor_id', $editor->id)
+            ->whereNull('revoked_at')
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Editor Bagian untuk naskah ini.');
         }
     }
 }

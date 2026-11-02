@@ -46,6 +46,11 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $submissionModel = $this->findSubmission($id);
+        if ($submissionModel) {
+            $this->authorizeLayoutEditorForSubmission($submissionModel);
+        }
+
         $viewModel = new LayoutEditorDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -75,22 +80,9 @@ class LayoutEditorSubmissionController extends Controller
         $changeSummary = $request->input('change_summary');
 
         $submission = $this->findSubmission($submissionParam);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user() ?? User::firstOrCreate(
-                    ['email' => 'rahmat.hidayat@brida.makassar.go.id'],
-                    [
-                        'username' => 'rahmat.hidayat',
-                        'name' => 'Rahmat Hidayat, S.Kom.',
-                        'full_name' => 'Rahmat Hidayat, S.Kom.',
-                        'password' => bcrypt('password123'),
-                    ]
-                );
-            }
-        } catch (\Throwable) {
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor && $request->hasFile('file')) {
             try {
@@ -121,6 +113,9 @@ class LayoutEditorSubmissionController extends Controller
         $noteId = (string) $request->input('note_id', '');
         $resolution = (string) $request->input('resolution', 'Telah diperbaiki.');
 
+        $submission = $this->findSubmission($submissionParam);
+        $this->authorizeLayoutEditorForSubmission($submission);
+
         try {
             if ($noteId !== '' && class_exists(ProofreadingNote::class) && Schema::hasTable('proofreading_notes')) {
                 $note = ProofreadingNote::find($noteId);
@@ -144,14 +139,9 @@ class LayoutEditorSubmissionController extends Controller
     {
         $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
         $submission = $this->findSubmission($submissionParam);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user() ?? User::first();
-            }
-        } catch (\Throwable) {
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor) {
             try {
@@ -175,14 +165,9 @@ class LayoutEditorSubmissionController extends Controller
         $reason = (string) $request->input('reason', 'Kendala format tata letak.');
 
         $submission = $this->findSubmission($submissionParam);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user() ?? User::first();
-            }
-        } catch (\Throwable) {
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor) {
             $this->layoutEditorService->submitEscalation($submission, $actor, $reason);
@@ -199,14 +184,9 @@ class LayoutEditorSubmissionController extends Controller
     {
         $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
         $submission = $this->findSubmission($submissionParam);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user() ?? User::first();
-            }
-        } catch (\Throwable) {
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor) {
             try {
@@ -352,5 +332,29 @@ class LayoutEditorSubmissionController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Otorisasi ketat hak akses ruang kerja penugasan layout editor.
+     */
+    private function authorizeLayoutEditorForSubmission(?Submission $submission): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
+        }
+
+        if (! $submission) {
+            abort(404, 'Naskah tidak ditemukan.');
+        }
+
+        $isAssigned = $submission->layoutAssignments()
+            ->where('layout_editor_id', $userId)
+            ->whereNull('revoked_at')
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Layout Editor pada naskah ini.');
+        }
     }
 }

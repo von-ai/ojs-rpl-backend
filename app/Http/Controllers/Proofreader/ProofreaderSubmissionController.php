@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Proofreader;
 use App\Http\Controllers\Controller;
 use App\Models\FileEntry;
 use App\Models\Galley;
+use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
 use App\Models\User;
@@ -46,6 +47,11 @@ class ProofreaderSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $submissionModel = $this->findSubmission($id);
+        if ($submissionModel) {
+            $this->authorizeProofreaderForSubmission($submissionModel);
+        }
+
         $viewModel = new ProofreaderDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -75,9 +81,11 @@ class ProofreaderSubmissionController extends Controller
         $severity = (string) $request->input('severity', 'minor');
         $description = (string) $request->input('description', 'Catatan koreksi galai');
 
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
-        $submission = $this->findSubmission($submissionId);
         if ($submission && $actor) {
             try {
                 $this->proofreaderService->addCorrectionNote(
@@ -108,6 +116,9 @@ class ProofreaderSubmissionController extends Controller
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $noteId = (string) $request->input('note_id', '');
 
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($noteId !== '' && $actor) {
@@ -137,6 +148,8 @@ class ProofreaderSubmissionController extends Controller
     {
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($submission && $actor) {
@@ -161,6 +174,8 @@ class ProofreaderSubmissionController extends Controller
         $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
         $reason = (string) $request->input('reason', 'Ketidaksesuaian naskah dengan hasil copyediting.');
         $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($submission && $actor) {
@@ -323,12 +338,31 @@ class ProofreaderSubmissionController extends Controller
      */
     protected function resolveActor(): ?User
     {
-        if (! class_exists(User::class) || ! Schema::hasTable('users')) {
-            return null;
+        return Auth::user();
+    }
+
+    /**
+     * Otorisasi ketat hak akses ruang kerja penugasan proofreading.
+     */
+    private function authorizeProofreaderForSubmission(?Submission $submission): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
         }
 
-        return Auth::user()
-            ?? User::where('email', 'sitti.aminah@brida.makassar.go.id')->first()
-            ?? User::first();
+        if (! $submission) {
+            abort(404, 'Naskah tidak ditemukan.');
+        }
+
+        $isAssigned = ProofAssignment::where('proofreader_id', $userId)
+            ->whereHas('galley', function ($q) use ($submission) {
+                $q->where('submission_id', $submission->id);
+            })
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Proofreader pada naskah ini.');
+        }
     }
 }
