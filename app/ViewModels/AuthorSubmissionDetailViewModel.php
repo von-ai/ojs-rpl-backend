@@ -603,6 +603,7 @@ class AuthorSubmissionDetailViewModel
     protected function buildInitialScreeningInfo(Submission $sub): array
     {
         $deskReview = $sub->deskReviews->sortByDesc('created_at')->first();
+        $hasRevisions = $sub->revisions()->exists();
 
         if ($deskReview) {
             $similarityText = $deskReview->similarity_score !== null
@@ -612,6 +613,21 @@ class AuthorSubmissionDetailViewModel
             $scopeText = $deskReview->scope_fit
                 ? 'Sesuai dengan Fokus & Ruang Lingkup Jurnal SIRIDA'
                 : 'Perlu Penyesuaian Ruang Lingkup Jurnal';
+
+            // Jika sebelumnya diminta revisi format dan penulis sudah mengunggah naskah perbaikan format
+            if ($sub->status === 'submitted' && $deskReview->status === 'revision_required' && $hasRevisions) {
+                return [
+                    'has_desk_review' => true,
+                    'stage_title' => 'Verifikasi Perbaikan Format Sedang Berlangsung',
+                    'similarity_score' => $similarityText,
+                    'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
+                    'editorial_officer' => $deskReview->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                    'scope_status' => $scopeText,
+                    'estimated_days' => '1 - 2 Hari Kerja',
+                    'notes' => 'Naskah perbaikan format telah berhasil Anda kirimkan. Dewan redaksi sedang memverifikasi ulang kesesuaian berkas sebelum melanjutkan ke tahapan penelaahan.',
+                    'status' => 'revision_submitted',
+                ];
+            }
 
             return [
                 'has_desk_review' => true,
@@ -652,10 +668,10 @@ class AuthorSubmissionDetailViewModel
 
         $assignmentsCount = 0;
         if ($round && Schema::hasTable('review_assignments')) {
-            $assignmentsCount = DB::table('review_assignments')->where('review_round_id', $round->id)->count();
-        }
-        if ($assignmentsCount === 0) {
-            $assignmentsCount = $round?->minimum_completed_reviews ?? 2;
+            $assignmentsCount = DB::table('review_assignments')
+                ->where('review_round_id', $round->id)
+                ->whereNotIn('status', ['declined', 'cancelled'])
+                ->count();
         }
 
         return [
@@ -664,7 +680,7 @@ class AuthorSubmissionDetailViewModel
             'round' => $roundNumber,
             'reviewers_assigned' => $assignmentsCount,
             'estimated_duration' => '2 - 4 Minggu',
-            'progress_status' => 'Menunggu Rekomendasi Evaluasi Mitra Bestari',
+            'progress_status' => $assignmentsCount > 0 ? 'Menunggu Rekomendasi Evaluasi Mitra Bestari' : 'Sedang Dialokasikan oleh Editor Bagian',
             'confidentiality_assurance' => 'Identitas penulis dan mitra bestari dirahasiakan sepenuhnya untuk menjaga objektivitas dan integritas penilaian ilmiah.',
         ];
     }

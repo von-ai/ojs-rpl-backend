@@ -90,7 +90,7 @@ class SectionEditorService
         $nextRoundNumber = ((int) $submission->reviewRounds()->max('round')) + 1;
 
         return DB::transaction(function () use ($submission, $nextRoundNumber, $note): ReviewRound {
-            $primaryFile = $submission->files()->first();
+            $primaryFile = $submission->files()->whereIn('genre', ['revision', 'manuscript'])->latest('created_at')->first() ?? $submission->files()->first();
 
             $round = ReviewRound::create([
                 'submission_id' => $submission->id,

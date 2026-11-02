@@ -6,12 +6,14 @@ namespace Tests\Feature\Author;
 
 use App\Models\DeskReview;
 use App\Models\Journal;
+use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
 use App\Models\User;
 use Database\Seeders\SubmissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
@@ -478,5 +480,114 @@ class AuthorSubmissionDetailTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00888');
         $indexResponse->assertSee('Perbaikan Format Berkas');
         $indexResponse->assertDontSee('15 Nov 2026');
+    }
+
+    /**
+     * Memastikan pengiriman revisi format skrining awal mengembalikan status naskah ke submitted (Pemeriksaan Awal).
+     */
+    public function test_pengunggahan_revisi_format_skrining_awal_mengembalikan_status_ke_submitted(): void
+    {
+        $journal = Journal::first() ?? Journal::create([
+            'name' => 'Jurnal Inovasi Daerah',
+            'slug' => 'sirida',
+            'is_active' => true,
+        ]);
+
+        $section = Section::first() ?? Section::create([
+            'journal_id' => $journal->id,
+            'name' => 'Artikel Riset',
+            'slug' => 'artikel-riset',
+            'is_active' => true,
+        ]);
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00999',
+            'title' => 'Pengujian Alur Revisi Format Skrining Awal',
+            'abstract' => 'Abstrak pengujian.',
+            'status' => 'revisions_requested',
+            'submitted_at' => now()->subDays(1),
+            'version' => 1,
+        ]);
+
+        DeskReview::create([
+            'submission_id' => $submission->id,
+            'assessed_by' => $this->author->id,
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 15.0,
+            'notes' => 'Tolong sesuaikan format margin dan referensi sesuai template.',
+            'status' => 'revision_required',
+            'version' => 1,
+        ]);
+
+        $fakeManuscript = UploadedFile::fake()->create('manuskrip_perbaikan_format.docx', 500, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $response = $this->post(route('author.submissions.revisions.store', $submission->id), [
+            'manuscript_file' => $fakeManuscript,
+            'note' => 'Format sudah diperbaiki sesuai panduan.',
+        ]);
+
+        $response->assertRedirect(route('author.submissions.show', $submission->id));
+
+        // Status naskah harus kembali ke submitted (Pemeriksaan Awal), BUKAN langsung in_review
+        $submission->refresh();
+        $this->assertSame('submitted', $submission->status);
+
+        // Tampilan detail naskah harus menunjukkan pemeriksaan awal dan bukan proses telaah putaran 1
+        $detailResponse = $this->get(route('author.submissions.show', 'SUB-2026-00999'));
+        $detailResponse->assertStatus(200);
+        $detailResponse->assertSee('Tahap 2 dari 6');
+        $detailResponse->assertSee('Verifikasi Perbaikan Format Sedang Berlangsung');
+        $detailResponse->assertDontSee('Proses Telaah Putaran 1');
+        $detailResponse->assertDontSee('Mitra Bestari Ditugaskan');
+    }
+
+    /**
+     * Memastikan naskah dalam tahap telaah tanpa reviewer yang ditugaskan tidak memalsukan jumlah reviewer.
+     */
+    public function test_penelaahan_in_review_tanpa_mitra_bestari_menampilkan_sedang_dialokasikan(): void
+    {
+        $journal = Journal::first() ?? Journal::create([
+            'name' => 'Jurnal Inovasi Daerah',
+            'slug' => 'sirida',
+            'is_active' => true,
+        ]);
+
+        $section = Section::first() ?? Section::create([
+            'journal_id' => $journal->id,
+            'name' => 'Artikel Riset',
+            'slug' => 'artikel-riset',
+            'is_active' => true,
+        ]);
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00777',
+            'title' => 'Pengujian Telaah Tanpa Penugasan Reviewer',
+            'abstract' => 'Abstrak pengujian telaah.',
+            'status' => 'in_review',
+            'submitted_at' => now()->subDays(5),
+            'version' => 1,
+        ]);
+
+        ReviewRound::create([
+            'submission_id' => $submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00777'));
+        $response->assertStatus(200);
+        $response->assertSee('Proses Telaah');
+        $response->assertSee('Sedang Dialokasikan');
+        $response->assertDontSee('2 Penilai Independen');
     }
 }

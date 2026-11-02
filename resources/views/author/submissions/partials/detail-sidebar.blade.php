@@ -339,7 +339,11 @@
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Mitra Bestari Ditugaskan:</span>
-                    <span class="font-bold text-gray-800 text-right shrink-0">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
+                    @if(($submission['review_info']['reviewers_assigned'] ?? 0) > 0)
+                        <span class="font-bold text-gray-800 text-right shrink-0">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
+                    @else
+                        <span class="font-medium text-amber-700 text-right shrink-0">Sedang Dialokasikan</span>
+                    @endif
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Estimasi Durasi:</span>

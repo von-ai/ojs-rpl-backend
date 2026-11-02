@@ -100,9 +100,14 @@ class AuthorSubmissionService
             $nextRound = $currentRound + 1;
 
             // 4. Catat record revisi pada tabel revisions
+            $latestDecision = $submission->editorialDecisions()
+                ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
+                ->latest('created_at')
+                ->first();
+
             $revision = Revision::create([
                 'submission_id' => $submission->id,
-                'decision_id' => null,
+                'decision_id' => $latestDecision?->id,
                 'round' => $nextRound,
                 'status' => 'submitted',
                 'manuscript_file_id' => $manuscriptEntry->id,
@@ -130,8 +135,16 @@ class AuthorSubmissionService
                 ]);
             }
 
-            // 6. Kembalikan status naskah ke penelaahan dewan redaksi
-            $submission->status = 'in_review';
+            // 6. Tentukan status naskah: jika revisi berasal dari permintaan perbaikan format pada skrining awal (desk review), kembalikan ke submitted untuk diverifikasi redaksi. Jika pasca telaah sejawat, kembalikan ke in_review.
+            $hasPeerReviewRound = $submission->reviewRounds()->exists();
+            $hasEditorialDecision = $latestDecision !== null;
+            $hasDeskRevisionRequired = $submission->deskReviews()
+                ->where('status', 'revision_required')
+                ->exists();
+
+            $isDeskFormatRevision = $hasDeskRevisionRequired && ! $hasPeerReviewRound && ! $hasEditorialDecision;
+
+            $submission->status = $isDeskFormatRevision ? 'submitted' : 'in_review';
             $submission->version = (int) $submission->version + 1;
             $submission->save();
 

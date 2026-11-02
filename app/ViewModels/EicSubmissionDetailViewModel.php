@@ -325,10 +325,13 @@ class EicSubmissionDetailViewModel
     public function workflowSteps(): array
     {
         $status = $this->submission->status;
+        $isDeskRevisionRequested = ($status === 'revisions_requested' && $this->submission->reviewRounds->isEmpty());
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
-            || in_array($status, ['in_review', 'revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
+            || in_array($status, ['in_review', 'accepted', 'in_production', 'ready_for_issue', 'published'], true)
+            || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
         $hasSe = $this->submission->activeEditorAssignment !== null
-            || in_array($status, ['revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
+            || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true)
+            || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
         $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
             || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published', 'declined'], true);
         $inProdOrPub = in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true);
@@ -347,8 +350,8 @@ class EicSubmissionDetailViewModel
             [
                 'step' => 1,
                 'title' => 'Skrining Awal',
-                'subtitle' => 'Pemeriksaan Kelayakan',
-                'state' => $hasDeskPassed ? 'completed' : ($status === 'submitted' ? 'current' : 'upcoming'),
+                'subtitle' => $isDeskRevisionRequested ? 'Menunggu Revisi Format Penulis' : 'Pemeriksaan Kelayakan',
+                'state' => $hasDeskPassed ? 'completed' : (in_array($status, ['submitted', 'revisions_requested'], true) ? 'current' : 'upcoming'),
             ],
             [
                 'step' => 2,
@@ -359,8 +362,8 @@ class EicSubmissionDetailViewModel
             [
                 'step' => 3,
                 'title' => 'Telaah & Revisi',
-                'subtitle' => $status === 'revisions_requested' ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
-                'state' => $inProdOrPub ? 'completed' : (in_array($status, ['in_review', 'revisions_requested'], true) ? 'current' : 'upcoming'),
+                'subtitle' => ($status === 'revisions_requested' && ! $isDeskRevisionRequested) ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
+                'state' => $inProdOrPub ? 'completed' : ((in_array($status, ['in_review'], true) || ($status === 'revisions_requested' && ! $isDeskRevisionRequested)) ? 'current' : 'upcoming'),
             ],
             [
                 'step' => 4,
