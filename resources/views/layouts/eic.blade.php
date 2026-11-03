@@ -30,22 +30,6 @@
 
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
-            @if($errors->any())
-                <div class="p-4 rounded-lg bg-brand-maroon-light/40 border border-red-200 text-red-900 text-xs space-y-1.5" role="alert">
-                    <div class="font-bold flex items-center gap-2">
-                        <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Mohon periksa kembali isian formulir:</span>
-                    </div>
-                    <ul class="space-y-0.5 pl-6">
-                        @foreach($errors->all() as $err)
-                            <li>{{ $err }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             @yield('content')
         </main>
     </div>

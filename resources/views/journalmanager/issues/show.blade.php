@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Pemberitahuan">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- 1. Header Metadata Edisi & Tombol Navigasi -->
     <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">

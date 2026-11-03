@@ -17,28 +17,32 @@
     $id = $id ?? $name;
     $currentValue = (string) ($selected ?? $value ?? old($name, request($name, '')));
 
-    // Normalisasi opsi menjadi array seragam: [['value' => ..., 'label' => ...]]
+    // Normalisasi opsi menjadi array seragam: [['value' => ..., 'label' => ..., 'desc' => ...]]
     $normalizedOptions = [];
     foreach ($options as $optKey => $optVal) {
         if (is_array($optVal)) {
             $normalizedOptions[] = [
                 'value' => (string) ($optVal['value'] ?? $optKey),
                 'label' => (string) ($optVal['label'] ?? $optVal['name'] ?? $optVal['title'] ?? $optKey),
+                'desc' => (string) ($optVal['desc'] ?? $optVal['description'] ?? ''),
             ];
         } elseif (is_object($optVal)) {
             $normalizedOptions[] = [
                 'value' => (string) ($optVal->value ?? $optVal->id ?? $optKey),
                 'label' => (string) ($optVal->label ?? $optVal->name ?? $optVal->title ?? $optKey),
+                'desc' => (string) ($optVal->desc ?? $optVal->description ?? ''),
             ];
         } elseif (is_numeric($optKey) && is_string($optVal)) {
             $normalizedOptions[] = [
                 'value' => (string) $optVal,
                 'label' => (string) $optVal,
+                'desc' => '',
             ];
         } else {
             $normalizedOptions[] = [
                 'value' => (string) $optKey,
                 'label' => (string) $optVal,
+                'desc' => '',
             ];
         }
     }
@@ -56,10 +60,13 @@
             ? $normalizedOptions[0]['label'] 
             : $placeholder;
     }
+
+    $isFullWidth = str_contains($panelClass, 'w-full') || str_contains($containerClass, 'w-full');
+    $defaultPanelWidth = $isFullWidth ? 'w-full left-0 right-0 max-w-full' : 'min-w-full sm:min-w-44 w-max max-w-xs sm:max-w-sm';
 @endphp
 
 <div 
-    class="relative custom-dropdown-container inline-block text-left {{ $containerClass }}"
+    class="relative custom-dropdown-container {{ $isFullWidth ? 'w-full block' : 'inline-block' }} text-left {{ $containerClass }}"
     data-dropdown="{{ $name }}"
     @if($autoSubmit) data-auto-submit="true" @endif
 >
@@ -96,18 +103,27 @@
     </button>
 
     <!-- Custom Options Floating Panel -->
-    <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-full sm:min-w-44 w-max max-w-xs sm:max-w-sm max-h-60 overflow-y-auto bg-white rounded-md border border-gray-200 shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1 z-50 space-y-0.5 {{ $panelClass }}">
+    <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 {{ $defaultPanelWidth }} max-h-60 overflow-y-auto bg-white rounded-lg border border-gray-200 shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1.5 z-50 space-y-0.5 {{ $panelClass }}">
         @foreach($normalizedOptions as $opt)
             @php $isSelected = ($opt['value'] === $currentValue); @endphp
             <div 
-                class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded cursor-pointer transition {{ $isSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                class="custom-dropdown-item flex items-start justify-between gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ $isSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                 data-value="{{ $opt['value'] }}"
                 data-label="{{ $opt['label'] }}"
                 role="option"
                 aria-selected="{{ $isSelected ? 'true' : 'false' }}"
             >
-                <span class="truncate">{{ $opt['label'] }}</span>
-                <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon shrink-0 {{ $isSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="min-w-0 flex-1">
+                    <div class="{{ $isSelected ? 'text-brand-maroon font-semibold' : 'text-gray-900 font-medium' }} leading-snug {{ empty($opt['desc']) ? 'truncate' : '' }}">
+                        {{ $opt['label'] }}
+                    </div>
+                    @if(!empty($opt['desc']))
+                        <div class="text-[11px] {{ $isSelected ? 'text-brand-maroon/80' : 'text-gray-500' }} font-normal mt-0.5 leading-snug">
+                            {{ $opt['desc'] }}
+                        </div>
+                    @endif
+                </div>
+                <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
