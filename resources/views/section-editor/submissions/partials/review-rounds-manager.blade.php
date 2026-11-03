@@ -81,9 +81,32 @@
                 </span>
             </div>
             @if($activeRound->se_recommendation_note)
-                <p class="text-indigo-900 leading-relaxed text-left bg-white/90 p-3 rounded-lg border border-indigo-100">
-                    "{{ $activeRound->se_recommendation_note }}"
-                </p>
+                @php
+                    $isNoteLong = mb_strlen($activeRound->se_recommendation_note) > 160 || str_contains($activeRound->se_recommendation_note, "\n");
+                @endphp
+                <div class="text-indigo-900 leading-relaxed text-left bg-white/90 p-3 rounded-lg border border-indigo-100">
+                    @if($isNoteLong)
+                        <p id="se-mgr-note-preview-{{ $activeRound->id }}" class="italic line-clamp-2">
+                            "{{ Str::limit($activeRound->se_recommendation_note, 150) }}"
+                        </p>
+                        <p id="se-mgr-note-full-{{ $activeRound->id }}" class="italic hidden whitespace-pre-line">
+                            "{{ $activeRound->se_recommendation_note }}"
+                        </p>
+                        <button 
+                            type="button" 
+                            onclick="toggleSeMgrNote('{{ $activeRound->id }}', this)" 
+                            class="mt-1.5 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 cursor-pointer"
+                            aria-expanded="false"
+                        >
+                            <span class="note-btn-text">Lihat Detail Catatan</span>
+                            <svg class="w-3 h-3 transform transition-transform duration-200 note-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    @else
+                        <p class="italic">"{{ $activeRound->se_recommendation_note }}"</p>
+                    @endif
+                </div>
             @endif
             @if($activeRound->se_recommended_at)
                 <span class="block text-[11px] text-indigo-700 tabular-nums">
@@ -413,6 +436,30 @@
             btn.setAttribute('data-expanded', 'true');
             if (textSpan) textSpan.textContent = 'Tutup Mitra Bestari Tambahan';
             if (icon) icon.classList.add('rotate-180');
+        }
+    }
+
+    function toggleSeMgrNote(roundId, btn) {
+        const previewEl = document.getElementById('se-mgr-note-preview-' + roundId);
+        const fullEl = document.getElementById('se-mgr-note-full-' + roundId);
+        const label = btn.querySelector('.note-btn-text');
+        const icon = btn.querySelector('.note-chevron');
+
+        if (!previewEl || !fullEl) return;
+
+        const isFullHidden = fullEl.classList.contains('hidden');
+        if (isFullHidden) {
+            fullEl.classList.remove('hidden');
+            previewEl.classList.add('hidden');
+            btn.setAttribute('aria-expanded', 'true');
+            if (label) label.textContent = 'Tutup Catatan';
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            fullEl.classList.add('hidden');
+            previewEl.classList.remove('hidden');
+            btn.setAttribute('aria-expanded', 'false');
+            if (label) label.textContent = 'Lihat Detail Catatan';
+            if (icon) icon.classList.remove('rotate-180');
         }
     }
 </script>

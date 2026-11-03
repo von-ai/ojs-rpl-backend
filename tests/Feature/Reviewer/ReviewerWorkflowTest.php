@@ -354,6 +354,39 @@ class ReviewerWorkflowTest extends TestCase
         $response->assertSessionHasErrors('submit');
     }
 
+    public function test_halaman_telaah_selesai_menampilkan_label_rekomendasi_ramah_pengguna_tanpa_capslock(): void
+    {
+        $this->assignment->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        Review::create([
+            'assignment_id' => $this->assignment->id,
+            'scores' => [
+                'originality' => 80,
+                'methodology' => 80,
+                'structure' => 80,
+                'relevance' => 80,
+            ],
+            'comments_for_author' => 'Naskah memerlukan beberapa revisi minor pada bagian metode.',
+            'recommendation' => 'revisions_required',
+            'certify_no_conflict' => true,
+            'status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $response->assertOk();
+        $response->assertSee('Hasil Telaah Telah Dikirim Resmi (Terkunci)');
+        $response->assertSee('Perlu Revisi');
+        $response->assertDontSee('REVISIONS_REQUIRED');
+        $response->assertSee('Lihat Detail Lembar Evaluasi Lengkap');
+        $response->assertSee('id="completedReviewDetail"', false);
+    }
+
     public function test_reviewer_dapat_mengakses_dashboard_dan_melihat_metrik_statis(): void
     {
         $response = $this->actingAs($this->reviewer)

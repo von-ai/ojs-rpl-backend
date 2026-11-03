@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Eic;
 
+use App\Models\DeskReview;
+use App\Models\EditorialDecision;
 use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\GalleyApproval;
 use App\Models\Journal;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
+use App\Models\Review;
+use App\Models\ReviewAssignment;
 use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
@@ -332,6 +336,130 @@ class EditorInChiefWorkflowTest extends TestCase
         $response->assertDontSee('UC-12');
         $response->assertDontSee('text-justify');
         $response->assertDontSee('font-serif');
+    }
+
+    /**
+     * Ringkasan telaah sejawat dan rekomendasi editor mendukung toggle lihat detail.
+     */
+    public function test_ringkasan_telaah_eic_mendukung_lihat_detail_dan_toggle_review(): void
+    {
+        $this->actingAs($this->eic);
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'minimum_completed_reviews' => 2,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'se_recommendation' => 'accept',
+            'se_recommendation_note' => 'Catatan rekomendasi editor yang cukup panjang untuk menguji fitur lihat detail pada antarmuka pengguna SIRIDA Kota Makassar.',
+            'se_recommended_at' => now(),
+            'version' => 1,
+        ]);
+
+        $reviewer = User::factory()->create([
+            'name' => 'Prof. Dr. Ir. Reviewer Handal',
+            'email' => 'reviewer@unhas.ac.id',
+        ]);
+
+        $assignment = ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $reviewer->id,
+            'status' => 'completed',
+            'response_due_at' => now()->addDays(7),
+            'review_due_at' => now()->addDays(14),
+            'responded_at' => now(),
+            'completed_at' => now(),
+            'deadline_version' => 1,
+            'version' => 1,
+        ]);
+
+        Review::create([
+            'assignment_id' => $assignment->id,
+            'scores' => [
+                'originality' => 85,
+                'methodology' => 90,
+            ],
+            'comments_for_author' => 'Metodologi dan temuan empiris sudah sangat baik.',
+            'confidential_comments_for_editor' => 'Rekomendasi kuat untuk diterbitkan segera.',
+            'recommendation' => 'accept',
+            'certify_no_conflict' => true,
+            'status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('Ringkasan Telaah Sejawat & Rekomendasi Editor Bagian', false);
+        $response->assertSee('Laporan Evaluasi Substantif');
+        $response->assertSee('Lihat Detail');
+        $response->assertSee('eic-rev-detail-'.$assignment->id);
+    }
+
+    /**
+     * Jejak audit skrining awal dan keputusan editorial mendukung lihat detail catatan dan riwayat sebelumnya.
+     */
+    public function test_jejak_audit_skrining_dan_keputusan_editorial_mendukung_lihat_detail(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Buat 2 rekaman skrining awal (skrining awal sebelumnya dan terbaru)
+        DeskReview::create([
+            'submission_id' => $this->submission->id,
+            'assessed_by' => $this->eic->id,
+            'status' => 'revision_required',
+            'notes' => 'Catatan revisi format awal pertama sebelum penulis mengirim ulang perbaikan naskah.',
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 15.0,
+            'created_at' => now()->subDays(5),
+        ]);
+
+        DeskReview::create([
+            'submission_id' => $this->submission->id,
+            'assessed_by' => $this->eic->id,
+            'status' => 'passed',
+            'notes' => 'Catatan skrining awal kedua yang sangat panjang dan komprehensif untuk memastikan seluruh aspek format, kepatuhan selingkung, dan relevansi fokus telah memenuhi standar baku penerbitan SIRIDA Kota Makassar.',
+            'scope_fit' => true,
+            'files_complete' => true,
+            'guidelines_compliant' => true,
+            'similarity_score' => 12.5,
+            'created_at' => now()->subDays(2),
+        ]);
+
+        // Buat 2 rekaman keputusan editorial resmi
+        EditorialDecision::create([
+            'submission_id' => $this->submission->id,
+            'decided_by' => $this->eic->id,
+            'review_round_id' => null,
+            'decision' => 'revisions_required',
+            'note_for_author' => 'Surat keputusan revisi pertama yang panjang dan mendalam, menginstruksikan penulis untuk memperkaya metodologi penelitian, menambahkan referensi jurnal bereputasi terbaru, dan memperbaiki tata tulis ilmiah secara tuntas.',
+            'internal_note' => 'Catatan internal rahasia dewan redaksi untuk memantau perbaikan.',
+            'revision_due_at' => now()->addDays(14),
+            'sent_at' => now()->subDay(),
+        ]);
+
+        EditorialDecision::create([
+            'submission_id' => $this->submission->id,
+            'decided_by' => $this->eic->id,
+            'review_round_id' => null,
+            'decision' => 'accept',
+            'note_for_author' => 'Selamat, naskah Anda dinyatakan diterima resmi untuk penerbitan.',
+            'internal_note' => null,
+            'sent_at' => now(),
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('Jejak Audit Skrining Awal & Keputusan Editorial', false);
+        $response->assertSee('Riwayat Skrining Awal');
+        $response->assertSee('Lihat Detail Catatan');
+        $response->assertSee('Lihat Riwayat Skrining Sebelumnya');
+        $response->assertSee('Lihat Detail Surat Keputusan');
+        $response->assertSee('Lihat Keputusan Editorial Sebelumnya');
     }
 
     /**

@@ -480,133 +480,280 @@
                     </div>
 
                     @if($viewModel->isCompleted())
-                        <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-2">
-                            <div class="flex items-center justify-between font-bold">
-                                <span>Hasil Telaah Telah Dikirim Resmi (Terkunci)</span>
-                                <span class="bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded uppercase">
-                                    {{ $viewModel->existingReview()?->recommendation }}
-                                </span>
-                            </div>
-                            <p class="text-emerald-800">
-                                Diserahkan pada: <span class="tabular-nums font-semibold">{{ $viewModel->existingReview()?->submitted_at?->format('d M Y H:i') }} UTC</span>. Terima kasih atas dedikasi dan kontribusi keilmuan Anda!
-                            </p>
-                        </div>
-                    @endif
+                        @php
+                            $existingRev = $viewModel->existingReview();
+                            $scores = is_array($existingRev?->scores) ? $existingRev->scores : [];
+                            $avgScore = $viewModel->averageScore();
+                        @endphp
 
-                    <form action="{{ route('reviewer.assignments.submit', $viewModel->assignment->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6 text-xs">
-                        @csrf
-
-                        <!-- 1. Kriteria Rubrik Penilaian -->
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                                <h3 class="font-bold text-gray-900 uppercase text-[11px] tracking-wider">
-                                    1. Rubrik Penilaian Kualitas Naskah (Skor 0 - 100)
-                                </h3>
-                                <span class="text-[10px] text-gray-400">Skala Baku</span>
-                            </div>
-
-                            <div class="space-y-3">
-                                @foreach($viewModel->rubricCriteria as $key => $criteria)
-                                    @php
-                                        $existingScore = $viewModel->existingReview()?->scores[$key] ?? 80;
-                                    @endphp
-                                    <div class="p-3.5 bg-gray-50/70 rounded-xl border border-gray-200/80 space-y-2">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="font-bold text-gray-800 text-xs">{{ $criteria['label'] }} ({{ $criteria['weight'] }}%)</span>
-                                            <div class="flex items-center gap-1.5 shrink-0">
-                                                <input 
-                                                    type="number" 
-                                                    min="0" 
-                                                    max="100" 
-                                                    name="scores[{{ $key }}]" 
-                                                    value="{{ old('scores.'.$key, $existingScore) }}" 
-                                                    {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                                    required 
-                                                    class="w-16 rounded-lg border border-gray-300 p-1.5 text-center font-bold text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon tabular-nums"
-                                                >
-                                                <span class="text-gray-400 font-medium">/ 100</span>
-                                            </div>
-                                        </div>
-                                        <p class="text-[11px] text-gray-500 leading-relaxed text-left">{{ $criteria['description'] }}</p>
+                        <!-- 1. Banner Status Terkunci & Rekomendasi Resmi -->
+                        <div class="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 space-y-2.5 shadow-2xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                                <div class="flex items-center gap-2 font-bold text-emerald-900">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Hasil Telaah Telah Dikirim Resmi (Terkunci)</span>
+                                </div>
+                                @if($viewModel->recommendationLabel())
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <span class="text-[11px] text-emerald-800 font-medium">Rekomendasi Putusan:</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border shadow-2xs {{ $viewModel->recommendationBadgeClass() }}">
+                                            {{ $viewModel->recommendationLabel() }}
+                                        </span>
                                     </div>
-                                @endforeach
+                                @endif
+                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 text-emerald-800 text-[11px] pt-2 border-t border-emerald-200/60">
+                                <span>
+                                    Diserahkan pada: <strong class="tabular-nums font-semibold">{{ $existingRev?->submitted_at?->format('d M Y, H:i') ?? '-' }} UTC</strong>
+                                </span>
+                                @if($avgScore !== null)
+                                    <span class="font-semibold bg-emerald-100/90 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 tabular-nums">
+                                        Skor Rata-rata: {{ $avgScore }}/100
+                                    </span>
+                                @endif
                             </div>
                         </div>
 
-                        <!-- 2. Masukan untuk Penulis (Comments for Author) -->
-                        <div class="space-y-2">
-                            <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
-                                2. Masukan Konstruktif untuk Penulis <span class="text-rose-500">*</span>
-                            </label>
-                            <p class="text-[11px] text-gray-500">
-                                Catatan ini akan diteruskan kepada penulis secara anonim sebagai panduan perbaikan naskah.
-                            </p>
-                            <textarea 
-                                name="comments_for_author" 
-                                rows="5" 
-                                required 
-                                {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                placeholder="Tuliskan evaluasi mengenai kekuatan naskah, kelemahan metodologi, referensi yang perlu diperkaya, dan saran perbaikan spesifik..." 
-                                class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
-                            >{{ old('comments_for_author', $viewModel->existingReview()?->comments_for_author) }}</textarea>
+                        <!-- 2. Ringkasan Hasil Telaah & Cuplikan Masukan (Optimasi UX) -->
+                        <div class="p-4 sm:p-5 rounded-xl bg-gray-50/80 border border-gray-200 space-y-4 text-xs">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="font-bold text-gray-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    <span>Ringkasan Hasil Evaluasi Ilmiah</span>
+                                </h3>
+                                <span class="text-[11px] text-gray-500 tabular-nums">{{ count($scores) }} kriteria dinilai</span>
+                            </div>
+
+                            @if(!empty($scores))
+                                <div class="flex flex-wrap gap-2 pt-0.5">
+                                    @foreach($viewModel->rubricCriteria as $key => $crit)
+                                        @if(isset($scores[$key]))
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-800 text-[11px] shadow-2xs">
+                                                <span class="text-gray-500">{{ $crit['label'] }}:</span>
+                                                <strong class="font-bold text-brand-maroon tabular-nums">{{ $scores[$key] }}</strong>/100
+                                            </span>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($existingRev?->comments_for_author)
+                                <div class="pt-2 border-t border-gray-200/70">
+                                    <span class="text-[11px] font-bold text-gray-500 uppercase block mb-1">Masukan untuk Penulis:</span>
+                                    <p class="text-xs text-gray-700 leading-relaxed italic bg-white p-3 rounded-lg border border-gray-200/80 line-clamp-3">
+                                        "{{ $existingRev->comments_for_author }}"
+                                    </p>
+                                </div>
+                            @endif
+
+                            <!-- Tombol Toggle Lihat Detail Lengkap -->
+                            <div class="pt-1 flex items-center justify-between">
+                                <span class="text-[11px] text-gray-400">Tekan tombol detail untuk meninjau rubrik lengkap & catatan tertutup</span>
+                                <button 
+                                    type="button" 
+                                    onclick="toggleReviewerCompletedDetail(this)" 
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-brand-maroon hover:bg-brand-maroon/10 rounded-lg border border-brand-maroon/20 transition cursor-pointer shadow-2xs"
+                                    aria-expanded="false"
+                                >
+                                    <span class="btn-text">Lihat Detail Lembar Evaluasi Lengkap</span>
+                                    <svg class="w-3.5 h-3.5 transform transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- 3. Catatan Rahasia untuk Dewan Redaksi (Confidential Comments for Editor) -->
-                        <div class="space-y-2">
-                            <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
-                                3. Catatan Rahasia untuk Dewan Redaksi (Opsional)
-                            </label>
-                            <p class="text-[11px] text-gray-500">
-                                Catatan tertutup yang hanya dapat dibaca oleh Editor Bagian dan Pemimpin Redaksi (tidak dapat dilihat oleh penulis).
-                            </p>
-                            <textarea 
-                                name="confidential_comments_for_editor" 
-                                rows="3" 
-                                {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                placeholder="Informasi rahasia, keraguan orisinalitas, atau catatan etis yang perlu diperhatikan dewan editor..." 
-                                class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
-                            >{{ old('confidential_comments_for_editor', $viewModel->existingReview()?->confidential_comments_for_editor) }}</textarea>
+                        <!-- 3. Rincian Lengkap Hasil Telaah (Collapsible Detail) -->
+                        <div id="completedReviewDetail" class="hidden space-y-6 pt-3 border-t border-gray-100">
+                            <!-- Rubrik Penilaian Lengkap -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                    <h3 class="font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                        1. Rincian Penilaian Rubrik Kualitas Naskah
+                                    </h3>
+                                    <span class="text-[10px] text-gray-400">Skala 0 - 100</span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    @foreach($viewModel->rubricCriteria as $key => $criteria)
+                                        @php
+                                            $critScore = $scores[$key] ?? 0;
+                                        @endphp
+                                        <div class="p-3.5 bg-gray-50/70 rounded-xl border border-gray-200/80 space-y-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-bold text-gray-800 text-xs">{{ $criteria['label'] }} ({{ $criteria['weight'] }}%)</span>
+                                                <div class="flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded bg-white border border-gray-200 text-xs font-bold text-gray-900 tabular-nums">
+                                                    <span class="text-brand-maroon">{{ $critScore }}</span>
+                                                    <span class="text-gray-400 font-normal">/ 100</span>
+                                                </div>
+                                            </div>
+                                            <p class="text-[11px] text-gray-500 leading-relaxed text-left">{{ $criteria['description'] }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Masukan Lengkap untuk Penulis -->
+                            <div class="space-y-2">
+                                <span class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                    2. Masukan Konstruktif untuk Penulis
+                                </span>
+                                <div class="w-full rounded-lg border border-gray-200 bg-white p-3.5 text-xs leading-relaxed text-left whitespace-pre-line text-gray-800">
+                                    {{ $existingRev?->comments_for_author ?: 'Tidak ada masukan tambahan.' }}
+                                </div>
+                            </div>
+
+                            <!-- Catatan Rahasia Lengkap untuk Editor -->
+                            <div class="space-y-2">
+                                <span class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                    3. Catatan Rahasia untuk Dewan Redaksi
+                                </span>
+                                <div class="w-full rounded-lg border border-purple-200 bg-purple-50/60 p-3.5 text-xs leading-relaxed text-left whitespace-pre-line text-purple-950">
+                                    {{ $existingRev?->confidential_comments_for_editor ?: 'Tidak ada catatan rahasia tambahan.' }}
+                                </div>
+                            </div>
+
+                            <!-- Berkas Manuskrip Beranotasi jika ada -->
+                            @if($existingRev?->annotations && $existingRev->annotations->isNotEmpty())
+                                <div class="space-y-2">
+                                    <span class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                        4. Berkas Manuskrip Beranotasi yang Diunggah
+                                    </span>
+                                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between text-xs">
+                                        <div class="flex items-center gap-2 text-gray-700">
+                                            <svg class="w-4 h-4 text-brand-maroon" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+                                            </svg>
+                                            <span class="font-medium">{{ $existingRev->annotations->first()->file?->original_name ?? 'Berkas_Anotasi.pdf' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Integritas Saintifik -->
+                            <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-[11px] text-gray-600 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Pernyataan Bebas Konflik Kepentingan telah ditandatangani saat penyerahan telaah resmi.</span>
+                            </div>
                         </div>
 
-                        <!-- 4. Rekomendasi Putusan (Recommendation) -->
-                        <div class="space-y-2">
-                            <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
-                                4. Rekomendasi Putusan Ilmiah <span class="text-rose-500">*</span>
-                            </label>
-                            <x-custom-dropdown
-                                name="recommendation"
-                                :value="old('recommendation', $viewModel->existingReview()?->recommendation)"
-                                :disabled="$viewModel->isCompleted()"
-                                :required="true"
-                                :options="[
-                                    '' => [
-                                        'label' => 'Pilih Rekomendasi',
-                                    ],
-                                    'accept' => [
-                                        'label' => 'Diterima',
-                                        'desc' => 'Naskah layak terbit tanpa revisi mayor',
-                                    ],
-                                    'revisions_required' => [
-                                        'label' => 'Perlu Revisi',
-                                        'desc' => 'Penulis wajib melakukan revisi minor',
-                                    ],
-                                    'resubmit' => [
-                                        'label' => 'Kirim Ulang untuk Telaah',
-                                        'desc' => 'Perlu perombakan besar dan putaran telaah baru',
-                                    ],
-                                    'decline' => [
-                                        'label' => 'Ditolak',
-                                        'desc' => 'Naskah tidak memenuhi standar ilmiah jurnal',
-                                    ],
-                                ]"
-                                container-class="w-full"
-                                button-class="w-full bg-white hover:bg-gray-50/80 border-gray-300 text-gray-900 rounded-lg p-2.5 text-xs font-medium"
-                                panel-class="w-full left-0 right-0 max-w-full"
-                            />
-                        </div>
+                    @else
+                        <!-- Form Aktif saat Mengisi / Mengirim Telaah Ilmiah -->
+                        <form action="{{ route('reviewer.assignments.submit', $viewModel->assignment->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6 text-xs">
+                            @csrf
 
-                        <!-- 5. Unggah Berkas Manuskrip Beranotasi (Optional) -->
-                        @if(! $viewModel->isCompleted())
+                            <!-- 1. Kriteria Rubrik Penilaian -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                    <h3 class="font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                        1. Rubrik Penilaian Kualitas Naskah (Skor 0 - 100)
+                                    </h3>
+                                    <span class="text-[10px] text-gray-400">Skala Baku</span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    @foreach($viewModel->rubricCriteria as $key => $criteria)
+                                        @php
+                                            $existingScore = $viewModel->existingReview()?->scores[$key] ?? 80;
+                                        @endphp
+                                        <div class="p-3.5 bg-gray-50/70 rounded-xl border border-gray-200/80 space-y-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-bold text-gray-800 text-xs">{{ $criteria['label'] }} ({{ $criteria['weight'] }}%)</span>
+                                                <div class="flex items-center gap-1.5 shrink-0">
+                                                    <input 
+                                                        type="number" 
+                                                        min="0" 
+                                                        max="100" 
+                                                        name="scores[{{ $key }}]" 
+                                                        value="{{ old('scores.'.$key, $existingScore) }}" 
+                                                        required 
+                                                        class="w-16 rounded-lg border border-gray-300 p-1.5 text-center font-bold text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon tabular-nums"
+                                                    >
+                                                    <span class="text-gray-400 font-medium">/ 100</span>
+                                                </div>
+                                            </div>
+                                            <p class="text-[11px] text-gray-500 leading-relaxed text-left">{{ $criteria['description'] }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- 2. Masukan untuk Penulis (Comments for Author) -->
+                            <div class="space-y-2">
+                                <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                    2. Masukan Konstruktif untuk Penulis <span class="text-rose-500">*</span>
+                                </label>
+                                <p class="text-[11px] text-gray-500">
+                                    Catatan ini akan diteruskan kepada penulis secara anonim sebagai panduan perbaikan naskah.
+                                </p>
+                                <textarea 
+                                    name="comments_for_author" 
+                                    rows="5" 
+                                    required 
+                                    placeholder="Tuliskan evaluasi mengenai kekuatan naskah, kelemahan metodologi, referensi yang perlu diperkaya, dan saran perbaikan spesifik..." 
+                                    class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
+                                >{{ old('comments_for_author', $viewModel->existingReview()?->comments_for_author) }}</textarea>
+                            </div>
+
+                            <!-- 3. Catatan Rahasia untuk Dewan Redaksi (Confidential Comments for Editor) -->
+                            <div class="space-y-2">
+                                <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                    3. Catatan Rahasia untuk Dewan Redaksi (Opsional)
+                                </label>
+                                <p class="text-[11px] text-gray-500">
+                                    Catatan tertutup yang hanya dapat dibaca oleh Editor Bagian dan Pemimpin Redaksi (tidak dapat dilihat oleh penulis).
+                                </p>
+                                <textarea 
+                                    name="confidential_comments_for_editor" 
+                                    rows="3" 
+                                    placeholder="Informasi rahasia, keraguan orisinalitas, atau catatan etis yang perlu diperhatikan dewan editor..." 
+                                    class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
+                                >{{ old('confidential_comments_for_editor', $viewModel->existingReview()?->confidential_comments_for_editor) }}</textarea>
+                            </div>
+
+                            <!-- 4. Rekomendasi Putusan (Recommendation) -->
+                            <div class="space-y-2">
+                                <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
+                                    4. Rekomendasi Putusan Ilmiah <span class="text-rose-500">*</span>
+                                </label>
+                                <x-custom-dropdown
+                                    name="recommendation"
+                                    :value="old('recommendation', $viewModel->existingReview()?->recommendation)"
+                                    :required="true"
+                                    :options="[
+                                        '' => [
+                                            'label' => 'Pilih Rekomendasi',
+                                        ],
+                                        'accept' => [
+                                            'label' => 'Diterima',
+                                            'desc' => 'Naskah layak terbit tanpa revisi mayor',
+                                        ],
+                                        'revisions_required' => [
+                                            'label' => 'Perlu Revisi',
+                                            'desc' => 'Penulis wajib melakukan revisi minor',
+                                        ],
+                                        'resubmit' => [
+                                            'label' => 'Kirim Ulang untuk Telaah',
+                                            'desc' => 'Perlu perombakan besar dan putaran telaah baru',
+                                        ],
+                                        'decline' => [
+                                            'label' => 'Ditolak',
+                                            'desc' => 'Naskah tidak memenuhi standar ilmiah jurnal',
+                                        ],
+                                    ]"
+                                    container-class="w-full"
+                                    button-class="w-full bg-white hover:bg-gray-50/80 border-gray-300 text-gray-900 rounded-lg p-2.5 text-xs font-medium"
+                                    panel-class="w-full left-0 right-0 max-w-full"
+                                />
+                            </div>
+
+                            <!-- 5. Unggah Berkas Manuskrip Beranotasi (Optional) -->
                             <div class="space-y-2">
                                 <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
                                     5. Unggah Berkas Manuskrip Beranotasi (Opsional)
@@ -619,10 +766,8 @@
                                 >
                                 <p class="text-[10px] text-gray-400">Format yang diterima: PDF atau DOCX, maksimal 20 MB.</p>
                             </div>
-                        @endif
 
-                        <!-- 6. Pernyataan Bebas Konflik Kepentingan (Wajib Centang) -->
-                        @if(! $viewModel->isCompleted())
+                            <!-- 6. Pernyataan Bebas Konflik Kepentingan (Wajib Centang) -->
                             <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
                                 <label class="flex items-start gap-2.5 cursor-pointer">
                                     <input 
@@ -637,10 +782,8 @@
                                     </span>
                                 </label>
                             </div>
-                        @endif
 
-                        <!-- Tombol Aksi Simpan Draf & Submit -->
-                        @if(! $viewModel->isCompleted())
+                            <!-- Tombol Aksi Simpan Draf & Submit -->
                             <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                                 <button 
                                     type="submit" 
@@ -656,8 +799,8 @@
                                     Kirim Hasil Telaah Resmi
                                 </button>
                             </div>
-                        @endif
-                    </form>
+                        </form>
+                    @endif
                 </div>
             @endif
 
@@ -717,4 +860,29 @@
         </div>
     </div>
 @endif
+
+@pushOnce('scripts')
+<script>
+    function toggleReviewerCompletedDetail(btn) {
+        const detailEl = document.getElementById('completedReviewDetail');
+        if (!detailEl) return;
+
+        const isHidden = detailEl.classList.contains('hidden');
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (isHidden) {
+            detailEl.classList.remove('hidden');
+            btn.setAttribute('aria-expanded', 'true');
+            if (textSpan) textSpan.textContent = 'Tutup Detail Evaluasi & Rubrik';
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            detailEl.classList.add('hidden');
+            btn.setAttribute('aria-expanded', 'false');
+            if (textSpan) textSpan.textContent = 'Lihat Detail Lembar Evaluasi Lengkap';
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
+</script>
+@endpushOnce
 @endsection
