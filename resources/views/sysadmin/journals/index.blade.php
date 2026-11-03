@@ -15,7 +15,7 @@
     <!-- Header Halaman & Tombol Tambah Jurnal -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Manajemen Instansi Jurnal Ilmiah
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -24,8 +24,8 @@
         </div>
 
         <div class="shrink-0">
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="document.getElementById('modal-add-journal').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 min-h-11 bg-brand-maroon hover:bg-brand-maroon-dark text-white text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
                 title="Daftarkan Instansi Jurnal Baru"
@@ -60,7 +60,7 @@
 
     <!-- Main Container: Filter Tabs, Pencarian, & Tabel Jurnal -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        
+
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Status -->
@@ -72,7 +72,7 @@
                     @php
                         $isActive = $tabs['active'] === $tabKey;
                     @endphp
-                    <a 
+                    <a
                         href="{{ route('sysadmin.journals.index', ['status' => $tabKey, 'q' => request('q')]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -92,16 +92,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="search" 
-                    name="q" 
+                <input
+                    type="search"
+                    name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari nama jurnal, slug, atau ISSN..."
                     class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                 @if(request('q'))
-                    <a 
-                        href="{{ route('sysadmin.journals.index', ['status' => $tabs['active']]) }}" 
+                    <a
+                        href="{{ route('sysadmin.journals.index', ['status' => $tabs['active']]) }}"
                         class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                         title="Hapus filter pencarian"
                     >
@@ -132,7 +132,7 @@
                             <!-- Kolom Jurnal -->
                             <td class="py-4 px-4 sm:px-5 align-top">
                                 <div class="space-y-1">
-                                    <span class="font-serif font-bold text-gray-900 group-hover:text-brand-maroon transition block leading-snug text-sm sm:text-[15px]">
+                                    <span class="font-sans font-bold text-gray-900 group-hover:text-brand-maroon transition block leading-snug text-sm sm:text-[15px]">
                                         {{ $journal['name'] }}
                                     </span>
                                     @if (!empty($journal['description']))
@@ -206,8 +206,8 @@
                                     @csrf
                                     @if($journal['status'] === 'active')
                                         <input type="hidden" name="status" value="archived">
-                                        <button 
-                                            type="submit" 
+                                        <button
+                                            type="submit"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                                             title="Arsipkan instansi jurnal ini"
                                         >
@@ -215,8 +215,8 @@
                                         </button>
                                     @else
                                         <input type="hidden" name="status" value="active">
-                                        <button 
-                                            type="submit" 
+                                        <button
+                                            type="submit"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 cursor-pointer"
                                             title="Aktifkan kembali publikasi jurnal"
                                         >
@@ -277,11 +277,11 @@
 <div id="modal-add-journal" class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+            <h3 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                 Daftarkan Instansi Jurnal Ilmiah Baru
             </h3>
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="document.getElementById('modal-add-journal').classList.add('hidden')"
                 class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center"
             >
@@ -298,11 +298,11 @@
                 <label for="name" class="block text-xs font-semibold text-gray-700 mb-1">
                     Nama Lengkap Jurnal <span class="text-red-500">*</span>
                 </label>
-                <input 
-                    type="text" 
-                    id="name" 
-                    name="name" 
-                    required 
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
                     placeholder="Contoh: Jurnal Kebijakan Publik Makassar"
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
@@ -312,8 +312,8 @@
                 <label for="manager_user_id" class="block text-xs font-semibold text-gray-700 mb-1">
                     Akun PIC / Journal Manager <span class="text-xs font-normal text-emerald-700">(Otomatis diberi hak akses Journal Manager)</span>
                 </label>
-                <select 
-                    id="manager_user_id" 
+                <select
+                    id="manager_user_id"
                     name="manager_user_id"
                     onchange="if(this.options[this.selectedIndex].dataset.name) { document.getElementById('primary_contact').value = this.options[this.selectedIndex].dataset.name; }"
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
@@ -335,11 +335,11 @@
                     <label for="slug" class="block text-xs font-semibold text-gray-700 mb-1">
                         URL Slug <span class="text-red-500">*</span>
                     </label>
-                    <input 
-                        type="text" 
-                        id="slug" 
-                        name="slug" 
-                        required 
+                    <input
+                        type="text"
+                        id="slug"
+                        name="slug"
+                        required
                         placeholder="jkpm-makassar"
                         class="w-full text-xs font-mono text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                     >
@@ -348,11 +348,11 @@
                     <label for="primary_contact" class="block text-xs font-semibold text-gray-700 mb-1">
                         Kontak Utama / PIC <span class="text-red-500">*</span>
                     </label>
-                    <input 
-                        type="text" 
-                        id="primary_contact" 
-                        name="primary_contact" 
-                        required 
+                    <input
+                        type="text"
+                        id="primary_contact"
+                        name="primary_contact"
+                        required
                         placeholder="Nama Pejabat / Pengelola"
                         class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                     >
@@ -364,10 +364,10 @@
                     <label for="issn" class="block text-xs font-semibold text-gray-700 mb-1">
                         Print ISSN (Opsional)
                     </label>
-                    <input 
-                        type="text" 
-                        id="issn" 
-                        name="issn" 
+                    <input
+                        type="text"
+                        id="issn"
+                        name="issn"
                         placeholder="2655-xxxx"
                         class="w-full text-xs font-mono text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                     >
@@ -376,10 +376,10 @@
                     <label for="eissn" class="block text-xs font-semibold text-gray-700 mb-1">
                         Electronic E-ISSN (Opsional)
                     </label>
-                    <input 
-                        type="text" 
-                        id="eissn" 
-                        name="eissn" 
+                    <input
+                        type="text"
+                        id="eissn"
+                        name="eissn"
                         placeholder="2722-xxxx"
                         class="w-full text-xs font-mono text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                     >
@@ -390,25 +390,25 @@
                 <label for="description" class="block text-xs font-semibold text-gray-700 mb-1">
                     Deskripsi Ringkas Jurnal
                 </label>
-                <textarea 
-                    id="description" 
-                    name="description" 
-                    rows="2" 
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="2"
                     placeholder="Fokus dan ruang lingkup jurnal ilmiah..."
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 ></textarea>
             </div>
 
             <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     onclick="document.getElementById('modal-add-journal').classList.add('hidden')"
                     class="px-4 py-2 min-h-11 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
                 >
                     Batal
                 </button>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="px-4 py-2 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition shadow-2xs"
                 >
                     Simpan &amp; Inisialisasi Jurnal

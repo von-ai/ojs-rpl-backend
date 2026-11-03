@@ -15,6 +15,7 @@ use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\PortalAccess;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -63,62 +64,57 @@ class ProofreaderService
         array $data,
         User $actor
     ): ProofreadingNote {
-        $sub = $this->resolveSubmission($submission);
+        return DB::transaction(function () use ($submission, $data, $actor) {
+            $submission = $this->resolveSubmission($submission);
+            PortalAccess::lockSubmission($submission, $actor, 'proofreader');
 
-        if (empty(trim($data['description'] ?? ''))) {
-            throw new DomainException('Deskripsi catatan koreksi tidak boleh kosong.');
-        }
+            $sub = $this->resolveSubmission($submission);
 
-        return DB::transaction(function () use ($sub, $data, $actor): ProofreadingNote {
-            $galley = $this->resolveActiveGalley($sub);
-
-            // Cari atau buat penugasan proofreading untuk galai ini
-            $assignment = ProofAssignment::where('galley_id', $galley->id)
-                ->where('proofreader_id', $actor->id)
-                ->latest()
-                ->first();
-
-            if (! $assignment) {
-                $assignment = ProofAssignment::where('galley_id', $galley->id)->latest()->first();
+            if (empty(trim($data['description'] ?? ''))) {
+                throw new DomainException('Deskripsi catatan koreksi tidak boleh kosong.');
             }
 
-            if (! $assignment) {
-                $assignment = ProofAssignment::create([
+            return DB::transaction(function () use ($sub, $data, $actor): ProofreadingNote {
+                $galley = $this->resolveActiveGalley($sub);
+
+                // Cari atau buat penugasan proofreading untuk galai ini
+                $assignment = ProofAssignment::where('galley_id', $galley->id)
+                    ->where('proofreader_id', $actor->id)
+                    ->latest()
+                    ->first();
+
+                if (! $assignment) {
+                    throw new DomainException('Anda belum ditugaskan memeriksa galai ini.');
+                } elseif ($assignment->status === 'completed' || $galley->stage === 'approved') {
+                    throw new DomainException('Pemeriksaan sudah ditutup. Perubahan memerlukan galai dan penugasan baru.');
+                } elseif ($assignment->status === 'assigned') {
+                    $assignment->status = 'in_progress';
+                    $assignment->save();
+                }
+
+                $note = ProofreadingNote::create([
+                    'proof_assignment_id' => $assignment->id,
                     'galley_id' => $galley->id,
-                    'proofreader_id' => $actor->id,
                     'file_id' => $galley->file_id,
-                    'due_at' => now()->addDays(5),
-                    'status' => 'in_progress',
-                    'assigned_at' => now(),
-                    'checksum_sha256' => (string) ($galley->checksum_sha256 ? substr((string) $galley->checksum_sha256, 0, 64) : hash('sha256', $galley->id)),
+                    'checksum_sha256' => (string) $galley->checksum_sha256,
+                    'category' => $data['category'] ?? 'typo',
+                    'page' => ! empty($data['page']) ? (int) $data['page'] : null,
+                    'severity' => $data['severity'] ?? 'minor',
+                    'description' => trim($data['description']),
+                    'resolved' => false,
+                    'resolution' => null,
+                    'resolved_at' => null,
+                    'verified' => false,
+                    'verified_at' => null,
+                    'verified_by' => null,
+                    'version' => 1,
                 ]);
-            } elseif ($assignment->status === 'assigned') {
-                $assignment->status = 'in_progress';
-                $assignment->save();
-            }
 
-            $note = ProofreadingNote::create([
-                'proof_assignment_id' => $assignment->id,
-                'galley_id' => $galley->id,
-                'file_id' => $galley->file_id,
-                'checksum_sha256' => (string) $galley->checksum_sha256,
-                'category' => $data['category'] ?? 'typo',
-                'page' => ! empty($data['page']) ? (int) $data['page'] : null,
-                'severity' => $data['severity'] ?? 'minor',
-                'description' => trim($data['description']),
-                'resolved' => false,
-                'resolution' => null,
-                'resolved_at' => null,
-                'verified' => false,
-                'verified_at' => null,
-                'verified_by' => null,
-                'version' => 1,
-            ]);
+                // Kirim notifikasi email ke Layout Editor yang bertanggung jawab
+                $this->notifyCorrectionNotesAdded($sub, $note, $actor);
 
-            // Kirim notifikasi email ke Layout Editor yang bertanggung jawab
-            $this->notifyCorrectionNotesAdded($sub, $note, $actor);
-
-            return $note;
+                return $note;
+            });
         });
     }
 
@@ -130,26 +126,38 @@ class ProofreaderService
         ProofreadingNote|string $note,
         User $actor
     ): ProofreadingNote {
-        $noteModel = $note instanceof ProofreadingNote
-            ? $note
-            : ProofreadingNote::findOrFail($note);
-
-        if (! $noteModel->resolved) {
-            throw new DomainException('Catatan koreksi belum diselesaikan oleh Layout Editor dan tidak dapat diverifikasi.');
-        }
-
-        return DB::transaction(function () use ($noteModel, $actor): ProofreadingNote {
-            $noteModel->verified = true;
-            $noteModel->verified_at = now();
-            $noteModel->verified_by = $actor->id;
-            $noteModel->save();
-
-            $sub = $noteModel->galley?->submission;
-            if ($sub) {
-                $this->notifyNoteVerified($sub, $noteModel, $actor);
+        return DB::transaction(function () use ($note, $actor) {
+            $note = $note instanceof ProofreadingNote ? $note : ProofreadingNote::findOrFail($note);
+            PortalAccess::lockSubmission($note->galley->submission, $actor, 'proofreader');
+            $note = ProofreadingNote::query()->lockForUpdate()->findOrFail($note->id);
+            if ($note->assignment?->proofreader_id !== $actor->id) {
+                throw new DomainException('Catatan bukan bagian dari penugasan Anda.');
+            }
+            if ($note->galley->status !== 'active' || $note->galley->stage === 'approved' || $note->assignment->status === 'completed') {
+                throw new DomainException('Catatan pemeriksaan historis atau final tidak dapat diubah.');
             }
 
-            return $noteModel;
+            $noteModel = $note instanceof ProofreadingNote
+                ? $note
+                : ProofreadingNote::findOrFail($note);
+
+            if (! $noteModel->resolved) {
+                throw new DomainException('Catatan koreksi belum diselesaikan oleh Layout Editor dan tidak dapat diverifikasi.');
+            }
+
+            return DB::transaction(function () use ($noteModel, $actor): ProofreadingNote {
+                $noteModel->verified = true;
+                $noteModel->verified_at = now();
+                $noteModel->verified_by = $actor->id;
+                $noteModel->save();
+
+                $sub = $noteModel->galley?->submission;
+                if ($sub) {
+                    $this->notifyNoteVerified($sub, $noteModel, $actor);
+                }
+
+                return $noteModel;
+            });
         });
     }
 
@@ -161,71 +169,69 @@ class ProofreaderService
         Submission|string $submission,
         User $actor
     ): ProofAssignment {
-        $sub = $this->resolveSubmission($submission);
+        return DB::transaction(function () use ($submission, $actor) {
+            $submission = $this->resolveSubmission($submission);
+            PortalAccess::lockSubmission($submission, $actor, 'proofreader');
 
-        return DB::transaction(function () use ($sub, $actor): ProofAssignment {
-            $galley = $this->resolveActiveGalley($sub);
+            $sub = $this->resolveSubmission($submission);
 
-            // Guardrail 0: Pastikan tidak terdapat tiket eskalasi aktif yang belum diselesaikan
-            $activeEscalation = ProductionEscalation::where('submission_id', $sub->id)
-                ->whereIn('status', ['open', 'investigating'])
-                ->first();
+            return DB::transaction(function () use ($sub, $actor): ProofAssignment {
+                $galley = $this->resolveActiveGalley($sub);
 
-            if ($activeEscalation) {
-                $ticketCode = '#ESC-'.substr($activeEscalation->id, -8);
-                throw new DomainException("Tidak dapat menyelesaikan proofreading karena naskah sedang berada dalam tiket eskalasi aktif ({$ticketCode}) yang ditinjau Section Editor.");
-            }
+                // Guardrail 0: Pastikan tidak terdapat tiket eskalasi aktif yang belum diselesaikan
+                $activeEscalation = ProductionEscalation::where('submission_id', $sub->id)
+                    ->whereIn('status', ['open', 'investigating'])
+                    ->first();
 
-            // Guardrail 1: Pastikan tidak ada catatan yang belum diselesaikan Layout Editor
-            $unresolvedNotes = ProofreadingNote::where('galley_id', $galley->id)
-                ->where('resolved', false)
-                ->get();
+                if ($activeEscalation) {
+                    $ticketCode = '#ESC-'.substr($activeEscalation->id, -8);
+                    throw new DomainException("Tidak dapat menyelesaikan proofreading karena naskah sedang berada dalam tiket eskalasi aktif ({$ticketCode}) yang ditinjau Section Editor.");
+                }
 
-            if ($unresolvedNotes->isNotEmpty()) {
-                $count = $unresolvedNotes->count();
-                $criticalCount = $unresolvedNotes->whereIn('severity', ['critical', 'major'])->count();
-                $detail = $criticalCount > 0 ? " ({$criticalCount} berkategori Kritis/Major)" : '';
+                // Guardrail 1: Pastikan tidak ada catatan yang belum diselesaikan Layout Editor
+                $unresolvedNotes = ProofreadingNote::where('galley_id', $galley->id)
+                    ->where('resolved', false)
+                    ->get();
 
-                throw new DomainException("Tidak dapat menyelesaikan proofreading karena masih terdapat {$count} catatan koreksi{$detail} yang belum diselesaikan oleh Layout Editor.");
-            }
+                if ($unresolvedNotes->isNotEmpty()) {
+                    $count = $unresolvedNotes->count();
+                    $criticalCount = $unresolvedNotes->whereIn('severity', ['critical', 'major'])->count();
+                    $detail = $criticalCount > 0 ? " ({$criticalCount} berkategori Kritis/Major)" : '';
 
-            // Guardrail 2: Pastikan seluruh perbaikan telah diverifikasi proofreader
-            $unverifiedCount = ProofreadingNote::where('galley_id', $galley->id)
-                ->where('resolved', true)
-                ->where('verified', false)
-                ->count();
+                    throw new DomainException("Tidak dapat menyelesaikan proofreading karena masih terdapat {$count} catatan koreksi{$detail} yang belum diselesaikan oleh Layout Editor.");
+                }
 
-            if ($unverifiedCount > 0) {
-                throw new DomainException("Tidak dapat memberikan persetujuan sign-off karena terdapat {$unverifiedCount} perbaikan layout editor yang belum Anda verifikasi.");
-            }
+                // Guardrail 2: Pastikan seluruh perbaikan telah diverifikasi proofreader
+                $unverifiedCount = ProofreadingNote::where('galley_id', $galley->id)
+                    ->where('resolved', true)
+                    ->where('verified', false)
+                    ->count();
 
-            // Tandai penugasan proofreading selesai
-            $assignment = ProofAssignment::where('galley_id', $galley->id)->latest()->first();
-            if (! $assignment) {
-                $assignment = ProofAssignment::create([
-                    'galley_id' => $galley->id,
-                    'proofreader_id' => $actor->id,
-                    'file_id' => $galley->file_id,
-                    'due_at' => now(),
-                    'status' => 'completed',
-                    'assigned_at' => now(),
-                    'checksum_sha256' => (string) ($galley->checksum_sha256 ? substr((string) $galley->checksum_sha256, 0, 64) : hash('sha256', $galley->id)),
-                ]);
-            } else {
-                $assignment->status = 'completed';
-                $assignment->save();
-            }
+                if ($unverifiedCount > 0) {
+                    throw new DomainException("Tidak dapat memberikan persetujuan sign-off karena terdapat {$unverifiedCount} perbaikan layout editor yang belum Anda verifikasi.");
+                }
 
-            // Transisi tahap galai ke 'approved'
-            if ($galley->stage === 'proofreading') {
-                $galley->stage = 'approved';
-                $galley->save();
-            }
+                // Tandai penugasan proofreading selesai
+                $assignment = ProofAssignment::where('galley_id', $galley->id)->where('proofreader_id', $actor->id)->lockForUpdate()->first();
+                if (! $assignment || $assignment->file_id !== $galley->file_id || $assignment->checksum_sha256 !== $galley->checksum_sha256 || $galley->file?->virus_scan_status !== 'clean') {
+                    throw new DomainException('Penugasan, berkas, atau checksum galai tidak sesuai.');
+                }
+                if ($assignment->status === 'completed') {
+                    return $assignment;
+                }
+                $assignment->update(['status' => 'completed']);
 
-            // Kirim notifikasi email persetujuan signoff
-            $this->notifySignoffCompleted($sub, $galley, $assignment, $actor);
+                // Transisi tahap galai ke 'approved'
+                if ($galley->stage === 'proofreading') {
+                    $galley->stage = 'proofread';
+                    $galley->save();
+                }
 
-            return $assignment;
+                // Kirim notifikasi email persetujuan signoff
+                $this->notifySignoffCompleted($sub, $galley, $assignment, $actor);
+
+                return $assignment;
+            });
         });
     }
 
@@ -238,43 +244,48 @@ class ProofreaderService
         string $reason,
         User $actor
     ): ProductionEscalation {
-        $sub = $this->resolveSubmission($submission);
+        return DB::transaction(function () use ($submission, $reason, $actor) {
+            $submission = $this->resolveSubmission($submission);
+            PortalAccess::lockSubmission($submission, $actor, 'proofreader');
 
-        if (empty(trim($reason))) {
-            throw new DomainException('Alasan eskalasi redaksi wajib diisi.');
-        }
+            $sub = $this->resolveSubmission($submission);
 
-        return DB::transaction(function () use ($sub, $reason, $actor): ProductionEscalation {
-            $activeGalley = Galley::where('submission_id', $sub->id)
-                ->where('status', 'active')
-                ->latest('version')
-                ->first();
-
-            // Cek apakah ada eskalasi aktif yang belum terselesaikan
-            $existingActive = ProductionEscalation::where('submission_id', $sub->id)
-                ->whereIn('status', ['open', 'investigating'])
-                ->first();
-
-            if ($existingActive) {
-                throw new DomainException('Sudah terdapat tiket eskalasi aktif yang sedang ditindaklanjuti untuk naskah ini.');
+            if (empty(trim($reason))) {
+                throw new DomainException('Alasan eskalasi redaksi wajib diisi.');
             }
 
-            $escalation = ProductionEscalation::create([
-                'submission_id' => $sub->id,
-                'copyedit_id' => null,
-                'galley_id' => $activeGalley?->id,
-                'opened_by' => $actor->id,
-                'reason' => trim($reason),
-                'status' => 'open',
-                'resolution' => null,
-                'resume_stage' => null,
-                'version' => 1,
-            ]);
+            return DB::transaction(function () use ($sub, $reason, $actor): ProductionEscalation {
+                $activeGalley = Galley::where('submission_id', $sub->id)
+                    ->where('status', 'active')
+                    ->latest('version')
+                    ->first();
 
-            // Kirim notifikasi email eskalasi
-            $this->notifyEscalationSubmitted($sub, $escalation, $actor);
+                // Cek apakah ada eskalasi aktif yang belum terselesaikan
+                $existingActive = ProductionEscalation::where('submission_id', $sub->id)
+                    ->whereIn('status', ['open', 'investigating'])
+                    ->first();
 
-            return $escalation;
+                if ($existingActive) {
+                    throw new DomainException('Sudah terdapat tiket eskalasi aktif yang sedang ditindaklanjuti untuk naskah ini.');
+                }
+
+                $escalation = ProductionEscalation::create([
+                    'submission_id' => $sub->id,
+                    'copyedit_id' => null,
+                    'galley_id' => $activeGalley?->id,
+                    'opened_by' => $actor->id,
+                    'reason' => trim($reason),
+                    'status' => 'open',
+                    'resolution' => null,
+                    'resume_stage' => null,
+                    'version' => 1,
+                ]);
+
+                // Kirim notifikasi email eskalasi
+                $this->notifyEscalationSubmitted($sub, $escalation, $actor);
+
+                return $escalation;
+            });
         });
     }
 

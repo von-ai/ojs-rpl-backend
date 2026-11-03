@@ -52,13 +52,13 @@
 @endphp
 
 <aside class="lg:col-span-1 min-w-0 space-y-6">
-    
+
     <!-- Kartu 1: Skrining Awal -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
-                class="flex items-center gap-2 min-w-0 cursor-help" 
-                data-tooltip="Skrining Awal" 
+            <div
+                class="flex items-center gap-2 min-w-0 cursor-help"
+                data-tooltip="Skrining Awal"
                 data-tooltip-desc="Pemeriksaan kelayakan ruang lingkup, kelengkapan berkas, dan indeks kemiripan naskah"
             >
                 <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
@@ -94,11 +94,11 @@
 
                     <input type="hidden" name="scope_fit" value="0">
                     <label class="flex items-center gap-2.5 p-1.5 rounded-md hover:bg-white cursor-pointer font-medium text-gray-800 transition">
-                        <input 
-                            type="checkbox" 
-                            name="scope_fit" 
-                            value="1" 
-                            {{ old('scope_fit', $latestDesk?->scope_fit ?? true) ? 'checked' : '' }} 
+                        <input
+                            type="checkbox"
+                            name="scope_fit"
+                            value="1"
+                            {{ old('scope_fit', $latestDesk?->scope_fit ?? true) ? 'checked' : '' }}
                             class="w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0"
                         >
                         <span class="leading-snug">Sesuai Ruang Lingkup & Fokus Jurnal</span>
@@ -106,11 +106,11 @@
 
                     <input type="hidden" name="files_complete" value="0">
                     <label class="flex items-center gap-2.5 p-1.5 rounded-md hover:bg-white cursor-pointer font-medium text-gray-800 transition">
-                        <input 
-                            type="checkbox" 
-                            name="files_complete" 
-                            value="1" 
-                            {{ old('files_complete', $latestDesk?->files_complete ?? true) ? 'checked' : '' }} 
+                        <input
+                            type="checkbox"
+                            name="files_complete"
+                            value="1"
+                            {{ old('files_complete', $latestDesk?->files_complete ?? true) ? 'checked' : '' }}
                             class="w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0"
                         >
                         <span class="leading-snug">Berkas Manuskrip Lengkap & Anonim</span>
@@ -118,11 +118,11 @@
 
                     <input type="hidden" name="guidelines_compliant" value="0">
                     <label class="flex items-center gap-2.5 p-1.5 rounded-md hover:bg-white cursor-pointer font-medium text-gray-800 transition">
-                        <input 
-                            type="checkbox" 
-                            name="guidelines_compliant" 
-                            value="1" 
-                            {{ old('guidelines_compliant', $latestDesk?->guidelines_compliant ?? true) ? 'checked' : '' }} 
+                        <input
+                            type="checkbox"
+                            name="guidelines_compliant"
+                            value="1"
+                            {{ old('guidelines_compliant', $latestDesk?->guidelines_compliant ?? true) ? 'checked' : '' }}
                             class="w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0"
                         >
                         <span class="leading-snug">Mematuhi Pedoman & Gaya Selingkung</span>
@@ -136,13 +136,13 @@
                         <span class="text-[11px] text-gray-400 font-medium">Maksimal 20%</span>
                     </div>
                     <div class="relative">
-                        <input 
-                            type="number" 
-                            id="similarity_score" 
-                            name="similarity_score" 
-                            step="0.1" 
-                            min="0" 
-                            max="100" 
+                        <input
+                            type="number"
+                            id="similarity_score"
+                            name="similarity_score"
+                            step="0.1"
+                            min="0"
+                            max="100"
                             value="{{ old('similarity_score', $latestDesk?->similarity_score ?? '12.5') }}"
                             placeholder="Contoh: 12.5"
                             class="w-full pl-3.5 pr-10 py-2.5 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon tabular-nums font-semibold text-gray-900 transition"
@@ -160,8 +160,8 @@
                                 <option value="{{ $val }}" {{ $currentDeskStatus === $val ? 'selected' : '' }}>{{ $opt['label'] }}</option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -176,7 +176,7 @@
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
                             @foreach($deskStatusOptions as $val => $opt)
                                 @php $isSelected = ($currentDeskStatus === $val); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $val }}"
                                     data-label="{{ $opt['label'] }}"
@@ -209,8 +209,8 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-800 font-medium flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -223,7 +223,7 @@
                             </svg>
                         </button>
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
-                            <div 
+                            <div
                                 class="custom-dropdown-item flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $currentEditorId === '' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                 data-value=""
                                 data-label="Tugaskan Nanti Secara Terpisah"
@@ -235,7 +235,7 @@
                             </div>
                             @foreach($availableEditors as $editor)
                                 @php $isEdSelected = ($currentEditorId === (string) $editor->id); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $editor->id }}"
                                     data-label="{{ $editor->name }}"
@@ -256,17 +256,17 @@
                 <!-- Catatan Skrining -->
                 <div class="space-y-1.5">
                     <label for="notes" class="font-bold text-gray-700 block">Catatan Evaluasi Skrining</label>
-                    <textarea 
-                        id="notes" 
-                        name="notes" 
-                        rows="2" 
+                    <textarea
+                        id="notes"
+                        name="notes"
+                        rows="2"
                         placeholder="Tuliskan catatan pemeriksaan ruang lingkup, kelengkapan berkas, dan indeks kemiripan..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('notes', $latestDesk?->notes) }}</textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full min-h-10 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-semibold rounded-lg transition cursor-pointer"
                 >
                     Simpan Evaluasi Skrining Awal
@@ -318,9 +318,9 @@
     <!-- Kartu 2: Penugasan Section Editor -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
-                class="flex items-center gap-2 min-w-0 cursor-help" 
-                data-tooltip="Penugasan Section Editor" 
+            <div
+                class="flex items-center gap-2 min-w-0 cursor-help"
+                data-tooltip="Penugasan Section Editor"
                 data-tooltip-desc="Delegasi pimpinan telaah sejawat untuk mengevaluasi substansi naskah"
             >
                 <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
@@ -382,8 +382,8 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -398,7 +398,7 @@
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
                             @foreach($availableEditors as $editor)
                                 @php $isEdSelected = ($currentEditorId === (string) $editor->id); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isEdSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $editor->id }}"
                                     data-label="{{ $editor->name }}"
@@ -418,17 +418,17 @@
 
                 <div class="space-y-1.5">
                     <label for="assign_note" class="font-bold text-gray-700 block">Instruksi Penugasan</label>
-                    <textarea 
-                        id="assign_note" 
-                        name="note" 
-                        rows="2" 
+                    <textarea
+                        id="assign_note"
+                        name="note"
+                        rows="2"
                         placeholder="Contoh: Mohon ditugaskan minimal 2 mitra bestari di bidang kebijakan publik..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     ></textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full min-h-10 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition cursor-pointer"
                 >
                     {{ $submission->activeEditorAssignment ? 'Perbarui Penugasan Editor Bagian' : 'Tugaskan Editor Bagian' }}
@@ -453,9 +453,9 @@
     <!-- Kartu 3: Keputusan Editorial Resmi -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
-                class="flex items-center gap-2 min-w-0 cursor-help" 
-                data-tooltip="Keputusan Editorial Resmi" 
+            <div
+                class="flex items-center gap-2 min-w-0 cursor-help"
+                data-tooltip="Keputusan Editorial Resmi"
                 data-tooltip-desc="Penetapan hasil akhir evaluasi naskah oleh Pemimpin Redaksi"
             >
                 <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
@@ -504,8 +504,8 @@
                                 <option value="{{ $val }}" {{ $defaultDec === $val ? 'selected' : '' }}>{{ $opt['label'] }}</option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -520,7 +520,7 @@
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
                             @foreach($decisionOptions as $val => $opt)
                                 @php $isDecSelected = ($defaultDec === $val); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isDecSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $val }}"
                                     data-label="{{ $opt['label'] }}"
@@ -543,10 +543,10 @@
                     <label for="revision_due_at" class="font-bold text-gray-700 block">
                         Batas Waktu Pengumpulan Revisi <span class="text-rose-500">*</span>
                     </label>
-                    <input 
-                        type="date" 
-                        id="revision_due_at" 
-                        name="revision_due_at" 
+                    <input
+                        type="date"
+                        id="revision_due_at"
+                        name="revision_due_at"
                         value="{{ old('revision_due_at', now()->addDays(14)->format('Y-m-d')) }}"
                         class="w-full px-3.5 py-2.5 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon tabular-nums font-medium transition"
                     >
@@ -557,11 +557,11 @@
                     <label for="note_for_author" class="font-bold text-gray-700 block">
                         Surat Keputusan untuk Penulis <span class="text-rose-500">*</span>
                     </label>
-                    <textarea 
-                        id="note_for_author" 
-                        name="note_for_author" 
-                        rows="4" 
-                        required 
+                    <textarea
+                        id="note_for_author"
+                        name="note_for_author"
+                        rows="4"
+                        required
                         placeholder="Sampaikan keputusan resmi dewan redaksi beserta rangkuman pertimbangan mitra bestari..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('note_for_author', 'Dewan redaksi telah menelaah naskah ilmiah Anda secara saksama. Berdasarkan pertimbangan mitra bestari dan editor bagian, kami menyampaikan keputusan resmi berikut.') }}</textarea>
@@ -572,17 +572,17 @@
                     <label for="internal_note" class="font-bold text-gray-700 block">
                         Catatan Internal Redaksi
                     </label>
-                    <textarea 
-                        id="internal_note" 
-                        name="internal_note" 
-                        rows="2" 
+                    <textarea
+                        id="internal_note"
+                        name="internal_note"
+                        rows="2"
                         placeholder="Catatan internal untuk editor bagian, penyunting naskah, atau arsip redaksi..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('internal_note') }}</textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full min-h-10 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-semibold rounded-lg transition cursor-pointer"
                 >
                     Terbitkan Keputusan Editorial Resmi
@@ -631,9 +631,9 @@
     <!-- Kartu 4: Persetujuan Akhir Galai (Ready for Issue) -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
-                class="flex items-center gap-2 min-w-0 cursor-help" 
-                data-tooltip="Persetujuan Akhir Galai" 
+            <div
+                class="flex items-center gap-2 min-w-0 cursor-help"
+                data-tooltip="Persetujuan Akhir Galai"
                 data-tooltip-desc="Pengesahan galai publikasi resmi (PDF) oleh Pemimpin Redaksi sebelum naskah masuk ke edisi terbitan"
             >
                 <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
@@ -691,8 +691,8 @@
                         <span class="text-emerald-700 font-mono text-[10px] truncate">
                             SHA: {{ substr((string) $activeGalley->checksum_sha256, 0, 16) }}...
                         </span>
-                        <a 
-                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}" 
+                        <a
+                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}"
                             class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-navy hover:underline shrink-0"
                             target="_blank"
                         >
@@ -725,8 +725,8 @@
                         <span class="text-gray-500 text-[10px] font-mono truncate">
                             {{ substr((string) $activeGalley->checksum_sha256, 0, 16) }}...
                         </span>
-                        <a 
-                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}" 
+                        <a
+                            href="{{ route('layouteditor.galleys.download', $activeGalley->id) }}"
                             class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-maroon hover:underline shrink-0"
                             target="_blank"
                         >
@@ -743,17 +743,17 @@
                     <label for="galley_approval_note" class="block font-semibold text-gray-800">
                         Catatan Pengesahan Galai (Opsional)
                     </label>
-                    <textarea 
-                        name="note" 
-                        id="galley_approval_note" 
-                        rows="2" 
+                    <textarea
+                        name="note"
+                        id="galley_approval_note"
+                        rows="2"
                         class="w-full rounded-lg border border-gray-300 p-2.5 text-xs text-gray-900 focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon outline-hidden placeholder:text-gray-400"
                         placeholder="Contoh: Galai telah diperiksa dan disetujui untuk penjadwalan terbitan."
                     ></textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition duration-150 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 focus:ring-offset-1"
                     onclick="return confirm('Apakah Anda yakin ingin mengesahkan galai naskah ini? Status naskah akan otomatis beralih menjadi Siap Terbit (ready_for_issue).')"
                 >
@@ -856,8 +856,8 @@
                         </div>
 
                         <div class="pt-1">
-                            <a 
-                                href="{{ $paymentInfo['proof_url'] }}" 
+                            <a
+                                href="{{ $paymentInfo['proof_url'] }}"
                                 target="_blank"
                                 class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-sky-800 bg-white hover:bg-sky-50 border border-sky-200 rounded-lg shadow-2xs transition group"
                             >
@@ -874,8 +874,8 @@
                         <form action="{{ route('eic.submissions.payment.verify', $submission->id) }}" method="POST" class="pt-0.5">
                             @csrf
                             <input type="hidden" name="notes" value="Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).">
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs hover:shadow transition duration-150 cursor-pointer"
                             >
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -926,103 +926,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
-
-        function openDropdown(panel, btn, chevron) {
-            closeAllDropdowns();
-            panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            btn.setAttribute('aria-expanded', 'true');
-            if (chevron) chevron.classList.add('rotate-180');
-        }
-
-        function closeDropdown(panel, btn, chevron) {
-            panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            btn.setAttribute('aria-expanded', 'false');
-            if (chevron) chevron.classList.remove('rotate-180');
-        }
-
-        function closeAllDropdowns() {
-            dropdownContainers.forEach(c => {
-                const btn = c.querySelector('.custom-dropdown-btn');
-                const panel = c.querySelector('.custom-dropdown-panel');
-                const chevron = c.querySelector('.custom-dropdown-chevron');
-                if (btn && panel) {
-                    closeDropdown(panel, btn, chevron);
-                }
-            });
-        }
-
-        dropdownContainers.forEach(container => {
-            const btn = container.querySelector('.custom-dropdown-btn');
-            const panel = container.querySelector('.custom-dropdown-panel');
-            const chevron = container.querySelector('.custom-dropdown-chevron');
-            const select = container.querySelector('select');
-            const items = container.querySelectorAll('.custom-dropdown-item');
-            const label = container.querySelector('.custom-dropdown-label');
-
-            if (!btn || !panel) return;
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isOpen = panel.classList.contains('visible');
-                if (isOpen) {
-                    closeDropdown(panel, btn, chevron);
-                } else {
-                    openDropdown(panel, btn, chevron);
-                }
-            });
-
-            items.forEach(item => {
-                item.addEventListener('click', () => {
-                    const val = item.getAttribute('data-value');
-                    const text = item.getAttribute('data-label') || item.innerText.trim();
-
-                    if (select) {
-                        select.value = val;
-                    }
-                    if (label) {
-                        label.textContent = text;
-                    }
-
-                    items.forEach(it => {
-                        const check = it.querySelector('.custom-dropdown-check');
-                        if (it === item) {
-                            it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.remove('text-gray-700', 'hover:bg-gray-50');
-                            if (check) check.classList.remove('hidden');
-                        } else {
-                            it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.add('text-gray-700', 'hover:bg-gray-50');
-                            if (check) check.classList.add('hidden');
-                        }
-                    });
-
-                    closeDropdown(panel, btn, chevron);
-
-                    if (select && select.id === 'desk_status') {
-                        toggleDirectSeSelect(val);
-                    }
-                    if (select && select.id === 'decision') {
-                        handleDecisionChange(val);
-                    }
-                });
-            });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.custom-dropdown-container')) {
-                closeAllDropdowns();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeAllDropdowns();
-            }
-        });
-
         const deskStatus = document.getElementById('desk_status');
         if (deskStatus) toggleDirectSeSelect(deskStatus.value);
 

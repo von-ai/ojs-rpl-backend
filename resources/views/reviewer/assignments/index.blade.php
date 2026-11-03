@@ -17,8 +17,8 @@
         </div>
 
         <div class="flex items-center gap-2.5 shrink-0">
-            <a 
-                href="{{ route('reviewer.guidelines') }}" 
+            <a
+                href="{{ route('reviewer.guidelines') }}"
                 class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition"
             >
                 <svg class="w-4 h-4 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,12 +69,12 @@
 
     <!-- Filter Tabs & Bar Pencarian -->
     <div class="space-y-4">
-        
+
         <!-- Tab Navigasi Status -->
         <div class="border-b border-gray-200">
             <nav class="flex space-x-1 sm:space-x-2 overflow-x-auto overflow-y-hidden no-scrollbar" aria-label="Tab Filter Status Tugas">
                 @foreach($viewModel->tabs() as $tab)
-                    <a 
+                    <a
                         href="{{ route('reviewer.assignments.index', ['status' => $tab['key'], 'search' => $viewModel->searchQuery()]) }}"
                         class="group inline-flex items-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 border-b-2 text-xs sm:text-sm font-semibold transition duration-150 whitespace-nowrap shrink-0 {{ $tab['active'] ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300' }}"
                     >
@@ -91,32 +91,32 @@
         <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <form action="{{ route('reviewer.assignments.index') }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
                 <input type="hidden" name="status" value="{{ $viewModel->currentStatus() }}">
-                
+
                 <div class="relative w-full sm:w-80">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input 
-                        type="text" 
-                        name="search" 
-                        value="{{ $viewModel->searchQuery() }}" 
-                        placeholder="Cari nomor naskah atau kata kunci judul..." 
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ $viewModel->searchQuery() }}"
+                        placeholder="Cari nomor naskah atau kata kunci judul..."
                         class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon transition"
                     >
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0"
                 >
                     Cari
                 </button>
 
                 @if($viewModel->searchQuery())
-                    <a 
-                        href="{{ route('reviewer.assignments.index', ['status' => $viewModel->currentStatus()]) }}" 
+                    <a
+                        href="{{ route('reviewer.assignments.index', ['status' => $viewModel->currentStatus()]) }}"
                         class="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2 py-1 transition shrink-0"
                     >
                         Reset
@@ -150,8 +150,8 @@
                 </p>
                 @if($viewModel->searchQuery() || $viewModel->currentStatus() !== 'all')
                     <div class="pt-2">
-                        <a 
-                            href="{{ route('reviewer.assignments.index') }}" 
+                        <a
+                            href="{{ route('reviewer.assignments.index') }}"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
                         >
                             Tampilkan Semua Penugasan
@@ -178,7 +178,7 @@
                             @php
                                 $round = $assignment->reviewRound;
                                 $submission = $round?->submission;
-                                $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
+                                $title = $round?->reviewer_title ?? 'Judul anonim belum disiapkan';
                                 $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
                                 $meta = $viewModel->statusMeta($assignment->status);
                             @endphp
@@ -192,8 +192,8 @@
                                             Putaran {{ $round?->round ?? 1 }}
                                         </span>
                                     </div>
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                                    <a
+                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                                         class="font-semibold text-gray-900 hover:text-brand-maroon text-sm block leading-snug line-clamp-2 transition"
                                     >
                                         {{ $title }}
@@ -250,8 +250,8 @@
                                 </td>
 
                                 <td class="py-4 px-6 text-right">
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                                    <a
+                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $assignment->status === 'invited' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-brand-maroon hover:bg-brand-maroon-hover' }} text-white text-xs font-semibold rounded-lg shadow-2xs transition"
                                     >
                                         <span>{{ $assignment->status === 'invited' ? 'Tanggapi' : 'Ruang Telaah' }}</span>
@@ -272,7 +272,7 @@
                     @php
                         $round = $assignment->reviewRound;
                         $submission = $round?->submission;
-                        $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
+                        $title = $round?->reviewer_title ?? 'Judul anonim belum disiapkan';
                         $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
                         $meta = $viewModel->statusMeta($assignment->status);
                     @endphp
@@ -291,8 +291,8 @@
                             </span>
                         </div>
 
-                        <a 
-                            href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                        <a
+                            href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                             class="font-semibold text-gray-900 text-sm block leading-snug"
                         >
                             {{ $title }}
@@ -312,8 +312,8 @@
                         </div>
 
                         <div class="pt-2">
-                            <a 
-                                href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                            <a
+                                href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                                 class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 {{ $assignment->status === 'invited' ? 'bg-amber-600' : 'bg-brand-maroon' }} text-white text-xs font-semibold rounded-lg shadow-2xs transition"
                             >
                                 <span>{{ $assignment->status === 'invited' ? 'Tanggapi Undangan' : 'Buka Ruang Telaah' }}</span>

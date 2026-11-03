@@ -76,7 +76,7 @@ class LayoutEditorNavigationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Panduan Tata Letak');
         $response->assertSee('Grid Dua Kolom');
-        $response->assertSee('Unduh Template Galley');
+        $response->assertSee('Unduh Panduan Format (PDF)');
     }
 
     /**
@@ -96,24 +96,11 @@ class LayoutEditorNavigationTest extends TestCase
      */
     public function test_aksi_transaksional_layout_mengembalikan_redirect(): void
     {
-        $responseUpload = $this->post('/layouteditor/upload-galley', ['submission_id' => 'SUB-2026-00106']);
-        $responseUpload->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $responseUpload->assertSessionHas('status');
-
-        $responseResolve = $this->post('/layouteditor/resolve-note', ['submission_id' => 'SUB-2026-00106']);
-        $responseResolve->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $responseResolve->assertSessionHas('status');
-
-        $responseProofread = $this->post('/layouteditor/request-proofread', ['submission_id' => 'SUB-2026-00107']);
-        $responseProofread->assertRedirect('/layouteditor/submissions/SUB-2026-00107');
-        $responseProofread->assertSessionHas('status');
-
-        $responseEscalate = $this->post('/layouteditor/escalate', ['submission_id' => 'SUB-2026-00106']);
-        $responseEscalate->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $responseEscalate->assertSessionHas('status');
-
-        $responseApproval = $this->post('/layouteditor/request-final-approval', ['submission_id' => 'SUB-2026-00109']);
-        $responseApproval->assertRedirect('/layouteditor/submissions/SUB-2026-00109');
-        $responseApproval->assertSessionHas('status');
+        $this->post('/layouteditor/upload-galley', ['submission_id' => 'SUB-2026-00106'])
+            ->assertSessionHasErrors(['file', 'galley_label', 'format']);
+        $this->post('/layouteditor/resolve-note', ['submission_id' => 'SUB-2026-00106'])
+            ->assertSessionHasErrors(['note_id', 'resolution']);
+        $this->post('/layouteditor/escalate', ['submission_id' => 'SUB-2026-00106'])
+            ->assertSessionHasErrors(['reason']);
     }
 }

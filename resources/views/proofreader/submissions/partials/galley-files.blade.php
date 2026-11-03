@@ -45,8 +45,8 @@
                 </span>
             </div>
 
-            <a 
-                href="{{ $submission['active_galley']['download_url'] }}" 
+            <a
+                href="{{ $submission['active_galley']['download_url'] }}"
                 class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition duration-150 shadow-2xs cursor-pointer min-h-11"
                 title="Unduh Berkas Galai PDF untuk Diperiksa"
             >
@@ -85,8 +85,9 @@
                 {{ $submission['copyedit_reference']['description'] }}
             </p>
 
-            <a 
-                href="{{ $submission['copyedit_reference']['download_url'] }}" 
+            @if($submission['copyedit_reference']['download_url'])
+            <a
+                href="{{ $submission['copyedit_reference']['download_url'] }}"
                 class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-blue-800 bg-white hover:bg-blue-100/60 border border-blue-300 rounded-lg transition duration-150 shadow-2xs cursor-pointer min-h-11"
                 title="Unduh Naskah Acuan Copyediting (.docx)"
             >
@@ -95,6 +96,9 @@
                 </svg>
                 <span>Unduh Acuan Teks Final (.docx)</span>
             </a>
+            @else
+                <span class="text-xs text-gray-500">Berkas belum tersedia</span>
+            @endif
         </div>
     </div>
 </div>

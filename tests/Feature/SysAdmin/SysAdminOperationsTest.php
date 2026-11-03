@@ -7,6 +7,7 @@ namespace Tests\Feature\SysAdmin;
 use App\Models\User;
 use Database\Seeders\SysAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SysAdminOperationsTest extends TestCase
@@ -46,8 +47,8 @@ class SysAdminOperationsTest extends TestCase
         // Diagnostik kesehatan server
         $response->assertSee('Diagnostik Kesehatan Server');
         $response->assertSee('PHP');
-        $response->assertSee('SQLite');
-        $response->assertSee('Defender');
+        $response->assertSee(DB::getDriverName() === 'sqlite' ? 'SQLite' : ucfirst(DB::getDriverName()));
+        $response->assertSee('Pemindai');
         $response->assertSee('Kosongkan Cache Aplikasi');
     }
 

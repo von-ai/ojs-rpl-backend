@@ -15,8 +15,10 @@ use App\Models\Submission;
 use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\Reviewer\ReviewerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SectionEditorWorkflowTest extends TestCase
@@ -94,6 +96,8 @@ class SectionEditorWorkflowTest extends TestCase
             'email' => 'fatimah.rev@unm.ac.id',
         ]);
 
+        $this->grantRole($this->reviewerA, 'reviewer', $this->journal->id);
+        $this->grantRole($this->reviewerB, 'reviewer', $this->journal->id);
         $this->submission = Submission::create([
             'submission_number' => 'SUB-2026-SE-001',
             'journal_id' => $this->journal->id,
@@ -152,11 +156,8 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertSee('Putaran Telaah Sejawat');
         $response->assertSee('Undang Mitra Bestari');
 
-        $this->assertDatabaseHas('review_rounds', [
-            'submission_id' => $this->submission->id,
-            'round' => 1,
-            'status' => 'active',
-        ]);
+        $this->assertDatabaseCount('review_rounds', 0);
+
     }
 
     public function test_section_editor_dapat_mengundang_mitra_bestari_dengan_batas_waktu_valid(): void
@@ -168,6 +169,9 @@ class SectionEditorWorkflowTest extends TestCase
             'minimum_completed_reviews' => 2,
         ]);
 
+        $original = $this->cleanTestFile('asli.pdf');
+        $anonymous = $this->cleanTestFile('anonim.pdf');
+        $round->update(['manuscript_file_id' => $original->id, 'anonymized_file_id' => $anonymous->id, 'anonymized_checksum' => $anonymous->checksum_sha256, 'reviewer_title' => 'Judul anonim', 'reviewer_abstract' => 'Abstrak anonim', 'rubric_snapshot' => app(ReviewerService::class)->getDefaultRubricCriteria()]);
         $responseDue = Carbon::now()->addDays(7)->format('Y-m-d');
         $reviewDue = Carbon::now()->addDays(21)->format('Y-m-d');
 
@@ -338,6 +342,7 @@ class SectionEditorWorkflowTest extends TestCase
             'minimum_completed_reviews' => 2,
         ]);
 
+        $this->completeReviewRound($this->submission, $round);
         $response = $this->actingAs($this->sectionEditor)
             ->post(route('section-editor.rounds.recommendation', $round->id), [
                 'recommendation' => 'revisions_required',
@@ -392,6 +397,7 @@ class SectionEditorWorkflowTest extends TestCase
             'virus_scan_status' => 'clean',
         ]);
 
+        Storage::disk('local')->put($fileEntry->storage_path, 'dummy content');
         $subFile = SubmissionFile::create([
             'submission_id' => $this->submission->id,
             'file_id' => $fileEntry->id,

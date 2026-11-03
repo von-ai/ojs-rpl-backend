@@ -13,7 +13,9 @@ use App\Models\ProofreadingNote;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
+use App\Models\SubmissionFile;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +27,10 @@ class ProofreaderSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Proofreader Utama: Dra. Sitti Aminah, M.Hum.
         $proofreader1 = User::firstOrCreate(
             ['email' => 'sitti.aminah@brida.makassar.go.id'],
@@ -80,6 +86,10 @@ class ProofreaderSeeder extends Seeder
             'status' => 'active',
             'version' => 1,
         ]);
+
+        foreach ([[$proofreader1, 'proofreader'], [$proofreader2, 'proofreader'], [$layoutEditor, 'layout_editor'], [$sectionEditor, 'editor_in_chief']] as [$user, $role]) {
+            UserRole::firstOrCreate(['user_id' => $user->id, 'journal_id' => $journal->id, 'role_code' => $role]);
+        }
 
         $section = Section::firstOrCreate(
             ['slug' => 'sec-inovasi-pelayanan'],
@@ -632,7 +642,7 @@ class ProofreaderSeeder extends Seeder
         $size = (int) $disk->size($storagePath);
         $checksum = hash('sha256', (string) $disk->get($storagePath));
 
-        return FileEntry::updateOrCreate(
+        $entry = FileEntry::updateOrCreate(
             ['storage_disk' => 'local', 'storage_path' => $storagePath],
             [
                 'original_name' => $originalName,
@@ -643,6 +653,11 @@ class ProofreaderSeeder extends Seeder
                 'created_by' => $createdBy,
             ]
         );
+        if ($type !== 'pdf' && preg_match('~^submissions/([^/]+)/~', $storagePath, $match)) {
+            SubmissionFile::firstOrCreate(['submission_id' => $match[1], 'file_id' => $entry->id], ['genre' => 'copyedit_final', 'version' => 1]);
+        }
+
+        return $entry;
     }
 
     /**

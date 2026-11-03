@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\SysAdmin;
 
+use App\Jobs\ProcessUserImport;
 use App\Mail\SysAdmin\JournalStatusChangedMail;
 use App\Mail\SysAdmin\SysAdminRoleAssignedMail;
 use App\Mail\SysAdmin\SysAdminRoleRevokedMail;
 use App\Mail\SysAdmin\UserImportCompletedMail;
 use App\Models\AuditLog;
+use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\Section;
 use App\Models\SystemSetting;
@@ -23,6 +25,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -196,7 +200,7 @@ class SysAdminService
         $user = User::findOrFail($userId);
 
         $existing = UserRole::where('user_id', $user->id)
-            ->where('role_code', 'sysadmin')
+            ->where('role_code', 'sysadmin')->whereNull('journal_id')
             ->first();
 
         if ($existing !== null) {
@@ -245,52 +249,55 @@ class SysAdminService
      */
     public function revokeSysAdmin(string $userId, ?User $actor = null): bool
     {
-        $user = User::findOrFail($userId);
+        return DB::transaction(function () use ($userId, $actor) {
+            $user = User::findOrFail($userId);
+            $admins = UserRole::where('role_code', 'sysadmin')->whereNull('journal_id')->orderBy('id')->lockForUpdate()->get();
 
-        // Invariant Guard: Cegah pencabutan jika hanya tersisa 1 System Administrator
-        $totalSysadmins = UserRole::where('role_code', 'sysadmin')->count();
-        if ($totalSysadmins <= 1) {
-            throw new DomainException('Tidak dapat mencabut peran System Administrator terakhir pada sistem.');
-        }
-
-        $sysadminRole = UserRole::where('user_id', $user->id)
-            ->where('role_code', 'sysadmin')
-            ->first();
-
-        if ($sysadminRole === null) {
-            return false;
-        }
-
-        return DB::transaction(function () use ($user, $sysadminRole, $actor) {
-            $sysadminRole->delete();
-
-            // Kirim notifikasi surel pencabutan
-            if (! empty($user->email)) {
-                try {
-                    Mail::to($user->email)->send(new SysAdminRoleRevokedMail($user, $actor));
-                } catch (\Throwable) {
-                    // Suppress mail failure
-                }
+            // Invariant Guard: Cegah pencabutan jika hanya tersisa 1 System Administrator
+            $totalSysadmins = $admins->count();
+            if ($totalSysadmins <= 1) {
+                throw new DomainException('Tidak dapat mencabut peran System Administrator terakhir pada sistem.');
             }
 
-            // Catat rekam jejak audit
-            AuditLog::record([
-                'actor_id' => $actor?->id,
-                'user_id' => $user->id,
-                'actor_type' => 'user',
-                'effective_role' => 'System Administrator',
-                'action' => 'user.sysadmin_revoked',
-                'resource_type' => 'user',
-                'resource_id' => $user->id,
-                'reason' => "Pencabutan hak akses System Administrator dari {$user->name} ({$user->email}).",
-                'before_after' => [
-                    'before' => ['is_sysadmin' => true],
-                    'after' => ['is_sysadmin' => false],
-                ],
-            ]);
+            $sysadminRole = UserRole::where('user_id', $user->id)
+                ->where('role_code', 'sysadmin')->whereNull('journal_id')
+                ->first();
 
-            return true;
-        });
+            if ($sysadminRole === null) {
+                return false;
+            }
+
+            return DB::transaction(function () use ($user, $sysadminRole, $actor) {
+                $sysadminRole->delete();
+
+                // Kirim notifikasi surel pencabutan
+                if (! empty($user->email)) {
+                    try {
+                        Mail::to($user->email)->send(new SysAdminRoleRevokedMail($user, $actor));
+                    } catch (\Throwable) {
+                        // Suppress mail failure
+                    }
+                }
+
+                // Catat rekam jejak audit
+                AuditLog::record([
+                    'actor_id' => $actor?->id,
+                    'user_id' => $user->id,
+                    'actor_type' => 'user',
+                    'effective_role' => 'System Administrator',
+                    'action' => 'user.sysadmin_revoked',
+                    'resource_type' => 'user',
+                    'resource_id' => $user->id,
+                    'reason' => "Pencabutan hak akses System Administrator dari {$user->name} ({$user->email}).",
+                    'before_after' => [
+                        'before' => ['is_sysadmin' => true],
+                        'after' => ['is_sysadmin' => false],
+                    ],
+                ]);
+
+                return true;
+            });
+        }, 3);
     }
 
     /**
@@ -413,11 +420,35 @@ class SysAdminService
     /**
      * Mengimpor pengguna secara massal dari berkas CSV dengan validasi dan alokasi peran.
      */
-    public function importUsersFromCsv(
+    public function importUsersFromCsv(UploadedFile|string $file, ?string $journalId = null, bool $sendInvitation = false, ?User $actor = null): UserImport
+    {
+        abort_unless($actor?->isSysAdmin(), 403);
+        if ($journalId) {
+            Journal::findOrFail($journalId);
+        }
+        $name = $file instanceof UploadedFile ? $file->getClientOriginalName() : basename($file);
+        $content = file_get_contents($file instanceof UploadedFile ? $file->getRealPath() : $file);
+        if ($content === false || strlen($content) > 512000) {
+            throw new DomainException('Berkas impor maksimal 500 KB.');
+        }
+        $path = 'user-imports/'.Str::ulid().'.csv';
+        Storage::disk('local')->put($path, $content);
+
+        return DB::transaction(function () use ($name, $path, $content, $journalId, $sendInvitation, $actor) {
+            $entry = FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => $name, 'mime_type' => 'text/csv', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => 'pending', 'created_by' => $actor->id]);
+            $import = UserImport::create(['journal_id' => $journalId, 'file_name' => $name, 'file_id' => $entry->id, 'send_invitation_email' => $sendInvitation, 'total_rows' => 0, 'processed_rows' => 0, 'failed_rows' => 0, 'status' => 'queued', 'imported_by' => $actor->id]);
+            ProcessUserImport::dispatch($import->id);
+
+            return $import;
+        });
+    }
+
+    public function processUsersFromCsv(
         UploadedFile|string $file,
         ?string $journalId = null,
         bool $sendInvitation = false,
-        ?User $actor = null
+        ?User $actor = null,
+        ?UserImport $existing = null
     ): UserImport {
         $filePath = is_string($file) ? $file : $file->getRealPath();
         $fileName = is_string($file) ? basename($file) : $file->getClientOriginalName();
@@ -426,7 +457,7 @@ class SysAdminService
             throw new InvalidArgumentException("Berkas CSV '{$fileName}' tidak dapat dibaca atau tidak ditemukan.");
         }
 
-        $userImport = UserImport::create([
+        $userImport = $existing ?? UserImport::create([
             'journal_id' => $journalId,
             'file_name' => $fileName,
             'total_rows' => 0,
@@ -488,9 +519,12 @@ class SysAdminService
                 }
 
                 $totalRows++;
+                if ($totalRows > 200) {
+                    throw new DomainException('Satu impor dibatasi 200 pengguna.');
+                }
                 $rowNumber = $totalRows + 1; // baris ke-1 adalah header
 
-                $email = trim((string) ($row[$emailIdx] ?? ''));
+                $email = strtolower(trim((string) ($row[$emailIdx] ?? '')));
                 if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $failedRows++;
                     $errors[] = "Baris {$rowNumber}: Alamat email '{$email}' tidak valid.";
@@ -509,6 +543,13 @@ class SysAdminService
                 $roleCode = $roleIdx !== null && isset($row[$roleIdx]) && trim((string) $row[$roleIdx]) !== ''
                     ? Str::slug(trim((string) $row[$roleIdx]), '_')
                     : 'author';
+
+                if (! in_array($roleCode, ['manager', 'editor_in_chief', 'section_editor', 'copyeditor', 'layout_editor', 'proofreader', 'reviewer', 'author'], true)) {
+                    $failedRows++;
+                    $errors[] = "Baris {$rowNumber}: peran jurnal tidak valid.";
+
+                    continue;
+                }
 
                 // Buat atau temukan user
                 $user = User::where('email', $email)->first();
@@ -551,6 +592,9 @@ class SysAdminService
                     );
                 }
 
+                if ($sendInvitation) {
+                    Password::sendResetLink(['email' => $user->email]);
+                }
                 $processedRows++;
             }
 
@@ -660,14 +704,17 @@ class SysAdminService
             }
 
             if (isset($data['allowed_file_extensions'])) {
-                $exts = trim((string) $data['allowed_file_extensions']);
+                $exts = implode(', ', array_values(array_intersect(['pdf', 'doc', 'docx', 'odt', 'jpg', 'jpeg', 'png', 'csv', 'html'], array_map(fn ($value) => strtolower(trim($value)), explode(',', (string) $data['allowed_file_extensions'])))));
+                if ($exts === '') {
+                    throw new DomainException('Pilih sedikitnya satu ekstensi dokumen yang diizinkan.');
+                }
                 SystemSetting::setValue('allowed_file_extensions', $exts, 'string', 'storage');
                 $diffBefore['allowed_file_extensions'] = $currentSettings['allowed_file_extensions'];
                 $diffAfter['allowed_file_extensions'] = $exts;
             }
 
             if (isset($data['session_lifetime_minutes'])) {
-                $sessionLifetime = max(15, min(480, (int) $data['session_lifetime_minutes']));
+                $sessionLifetime = max(15, min(120, (int) $data['session_lifetime_minutes']));
                 SystemSetting::setValue('session_lifetime_minutes', $sessionLifetime, 'integer', 'security');
                 $diffBefore['session_lifetime_minutes'] = $currentSettings['session_lifetime_minutes'];
                 $diffAfter['session_lifetime_minutes'] = $sessionLifetime;
@@ -704,7 +751,7 @@ class SysAdminService
     public function clearSystemCache(?User $actor = null): array
     {
         try {
-            Cache::flush();
+            // Limiter and session keys must survive clearing compiled application caches.
             Artisan::call('view:clear');
             Artisan::call('route:clear');
             Artisan::call('config:clear');

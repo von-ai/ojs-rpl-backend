@@ -1,7 +1,7 @@
 <!-- Header Naskah & Tombol Kembali -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <a 
-        href="{{ route('copyeditor.submissions.index') }}" 
+    <a
+        href="{{ route('copyeditor.submissions.index') }}"
         class="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-brand-maroon transition w-fit"
     >
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,18 +27,18 @@
                 <span class="text-gray-500 font-sans font-medium">{{ $submission['section_title'] }}</span>
             </div>
 
-            <h1 class="font-serif text-xl sm:text-2xl font-bold text-gray-900 leading-snug">
+            <h1 class="font-sans text-xl sm:text-2xl font-bold text-gray-900 leading-snug">
                 {{ $submission['title'] }}
             </h1>
 
             <div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-gray-500 pt-1">
                 <div>
-                    <span class="text-gray-400">Penulis Korespondensi:</span> 
+                    <span class="text-gray-400">Penulis Korespondensi:</span>
                     <strong class="text-gray-800 font-semibold">{{ $submission['corresponding_author']['name'] }}</strong>
                     <span class="text-gray-400">({{ $submission['corresponding_author']['email'] }})</span>
                 </div>
                 <div>
-                    <span class="text-gray-400">Batas Waktu:</span> 
+                    <span class="text-gray-400">Batas Waktu:</span>
                     <strong class="{{ $submission['is_urgent'] ? 'text-amber-700' : 'text-gray-700' }} font-semibold">{{ $submission['due_at'] }}</strong>
                 </div>
             </div>
@@ -46,8 +46,8 @@
 
         <!-- Tombol Aksi Penting: Unduh Naskah Acuan Asli -->
         <div class="shrink-0 pt-1 lg:pt-0">
-            <a 
-                href="{{ $submission['source_file']['download_url'] }}" 
+            <a
+                href="{{ $submission['source_file']['download_url'] }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition"
                 title="Unduh naskah mentah asli sebelum disunting"
             >

@@ -16,6 +16,8 @@ class UserImport extends Model
     protected $table = 'user_imports';
 
     protected $fillable = [
+        'file_id',
+        'send_invitation_email',
         'id',
         'journal_id',
         'file_name',
@@ -28,6 +30,7 @@ class UserImport extends Model
     ];
 
     protected $casts = [
+        'send_invitation_email' => 'boolean',
         'total_rows' => 'integer',
         'processed_rows' => 'integer',
         'failed_rows' => 'integer',

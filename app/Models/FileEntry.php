@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Jobs\ScanFile;
 use Database\Factories\FileEntryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,17 @@ class FileEntry extends Model
     use HasFactory, HasUlids;
 
     protected $table = 'files';
+
+    protected $attributes = ['virus_scan_status' => 'pending'];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $file) {
+            if ($file->virus_scan_status === 'pending') {
+                ScanFile::dispatch($file->id);
+            }
+        });
+    }
 
     protected $fillable = [
         'storage_disk',

@@ -13,7 +13,7 @@
                 <span>/</span>
                 <span class="text-gray-900">Panduan Bukti Baca</span>
             </div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Panduan Bukti Baca &amp; Standar Koreksi Galai
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -22,8 +22,8 @@
         </div>
 
         <div class="shrink-0">
-            <a 
-                href="{{ route('proofreader.submissions.index') }}" 
+            <a
+                href="{{ route('proofreader.submissions.index') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 min-h-11 bg-brand-maroon hover:bg-brand-maroon-dark text-white text-xs font-bold rounded-xl shadow-2xs transition"
                 title="Kembali ke Daftar Penugasan Proofreading"
             >

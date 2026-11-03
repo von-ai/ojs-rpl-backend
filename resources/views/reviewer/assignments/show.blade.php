@@ -113,15 +113,8 @@
                             $filesToDownload = collect();
                             if ($viewModel->assignment->reviewRound?->anonymizedFile) {
                                 $filesToDownload->push($viewModel->assignment->reviewRound->anonymizedFile);
-                            } elseif ($viewModel->assignment->reviewRound?->manuscriptFile) {
-                                $filesToDownload->push($viewModel->assignment->reviewRound->manuscriptFile);
-                            } else {
-                                foreach($viewModel->assignment->reviewRound->submission->files as $sf) {
-                                    if ($sf->file) {
-                                        $filesToDownload->push($sf->file);
-                                    }
-                                }
                             }
+
                         @endphp
 
                         @forelse($filesToDownload as $fileEntry)
@@ -132,16 +125,16 @@
                                     </svg>
                                     <div class="truncate">
                                         <span class="font-medium text-gray-800 truncate block">
-                                            {{ $fileEntry->original_name ?: 'Manuskrip_Anonim.pdf' }}
+                                            Manuskrip anonim
                                         </span>
                                         <span class="text-[10px] text-gray-400 font-mono">
                                             {{ number_format(($fileEntry->byte_size ?? $fileEntry->file_size ?? 0) / 1024, 1) }} KB
                                         </span>
                                     </div>
                                 </div>
-                                
-                                <a 
-                                    href="{{ route('reviewer.files.download', ['id' => $viewModel->assignment->id, 'fileId' => $fileEntry->id]) }}" 
+
+                                <a
+                                    href="{{ route('reviewer.files.download', ['id' => $viewModel->assignment->id, 'fileId' => $fileEntry->id]) }}"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold text-xs shadow-2xs shrink-0 transition"
                                 >
                                     <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,9 +160,9 @@
                         <span>Tenggat Waktu Penelaahan</span>
                     </h3>
                     @if($viewModel->canSubmit() && ! $viewModel->pendingExtension())
-                        <button 
-                            type="button" 
-                            onclick="document.getElementById('modalExtension').classList.remove('hidden')" 
+                        <button
+                            type="button"
+                            onclick="document.getElementById('modalExtension').classList.remove('hidden')"
                             class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold"
                         >
                             + Minta Perpanjangan
@@ -244,7 +237,7 @@
                             Konfirmasi Kesediaan Menelaah Naskah
                         </h2>
                         <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
-                            Dewan Redaksi mengundang Anda untuk menelaah naskah ini berdasarkan rekam jejak riset dan kepakaran ilmiah Anda. Silakan konfirmasi kesediaan sebelum batas respon: 
+                            Dewan Redaksi mengundang Anda untuk menelaah naskah ini berdasarkan rekam jejak riset dan kepakaran ilmiah Anda. Silakan konfirmasi kesediaan sebelum batas respon:
                             <strong class="text-gray-900 tabular-nums">{{ $viewModel->assignment->response_due_at ? $viewModel->assignment->response_due_at->format('d M Y') : '-' }}</strong>.
                         </p>
                     </div>
@@ -260,17 +253,17 @@
                         <form action="{{ route('reviewer.assignments.respond', $viewModel->assignment->id) }}" method="POST">
                             @csrf
                             <input type="hidden" name="response" value="accepted">
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-2xs transition"
                             >
                                 Terima Undangan Telaah
                             </button>
                         </form>
 
-                        <button 
-                            type="button" 
-                            onclick="document.getElementById('modalDecline').classList.remove('hidden')" 
+                        <button
+                            type="button"
+                            onclick="document.getElementById('modalDecline').classList.remove('hidden')"
                             class="w-full sm:w-auto px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition"
                         >
                             Tolak Undangan
@@ -289,7 +282,7 @@
                         <form action="{{ route('reviewer.assignments.respond', $viewModel->assignment->id) }}" method="POST" class="space-y-4 text-xs">
                             @csrf
                             <input type="hidden" name="response" value="declined">
-                            
+
                             <div>
                                 <label class="block font-bold text-gray-700 mb-1">Alasan Penolakan (Opsional)</label>
                                 <textarea name="reason" rows="3" placeholder="Contoh: Berhalangan karena tugas riset lain / bidang kepakaran tidak sepenuhnya sesuai..." class="w-full rounded-lg border border-gray-300 p-2 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon"></textarea>
@@ -357,14 +350,14 @@
                                         <div class="flex items-center justify-between gap-2">
                                             <span class="font-bold text-gray-800 text-xs">{{ $criteria['label'] }} ({{ $criteria['weight'] }}%)</span>
                                             <div class="flex items-center gap-1.5 shrink-0">
-                                                <input 
-                                                    type="number" 
-                                                    min="0" 
-                                                    max="100" 
-                                                    name="scores[{{ $key }}]" 
-                                                    value="{{ old('scores.'.$key, $existingScore) }}" 
-                                                    {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                                    required 
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    name="scores[{{ $key }}]"
+                                                    value="{{ old('scores.'.$key, $existingScore) }}"
+                                                    {{ $viewModel->isCompleted() ? 'disabled' : '' }}
+                                                    required
                                                     class="w-16 rounded-lg border border-gray-300 p-1.5 text-center font-bold text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon tabular-nums"
                                                 >
                                                 <span class="text-gray-400 font-medium">/ 100</span>
@@ -384,12 +377,12 @@
                             <p class="text-[11px] text-gray-500">
                                 Catatan ini akan diteruskan kepada penulis secara anonim sebagai panduan perbaikan naskah.
                             </p>
-                            <textarea 
-                                name="comments_for_author" 
-                                rows="5" 
-                                required 
-                                {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                placeholder="Tuliskan evaluasi mengenai kekuatan naskah, kelemahan metodologi, referensi yang perlu diperkaya, dan saran perbaikan spesifik..." 
+                            <textarea
+                                name="comments_for_author"
+                                rows="5"
+                                required
+                                {{ $viewModel->isCompleted() ? 'disabled' : '' }}
+                                placeholder="Tuliskan evaluasi mengenai kekuatan naskah, kelemahan metodologi, referensi yang perlu diperkaya, dan saran perbaikan spesifik..."
                                 class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
                             >{{ old('comments_for_author', $viewModel->existingReview()?->comments_for_author) }}</textarea>
                         </div>
@@ -402,11 +395,11 @@
                             <p class="text-[11px] text-gray-500">
                                 Catatan tertutup yang hanya dapat dibaca oleh Editor Bagian dan Pemimpin Redaksi (tidak dapat dilihat oleh penulis).
                             </p>
-                            <textarea 
-                                name="confidential_comments_for_editor" 
-                                rows="3" 
-                                {{ $viewModel->isCompleted() ? 'disabled' : '' }} 
-                                placeholder="Informasi rahasia, keraguan orisinalitas, atau catatan etis yang perlu diperhatikan dewan editor..." 
+                            <textarea
+                                name="confidential_comments_for_editor"
+                                rows="3"
+                                {{ $viewModel->isCompleted() ? 'disabled' : '' }}
+                                placeholder="Informasi rahasia, keraguan orisinalitas, atau catatan etis yang perlu diperhatikan dewan editor..."
                                 class="w-full rounded-lg border border-gray-300 p-3 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
                             >{{ old('confidential_comments_for_editor', $viewModel->existingReview()?->confidential_comments_for_editor) }}</textarea>
                         </div>
@@ -439,10 +432,10 @@
                                 <label class="block font-bold text-gray-900 uppercase text-[11px] tracking-wider">
                                     5. Unggah Berkas Manuskrip Beranotasi (Opsional)
                                 </label>
-                                <input 
-                                    type="file" 
-                                    name="annotated_file" 
-                                    accept=".pdf,.docx" 
+                                <input
+                                    type="file"
+                                    name="annotated_file"
+                                    accept=".pdf,.docx"
                                     class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                                 >
                                 <p class="text-[10px] text-gray-400">Format yang diterima: PDF atau DOCX, maksimal 20 MB.</p>
@@ -453,11 +446,11 @@
                         @if(! $viewModel->isCompleted())
                             <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
                                 <label class="flex items-start gap-2.5 cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        name="certify_no_conflict" 
-                                        value="1" 
-                                        required 
+                                    <input
+                                        type="checkbox"
+                                        name="certify_no_conflict"
+                                        value="1"
+                                        required
                                         class="mt-0.5 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon"
                                     >
                                     <span class="text-xs text-amber-950 font-medium leading-relaxed text-left">
@@ -470,15 +463,15 @@
                         <!-- Tombol Aksi Simpan Draf & Submit -->
                         @if(! $viewModel->isCompleted())
                             <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-                                <button 
-                                    type="submit" 
-                                    formaction="{{ route('reviewer.assignments.draft', $viewModel->assignment->id) }}" 
+                                <button
+                                    type="submit"
+                                    formaction="{{ route('reviewer.assignments.draft', $viewModel->assignment->id) }}"
                                     class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition"
                                 >
                                     Simpan Draf Evaluasi
                                 </button>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover text-white font-bold rounded-lg shadow-2xs transition"
                                 >
                                     Kirim Hasil Telaah Resmi
@@ -510,12 +503,12 @@
                     <label class="block font-bold text-gray-700 mb-1">
                         Batas Waktu Baru yang Dimohonkan <span class="text-rose-500">*</span>
                     </label>
-                    <input 
-                        type="date" 
-                        name="requested_due_at" 
-                        required 
-                        min="{{ now()->addDay()->format('Y-m-d') }}" 
-                        value="{{ $viewModel->assignment->review_due_at ? $viewModel->assignment->review_due_at->addDays(7)->format('Y-m-d') : now()->addDays(7)->format('Y-m-d') }}" 
+                    <input
+                        type="date"
+                        name="requested_due_at"
+                        required
+                        min="{{ now()->addDay()->format('Y-m-d') }}"
+                        value="{{ $viewModel->assignment->review_due_at ? $viewModel->assignment->review_due_at->addDays(7)->format('Y-m-d') : now()->addDays(7)->format('Y-m-d') }}"
                         class="w-full rounded-lg border border-gray-300 p-2 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon"
                     >
                 </div>
@@ -524,11 +517,11 @@
                     <label class="block font-bold text-gray-700 mb-1">
                         Alasan Permohonan Waktu Tambahan <span class="text-rose-500">*</span>
                     </label>
-                    <textarea 
-                        name="reason" 
-                        rows="3" 
-                        required 
-                        placeholder="Jelaskan alasan ilmiah permohonan waktu tambahan (misal: verifikasi metode empiris atau kajian pustaka lanjutan)..." 
+                    <textarea
+                        name="reason"
+                        rows="3"
+                        required
+                        placeholder="Jelaskan alasan ilmiah permohonan waktu tambahan (misal: verifikasi metode empiris atau kajian pustaka lanjutan)..."
                         class="w-full rounded-lg border border-gray-300 p-2 text-xs focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed text-left"
                     ></textarea>
                 </div>

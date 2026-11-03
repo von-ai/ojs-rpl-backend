@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
-use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
-use App\Models\SubmissionFile;
 use Illuminate\Support\Facades\Schema;
 
 class ProofreaderDetailViewModel
@@ -177,30 +175,21 @@ class ProofreaderDetailViewModel
             'version' => (int) ($activeGalley?->version ?? 1),
             'version_label' => 'Versi '.($activeGalley?->version ?? 1).' ('.($activeGalley && $activeGalley->version > 1 ? 'Revisi' : 'Draf Awal').')',
             'file_name' => $galleyFile?->original_name ?? "{$sub->submission_number}_Galley_v".($activeGalley->version ?? 1).'.pdf',
-            'size_formatted' => $galleyFile ? $this->formatBytes($galleyFile->byte_size) : '3.8 MB',
+            'size_formatted' => $galleyFile ? $this->formatBytes($galleyFile->byte_size) : '—',
             'checksum_sha256' => (string) ($activeGalley?->checksum_sha256 ?? '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b'),
             'download_url' => route('proofreader.galleys.download', $activeGalley?->id ?? $sub->submission_number),
             'uploaded_at' => $activeGalley?->created_at ? $activeGalley->created_at->translatedFormat('d M Y, H:i').' WITA' : 'Baru saja',
         ];
 
         // Copyedit Reference File
-        $copyeditFile = FileEntry::where('storage_path', 'like', "%{$sub->id}%")
-            ->where('original_name', 'like', '%.docx')
-            ->latest()
-            ->first();
-
-        if (! $copyeditFile) {
-            $subFile = SubmissionFile::where('submission_id', $sub->id)->latest()->first();
-            $copyeditFile = $subFile?->file;
-        }
-
+        $copyeditFile = $sub->finalCopyeditFile();
         $copyeditReference = [
-            'id' => (string) ($copyeditFile?->id ?? 'FILE-CE-FINAL'),
-            'file_name' => $copyeditFile?->original_name ?? "{$sub->submission_number}_Copyedited_Final.docx",
-            'size_formatted' => $copyeditFile ? $this->formatBytes($copyeditFile->byte_size) : '642 KB',
-            'checksum_sha256' => (string) ($copyeditFile?->checksum_sha256 ?? '3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d'),
-            'download_url' => route('proofreader.files.download', $copyeditFile?->id ?? $sub->submission_number),
-            'description' => 'Naskah teks bersih hasil copyediting final untuk rujukan verifikasi tata letak teks.',
+            'id' => $copyeditFile?->id,
+            'file_name' => $copyeditFile?->original_name ?? 'Naskah final belum tersedia',
+            'size_formatted' => $copyeditFile ? $this->formatBytes($copyeditFile->byte_size) : '—',
+            'checksum_sha256' => $copyeditFile?->checksum_sha256 ?? '',
+            'download_url' => $copyeditFile ? route('proofreader.files.download', $copyeditFile->id) : null,
+            'description' => 'Naskah final yang terhubung pada pengajuan ini.',
         ];
 
         // Timeline

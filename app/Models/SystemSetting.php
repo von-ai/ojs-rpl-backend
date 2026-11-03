@@ -34,7 +34,7 @@ class SystemSetting extends Model
             'maintenance_mode' => false,
             'maintenance_message' => 'Sistem sedang dalam proses pemeliharaan rutin server. Silakan coba beberapa saat lagi.',
             'max_upload_size_mb' => 32,
-            'allowed_file_extensions' => 'pdf, docx, odt, jpg, png, csv',
+            'allowed_file_extensions' => 'pdf, doc, docx, odt, jpg, jpeg, png, csv, html',
             'session_lifetime_minutes' => 120,
         ];
     }

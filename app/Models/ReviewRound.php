@@ -45,6 +45,11 @@ class ReviewRound extends Model
         'closed_at' => 'datetime',
     ];
 
+    public function completedReviewCount(): int
+    {
+        return $this->assignments()->where('status', 'completed')->whereHas('review', fn ($q) => $q->where('status', 'submitted'))->distinct()->count('reviewer_id');
+    }
+
     /**
      * @return BelongsTo<Submission, $this>
      */

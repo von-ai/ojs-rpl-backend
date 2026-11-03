@@ -11,19 +11,7 @@
 
         <!-- Right Quick Actions & Language -->
         <div class="flex items-center gap-4 text-xs">
-            <!-- Language Switcher -->
-            @if (!empty($topbarData['languages']))
-                <div class="flex items-center gap-1 font-semibold text-gray-500">
-                    @foreach ($topbarData['languages'] as $index => $lang)
-                        @if ($index > 0)
-                            <span class="text-gray-300">/</span>
-                        @endif
-                        <a href="#" class="{{ $lang['active'] ? 'text-brand-maroon font-bold' : 'hover:text-gray-900 transition-colors' }}">
-                            {{ $lang['label'] }}
-                        </a>
-                    @endforeach
-                </div>
-            @endif
+            <span class="font-semibold text-gray-500" lang="id">Bahasa Indonesia</span>
 
             <span class="text-gray-300">|</span>
 

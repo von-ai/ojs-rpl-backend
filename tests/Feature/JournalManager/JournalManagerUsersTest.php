@@ -133,6 +133,7 @@ class JournalManagerUsersTest extends TestCase
         // 1. Tetapkan peran jurnal
         $resAssign = $this->post('/journalmanager/users/assign-role', [
             'role_code' => 'Section Editor',
+            'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resAssign->assertRedirect('/journalmanager/users');
         $resAssign->assertSessionHas('status', "Peran 'Section Editor' berhasil ditetapkan kepada pengguna.");

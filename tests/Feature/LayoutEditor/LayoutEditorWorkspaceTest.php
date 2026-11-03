@@ -162,7 +162,7 @@ class LayoutEditorWorkspaceTest extends TestCase
             'file' => $fakeFile,
         ]);
         $resUpload->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $resUpload->assertSessionHas('status', 'Berkas galai PDF berhasil diunggah dan diverifikasi checksum.');
+        $resUpload->assertSessionHas('status', 'Galai diunggah dan menunggu pemindaian keamanan.');
 
         // 2. Resolve Note
         $note = ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->first();
@@ -172,7 +172,9 @@ class LayoutEditorWorkspaceTest extends TestCase
             'resolution' => 'Tabel 2 telah diposisikan ke awal halaman 5 format 2-kolom penuh.',
         ]);
         $resResolve->assertRedirect('/layouteditor/submissions/SUB-2026-00107');
-        $resResolve->assertSessionHas('status', 'Catatan koreksi proofreading berhasil ditandai selesai.');
+        $resResolve->assertSessionHas('status', 'Catatan koreksi ditandai selesai dan menunggu verifikasi proofreader.');
+
+        $this->scanTestUploads();
 
         // 3. Request Proofread
         $resProofread = $this->post('/layouteditor/request-proofread', [
@@ -186,7 +188,8 @@ class LayoutEditorWorkspaceTest extends TestCase
             'submission_id' => 'SUB-2026-00109',
         ]);
         $resApproval->assertRedirect('/layouteditor/submissions/SUB-2026-00109');
-        $resApproval->assertSessionHas('status', 'Permohonan persetujuan akhir galai berhasil diajukan ke Editor in Chief.');
+        $resApproval->assertSessionHasErrors('general');
+        $this->assertDatabaseHas('submissions', ['submission_number' => 'SUB-2026-00109', 'status' => 'archived']);
 
         // 5. Submit Escalation
         $resEscalate = $this->post('/layouteditor/escalate', [

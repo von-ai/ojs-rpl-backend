@@ -12,7 +12,9 @@ use App\Models\ProductionEscalation;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
+use App\Models\SubmissionFile;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +26,10 @@ class LayoutEditorSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         if (Submission::count() === 0) {
             $this->call([
                 JournalSeeder::class,
@@ -90,6 +96,12 @@ class LayoutEditorSeeder extends Seeder
             'SUB-2026-00110',
             'SUB-2026-00111',
         ])->get()->keyBy('submission_number');
+
+        foreach ($submissions->pluck('journal_id')->unique() as $journalId) {
+            foreach ([[$layoutEditor, 'layout_editor'], [$proofreader1, 'proofreader'], [$proofreader2, 'proofreader'], [$sectionEditor, 'editor_in_chief']] as [$user, $role]) {
+                UserRole::firstOrCreate(['user_id' => $user->id, 'journal_id' => $journalId, 'role_code' => $role]);
+            }
+        }
 
         // Skenario 1: SUB-2026-00106 — Drafting (Perlu Draf Galai Awal, belum ada PDF)
         if ($sub106 = $submissions->get('SUB-2026-00106')) {
@@ -579,7 +591,7 @@ class LayoutEditorSeeder extends Seeder
         $actualBytes = (int) $disk->size($storagePath);
         $actualSha256 = hash('sha256', (string) $disk->get($storagePath));
 
-        return FileEntry::updateOrCreate(
+        $entry = FileEntry::updateOrCreate(
             ['original_name' => $originalName],
             [
                 'storage_disk' => 'local',
@@ -591,6 +603,11 @@ class LayoutEditorSeeder extends Seeder
                 'created_by' => $createdBy,
             ]
         );
+        if ($type !== 'pdf' && preg_match('~^submissions/([^/]+)/~', $storagePath, $match)) {
+            SubmissionFile::firstOrCreate(['submission_id' => $match[1], 'file_id' => $entry->id], ['genre' => 'copyedit_final', 'version' => 1]);
+        }
+
+        return $entry;
     }
 
     /**

@@ -23,8 +23,8 @@
             </p>
         </div>
 
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="openCreateIssueModal()"
             class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition self-start sm:self-center"
         >
@@ -57,7 +57,7 @@
 
     <!-- Main Container: Filter Tabs, Pencarian & Tabel Edisi -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        
+
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Status -->
@@ -69,7 +69,7 @@
                     @php
                         $isActive = $tabs['active'] === $tabKey;
                     @endphp
-                    <a 
+                    <a
                         href="{{ route('journalmanager.issues.index', ['tab' => $tabKey, 'q' => request('q')]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -89,16 +89,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="search" 
-                    name="q" 
+                <input
+                    type="search"
+                    name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari volume, nomor, atau judul edisi..."
                     class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                 @if(request('q'))
-                    <a 
-                        href="{{ route('journalmanager.issues.index', ['tab' => $tabs['active']]) }}" 
+                    <a
+                        href="{{ route('journalmanager.issues.index', ['tab' => $tabs['active']]) }}"
                         class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                         title="Hapus pencarian"
                     >
@@ -138,9 +138,9 @@
                                         </span>
                                     @endif
                                 </div>
-                                <a 
-                                    href="{{ $issue['url_workspace'] }}" 
-                                    class="font-serif font-bold text-gray-900 group-hover:text-brand-maroon transition leading-snug line-clamp-1"
+                                <a
+                                    href="{{ $issue['url_workspace'] }}"
+                                    class="font-sans font-bold text-gray-900 group-hover:text-brand-maroon transition leading-snug line-clamp-1"
                                     title="{{ $issue['title'] }}"
                                 >
                                     {{ $issue['title'] }}
@@ -193,8 +193,8 @@
                                     @if($issue['status'] === 'published' && !$issue['is_current'])
                                         <form action="{{ route('journalmanager.issues.set-current', $issue['id']) }}" method="POST" class="inline">
                                             @csrf
-                                            <button 
-                                                type="submit" 
+                                            <button
+                                                type="submit"
                                                 class="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition"
                                                 title="Tetapkan sebagai Terbitan Berjalan (Current Issue)"
                                             >
@@ -203,8 +203,8 @@
                                         </form>
                                     @endif
 
-                                    <a 
-                                        href="{{ $issue['url_workspace'] }}" 
+                                    <a
+                                        href="{{ $issue['url_workspace'] }}"
                                         class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-brand-maroon bg-brand-maroon/5 hover:bg-brand-maroon hover:text-white rounded-lg transition border border-brand-maroon/20"
                                         title="Buka Ruang Kerja Daftar Isi Edisi"
                                     >
@@ -315,6 +315,11 @@
                     <input type="text" name="title" id="title" placeholder="Contoh: Edisi Khusus Riset Inovasi Maritim" class="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon">
                 </div>
 
+                <div class="space-y-1">
+                    <label for="issue_doi_prefix" class="block text-xs font-semibold text-gray-700">Prefiks DOI edisi (opsional)</label>
+                    <x-input id="issue_doi_prefix" name="doi_prefix" maxlength="191" placeholder="10.12345/jurnal.v1i1" />
+                    <p class="text-xs text-gray-500">Kosongkan jika DOI belum dialokasikan.</p>
+                </div>
                 <div>
                     <label for="description" class="block text-xs font-semibold text-gray-700 mb-1">Kata Pengantar / Deskripsi Edisi</label>
                     <textarea name="description" id="description" rows="3" placeholder="Deskripsi ringkas fokus dan pengantar dewan redaksi untuk edisi ini..." class="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"></textarea>
@@ -344,4 +349,3 @@
     }
 </script>
 @endsection
-

@@ -15,6 +15,7 @@ class CopyeditApproval extends Model
     use HasFactory, HasUlids;
 
     protected $fillable = [
+        'requested_at',
         'copyedit_id',
         'author_id',
         'decision',
@@ -26,6 +27,7 @@ class CopyeditApproval extends Model
     ];
 
     protected $casts = [
+        'requested_at' => 'datetime',
         'output_version' => 'integer',
         'approved_at' => 'datetime',
         'invalidated_at' => 'datetime',

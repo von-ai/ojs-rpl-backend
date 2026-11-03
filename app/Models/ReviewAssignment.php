@@ -17,6 +17,7 @@ class ReviewAssignment extends Model
     use HasFactory, HasUlids;
 
     protected $fillable = [
+        'response_reason',
         'review_round_id',
         'reviewer_id',
         'status',
