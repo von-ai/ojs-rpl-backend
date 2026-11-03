@@ -1,5 +1,5 @@
 <!-- Kolom Samping (Sidebar Editorial, Konteks Status, & Linimasa Audit) -->
-<div class="space-y-5">
+<div class="space-y-5 min-w-0">
 
     <!-- 1. Panel Kontekstual Status Naskah -->
 
@@ -335,14 +335,14 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Metode Telaah:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words">{{ $submission['review_info']['method'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right break-words min-w-0">{{ $submission['review_info']['method'] }}</strong>
                 </div>
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Mitra Bestari Ditugaskan:</span>
                     @if(($submission['review_info']['reviewers_assigned'] ?? 0) > 0)
-                        <span class="font-bold text-gray-800 text-right shrink-0">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
+                        <span class="font-bold text-gray-800 text-right min-w-0 break-words">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
                     @else
-                        <span class="font-medium text-amber-700 text-right shrink-0">Sedang Dialokasikan</span>
+                        <span class="font-medium text-amber-700 text-right min-w-0 break-words">Sedang Dialokasikan</span>
                     @endif
                 </div>
                 <div class="flex items-center justify-between gap-2">
@@ -361,36 +361,36 @@
     <!-- Kasus F: Tahap Produksi & Pemeriksaan Galai -->
     @if(in_array($submission['status'], ['in_production', 'accepted'], true) && !empty($submission['production_info']))
         <div id="panel-produksi" class="bg-white rounded-xl border border-purple-200 p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-purple-100 pb-3">
+            <div class="flex items-start justify-between gap-2 border-b border-purple-100 pb-3">
                 <div class="flex items-center gap-2 text-purple-900 min-w-0">
                     <div class="w-6 h-6 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 border border-purple-200">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['production_info']['stage_title'] }}">{{ $submission['production_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold leading-snug break-words" title="{{ $submission['production_info']['stage_title'] }}">{{ $submission['production_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 shrink-0">
                     Penerbitan
                 </span>
             </div>
 
-            <div class="text-xs text-gray-700 space-y-2">
+            <div class="text-xs text-gray-700 space-y-2.5">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Status Keputusan:</span>
-                    <strong class="text-emerald-700 font-bold text-right break-words">{{ $submission['production_info']['decision'] }}</strong>
+                    <strong class="text-emerald-700 font-bold text-right break-words min-w-0">{{ $submission['production_info']['decision'] }}</strong>
                 </div>
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Target Edisi:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words">{{ $submission['production_info']['target_issue'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right break-words min-w-0">{{ $submission['production_info']['target_issue'] }}</strong>
                 </div>
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Bahasa:</span>
-                    <span class="font-semibold text-emerald-700 shrink-0">{{ $submission['production_info']['copyediting_status'] }}</span>
+                    <span class="font-semibold text-emerald-700 text-right break-words min-w-0">{{ $submission['production_info']['copyediting_status'] }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Letak:</span>
-                    <span class="font-semibold text-purple-800 shrink-0">{{ $submission['production_info']['layout_status'] }}</span>
+                    <span class="font-semibold text-purple-800 text-right break-words min-w-0">{{ $submission['production_info']['layout_status'] }}</span>
                 </div>
             </div>
 
@@ -706,19 +706,19 @@
         <div class="space-y-2.5 text-xs">
             <div>
                 <span class="text-gray-400 block text-[11px]">Jurnal:</span>
-                <span class="font-bold text-gray-900 leading-snug block pt-0.5 truncate" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
+                <span class="font-bold text-gray-900 leading-snug block pt-0.5 break-words" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                <span class="text-gray-500 text-[11px]">e-ISSN:</span>
-                <span class="font-mono font-bold text-gray-800 tabular-nums">{{ $submission['journal_issn'] }}</span>
+                <span class="text-gray-500 text-[11px] shrink-0">e-ISSN:</span>
+                <span class="font-mono font-bold text-gray-800 tabular-nums shrink-0">{{ $submission['journal_issn'] }}</span>
+            </div>
+            <div class="flex items-start justify-between gap-2 pt-2 border-t border-gray-100">
+                <span class="text-gray-500 text-[11px] shrink-0">Seksi Rubrik:</span>
+                <span class="font-semibold text-gray-800 text-right break-words min-w-0" title="{{ $submission['section'] }}">{{ $submission['section'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                <span class="text-gray-500 text-[11px]">Seksi Rubrik:</span>
-                <span class="font-semibold text-gray-800 truncate" title="{{ $submission['section'] }}">{{ $submission['section'] }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                <span class="text-gray-500 text-[11px]">Penerbit Resmi:</span>
-                <span class="font-semibold text-brand-maroon">BRIDA Kota Makassar</span>
+                <span class="text-gray-500 text-[11px] shrink-0">Penerbit Resmi:</span>
+                <span class="font-semibold text-brand-maroon text-right shrink-0">BRIDA Kota Makassar</span>
             </div>
         </div>
 

@@ -709,7 +709,7 @@ class AuthorSubmissionDetailViewModel
 
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
-            'decision' => 'Naskah Diterima untuk Publikasi (Accepted)',
+            'decision' => 'Naskah Diterima untuk Publikasi',
             'target_issue' => $targetIssue,
             'copyediting_status' => $copyeditStatus,
             'layout_status' => $layoutStatus,
