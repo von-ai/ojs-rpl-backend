@@ -47,8 +47,8 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00103');
         $indexResponse->assertSee('Dra. Sitti Aminah, M.Hum.');
 
-        // Sidebar badge dinamis dari basis data
-        $indexResponse->assertSee('sidebar-badge-full', false);
+        // Sidebar navigasi bersih tanpa angka badge sesuai pedoman UI
+        $indexResponse->assertDontSee('sidebar-badge-full', false);
 
         // Akses detail naskah SUB-2026-00105
         $detailResponse = $this->get('/proofreader/submissions/SUB-2026-00105');
@@ -258,6 +258,18 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
 
         $proofreader = User::where('email', 'sitti.aminah@brida.makassar.go.id')->firstOrFail();
         $this->actingAs($proofreader);
+
+        $galley108 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00108'))->firstOrFail();
+        ProofAssignment::firstOrCreate([
+            'galley_id' => $galley108->id,
+            'proofreader_id' => $proofreader->id,
+        ], [
+            'file_id' => $galley108->file_id,
+            'due_at' => now()->addDays(3),
+            'status' => 'in_progress',
+            'assigned_at' => now()->subDays(2),
+            'checksum_sha256' => substr((string) $galley108->checksum_sha256, 0, 64),
+        ]);
 
         // SUB-2026-00108 sudah memiliki tiket eskalasi berstatus 'open'
         $response = $this->post('/proofreader/escalate', [

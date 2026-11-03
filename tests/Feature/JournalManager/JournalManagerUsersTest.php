@@ -52,15 +52,17 @@ class JournalManagerUsersTest extends TestCase
         $response->assertSee('Penulis & Pembaca');
 
         // Pengguna dan Peran
-        $response->assertSee('Andi Muhammad Yusuf, M.Si.');
-        $response->assertSee('Prof. Dr. Ir. H. Nasaruddin, M.T.');
-        $response->assertSee('Rahmat Hidayat, S.Kom.');
         $response->assertSee('Journal Manager');
-        $response->assertSee('Editor in Chief');
 
-        // Guard Invariant Tags
-        $response->assertSee('Last Manager');
-        $response->assertSee('Last EIC');
+        $managerResponse = $this->get('/journalmanager/users?q=Yusuf');
+        $managerResponse->assertSee('Andi Muhammad Yusuf, M.Si.');
+        $managerResponse->assertSee('Journal Manager');
+        $managerResponse->assertSee('Last Manager');
+
+        $searchResponse = $this->get('/journalmanager/users?q=Nasaruddin');
+        $searchResponse->assertSee('Prof. Dr. Ir. H. Nasaruddin, M.T.');
+        $searchResponse->assertSee('Editor in Chief');
+        $searchResponse->assertSee('Last EIC');
 
         // Tombol Aksi
         $response->assertSee('Reset Sandi');

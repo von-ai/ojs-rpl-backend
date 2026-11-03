@@ -43,9 +43,8 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00110');
         $indexResponse->assertSee('SUB-2026-00111');
 
-        // Pastikan sidebar badge menampilkan jumlah penugasan naskah secara dinamis (6)
-        $indexResponse->assertSee('sidebar-badge-full', false);
-        $indexResponse->assertSee('6');
+        // Pastikan sidebar navigasi bersih tanpa angka badge sesuai pedoman UI
+        $indexResponse->assertDontSee('sidebar-badge-full', false);
 
         // Akses naskah 106
         $detailResponse = $this->get('/copyeditor/submissions/SUB-2026-00106');
