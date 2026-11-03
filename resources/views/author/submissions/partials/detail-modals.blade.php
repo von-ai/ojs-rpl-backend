@@ -268,3 +268,74 @@
         </div>
     </div>
 @endif
+
+<!-- Modal Detail Linimasa Aktivitas Editorial (Audit Trail Lengkap) -->
+@if(!empty($submission['timeline']))
+    <div 
+        id="modal-detail-linimasa" 
+        class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/60 backdrop-blur-xs transition-opacity duration-200 select-none"
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="modal-linimasa-title"
+    >
+        <div class="relative w-full max-w-xl bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Header Modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/80">
+                <div class="flex items-center gap-2.5 text-gray-900">
+                    <div class="w-8 h-8 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="modal-linimasa-title" class="text-sm font-bold text-gray-900 leading-snug">Detail Linimasa Aktivitas</h3>
+                        <p class="text-[11px] text-gray-500">Jejak kronologis proses editorial naskah {{ $submission['submission_number'] }}</p>
+                    </div>
+                </div>
+                <button 
+                    type="button" 
+                    onclick="closeTimelineModal()"
+                    class="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                    aria-label="Tutup dialog"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body Modal: Linimasa Lengkap -->
+            <div class="p-6 max-h-[65vh] overflow-y-auto space-y-4">
+                <div class="border-l-2 border-brand-maroon/30 pl-4 space-y-5">
+                    @foreach($submission['timeline'] as $event)
+                        <div class="relative text-xs space-y-1">
+                            <div class="absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white bg-brand-maroon"></div>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                <span class="font-bold text-gray-900 text-xs sm:text-sm">{{ $event['title'] }}</span>
+                                <span class="text-[11px] text-gray-400 tabular-nums font-medium">{{ $event['date'] }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-relaxed">{{ $event['description'] }}</p>
+                            <div class="pt-0.5">
+                                <span class="inline-block text-[10px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                    Aktor: {{ $event['actor'] }}
+                                </span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="flex items-center justify-between px-6 py-3.5 border-t border-gray-100 bg-gray-50/80">
+                <span class="text-[11px] text-gray-500 font-medium">Total {{ count($submission['timeline']) }} aktivitas tercatat</span>
+                <button 
+                    type="button" 
+                    onclick="closeTimelineModal()"
+                    class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition cursor-pointer shadow-2xs"
+                >
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+@endif

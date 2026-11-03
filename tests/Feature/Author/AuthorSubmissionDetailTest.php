@@ -259,7 +259,7 @@ class AuthorSubmissionDetailTest extends TestCase
         $respDec = $this->get(route('author.submissions.show', 'SUB-2026-00108'));
         $respDec->assertStatus(200);
         $respDec->assertSee('SUB-2026-00108');
-        $respDec->assertSee('Naskah Ditolak (Declined)');
+        $respDec->assertSee('Naskah Ditolak');
         $respDec->assertSee('Alur Terhenti (Ditolak)');
         $respDec->assertSee('Keputusan Editorial: Naskah Tidak Diterima');
 
@@ -267,9 +267,8 @@ class AuthorSubmissionDetailTest extends TestCase
         $respArchived = $this->get(route('author.submissions.show', 'SUB-2026-00109'));
         $respArchived->assertStatus(200);
         $respArchived->assertSee('SUB-2026-00109');
-        $respArchived->assertSee('Naskah Diarsipkan (Archived)');
         $respArchived->assertSee('Naskah Diarsipkan');
-        $respArchived->assertSee('Naskah Telah Diarsipkan Resmi (Archived)');
+        $respArchived->assertSee('Naskah Telah Diarsipkan Resmi');
     }
 
     /**

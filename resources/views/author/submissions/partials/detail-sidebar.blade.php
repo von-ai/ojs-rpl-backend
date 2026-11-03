@@ -752,8 +752,15 @@
             </span>
         </div>
 
+        @php
+            $timelineEvents = $submission['timeline'] ?? [];
+            $timelineCount = count($timelineEvents);
+            $initialLimit = 3;
+            $initialEvents = array_slice($timelineEvents, 0, $initialLimit);
+        @endphp
+
         <div class="border-l-2 border-brand-maroon/25 pl-3.5 space-y-4">
-            @foreach($submission['timeline'] as $event)
+            @forelse($initialEvents as $event)
                 <div class="relative text-xs space-y-1">
                     <div class="flex items-center justify-between gap-1">
                         <span class="font-bold text-gray-900 leading-tight" title="{{ $event['title'] }}">{{ $event['title'] }}</span>
@@ -764,9 +771,62 @@
                         Aktor: {{ $event['actor'] }}
                     </span>
                 </div>
-            @endforeach
+            @empty
+                <p class="text-xs text-gray-400 italic">Belum ada aktivitas tercatat.</p>
+            @endforelse
         </div>
+
+        @if($timelineCount > $initialLimit)
+            <div class="pt-2 border-t border-gray-100">
+                <button 
+                    type="button" 
+                    onclick="openTimelineModal()"
+                    class="w-full py-2 px-3 text-xs font-semibold text-brand-maroon hover:text-brand-maroon-hover bg-brand-maroon/5 hover:bg-brand-maroon/10 border border-brand-maroon/20 rounded-lg transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99]"
+                >
+                    <svg class="w-3.5 h-3.5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Lihat Detail</span>
+                </button>
+            </div>
+        @endif
     </div>
+
+    <script>
+        function openTimelineModal() {
+            const modal = document.getElementById('modal-detail-linimasa');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeTimelineModal() {
+            const modal = document.getElementById('modal-detail-linimasa');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTimelineModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modal-detail-linimasa');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeTimelineModal();
+                    }
+                });
+            }
+        });
+    </script>
 
     <!-- 4. Pengajuan Penarikan Naskah (Hanya jika belum masuk review dan belum ada tindak lanjut role lain) -->
     @if($submission['can_withdraw'] ?? false)

@@ -284,4 +284,44 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
         $this->assertStringContainsString('Catatan_Telaah_Reviewer_A.docx', $disposition);
         $this->assertStringNotContainsString('Budi_Santoso', $disposition);
     }
+
+    /**
+     * Uji Kerahasiaan Deliberasi Editorial: Author TIDAK BOLEH melihat rekomendasi internal
+     * Section Editor kepada EIC atau draf keputusan yang belum disahkan/dikirimkan.
+     */
+    public function test_author_tidak_dapat_melihat_rekomendasi_internal_dan_draf_keputusan_editorial(): void
+    {
+        $round = ReviewRound::where('submission_id', $this->submission->id)->first();
+
+        // 1. Tambahkan rekomendasi internal SE ke EIC pada putaran telaah
+        $round->update([
+            'se_recommendation' => 'decline',
+            'se_recommendation_note' => 'Catatan internal rahasia untuk EIC: Terindikasi ada plagiat pada metodologi.',
+            'se_recommended_at' => now(),
+        ]);
+
+        // 2. Buat draf keputusan editorial oleh Section Editor (belum dikirim/disahkan oleh EIC)
+        EditorialDecision::create([
+            'submission_id' => $this->submission->id,
+            'review_round_id' => $round->id,
+            'decided_by' => $this->reviewer1->id,
+            'decision' => 'decline',
+            'status' => 'draft',
+            'note_for_author' => 'Menunggu finalisasi keputusan resmi oleh Pemimpin Redaksi.',
+            'internal_note' => 'Catatan internal rahasia untuk EIC: Terindikasi ada plagiat pada metodologi.',
+            'sent_at' => null,
+            'version' => 1,
+        ]);
+
+        $response = $this->get('/author/submissions/'.$this->submission->id);
+
+        $response->assertStatus(200);
+
+        // Author TIDAK BOLEH melihat catatan internal evaluasi SE untuk EIC
+        $response->assertDontSee('Catatan internal rahasia untuk EIC: Terindikasi ada plagiat pada metodologi.');
+        $response->assertDontSee('Terindikasi ada plagiat pada metodologi.');
+
+        // Linimasa Author TIDAK BOLEH memuat keputusan berstatus draft
+        $response->assertDontSee('Keputusan Editorial: Naskah Ditolak');
+    }
 }

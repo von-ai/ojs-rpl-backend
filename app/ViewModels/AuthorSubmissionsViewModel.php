@@ -362,8 +362,10 @@ class AuthorSubmissionsViewModel
                     $statusSubtitle = match ($sub->status) {
                         'revisions_requested' => (function () use ($sub): string {
                             $decision = $sub->editorialDecisions
+                                ->where('status', '!=', 'draft')
+                                ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent')
                                 ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
-                                ->sortByDesc('created_at')
+                                ->sortByDesc('sent_at')
                                 ->first();
 
                             if ($decision?->revision_due_at) {

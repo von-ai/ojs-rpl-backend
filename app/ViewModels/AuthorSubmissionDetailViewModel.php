@@ -111,9 +111,9 @@ class AuthorSubmissionDetailViewModel
             'in_production' => 'Tahap Produksi & Pemeriksaan Galai',
             'accepted' => 'Naskah Diterima untuk Produksi',
             'published' => 'Telah Terbit Resmi',
-            'declined' => 'Naskah Ditolak (Declined)',
-            'archived' => 'Naskah Diarsipkan (Archived)',
-            'withdrawn' => 'Naskah Ditarik (Withdrawn)',
+            'declined' => 'Naskah Ditolak',
+            'archived' => 'Naskah Diarsipkan',
+            'withdrawn' => 'Naskah Ditarik',
             default => 'Dalam Proses Editorial',
         };
 
@@ -406,8 +406,12 @@ class AuthorSubmissionDetailViewModel
             ];
         }
 
-        // 6. Keputusan Editorial Resmi
-        foreach ($sub->editorialDecisions as $ed) {
+        // 6. Keputusan Editorial Resmi (Hanya yang telah difinalisasi dan dikirim oleh Pemimpin Redaksi / EIC)
+        $officialDecisions = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent');
+
+        foreach ($officialDecisions as $ed) {
             $decAt = $ed->sent_at ?? $ed->created_at ?? $submittedAt;
             $titleLabel = match ($ed->decision) {
                 'revisions_required', 'revise' => 'Keputusan Editorial: Perlu Revisi',
@@ -471,7 +475,7 @@ class AuthorSubmissionDetailViewModel
         }
 
         // 10. Kasus Terminasi Khusus (Declined / Withdrawn / Archived) jika belum tercatat di editorial decisions
-        if ($sub->status === 'declined' && $sub->editorialDecisions->whereIn('decision', ['decline', 'declined'])->isEmpty()) {
+        if ($sub->status === 'declined' && $officialDecisions->whereIn('decision', ['decline', 'declined'])->isEmpty()) {
             $decAt = $sub->updated_at ?? $submittedAt;
             $events[] = [
                 'timestamp' => $decAt->timestamp,
@@ -532,8 +536,10 @@ class AuthorSubmissionDetailViewModel
     {
         // 1. Cek apakah ada keputusan editorial resmi (Tahap 3 pasca review)
         $decision = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent')
             ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
-            ->sortByDesc('created_at')
+            ->sortByDesc('sent_at')
             ->first();
 
         // 2. Cek apakah revisi berasal dari pemeriksaan awal (Desk Review / Tahap 2)
@@ -720,13 +726,18 @@ class AuthorSubmissionDetailViewModel
      */
     protected function buildDeclinedInfo(Submission $sub): array
     {
-        $decision = $sub->editorialDecisions->whereIn('decision', ['decline', 'declined'])->sortByDesc('created_at')->first();
+        $decision = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent')
+            ->whereIn('decision', ['decline', 'declined'])
+            ->sortByDesc('sent_at')
+            ->first();
         $reason = $decision?->note_for_author
             ?: ($sub->comments_for_editor ?: 'Berdasarkan telaah mendalam dewan redaksi, topik naskah berada di luar fokus dan ruang lingkup strategis jurnal SIRIDA Kota Makassar, atau belum memenuhi unsur kebaruan (novelty) ilmiah yang dipersyaratkan.');
 
         return [
             'stage_title' => 'Keputusan Editorial: Naskah Tidak Diterima',
-            'decision' => 'Naskah Ditolak (Declined)',
+            'decision' => 'Naskah Ditolak',
             'decision_date' => ($decision?->sent_at ?? $sub->updated_at)?->format('d M Y') ?? date('d M Y'),
             'reason' => $reason,
             'appeal_window' => '14 Hari Kerja',
@@ -807,7 +818,7 @@ class AuthorSubmissionDetailViewModel
         $isArchived = ($status === 'archived');
 
         return [
-            'stage_title' => $isArchived ? 'Naskah Telah Diarsipkan Resmi (Archived)' : 'Naskah Telah Ditarik Resmi (Withdrawn)',
+            'stage_title' => $isArchived ? 'Naskah Telah Diarsipkan Resmi' : 'Naskah Telah Ditarik Resmi',
             'status' => $isArchived ? 'Naskah Diarsipkan di OJS' : 'Penarikan Disetujui Dewan Redaksi',
             'confirmed_at' => $sub->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y'),
             'statement' => $isArchived
