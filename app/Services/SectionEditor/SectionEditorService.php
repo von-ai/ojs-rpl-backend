@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\SectionEditor;
 
+use App\Mail\Reviewer\ReviewReminderMail;
 use App\Models\EditorialDecision;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewExtension;
@@ -16,6 +17,8 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
@@ -261,26 +264,58 @@ class SectionEditorService
      */
     public function sendReminder(ReviewAssignment $assignment, User $editor, ?string $message = null): ReviewReminder
     {
-        return ReviewReminder::create([
+        $reminder = ReviewReminder::create([
             'assignment_id' => $assignment->id,
             'sent_by' => $editor->id,
             'queued_at' => Carbon::now('UTC'),
             'delivery_status' => 'sent',
             'message' => $message ?? 'Pengingat batas waktu penelaahan naskah ilmiah.',
         ]);
+
+        if (! empty($assignment->reviewer?->email)) {
+            try {
+                Mail::to($assignment->reviewer->email)
+                    ->send(new ReviewReminderMail($assignment, $editor, $message));
+            } catch (\Throwable $e) {
+                Log::warning("Gagal mengirimkan email pengingat telaah ke {$assignment->reviewer->email}: {$e->getMessage()}", [
+                    'assignment_id' => $assignment->id,
+                    'reminder_id' => $reminder->id,
+                ]);
+            }
+        }
+
+        return $reminder;
     }
 
     /**
      * Mengirimkan rekomendasi editorial resmi Section Editor ke Pemimpin Redaksi (EIC).
      */
-    public function submitRecommendation(ReviewRound $round, string $recommendation, string $note, User $editor): ReviewRound
-    {
+    public function submitRecommendation(
+        ReviewRound $round,
+        string $recommendation,
+        string $note,
+        User $editor,
+        ?string $overrideReason = null
+    ): ReviewRound {
         $allowed = ['accept', 'revisions_required', 'resubmit', 'decline'];
         if (! in_array($recommendation, $allowed, true)) {
             throw new InvalidArgumentException('Rekomendasi editorial tidak valid.');
         }
 
-        return DB::transaction(function () use ($round, $recommendation, $note, $editor): ReviewRound {
+        // Guard Kuorum OJS & Aturan UC-12:
+        // Wajib memenuhi kuorum telaah, ATAU menyertakan alasan dispensasi/override khusus
+        $completedCount = $round->assignments()->where('status', 'completed')->count();
+        $minReq = max(1, (int) $round->minimum_completed_reviews);
+        $isQuorumMet = $completedCount >= $minReq;
+
+        if (! $isQuorumMet) {
+            $trimmedOverride = trim((string) $overrideReason);
+            if (mb_strlen($trimmedOverride) < 10) {
+                throw new InvalidArgumentException("Kuorum telaah belum terpenuhi ({$completedCount}/{$minReq} review selesai). Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.");
+            }
+        }
+
+        return DB::transaction(function () use ($round, $recommendation, $note, $editor, $isQuorumMet, $overrideReason): ReviewRound {
             $round->update([
                 'se_recommendation' => $recommendation,
                 'se_recommendation_note' => $note,
@@ -297,8 +332,9 @@ class SectionEditorService
                 [
                     'decided_by' => $editor->id,
                     'decision' => $recommendation,
-                    'note_for_author' => $note,
+                    'note_for_author' => 'Menunggu finalisasi keputusan resmi oleh Pemimpin Redaksi.',
                     'internal_note' => "Rekomendasi dari Section Editor {$editor->name}: {$note}",
+                    'minimum_review_override_reason' => (! $isQuorumMet && ! empty($overrideReason)) ? trim($overrideReason) : null,
                     'version' => 1,
                 ]
             );

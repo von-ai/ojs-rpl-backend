@@ -126,7 +126,7 @@ class EicSubmissionDetailViewModel
             return false;
         }
 
-        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+        return in_array($this->submission->status, ['in_review', 'under_review', 'revisions_requested'], true)
             || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
     }
 
@@ -139,7 +139,7 @@ class EicSubmissionDetailViewModel
             return false;
         }
 
-        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+        return in_array($this->submission->status, ['in_review', 'under_review', 'revisions_requested'], true)
             || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
     }
 
@@ -148,7 +148,27 @@ class EicSubmissionDetailViewModel
      */
     public function latestEditorialDecision(): ?EditorialDecision
     {
-        return $this->submission->editorialDecisions->sortByDesc('sent_at')->first();
+        return $this->submission->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->whereNotNull('sent_at')
+            ->sortByDesc('sent_at')
+            ->first();
+    }
+
+    /**
+     * Alasan dispensasi kuorum jika diajukan oleh Section Editor.
+     */
+    public function minimumReviewOverrideReason(): ?string
+    {
+        $round = $this->latestReviewRound();
+        if (! $round) {
+            return null;
+        }
+
+        return $this->submission->editorialDecisions
+            ->where('review_round_id', $round->id)
+            ->first()
+            ?->minimum_review_override_reason;
     }
 
     /**
@@ -376,12 +396,12 @@ class EicSubmissionDetailViewModel
         $status = $this->submission->status;
         $isDeskRevisionRequested = ($status === 'revisions_requested' && $this->submission->reviewRounds->isEmpty());
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
-            || in_array($status, ['in_review', 'accepted', 'in_production', 'ready_for_issue', 'published'], true)
+            || in_array($status, ['in_review', 'under_review', 'accepted', 'in_production', 'ready_for_issue', 'published'], true)
             || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
         $hasSe = $this->submission->activeEditorAssignment !== null
             || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true)
             || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
-        $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
+        $hasDecision = $this->submission->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->isNotEmpty()
             || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published', 'declined'], true);
         $inProdOrPub = in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true);
 
@@ -412,7 +432,7 @@ class EicSubmissionDetailViewModel
                 'step' => 3,
                 'title' => 'Telaah & Revisi',
                 'subtitle' => ($status === 'revisions_requested' && ! $isDeskRevisionRequested) ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
-                'state' => $inProdOrPub ? 'completed' : ((in_array($status, ['in_review'], true) || ($status === 'revisions_requested' && ! $isDeskRevisionRequested)) ? 'current' : 'upcoming'),
+                'state' => $inProdOrPub ? 'completed' : ((in_array($status, ['in_review', 'under_review'], true) || ($status === 'revisions_requested' && ! $isDeskRevisionRequested)) ? 'current' : 'upcoming'),
             ],
             [
                 'step' => 4,

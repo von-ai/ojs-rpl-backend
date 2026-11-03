@@ -49,7 +49,6 @@ class EditorInChiefController extends Controller
             'reviewRounds.assignments',
         ])
             ->whereIn('status', ['submitted', 'in_review', 'revisions_requested'])
-            ->orderByRaw("CASE WHEN status = 'submitted' THEN 1 WHEN status = 'in_review' THEN 2 ELSE 3 END")
             ->latest('updated_at')
             ->limit(5)
             ->get();

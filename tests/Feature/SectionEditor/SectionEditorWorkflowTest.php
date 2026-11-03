@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SectionEditor;
 
+use App\Mail\Reviewer\ReviewReminderMail;
 use App\Models\EditorAssignment;
 use App\Models\FileEntry;
 use App\Models\Journal;
@@ -18,6 +19,7 @@ use App\Models\UserRole;
 use App\Services\SectionEditor\SectionEditorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class SectionEditorWorkflowTest extends TestCase
@@ -369,6 +371,61 @@ class SectionEditorWorkflowTest extends TestCase
         $this->assertEquals($newDueAt->format('Y-m-d H:i'), $assignment->fresh()->review_due_at->format('Y-m-d H:i'));
     }
 
+    public function test_section_editor_tidak_dapat_mengirim_rekomendasi_jika_kuorum_telaah_belum_terpenuhi(): void
+    {
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'minimum_completed_reviews' => 2,
+        ]);
+
+        // Coba kirim rekomendasi saat kuorum belum tercapai (0/2 selesai)
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.rounds.recommendation', $round->id), [
+                'recommendation' => 'revisions_required',
+                'note' => 'Catatan telaah yang seharusnya ditolak karena kuorum belum cukup.',
+            ]);
+
+        $response->assertSessionHasErrors('recommendation');
+        $this->assertNull($round->fresh()->se_recommendation);
+    }
+
+    public function test_section_editor_dapat_mengirim_rekomendasi_dengan_alasan_override_kuorum(): void
+    {
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'minimum_completed_reviews' => 2,
+        ]);
+
+        // Belum ada review selesai (0/2), tetapi Section Editor menyertakan alasan override kuorum resmi
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.rounds.recommendation', $round->id), [
+                'recommendation' => 'decline',
+                'note' => 'Ditemukan indikasi plagiarisme berat dan naskah ditarik atas permintaan resmi.',
+                'is_override' => '1',
+                'override_reason' => 'Naskah ditarik secara tertulis oleh penulis utama dan ditemukan indikasi fabrikasi data.',
+            ]);
+
+        $response->assertRedirect(route('section-editor.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        $freshRound = $round->fresh();
+        $this->assertEquals('decline', $freshRound->se_recommendation);
+        $this->assertNotNull($freshRound->se_recommended_at);
+
+        // Memastikan draft EditorialDecision tersimpan dengan minimum_review_override_reason
+        $this->assertDatabaseHas('editorial_decisions', [
+            'submission_id' => $this->submission->id,
+            'review_round_id' => $round->id,
+            'decision' => 'decline',
+            'status' => 'draft',
+            'minimum_review_override_reason' => 'Naskah ditarik secara tertulis oleh penulis utama dan ditemukan indikasi fabrikasi data.',
+        ]);
+    }
+
     public function test_section_editor_dapat_mengirimkan_rekomendasi_editorial_ke_eic(): void
     {
         $round = ReviewRound::create([
@@ -376,6 +433,25 @@ class SectionEditorWorkflowTest extends TestCase
             'round' => 1,
             'status' => 'active',
             'minimum_completed_reviews' => 2,
+        ]);
+
+        // Lengkapi 2 review assignment berstatus 'completed'
+        ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $this->reviewerA->id,
+            'status' => 'completed',
+            'response_due_at' => Carbon::now()->subDays(5),
+            'review_due_at' => Carbon::now()->subDay(),
+            'version' => 1,
+        ]);
+
+        ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $this->reviewerB->id,
+            'status' => 'completed',
+            'response_due_at' => Carbon::now()->subDays(5),
+            'review_due_at' => Carbon::now()->subDay(),
+            'version' => 1,
         ]);
 
         $response = $this->actingAs($this->sectionEditor)
@@ -520,5 +596,54 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertSee('Kategori:');
         $response->assertSee($this->section->name);
         $response->assertSee($this->reviewerA->name);
+    }
+
+    public function test_section_editor_dapat_mengirim_pengingat_dan_memicu_email_ke_mitra_bestari(): void
+    {
+        Mail::fake();
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+        ]);
+
+        $assignment = ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $this->reviewerA->id,
+            'status' => 'accepted',
+            'response_due_at' => Carbon::now()->subDay(),
+            'review_due_at' => Carbon::now()->addDays(5),
+            'version' => 1,
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.assignments.reminder', $assignment->id), [
+                'message' => 'Segera selesaikan telaah.',
+            ]);
+
+        $response->assertRedirect(route('section-editor.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        // Pastikan record pengingat tercatat di basis data
+        $this->assertDatabaseHas('review_reminders', [
+            'assignment_id' => $assignment->id,
+            'sent_by' => $this->sectionEditor->id,
+            'delivery_status' => 'sent',
+        ]);
+
+        // Pastikan Mailable terkirim ke email reviewer
+        Mail::assertSent(ReviewReminderMail::class, function (ReviewReminderMail $mail) use ($assignment) {
+            return $mail->hasTo($this->reviewerA->email)
+                && $mail->assignment->id === $assignment->id;
+        });
+
+        // Pastikan tampilan memuat jejak pengingat
+        $showResponse = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $this->submission->id));
+
+        $showResponse->assertOk();
+        $showResponse->assertSee('Pengingat terakhir dikirim:');
+        $showResponse->assertSee('Kirim Pengingat Ulang');
     }
 }

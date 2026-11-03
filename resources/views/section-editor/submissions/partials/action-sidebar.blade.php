@@ -276,7 +276,14 @@
                     Rekomendasi ke EIC
                 </h3>
             </div>
-            @if($viewModel->hasSeRecommendation())
+            @if($viewModel->hasOverrideRecommendation())
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 shrink-0">
+                    <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Dispensasi Kuorum</span>
+                </span>
+            @elseif($viewModel->hasSeRecommendation())
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 shrink-0">
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
@@ -294,14 +301,27 @@
             @endif
         </div>
 
-        @if(!$canRecommend && !$viewModel->hasSeRecommendation())
-            <div class="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed">
-                Kuorum telaah belum tercapai (<strong class="tabular-nums">{{ $completedCount }}/{{ $minReq }} review selesai</strong>). Anda disarankan menunggu seluruh laporan penelaah sebelum mengirimkan rekomendasi akhir ke Pemimpin Redaksi.
+        @if($isFinalized)
+            <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
+                Rekomendasi editorial telah ditutup karena naskah telah berstatus final.
             </div>
-        @endif
+        @else
+            @if($viewModel->minimumReviewOverrideReason())
+                <div class="p-3 rounded-lg bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5 text-amber-900">
+                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Alasan Dispensasi Kuorum Diajukan:</span>
+                    </div>
+                    <p class="italic text-[11px] text-amber-900 pl-5 leading-relaxed">
+                        "{{ $viewModel->minimumReviewOverrideReason() }}"
+                    </p>
+                </div>
+            @endif
 
-        @if(!$isFinalized)
-            <form action="{{ route('section-editor.rounds.recommendation', $activeRound->id) }}" 
+            <form id="se-recommendation-form"
+                  action="{{ route('section-editor.rounds.recommendation', $activeRound->id) }}" 
                   method="POST" 
                   class="space-y-4"
                   data-confirm="Apakah Anda yakin ingin menyerahkan rekomendasi editorial ini kepada Pemimpin Redaksi (EIC)?"
@@ -310,6 +330,59 @@
                   data-confirm-cancel="Batal"
                   data-confirm-type="primary">
                 @csrf
+
+                @if(!$canRecommend)
+                    @php
+                        $isOverrideChecked = (bool) old('is_override', $viewModel->minimumReviewOverrideReason() ? '1' : '');
+                    @endphp
+                    <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-2.5">
+                        <div class="flex items-center gap-2 font-bold text-amber-950">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Kuorum Telaah Belum Terpenuhi ({{ $completedCount }}/{{ $minReq }} Selesai)</span>
+                        </div>
+                        <p class="leading-relaxed text-[11px] text-amber-900">
+                            Sesuai standar penelaahan sejawat OJS &amp; COPE, rekomendasi normal membutuhkan minimal {{ $minReq }} laporan mitra bestari. Anda dapat menggunakan opsi dispensasi/override jika terdapat alasan substantif khusus (seperti dugaan plagiarisme berat, penarikan oleh penulis, atau mitra bestari tidak merespons).
+                        </p>
+                        <div class="pt-2 border-t border-amber-200/80">
+                            <label class="flex items-start gap-2.5 cursor-pointer select-none">
+                                <input 
+                                    type="checkbox" 
+                                    id="enable-override-checkbox" 
+                                    name="is_override" 
+                                    value="1"
+                                    class="mt-0.5 rounded border-amber-300 text-brand-maroon focus:ring-brand-maroon/20 focus:ring-offset-0 h-4 w-4 transition cursor-pointer"
+                                    {{ $isOverrideChecked ? 'checked' : '' }}
+                                >
+                                <span class="text-[11px] font-bold text-amber-950 leading-tight">
+                                    Gunakan Dispensasi / Override Kuorum
+                                    <span class="block font-normal text-amber-800 text-[10.5px] mt-0.5">
+                                        Centang untuk menyertakan alasan khusus dan membuka pengiriman rekomendasi.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Input Alasan Dispensasi Kuorum -->
+                    <div id="override-reason-container" class="space-y-1.5 transition-all duration-200 {{ $isOverrideChecked ? '' : 'hidden' }}">
+                        <label for="override_reason" class="font-bold text-amber-950 block">
+                            Alasan Pengabaian Kuorum Minimum (Override Reason) <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea 
+                            id="override_reason" 
+                            name="override_reason" 
+                            rows="3" 
+                            placeholder="Jelaskan alasan substantif mengapa rekomendasi diajukan sebelum kuorum terpenuhi (contoh: dugaan plagiarisme, penarikan naskah, atau reviewer tidak dapat dihubungi)..."
+                            class="w-full p-3 text-xs bg-amber-50/40 focus:bg-white border border-amber-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 leading-relaxed transition"
+                            {{ $isOverrideChecked ? 'required minlength=10' : '' }}
+                        >{{ old('override_reason', $viewModel->minimumReviewOverrideReason()) }}</textarea>
+                        <p class="text-[10px] text-gray-500 leading-snug">
+                            Wajib diisi minimal 10 karakter. Alasan ini akan tercatat resmi pada rekam jejak editorial (<span class="font-mono">editorial_decisions</span>) untuk diverifikasi oleh Pemimpin Redaksi (EIC).
+                        </p>
+                    </div>
+                @endif
 
                 <!-- Custom Dropdown: Rekomendasi Keputusan -->
                 <div class="space-y-1.5">
@@ -333,7 +406,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
+                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
                             @foreach($recommendationOptions as $val => $opt)
                                 @php $isRecSelected = ($currentRec === $val); @endphp
                                 <div 
@@ -364,22 +437,41 @@
                         name="note" 
                         rows="4" 
                         required 
+                        minlength="10"
                         placeholder="Tuliskan sintesis akademis, konsistensi masukan penelaah, dan dasar rekomendasi editorial ini..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('note', $activeRound->se_recommendation_note) }}</textarea>
+                    <p class="text-[10px] text-gray-500 leading-snug">
+                        Wajib diisi minimal 10 karakter sebagai pertimbangan substantif bagi Pemimpin Redaksi.
+                    </p>
                 </div>
 
-                <button 
-                    type="submit" 
-                    class="w-full min-h-10 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-semibold rounded-lg transition cursor-pointer"
-                >
-                    {{ $viewModel->hasSeRecommendation() ? 'Perbarui Rekomendasi ke EIC' : 'Kirim Rekomendasi ke EIC' }}
-                </button>
+                <div class="pt-1">
+                    @if(!$canRecommend)
+                        <button 
+                            type="submit" 
+                            id="se-recommendation-submit-btn"
+                            class="w-full min-h-10 py-2.5 font-semibold rounded-lg transition flex items-center justify-center gap-1.5 text-xs {{ $isOverrideChecked ? 'bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white cursor-pointer' : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' }}"
+                            {{ $isOverrideChecked ? '' : 'disabled' }}
+                        >
+                            <svg class="w-3.5 h-3.5 {{ $isOverrideChecked ? 'hidden' : '' }}" id="se-submit-lock-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span id="se-submit-btn-text">
+                                {{ $isOverrideChecked ? ($viewModel->hasSeRecommendation() ? 'Perbarui Rekomendasi (Dispensasi)' : 'Kirim Rekomendasi (Dengan Dispensasi)') : 'Kuorum Belum Terpenuhi (Perlu Dispensasi)' }}
+                            </span>
+                        </button>
+                    @else
+                        <button 
+                            type="submit" 
+                            id="se-recommendation-submit-btn"
+                            class="w-full min-h-10 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-semibold rounded-lg transition cursor-pointer text-xs"
+                        >
+                            {{ $viewModel->hasSeRecommendation() ? 'Perbarui Rekomendasi ke EIC' : 'Kirim Rekomendasi ke EIC' }}
+                        </button>
+                    @endif
+                </div>
             </form>
-        @else
-            <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
-                Rekomendasi editorial telah ditutup karena naskah telah berstatus final.
-            </div>
         @endif
     </section>
 
@@ -406,7 +498,7 @@
             let activeIndex = -1;
 
             function openPanel() {
-                closeAllDropdowns();
+                if (window.closeAllCustomDropdowns) window.closeAllCustomDropdowns();
                 panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
                 panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
                 input.setAttribute('aria-expanded', 'true');
@@ -598,88 +690,84 @@
             window.closeReviewerCombobox = closePanel;
         }
 
-        // --- 2. Custom Dropdown untuk Rekomendasi EIC ---
-        const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
-
-        function openDropdown(panel, btn, chevron) {
-            closeAllDropdowns();
-            if (window.closeReviewerCombobox) window.closeReviewerCombobox();
-            panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            btn.setAttribute('aria-expanded', 'true');
-            if (chevron) chevron.classList.add('rotate-180');
+        // Tutup combobox reviewer jika dropdown rekomendasi diklik
+        const dropdownBtn = document.querySelector('.custom-dropdown-container .custom-dropdown-btn');
+        if (dropdownBtn) {
+            dropdownBtn.addEventListener('click', function () {
+                if (window.closeReviewerCombobox) window.closeReviewerCombobox();
+            }, true);
         }
 
-        function closeDropdown(panel, btn, chevron) {
-            panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            btn.setAttribute('aria-expanded', 'false');
-            if (chevron) chevron.classList.remove('rotate-180');
-        }
+        // --- 2. Override Kuorum Handler ---
+        const overrideCheckbox = document.getElementById('enable-override-checkbox');
+        const overrideContainer = document.getElementById('override-reason-container');
+        const overrideTextarea = document.getElementById('override_reason');
+        const submitBtn = document.getElementById('se-recommendation-submit-btn');
+        const submitBtnText = document.getElementById('se-submit-btn-text');
+        const submitLockIcon = document.getElementById('se-submit-lock-icon');
+        const recForm = document.getElementById('se-recommendation-form');
 
-        function closeAllDropdowns() {
-            dropdownContainers.forEach(container => {
-                const panel = container.querySelector('.custom-dropdown-panel');
-                const btn = container.querySelector('.custom-dropdown-btn');
-                const chevron = container.querySelector('.custom-dropdown-chevron');
-                if (panel && btn) closeDropdown(panel, btn, chevron);
-            });
-        }
+        if (overrideCheckbox && overrideContainer && submitBtn) {
+            const hasExistingRec = {{ $viewModel->hasSeRecommendation() ? 'true' : 'false' }};
 
-        dropdownContainers.forEach(container => {
-            const btn = container.querySelector('.custom-dropdown-btn');
-            const panel = container.querySelector('.custom-dropdown-panel');
-            const chevron = container.querySelector('.custom-dropdown-chevron');
-            const labelSpan = container.querySelector('.custom-dropdown-label');
-            const selectEl = container.querySelector('select');
-            const items = container.querySelectorAll('.custom-dropdown-item');
-
-            if (!btn || !panel || !selectEl) return;
-
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const isOpen = panel.classList.contains('visible');
-                if (isOpen) {
-                    closeDropdown(panel, btn, chevron);
+            overrideCheckbox.addEventListener('change', function () {
+                if (this.checked) {
+                    overrideContainer.classList.remove('hidden');
+                    if (overrideTextarea) {
+                        overrideTextarea.setAttribute('required', 'required');
+                        overrideTextarea.setAttribute('minlength', '10');
+                        overrideTextarea.focus();
+                    }
+                    submitBtn.removeAttribute('disabled');
+                    submitBtn.classList.remove('bg-gray-100', 'text-gray-400', 'border', 'border-gray-200', 'cursor-not-allowed');
+                    submitBtn.classList.add('bg-brand-maroon', 'hover:bg-brand-maroon-hover', 'active:bg-brand-maroon-active', 'text-white', 'cursor-pointer');
+                    if (submitLockIcon) submitLockIcon.classList.add('hidden');
+                    if (submitBtnText) {
+                        submitBtnText.textContent = hasExistingRec ? 'Perbarui Rekomendasi (Dispensasi)' : 'Kirim Rekomendasi (Dengan Dispensasi)';
+                    }
                 } else {
-                    openDropdown(panel, btn, chevron);
+                    overrideContainer.classList.add('hidden');
+                    if (overrideTextarea) {
+                        overrideTextarea.removeAttribute('required');
+                        overrideTextarea.removeAttribute('minlength');
+                    }
+                    submitBtn.setAttribute('disabled', 'disabled');
+                    submitBtn.classList.add('bg-gray-100', 'text-gray-400', 'border', 'border-gray-200', 'cursor-not-allowed');
+                    submitBtn.classList.remove('bg-brand-maroon', 'hover:bg-brand-maroon-hover', 'active:bg-brand-maroon-active', 'text-white', 'cursor-pointer');
+                    if (submitLockIcon) submitLockIcon.classList.remove('hidden');
+                    if (submitBtnText) {
+                        submitBtnText.textContent = 'Kuorum Belum Terpenuhi (Perlu Dispensasi)';
+                    }
                 }
             });
 
-            items.forEach(item => {
-                item.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const val = item.getAttribute('data-value');
-                    const label = item.getAttribute('data-label');
-
-                    selectEl.value = val;
-                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-
-                    if (labelSpan) labelSpan.textContent = label;
-
-                    items.forEach(it => {
-                        const check = it.querySelector('.custom-dropdown-check');
-                        if (it === item) {
-                            it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.remove('text-gray-700');
-                            if (check) check.classList.remove('hidden');
-                        } else {
-                            it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.add('text-gray-700');
-                            if (check) check.classList.add('hidden');
+            if (recForm) {
+                recForm.addEventListener('submit', function (e) {
+                    if (overrideCheckbox.checked && overrideTextarea) {
+                        const val = overrideTextarea.value.trim();
+                        if (val.length < 10) {
+                            e.preventDefault();
+                            if (window.customModal) {
+                                window.customModal.alert({
+                                    title: 'Alasan Dispensasi Wajib Diisi',
+                                    message: 'Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.',
+                                    type: 'warning',
+                                    btnText: 'Tutup'
+                                });
+                            } else {
+                                alert('Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.');
+                            }
+                            overrideTextarea.focus();
                         }
-                    });
-
-                    closeDropdown(panel, btn, chevron);
+                    }
                 });
-            });
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.custom-dropdown-container')) {
-                closeAllDropdowns();
             }
-        });
+        }
+
+        // Pastikan custom dropdown diinisialisasi oleh app.js
+        if (window.initCustomDropdowns) {
+            window.initCustomDropdowns();
+        }
 
         // Initialize Reviewer Combobox
         initReviewerCombobox();

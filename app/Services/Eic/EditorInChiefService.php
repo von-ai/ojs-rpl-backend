@@ -312,7 +312,7 @@ class EditorInChiefService
             });
         }
 
-        return $query->orderBy('created_at', 'desc')
+        return $query->latest('updated_at')
             ->paginate($perPage)
             ->withQueryString();
     }

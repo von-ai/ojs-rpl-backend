@@ -623,8 +623,31 @@
 
         @if($canDecide)
             @if($reviewSummary['se_recommendation'])
-                <div class="p-3 rounded-lg border text-xs font-semibold {{ $reviewSummary['se_recommendation_badge'] }}">
-                    {{ $reviewSummary['se_recommendation_label'] }}
+                <div class="p-3.5 rounded-xl border text-xs space-y-1.5 {{ $reviewSummary['se_recommendation_badge'] }}">
+                    <div class="font-bold flex items-center justify-between">
+                        <span>{{ $reviewSummary['se_recommendation_label'] }}</span>
+                        @if($reviewSummary['se_recommended_at'])
+                            <span class="text-[10px] font-normal opacity-75 tabular-nums">{{ $reviewSummary['se_recommended_at'] }}</span>
+                        @endif
+                    </div>
+                    @if($reviewSummary['se_recommendation_note'])
+                        <div class="text-[11px] font-normal leading-relaxed pt-1.5 border-t border-current/20">
+                            <strong>Catatan Rekomendasi Section Editor:</strong><br>
+                            "{{ $reviewSummary['se_recommendation_note'] }}"
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            @if($viewModel->minimumReviewOverrideReason())
+                <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+                    <span class="font-bold flex items-center gap-1.5 text-amber-950">
+                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Catatan Dispensasi Kuorum oleh SE:</span>
+                    </span>
+                    <p class="italic text-[11px] pl-5">"{{ $viewModel->minimumReviewOverrideReason() }}"</p>
                 </div>
             @endif
 
@@ -653,7 +676,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
+                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
                             @foreach($decisionOptions as $val => $opt)
                                 @php $isDecSelected = ($defaultDec === $val); @endphp
                                 <div 
@@ -1431,108 +1454,18 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         initEditorComboboxes();
-        const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
-
-        function openDropdown(panel, btn, chevron) {
-            closeAllDropdowns();
-            panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            btn.setAttribute('aria-expanded', 'true');
-            if (chevron) chevron.classList.add('rotate-180');
-        }
-
-        function closeDropdown(panel, btn, chevron) {
-            panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            btn.setAttribute('aria-expanded', 'false');
-            if (chevron) chevron.classList.remove('rotate-180');
-        }
-
-        function closeAllDropdowns() {
-            dropdownContainers.forEach(c => {
-                const btn = c.querySelector('.custom-dropdown-btn');
-                const panel = c.querySelector('.custom-dropdown-panel');
-                const chevron = c.querySelector('.custom-dropdown-chevron');
-                if (btn && panel) {
-                    closeDropdown(panel, btn, chevron);
-                }
-            });
-        }
-
-        dropdownContainers.forEach(container => {
-            const btn = container.querySelector('.custom-dropdown-btn');
-            const panel = container.querySelector('.custom-dropdown-panel');
-            const chevron = container.querySelector('.custom-dropdown-chevron');
-            const select = container.querySelector('select');
-            const items = container.querySelectorAll('.custom-dropdown-item');
-            const label = container.querySelector('.custom-dropdown-label');
-
-            if (!btn || !panel) return;
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isOpen = panel.classList.contains('visible');
-                if (isOpen) {
-                    closeDropdown(panel, btn, chevron);
-                } else {
-                    openDropdown(panel, btn, chevron);
-                }
-            });
-
-            items.forEach(item => {
-                item.addEventListener('click', () => {
-                    const val = item.getAttribute('data-value');
-                    const text = item.getAttribute('data-label') || item.innerText.trim();
-
-                    if (select) {
-                        select.value = val;
-                    }
-                    if (label) {
-                        label.textContent = text;
-                    }
-
-                    items.forEach(it => {
-                        const check = it.querySelector('.custom-dropdown-check');
-                        if (it === item) {
-                            it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.remove('text-gray-700', 'hover:bg-gray-50');
-                            if (check) check.classList.remove('hidden');
-                        } else {
-                            it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.add('text-gray-700', 'hover:bg-gray-50');
-                            if (check) check.classList.add('hidden');
-                        }
-                    });
-
-                    closeDropdown(panel, btn, chevron);
-
-                    if (select && select.id === 'desk_status') {
-                        toggleDirectSeSelect(val);
-                    }
-                    if (select && select.id === 'decision') {
-                        handleDecisionChange(val);
-                    }
-                });
-            });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.custom-dropdown-container')) {
-                closeAllDropdowns();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeAllDropdowns();
-            }
-        });
 
         const deskStatus = document.getElementById('desk_status');
-        if (deskStatus) toggleDirectSeSelect(deskStatus.value);
+        if (deskStatus) {
+            deskStatus.addEventListener('change', (e) => toggleDirectSeSelect(e.target.value));
+            toggleDirectSeSelect(deskStatus.value);
+        }
 
         const decisionSelect = document.getElementById('decision');
-        if (decisionSelect) handleDecisionChange(decisionSelect.value);
+        if (decisionSelect) {
+            decisionSelect.addEventListener('change', (e) => handleDecisionChange(e.target.value));
+            handleDecisionChange(decisionSelect.value);
+        }
 
         const storageKey = 'eic_decision_draft_{{ $submission->id }}';
         const noteAuthor = document.getElementById('note_for_author');

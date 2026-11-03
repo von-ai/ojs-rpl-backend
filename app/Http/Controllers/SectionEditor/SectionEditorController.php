@@ -60,7 +60,7 @@ class SectionEditorController extends Controller
                 $q->where('editor_id', $editor->id)->whereNull('revoked_at');
             })
             ->with(['assignment.reviewer', 'assignment.reviewRound.submission'])
-            ->latest()
+            ->latest('updated_at')
             ->limit(5)
             ->get();
 
@@ -238,6 +238,14 @@ class SectionEditorController extends Controller
             'response_due_at' => ['required', 'date', 'after:today'],
             'review_due_at' => ['required', 'date', 'after:response_due_at'],
             'invitation_message' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'reviewer_id.required' => 'Mitra bestari wajib dipilih dari direktori.',
+            'reviewer_id.exists' => 'Mitra bestari yang dipilih tidak terdaftar di sistem.',
+            'response_due_at.required' => 'Batas waktu respon konfirmasi wajib diisi.',
+            'response_due_at.after' => 'Batas waktu respon konfirmasi harus setelah hari ini.',
+            'review_due_at.required' => 'Batas waktu penyelesaian telaah wajib diisi.',
+            'review_due_at.after' => 'Batas waktu penyelesaian telaah harus setelah batas waktu respon.',
+            'invitation_message.max' => 'Pesan pengantar undangan maksimal 2000 karakter.',
         ]);
 
         /** @var User $editor */
@@ -356,6 +364,16 @@ class SectionEditorController extends Controller
         $validated = $request->validate([
             'recommendation' => ['required', 'string', 'in:accept,revisions_required,resubmit,decline'],
             'note' => ['required', 'string', 'min:10', 'max:5000'],
+            'is_override' => ['nullable', 'boolean'],
+            'override_reason' => ['nullable', 'string', 'min:10', 'max:2000'],
+        ], [
+            'recommendation.required' => 'Rekomendasi keputusan editorial wajib dipilih.',
+            'recommendation.in' => 'Pilihan rekomendasi keputusan tidak valid.',
+            'note.required' => 'Catatan evaluasi substantif untuk EIC wajib diisi.',
+            'note.min' => 'Catatan evaluasi substantif untuk EIC wajib diisi minimal 10 karakter.',
+            'note.max' => 'Catatan evaluasi substantif untuk EIC maksimal 5000 karakter.',
+            'override_reason.min' => 'Alasan pengabaian kuorum minimum wajib diisi minimal 10 karakter.',
+            'override_reason.max' => 'Alasan pengabaian kuorum minimum maksimal 2000 karakter.',
         ]);
 
         /** @var User $editor */
@@ -364,18 +382,26 @@ class SectionEditorController extends Controller
         $this->authorizeSectionEditorForSubmission($round->submission, $editor);
 
         try {
+            $overrideReason = $request->filled('override_reason') ? (string) $request->input('override_reason') : null;
+
             $this->sectionEditorService->submitRecommendation(
                 $round,
                 $validated['recommendation'],
                 $validated['note'],
-                $editor
+                $editor,
+                $overrideReason
             );
 
+            $msg = ! empty($overrideReason)
+                ? 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC) dengan dispensasi pengabaian kuorum.'
+                : 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC).';
+
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
-                ->with('success', 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC).');
+                ->with('success', $msg);
         } catch (InvalidArgumentException $e) {
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
-                ->withErrors(['recommendation' => $e->getMessage()]);
+                ->withErrors(['recommendation' => $e->getMessage()])
+                ->withInput();
         }
     }
 

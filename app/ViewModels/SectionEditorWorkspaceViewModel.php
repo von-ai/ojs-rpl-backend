@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\EditorialDecision;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
@@ -74,6 +75,23 @@ class SectionEditorWorkspaceViewModel
     public function hasSeRecommendation(): bool
     {
         return ! empty($this->activeRound->se_recommendation);
+    }
+
+    public function currentEditorialDecision(): ?EditorialDecision
+    {
+        return $this->submission->editorialDecisions
+            ->where('review_round_id', $this->activeRound->id)
+            ->first();
+    }
+
+    public function minimumReviewOverrideReason(): ?string
+    {
+        return $this->currentEditorialDecision()?->minimum_review_override_reason;
+    }
+
+    public function hasOverrideRecommendation(): bool
+    {
+        return $this->hasSeRecommendation() && ! empty($this->minimumReviewOverrideReason());
     }
 
     /**
@@ -151,7 +169,7 @@ class SectionEditorWorkspaceViewModel
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
             || in_array($status, ['in_review', 'under_review', 'revisions_requested', 'accepted', 'in_production', 'published'], true);
         $hasSe = true; // Section Editor sudah ditugaskan
-        $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
+        $hasDecision = $this->submission->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->isNotEmpty()
             || in_array($status, ['accepted', 'in_production', 'published', 'declined'], true);
         $inProdOrPub = in_array($status, ['accepted', 'in_production', 'published'], true);
 
