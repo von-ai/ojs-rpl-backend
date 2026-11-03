@@ -19,14 +19,15 @@
                 <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span>Kirim Naskah Baru (Submit)</span>
+
+                <span>Kirim Naskah Baru</span>
             </a>
 
             <a href="{{ route('journal.about.submissions') }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:bg-white/25 border border-white/30 rounded-md transition-all text-center">
                 <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
-                <span>Unduh Panduan Penulis (.DOCX)</span>
+                <span>Unduh Panduan Penulis</span>
             </a>
         </div>
     </div>

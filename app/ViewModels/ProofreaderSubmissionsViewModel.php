@@ -262,7 +262,7 @@ class ProofreaderSubmissionsViewModel
                 ])
                     ->where('proofreader_id', $userId);
 
-                $assignments = $query->latest('created_at')->get();
+                $assignments = $query->latest('updated_at')->get();
 
                 if ($assignments->isNotEmpty()) {
                     $results = [];

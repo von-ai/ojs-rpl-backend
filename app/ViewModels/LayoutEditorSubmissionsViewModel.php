@@ -255,7 +255,7 @@ class LayoutEditorSubmissionsViewModel
                     ->whereNull('revoked_at')
                     ->where('layout_editor_id', $userId);
 
-                $assignments = $query->orderBy('due_at', 'asc')->get();
+                $assignments = $query->latest('updated_at')->get();
 
                 if ($assignments->isNotEmpty()) {
                     return $assignments->map(fn ($assignment) => $this->formatAssignmentItem($assignment))->all();
