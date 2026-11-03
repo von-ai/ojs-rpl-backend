@@ -94,6 +94,28 @@ class ReviewerWorkspaceViewModel
         return $this->assignment->status === 'cancelled';
     }
 
+    public function isSubmissionFinalized(): bool
+    {
+        $submission = $this->assignment->reviewRound?->submission;
+
+        return $submission && in_array($submission->status, ['declined', 'published', 'accepted', 'in_production', 'ready_for_issue', 'archived', 'withdrawn'], true);
+    }
+
+    public function finalizedSubmissionMessage(): ?string
+    {
+        $submission = $this->assignment->reviewRound?->submission;
+        if (! $submission) {
+            return null;
+        }
+
+        return match ($submission->status) {
+            'declined' => 'Naskah ini telah diputuskan ditolak oleh Pemimpin Redaksi (EIC), sehingga proses penelaahan telaah telah dihentikan.',
+            'published' => 'Naskah ini telah selesai diproses dan diterbitkan secara resmi, sehingga proses penelaahan telah ditutup.',
+            'accepted', 'in_production', 'ready_for_issue' => 'Naskah ini telah diterima oleh Pemimpin Redaksi dan memasuki tahap produksi.',
+            default => 'Proses penelaahan untuk naskah ini telah ditutup oleh Dewan Redaksi.',
+        };
+    }
+
     public function isNoResponse(): bool
     {
         return $this->assignment->effective_status === 'no_response';

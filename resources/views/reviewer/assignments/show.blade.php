@@ -247,8 +247,46 @@
         <!-- KOLOM KANAN (7 Grid): Lembar Evaluasi & Rekomendasi -->
         <div class="lg:col-span-7 space-y-6">
 
+            <!-- KASUS KHUSUS: Naskah Telah Selesai/Diputuskan oleh EIC (declined, published, accepted) -->
+            @if($viewModel->isSubmissionFinalized() && !$viewModel->isCompleted())
+                <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-2xs space-y-5 text-center">
+                    <div class="w-14 h-14 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto border border-slate-200">
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Proses Penelaahan Ditutup oleh Dewan Redaksi
+                        </h2>
+                        <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
+                            {{ $viewModel->finalizedSubmissionMessage() }}
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl max-w-md mx-auto text-xs text-left space-y-2">
+                        <div class="flex items-center justify-between text-gray-500 text-[11px]">
+                            <span>Status Penugasan:</span>
+                            <span class="font-bold text-gray-700">Telaah Selesai / Ditutup</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 pt-1 border-t border-slate-200 leading-relaxed">
+                            Terima kasih atas partisipasi dan dedikasi Anda dalam proses evaluasi ilmiah di jurnal BRIDA. Anda tidak perlu lagi melakukan tindakan terhadap naskah ini.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        <a href="{{ route('reviewer.assignments.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>Kembali ke Daftar Penugasan</span>
+                        </a>
+                    </div>
+                </div>
+
             <!-- KASUS 1: Undangan Masih Menunggu Respon (Status: invited) -->
-            @if($viewModel->isInvited())
+            @elseif($viewModel->isInvited())
                 <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-2xs space-y-6 text-center">
                     <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
                         <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -541,14 +579,29 @@
                                 :disabled="$viewModel->isCompleted()"
                                 :required="true"
                                 :options="[
-                                    '' => '-- Pilih Rekomendasi --',
-                                    'accept' => 'Diterima (Accept Submission) — Naskah layak terbit tanpa revisi mayor',
-                                    'revisions_required' => 'Perlu Revisi (Revisions Required) — Penulis wajib melakukan revisi minor',
-                                    'resubmit' => 'Kirim Ulang untuk Telaah (Resubmit for Review) — Perlu perombakan besar dan putaran telaah baru',
-                                    'decline' => 'Ditolak (Decline Submission) — Naskah tidak memenuhi standar ilmiah jurnal',
+                                    '' => [
+                                        'label' => 'Pilih Rekomendasi',
+                                    ],
+                                    'accept' => [
+                                        'label' => 'Diterima',
+                                        'desc' => 'Naskah layak terbit tanpa revisi mayor',
+                                    ],
+                                    'revisions_required' => [
+                                        'label' => 'Perlu Revisi',
+                                        'desc' => 'Penulis wajib melakukan revisi minor',
+                                    ],
+                                    'resubmit' => [
+                                        'label' => 'Kirim Ulang untuk Telaah',
+                                        'desc' => 'Perlu perombakan besar dan putaran telaah baru',
+                                    ],
+                                    'decline' => [
+                                        'label' => 'Ditolak',
+                                        'desc' => 'Naskah tidak memenuhi standar ilmiah jurnal',
+                                    ],
                                 ]"
-                                button-class="w-full bg-white border-gray-300 text-gray-900 rounded-lg p-2.5"
-                                panel-class="w-full max-w-full"
+                                container-class="w-full"
+                                button-class="w-full bg-white hover:bg-gray-50/80 border-gray-300 text-gray-900 rounded-lg p-2.5 text-xs font-medium"
+                                panel-class="w-full left-0 right-0 max-w-full"
                             />
                         </div>
 

@@ -36,7 +36,7 @@ class ReviewerController extends Controller
         $assignments = $this->reviewerService->getAssignmentsForReviewer($reviewer, [], 5);
         $viewModel = new ReviewerAssignmentsViewModel($reviewer, $assignments);
 
-        // Naskah Prioritas yang sedang ditelaah dengan tenggat waktu terdekat
+        // Naskah Prioritas yang sedang ditelaah dengan pembaruan terkini
         $priorityAssignments = ReviewAssignment::query()
             ->where('reviewer_id', $reviewer->id)
             ->whereIn('status', ['accepted', 'overdue'])
@@ -45,18 +45,18 @@ class ReviewerController extends Controller
                 'reviewRound.anonymizedFile',
                 'pendingExtension',
             ])
-            ->orderByRaw('review_due_at IS NULL, review_due_at ASC')
+            ->latest('updated_at')
             ->take(5)
             ->get();
 
-        // Undangan telaah yang menunggu respon
+        // Undangan telaah yang menunggu respon (terbaru)
         $pendingInvitations = ReviewAssignment::query()
             ->where('reviewer_id', $reviewer->id)
             ->where('status', 'invited')
             ->with([
                 'reviewRound.submission.section',
             ])
-            ->orderByRaw('response_due_at IS NULL, response_due_at ASC')
+            ->latest('updated_at')
             ->take(5)
             ->get();
 

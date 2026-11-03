@@ -87,177 +87,197 @@
             </nav>
         </div>
 
-        <!-- Filter & Search Bar -->
-        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <form action="{{ route('reviewer.assignments.index') }}" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
+        <!-- Bar Pencarian Konsisten -->
+        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-2xs">
+            <form action="{{ route('reviewer.assignments.index') }}" method="GET" class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <input type="hidden" name="status" value="{{ $viewModel->currentStatus() }}">
-                
-                <div class="relative w-full sm:w-80">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input 
-                        type="text" 
+                        type="search" 
                         name="search" 
                         value="{{ $viewModel->searchQuery() }}" 
-                        placeholder="Cari nomor naskah atau kata kunci judul..." 
-                        class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon transition"
+                        placeholder="Cari berdasarkan ID naskah atau kata kunci judul artikel..." 
+                        class="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-gray-50/70 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition duration-150"
                     >
                 </div>
 
-                <button 
-                    type="submit" 
-                    class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0"
-                >
-                    Cari
-                </button>
-
-                @if($viewModel->searchQuery())
-                    <a 
-                        href="{{ route('reviewer.assignments.index', ['status' => $viewModel->currentStatus()]) }}" 
-                        class="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2 py-1 transition shrink-0"
+                <div class="flex items-center gap-2 shrink-0">
+                    @if($viewModel->searchQuery())
+                        <a 
+                            href="{{ route('reviewer.assignments.index', ['status' => $viewModel->currentStatus()]) }}" 
+                            class="px-3 py-2 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                        >
+                            Reset
+                        </a>
+                    @endif
+                    <button 
+                        type="submit" 
+                        class="px-4 py-2 bg-brand-maroon hover:bg-brand-maroon-hover text-white text-xs sm:text-sm font-semibold rounded-lg transition shrink-0 cursor-pointer"
                     >
-                        Reset
-                    </a>
-                @endif
+                        Cari Tugas
+                    </button>
+                </div>
             </form>
-
-            <div class="text-[11px] text-gray-500 self-end sm:self-auto">
-                Menampilkan <strong class="text-gray-800 tabular-nums">{{ $viewModel->assignments->total() }}</strong> penugasan
-            </div>
         </div>
 
     </div>
 
-    <!-- Assignments List Card -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
+    <!-- Kontainer Tabel Daftar Penugasan -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-2xs overflow-hidden">
         @if($viewModel->assignments->isEmpty())
-            <div class="p-12 text-center space-y-3">
-                <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                </div>
-                <h3 class="font-bold text-gray-900 text-sm">Tidak ada tugas telaah ditemukan</h3>
-                <p class="text-xs text-gray-500 max-w-sm mx-auto text-center">
-                    @if($viewModel->searchQuery())
-                        Tidak ada naskah yang cocok dengan kata kunci pencarian "{{ $viewModel->searchQuery() }}".
-                    @else
-                        Saat ini belum ada tugas penelaahan naskah ilmiah pada kategori filter ini.
-                    @endif
-                </p>
-                @if($viewModel->searchQuery() || $viewModel->currentStatus() !== 'all')
-                    <div class="pt-2">
-                        <a 
-                            href="{{ route('reviewer.assignments.index') }}" 
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
-                        >
-                            Tampilkan Semua Penugasan
-                        </a>
+            <div class="py-12 px-4 text-center">
+                <div class="max-w-sm mx-auto space-y-3">
+                    <div class="w-10 h-10 mx-auto rounded-full bg-gray-100 text-gray-400 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                     </div>
-                @endif
+                    <h3 class="text-sm font-bold text-gray-900">Belum Ada Tugas Telaah Ditemukan</h3>
+                    <p class="text-xs text-gray-500">
+                        @if($viewModel->searchQuery())
+                            Tidak ada penugasan naskah yang cocok dengan kata kunci pencarian "{{ $viewModel->searchQuery() }}".
+                        @else
+                            Saat ini belum ada tugas penelaahan naskah ilmiah pada kategori filter ini.
+                        @endif
+                    </p>
+                    @if($viewModel->searchQuery() || $viewModel->currentStatus() !== 'all')
+                        <div class="pt-1 flex items-center justify-center">
+                            <a 
+                                href="{{ route('reviewer.assignments.index') }}" 
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-brand-maroon bg-red-50 hover:bg-red-100 rounded-md transition"
+                            >
+                                Reset Filter
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
         @else
-            <!-- Desktop Table View (Hidden on mobile) -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+            <!-- Tampilan Tabel Desktop & Tablet (>= 640px) -->
+            <div class="hidden sm:block overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
                     <thead>
-                        <tr class="bg-gray-50/75 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                            <th class="py-3.5 px-6">Informasi Manuskrip Anonim</th>
-                            <th class="py-3.5 px-4">Bidang Kajian</th>
-                            <th class="py-3.5 px-4">Batas Konfirmasi</th>
-                            <th class="py-3.5 px-4">Batas Telaah</th>
-                            <th class="py-3.5 px-4">Status Penugasan</th>
-                            <th class="py-3.5 px-6 text-right">Aksi</th>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                            <th scope="col" class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">ID NASKAH</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 min-w-70">JUDUL ARTIKEL</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">BIDANG KAJIAN</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">TENGGAT WAKTU</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">STATUS PENUGASAN</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">AKSI</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 text-xs">
+                    <tbody class="divide-y divide-gray-100">
                         @foreach($viewModel->assignments as $assignment)
                             @php
+                                $rowNumber = ($viewModel->assignments->firstItem() ?? 1) + $loop->index;
                                 $round = $assignment->reviewRound;
                                 $submission = $round?->submission;
                                 $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
                                 $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
                                 $meta = $viewModel->statusMeta($assignment->status);
                             @endphp
-                            <tr class="hover:bg-gray-50/60 transition-colors">
-                                <td class="py-4 px-6 space-y-1 max-w-md">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-mono text-[10px] text-gray-600 font-bold bg-gray-100 px-1.5 py-0.5 rounded">
-                                            {{ $subNumber }}
-                                        </span>
-                                        <span class="text-[10px] text-indigo-700 bg-indigo-50 font-semibold px-1.5 py-0.5 rounded border border-indigo-100">
-                                            Putaran {{ $round?->round ?? 1 }}
-                                        </span>
-                                    </div>
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                                        class="font-semibold text-gray-900 hover:text-brand-maroon text-sm block leading-snug line-clamp-2 transition"
-                                    >
-                                        {{ $title }}
-                                    </a>
+                            <tr class="hover:bg-gray-50/70 transition duration-150">
+                                <!-- Kolom 0: Nomor Urut -->
+                                <td class="py-4 px-3 sm:px-4 align-top text-center whitespace-nowrap text-xs font-semibold text-gray-400 tabular-nums">
+                                    {{ $rowNumber }}
                                 </td>
 
-                                <td class="py-4 px-4 text-gray-600">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-800">
-                                        {{ $submission?->section?->name ?? $submission?->section?->title ?? 'Umum' }}
+                                <!-- Kolom 1: ID Naskah & Putaran -->
+                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                    <div class="text-sm font-normal text-gray-700 tabular-nums">
+                                        {{ $subNumber }}
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 tabular-nums">
+                                            Putaran {{ $round?->round ?? 1 }}
+                                        </span>
+                                        <span class="text-xs text-gray-400 tabular-nums">
+                                            {{ ($assignment->invited_at ?? $assignment->created_at)?->format('d M Y') ?? '-' }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom 2: Judul Artikel (Double-Blind) -->
+                                <td class="py-4 px-4 sm:px-6 align-top min-w-70">
+                                    <div class="relative group block max-w-full">
+                                        <a 
+                                            href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                                            title="{{ $title }}"
+                                            class="block font-normal text-gray-900 leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon hover:underline decoration-brand-maroon/40 underline-offset-2 transition duration-150 cursor-pointer"
+                                        >
+                                            {{ $title }}
+                                        </a>
+                                    </div>
+                                    <div class="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <span>Penelaahan Anonim Ganda</span>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom 3: Bidang Kajian -->
+                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 shrink-0">
+                                        {{ $submission?->section?->name ?? 'Artikel Riset' }}
                                     </span>
                                 </td>
 
-                                <td class="py-4 px-4 text-gray-600">
-                                    @if($assignment->response_due_at)
-                                        <span class="font-medium text-gray-900 block tabular-nums">
-                                            {{ $assignment->response_due_at->format('d M Y') }}
-                                        </span>
-                                        <span class="text-[10px] text-gray-400 block">
-                                            {{ $assignment->response_due_at->format('H:i') }} UTC
-                                        </span>
+                                <!-- Kolom 4: Tenggat Waktu (Respons / Telaah) -->
+                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap space-y-1">
+                                    @if($assignment->status === 'invited')
+                                        <div>
+                                            <span class="text-[11px] text-gray-500 block">Batas Respons:</span>
+                                            <strong class="text-xs text-gray-800 tabular-nums">
+                                                {{ $assignment->response_due_at ? $assignment->response_due_at->format('d M Y') : '-' }}
+                                            </strong>
+                                        </div>
                                     @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </td>
-
-                                <td class="py-4 px-4 text-gray-600">
-                                    @if($assignment->review_due_at)
-                                        <span class="font-medium text-gray-900 block tabular-nums">
-                                            {{ $assignment->review_due_at->format('d M Y') }}
-                                        </span>
-                                        @php
-                                            $days = (int) now()->diffInDays($assignment->review_due_at, false);
-                                        @endphp
-                                        @if(in_array($assignment->status, ['accepted', 'overdue'], true))
-                                            @if($days < 0)
-                                                <span class="text-[10px] font-semibold text-rose-600 block">
-                                                    Lewat {{ abs($days) }} hari
-                                                </span>
-                                            @elseif($days <= 3)
-                                                <span class="text-[10px] font-semibold text-amber-600 block">
-                                                    Sisa {{ $days }} hari
-                                                </span>
+                                        <div>
+                                            <span class="text-[11px] text-gray-500 block">Batas Telaah:</span>
+                                            <strong class="text-xs text-gray-800 tabular-nums">
+                                                {{ $assignment->review_due_at ? $assignment->review_due_at->format('d M Y') : '-' }}
+                                            </strong>
+                                            @php
+                                                $days = (int) now()->diffInDays($assignment->review_due_at, false);
+                                            @endphp
+                                            @if(in_array($assignment->status, ['accepted', 'overdue'], true))
+                                                @if($days < 0)
+                                                    <span class="text-[10px] font-semibold text-rose-600 block mt-0.5">
+                                                        Lewat {{ abs($days) }} hari
+                                                    </span>
+                                                @elseif($days <= 3)
+                                                    <span class="text-[10px] font-semibold text-amber-600 block mt-0.5">
+                                                        Sisa {{ $days }} hari
+                                                    </span>
+                                                @endif
                                             @endif
-                                        @endif
-                                    @else
-                                        <span class="text-gray-400">-</span>
+                                        </div>
                                     @endif
                                 </td>
 
-                                <td class="py-4 px-4">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border {{ $meta['badge_class'] }}">
+                                <!-- Kolom 5: Status Penugasan -->
+                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border {{ $meta['badge_class'] }}">
                                         {{ $meta['label'] }}
                                     </span>
                                 </td>
 
-                                <td class="py-4 px-6 text-right">
+                                <!-- Kolom 6: Aksi -->
+                                <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
                                     <a 
                                         href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $assignment->status === 'invited' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-brand-maroon hover:bg-brand-maroon-hover' }} text-white text-xs font-semibold rounded-lg shadow-2xs transition"
+                                        class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
                                     >
-                                        <span>{{ $assignment->status === 'invited' ? 'Tanggapi' : 'Ruang Telaah' }}</span>
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                        </svg>
+                                        Detail
                                     </a>
                                 </td>
                             </tr>
@@ -266,10 +286,11 @@
                 </table>
             </div>
 
-            <!-- Mobile Card View (Shown only on small screens) -->
-            <div class="md:hidden divide-y divide-gray-100">
+            <!-- Tampilan Kartu Responsif Mobile (< 640px) -->
+            <div class="sm:hidden divide-y divide-gray-100">
                 @foreach($viewModel->assignments as $assignment)
                     @php
+                        $rowNumber = ($viewModel->assignments->firstItem() ?? 1) + $loop->index;
                         $round = $assignment->reviewRound;
                         $submission = $round?->submission;
                         $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
@@ -279,47 +300,52 @@
                     <div class="p-4 space-y-3">
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-1.5">
-                                <span class="font-mono text-[10px] text-gray-600 font-bold bg-gray-100 px-1.5 py-0.5 rounded">
+                                <span class="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px] font-bold tabular-nums">
+                                    {{ $rowNumber }}
+                                </span>
+                                <span class="font-mono text-[11px] text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded">
                                     {{ $subNumber }}
                                 </span>
                                 <span class="text-[10px] text-indigo-700 bg-indigo-50 font-semibold px-1.5 py-0.5 rounded border border-indigo-100">
-                                    P{{ $round?->round ?? 1 }}
+                                    Putaran {{ $round?->round ?? 1 }}
                                 </span>
                             </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $meta['badge_class'] }}">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border {{ $meta['badge_class'] }}">
                                 {{ $meta['label'] }}
                             </span>
                         </div>
 
                         <a 
                             href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                            class="font-semibold text-gray-900 text-sm block leading-snug"
+                            class="font-semibold text-gray-900 text-sm block leading-snug line-clamp-2 hover:text-brand-maroon transition"
                         >
                             {{ $title }}
                         </a>
 
-                        <div class="text-xs text-gray-500 space-y-1 pt-1 border-t border-gray-100">
-                            <div class="flex justify-between">
+                        <div class="text-xs text-gray-500 space-y-1.5 pt-2 border-t border-gray-100">
+                            <div class="flex justify-between items-center">
                                 <span>Bidang Kajian:</span>
-                                <span class="font-medium text-gray-800">{{ $submission?->section?->name ?? 'Umum' }}</span>
+                                <span class="font-medium text-gray-800">{{ $submission?->section?->name ?? 'Artikel Riset' }}</span>
                             </div>
-                            @if($assignment->review_due_at)
-                                <div class="flex justify-between">
-                                    <span>Tenggat Telaah:</span>
-                                    <span class="font-medium text-gray-800">{{ $assignment->review_due_at->format('d M Y') }}</span>
+                            @if($assignment->status === 'invited')
+                                <div class="flex justify-between items-center">
+                                    <span>Batas Respons:</span>
+                                    <strong class="font-medium text-gray-900 tabular-nums">{{ $assignment->response_due_at ? $assignment->response_due_at->format('d M Y') : '-' }}</strong>
+                                </div>
+                            @else
+                                <div class="flex justify-between items-center">
+                                    <span>Batas Telaah:</span>
+                                    <strong class="font-medium text-gray-900 tabular-nums">{{ $assignment->review_due_at ? $assignment->review_due_at->format('d M Y') : '-' }}</strong>
                                 </div>
                             @endif
                         </div>
 
-                        <div class="pt-2">
+                        <div class="pt-1">
                             <a 
                                 href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 {{ $assignment->status === 'invited' ? 'bg-amber-600' : 'bg-brand-maroon' }} text-white text-xs font-semibold rounded-lg shadow-2xs transition"
+                                class="w-full inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
                             >
-                                <span>{{ $assignment->status === 'invited' ? 'Tanggapi Undangan' : 'Buka Ruang Telaah' }}</span>
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
+                                Detail
                             </a>
                         </div>
                     </div>
@@ -328,7 +354,7 @@
 
             <!-- Paginasi -->
             @if($viewModel->assignments->hasPages())
-                <div class="p-4 border-t border-gray-200">
+                <div class="p-4 border-t border-gray-200 bg-gray-50/50">
                     {{ $viewModel->assignments->links() }}
                 </div>
             @endif

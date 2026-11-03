@@ -212,6 +212,26 @@ class ReviewerWorkflowTest extends TestCase
         $this->assertEquals('no_response', $this->assignment->fresh()->status);
     }
 
+    public function test_konfirmasi_undangan_ditolak_jika_naskah_sudah_diputuskan_atau_diterbitkan_eic(): void
+    {
+        $this->submission->update(['status' => 'declined']);
+
+        $response = $this->actingAs($this->reviewer)
+            ->post(route('reviewer.assignments.respond', $this->assignment->id), [
+                'response' => 'accepted',
+            ]);
+
+        $response->assertSessionHasErrors('response');
+        $this->assertEquals('cancelled', $this->assignment->fresh()->status);
+
+        // Halaman telaah menampilkan notifikasi penutupan proses telaah
+        $viewResponse = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $viewResponse->assertStatus(200);
+        $viewResponse->assertSee('Proses Penelaahan Ditutup oleh Dewan Redaksi');
+    }
+
     public function test_reviewer_dapat_mengajukan_permohonan_perpanjangan_waktu_telaah(): void
     {
         $this->assignment->update(['status' => 'accepted']);
