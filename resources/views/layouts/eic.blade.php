@@ -2,6 +2,8 @@
 <html lang="id" class="h-full bg-canvas">
 <head>
     <meta charset="UTF-8">
+    <meta name="application-name" content="{{ $platformSettings['site_name'] ?? config('app.name') }}">
+    <meta name="description" content="{{ $platformSettings['site_description'] ?? 'Portal jurnal ilmiah BRIDA Makassar' }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal Pemimpin Redaksi — SIRIDA Kota Makassar')</title>
@@ -10,9 +12,6 @@
     <link rel="icon" type="image/png" href="{{ asset('images/brida-logo.png') }}">
 
     <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -24,7 +23,7 @@
 
     <!-- Main Content Wrapper -->
     <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        
+
         <!-- Header Topbar Pemimpin Redaksi -->
         <x-eic.header />
 
@@ -41,8 +40,8 @@
     <x-toast />
 
     <!-- Global Custom Floating Tooltip untuk Teks Terpotong & Header Detail -->
-    <div 
-        id="eic-custom-tooltip" 
+    <div
+        id="eic-custom-tooltip"
         role="tooltip"
         class="fixed z-100 pointer-events-none invisible opacity-0 scale-95 transition-all duration-150 ease-out bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg border border-gray-800 max-w-xs break-words leading-snug"
     >

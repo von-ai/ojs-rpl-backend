@@ -6,8 +6,8 @@ namespace App\Http\Controllers\Author;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Author\StoreSubmissionRequest;
+use App\Models\CopyeditApproval;
 use App\Models\FileEntry;
-use App\Models\Journal;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
@@ -15,17 +15,17 @@ use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Services\Author\AuthorSubmissionService;
 use App\Services\Payment\ArticlePaymentService;
+use App\Services\PrivateFileService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
 use DomainException;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -64,62 +64,16 @@ class AuthorSubmissionController extends Controller
      */
     public function sectionsApi(Request $request): JsonResponse
     {
-        $query = trim((string) $request->input('q', ''));
-        $perPage = min(max((int) $request->input('per_page', 8), 1), 30);
-        $page = max((int) $request->input('page', 1), 1);
-
-        try {
-            if (Schema::hasTable('sections')) {
-                $builder = Section::where('accepting_submissions', true);
-
-                if ($query !== '') {
-                    $builder->where(function ($sub) use ($query): void {
-                        $sub->where('name', 'like', "%{$query}%")
-                            ->orWhere('description', 'like', "%{$query}%");
-                    });
-                }
-
-                $paginator = $builder->orderBy('position', 'asc')
-                    ->orderBy('name', 'asc')
-                    ->paginate($perPage, ['id', 'slug', 'name', 'description', 'policy'], 'page', $page);
-
-                return response()->json([
-                    'data' => collect($paginator->items())->map(fn (Section $s): array => [
-                        'id' => $s->slug ?: $s->id,
-                        'raw_id' => $s->id,
-                        'name' => $s->name,
-                        'description' => $s->description ?? '',
-                        'policy' => $s->policy ?? '',
-                    ]),
-                    'current_page' => $paginator->currentPage(),
-                    'has_more' => $paginator->hasMorePages(),
-                    'total' => $paginator->total(),
-                ]);
-            }
-        } catch (\Throwable) {
-            // Fallback graceful jika terjadi kendala DB
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:200'], 'page' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:30']]);
+        $query = Section::where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+        if (! empty($data['q'])) {
+            $query->where(fn ($q) => $q->where('name', 'like', '%'.$data['q'].'%')->orWhere('description', 'like', '%'.$data['q'].'%'));
         }
-
-        $viewModel = new AuthorSubmissionsViewModel(request: $request);
-        $allSections = collect($viewModel->wizardJournalSections());
-
-        if ($query !== '') {
-            $qLower = strtolower($query);
-            $allSections = $allSections->filter(function (array $item) use ($qLower): bool {
-                return str_contains(strtolower($item['name']), $qLower)
-                    || str_contains(strtolower($item['description'] ?? ''), $qLower);
-            })->values();
-        }
-
-        $total = $allSections->count();
-        $slice = $allSections->slice(($page - 1) * $perPage, $perPage)->values();
-        $hasMore = ($page * $perPage) < $total;
+        $page = $query->orderBy('position')->orderBy('id')->paginate($data['per_page'] ?? 8);
 
         return response()->json([
-            'data' => $slice,
-            'current_page' => $page,
-            'has_more' => $hasMore,
-            'total' => $total,
+            'data' => collect($page->items())->map(fn ($section) => ['id' => $section->id, 'raw_id' => $section->id, 'name' => $section->name, 'description' => $section->description ?? '', 'policy' => $section->policy ?? '']),
+            'current_page' => $page->currentPage(), 'has_more' => $page->hasMorePages(), 'total' => $page->total(),
         ]);
     }
 
@@ -134,41 +88,19 @@ class AuthorSubmissionController extends Controller
         $authorId = $author?->id;
         $draftId = $request->input('draft_id') ?? ($validated['draft_id'] ?? null);
 
-        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $author, $authorId, $draftId): Submission {
-            // 1. Dapatkan atau inisialisasi Journal default
-            $journal = Journal::first() ?? Journal::create([
-                'slug' => 'sirida-makassar',
-                'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
-                'issn' => '2985-7821',
-                'eissn' => '2985-7821',
-                'status' => 'active',
-                'version' => 1,
-            ]);
-
-            // 2. Dapatkan Section berdasarkan id ULID atau slug
-            $section = null;
-            if (! empty($validated['section_id'])) {
-                $section = Section::where('id', $validated['section_id'])
-                    ->orWhere('slug', $validated['section_id'])
-                    ->first();
-            }
+        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $draftId): Submission {
+            $sectionQuery = Section::with('journal')->where(function ($q) use ($validated) {
+                $q->where('id', $validated['section_id'])->orWhere('slug', $validated['section_id']);
+            })->where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+            $section = $sectionQuery->count() === 1 ? $sectionQuery->first() : null;
 
             if (! $section) {
-                $section = Section::firstOrCreate(
-                    [
-                        'journal_id' => $journal->id,
-                        'slug' => 'sec-riset-orisinil',
-                    ],
-                    [
-                        'name' => 'Artikel Riset Orisinil',
-                        'description' => 'Laporan hasil penelitian empiris atau teoritis primer.',
-                        'policy' => 'Wajib memuat metodologi riset yang jelas.',
-                        'accepting_submissions' => true,
-                        'position' => 1,
-                        'version' => 1,
-                    ]
-                );
+                throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
             }
+
+            $journal = $section->journal;
+            $author = $request->user();
+            $authorId = $author->id;
 
             // 3. Checklist & Guidelines Acceptance
             $checklistItems = $request->input('checklist_items', []);
@@ -215,10 +147,13 @@ class AuthorSubmissionController extends Controller
                 ]);
                 $submission = $existingDraft;
             } else {
-                // Nomor pengajuan unik berformat SUB-YYYY-XXXXX
-                $year = date('Y');
-                $count = Submission::whereYear('created_at', $year)->count() + 1;
-                $submissionNumber = 'SUB-'.$year.'-'.str_pad((string) $count, 5, '0', STR_PAD_LEFT);
+                // Nomor pengajuan unik berformat SUB-YYYY-XXXXX dengan sequence atomic
+                $year = (int) now()->format('Y');
+                DB::table('submission_sequences')->insertOrIgnore(['year' => $year, 'last_number' => 0]);
+                $sequence = DB::table('submission_sequences')->where('year', $year)->lockForUpdate()->first();
+                $number = (int) $sequence->last_number + 1;
+                DB::table('submission_sequences')->where('year', $year)->update(['last_number' => $number]);
+                $submissionNumber = 'SUB-'.$year.'-'.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
 
                 // Simpan record pengajuan baru (Submission)
                 $submission = Submission::create([
@@ -268,7 +203,7 @@ class AuthorSubmissionController extends Controller
             // 7. Simpan Berkas Manuskrip utama jika diunggah
             if ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
                 $file = $request->file('manuscript_file');
-                $storageDisk = config('filesystems.default', 'local');
+                $storageDisk = config('filesecurity.disk', 'local');
                 $path = $file->store('manuscripts', $storageDisk);
                 $sha256 = hash_file('sha256', $file->getRealPath());
 
@@ -276,10 +211,10 @@ class AuthorSubmissionController extends Controller
                     'storage_disk' => $storageDisk,
                     'storage_path' => $path,
                     'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',
-                    'byte_size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                    'byte_size' => (int) Storage::disk($storageDisk)->size($path),
                     'checksum_sha256' => $sha256,
-                    'virus_scan_status' => 'clean',
+                    'virus_scan_status' => 'pending',
                     'created_by' => $authorId,
                 ]);
 
@@ -395,7 +330,7 @@ class AuthorSubmissionController extends Controller
             ]);
 
             foreach ($submissions as $item) {
-                fputcsv($handle, [
+                fputcsv($handle, array_map(fn ($cell) => preg_match('/^[\s]*[=+@-]/u', (string) $cell) ? "'".$cell : $cell, [
                     $item['id'],
                     $item['title'],
                     $item['type'],
@@ -404,7 +339,7 @@ class AuthorSubmissionController extends Controller
                     $item['status_subtitle'],
                     $item['doi'],
                     $item['updated_at_raw'],
-                ]);
+                ]));
             }
 
             fclose($handle);
@@ -432,9 +367,16 @@ class AuthorSubmissionController extends Controller
             return response()->json(['data' => $submission]);
         }
 
+        $copyeditApproval = CopyeditApproval::with('copyedit.outputs.file')
+            ->where('author_id', $request->user()->id)
+            ->whereNull('invalidated_at')
+            ->where('decision', 'requested')
+            ->whereHas('copyedit', fn ($q) => $q->where('submission_id', $submission['id']))
+            ->latest('created_at')
+            ->first();
         $viewModel = new AuthorSubmissionsViewModel($user);
 
-        return view('author.submissions.show', compact('submission', 'viewModel'));
+        return view('author.submissions.show', compact('submission', 'viewModel', 'copyeditApproval'));
     }
 
     /**
@@ -644,18 +586,6 @@ class AuthorSubmissionController extends Controller
             abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
         }
 
-        $fileEntry = $payment->fileEntry;
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk($fileEntry->storage_disk);
-
-        if (! $disk->exists($fileEntry->storage_path)) {
-            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
-        }
-
-        return $disk->download(
-            $fileEntry->storage_path,
-            $fileEntry->original_name,
-            ['Content-Type' => $fileEntry->mime_type]
-        );
+        return app(PrivateFileService::class)->stream($payment->fileEntry);
     }
 }

@@ -8,7 +8,7 @@
     <!-- Header Halaman -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Jejak Audit &amp; Pemantauan Sistem (audit_logs)
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -38,7 +38,7 @@
 
     <!-- Main Container: Filter Tabs, Pencarian & Tabel Log Audit -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        
+
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Tipe Aktor -->
@@ -50,7 +50,7 @@
                     @php
                         $isActive = $tabs['active'] === $tabKey;
                     @endphp
-                    <a 
+                    <a
                         href="{{ route('sysadmin.audit-logs.index', ['actor_type' => $tabKey, 'q' => request('q')]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -70,16 +70,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="search" 
-                    name="q" 
+                <input
+                    type="search"
+                    name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari aksi, aktor, atau request ID..."
                     class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                 @if(request('q'))
-                    <a 
-                        href="{{ route('sysadmin.audit-logs.index', ['actor_type' => $tabs['active']]) }}" 
+                    <a
+                        href="{{ route('sysadmin.audit-logs.index', ['actor_type' => $tabs['active']]) }}"
                         class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                         title="Hapus filter pencarian"
                     >

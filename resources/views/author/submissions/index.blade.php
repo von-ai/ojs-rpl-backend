@@ -18,9 +18,9 @@
 
         <div class="flex items-center gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
             <!-- Tombol Unduh Rekap CSV -->
-            <a 
+            <a
                 id="export-csv-btn"
-                href="{{ route('author.submissions.export', request()->query()) }}" 
+                href="{{ route('author.submissions.export', request()->query()) }}"
                 class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-300 rounded-lg transition duration-150 shrink-0"
                 title="Unduh seluruh rekap riwayat naskah dalam format CSV"
             >
@@ -31,8 +31,8 @@
             </a>
 
             <!-- Tombol Tambah Naskah -->
-            <a 
-                href="{{ route('author.submissions.create') }}" 
+            <a
+                href="{{ route('author.submissions.create') }}"
                 class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg transition duration-150 shadow-2xs"
             >
                 <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,7 +85,7 @@
                 @php
                     $isActive = ($filters['tab'] ?? 'semua') === $tab['key'];
                 @endphp
-                <a 
+                <a
                     href="{{ route('author.submissions.index', array_merge(request()->query(), ['tab' => $tab['key']])) }}"
                     data-tab="{{ $tab['key'] }}"
                     class="submission-tab-link whitespace-nowrap py-2.5 sm:py-3 px-3 sm:px-4 border-b-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 transition duration-150 shrink-0 {{ $isActive ? 'border-brand-maroon text-brand-maroon is-active' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
@@ -115,18 +115,18 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
             </div>
-            <input 
-                type="text" 
-                name="search" 
+            <input
+                type="text"
+                name="search"
                 id="filter_search"
-                value="{{ $filters['search'] ?? '' }}" 
-                placeholder="Cari judul naskah atau ID pengajuan..." 
+                value="{{ $filters['search'] ?? '' }}"
+                placeholder="Cari judul naskah atau ID pengajuan..."
                 autocomplete="off"
                 class="w-full pl-9 pr-9 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition duration-150"
             >
-            <button 
-                type="button" 
-                id="search-clear-btn" 
+            <button
+                type="button"
+                id="search-clear-btn"
                 class="{{ empty($filters['search']) ? 'hidden' : '' }} absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden cursor-pointer transition"
                 title="Hapus pencarian"
                 aria-label="Hapus kata kunci pencarian"
@@ -148,8 +148,8 @@
                         </option>
                     @endforeach
                 </select>
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                     aria-haspopup="listbox"
                     aria-expanded="false"
@@ -162,7 +162,7 @@
                     </svg>
                 </button>
                 <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-35 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
-                    <div 
+                    <div
                         class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['year'] ?? 'semua') === 'semua' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                         data-value="semua"
                         data-label="Semua Tahun"
@@ -173,7 +173,7 @@
                         </svg>
                     </div>
                     @foreach($viewModel->availableYears() as $year)
-                        <div 
+                        <div
                             class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['year'] ?? '') === $year ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                             data-value="{{ $year }}"
                             data-label="Tahun {{ $year }}"
@@ -197,8 +197,8 @@
                         </option>
                     @endforeach
                 </select>
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                     aria-haspopup="listbox"
                     aria-expanded="false"
@@ -211,7 +211,7 @@
                     </svg>
                 </button>
                 <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-42.5 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
-                    <div 
+                    <div
                         class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['type'] ?? 'semua') === 'semua' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                         data-value="semua"
                         data-label="Semua Seksi"
@@ -222,7 +222,7 @@
                         </svg>
                     </div>
                     @foreach($viewModel->articleTypes() as $type)
-                        <div 
+                        <div
                             class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['type'] ?? '') === $type ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                             data-value="{{ $type }}"
                             data-label="{{ $type }}"
@@ -244,8 +244,8 @@
                         <option value="updated_at" {{ ($filters['sort'] ?? '') === 'updated_at' ? 'selected' : '' }}>Terlama</option>
                         <option value="title" {{ ($filters['sort'] ?? '') === 'title' ? 'selected' : '' }}>Judul (A-Z)</option>
                     </select>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                         aria-haspopup="listbox"
                         aria-expanded="false"
@@ -267,7 +267,7 @@
                     </button>
                     <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-right absolute right-0 top-full mt-1.5 min-w-40 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
                         @foreach(['-updated_at' => 'Pembaruan Terkini', 'updated_at' => 'Terlama', 'title' => 'Judul (A-Z)'] as $sVal => $sLabel)
-                            <div 
+                            <div
                                 class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['sort'] ?? '-updated_at') === $sVal ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                 data-value="{{ $sVal }}"
                                 data-label="{{ $sLabel }}"
@@ -283,8 +283,8 @@
 
                 <!-- Tombol Reset Filter -->
                 <div id="reset-filter-container" class="{{ (!empty($filters['search']) || (($filters['year'] ?? 'semua') !== 'semua') || (($filters['type'] ?? 'semua') !== 'semua')) ? '' : 'hidden' }}">
-                    <a 
-                        href="{{ route('author.submissions.index', ['tab' => $filters['tab'] ?? 'semua']) }}" 
+                    <a
+                        href="{{ route('author.submissions.index', ['tab' => $filters['tab'] ?? 'semua']) }}"
                         id="btn-reset-filter"
                         class="p-2 min-w-9 min-h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition shrink-0 cursor-pointer"
                         title="Reset Filter"
@@ -324,7 +324,7 @@
                     Panduan Alur Kerja Editorial & Siklus Naskah
                 </h2>
             </div>
-            <a href="#panduan-penulis" class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover transition">
+            <a href="{{ route('journal.about.submissions') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover transition">
                 <span>Buku Panduan Penulis BRIDA</span>
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -362,104 +362,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const tableContainer = document.getElementById('submissions-table-container');
     const tableContent = document.getElementById('submissions-table-content');
     const loadingBar = document.getElementById('table-loading-bar');
-    const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
     const tabLinks = document.querySelectorAll('.submission-tab-link');
 
     let abortController = null;
     let searchDebounceTimer = null;
 
-    // --- Helper Dropdown Animations ---
-    function openDropdown(panel, btn, chevron) {
-        closeAllDropdowns();
-        panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-        panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-        btn.setAttribute('aria-expanded', 'true');
-        if (chevron) chevron.classList.add('rotate-180');
-    }
-
-    function closeDropdown(panel, btn, chevron) {
-        panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-        panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-        btn.setAttribute('aria-expanded', 'false');
-        if (chevron) chevron.classList.remove('rotate-180');
-    }
-
-    function closeAllDropdowns() {
-        dropdownContainers.forEach(c => {
-            const btn = c.querySelector('.custom-dropdown-btn');
-            const panel = c.querySelector('.custom-dropdown-panel');
-            const chevron = c.querySelector('.custom-dropdown-chevron');
-            if (btn && panel) {
-                closeDropdown(panel, btn, chevron);
-            }
-        });
-    }
-
-    // --- Event Dropdowns ---
-    dropdownContainers.forEach(container => {
-        const btn = container.querySelector('.custom-dropdown-btn');
-        const panel = container.querySelector('.custom-dropdown-panel');
-        const chevron = container.querySelector('.custom-dropdown-chevron');
-        const select = container.querySelector('select');
-        const items = container.querySelectorAll('.custom-dropdown-item');
-        const label = container.querySelector('.custom-dropdown-label');
-
-        if (!btn || !panel) return;
-
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = panel.classList.contains('visible');
-            if (isOpen) {
-                closeDropdown(panel, btn, chevron);
-            } else {
-                openDropdown(panel, btn, chevron);
-            }
-        });
-
-        items.forEach(item => {
-            item.addEventListener('click', () => {
-                const val = item.getAttribute('data-value');
-                const text = item.getAttribute('data-label') || item.innerText.trim();
-
-                if (select) {
-                    select.value = val;
-                }
-                if (label) {
-                    label.textContent = text;
-                }
-
-                // Update visual checkmark & highlight
-                items.forEach(it => {
-                    const check = it.querySelector('.custom-dropdown-check');
-                    if (it === item) {
-                        it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                        it.classList.remove('text-gray-700', 'hover:bg-gray-50');
-                        if (check) check.classList.remove('hidden');
-                    } else {
-                        it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                        it.classList.add('text-gray-700', 'hover:bg-gray-50');
-                        if (check) check.classList.add('hidden');
-                    }
-                });
-
-                closeDropdown(panel, btn, chevron);
-                triggerFilter(true);
-            });
-        });
-    });
-
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-dropdown-container')) {
-            closeAllDropdowns();
-        }
-    });
-
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAllDropdowns();
-        }
+    document.addEventListener('dropdown:change', event => {
+        if (event.target.matches('.custom-dropdown-container[data-filter]')) triggerFilter(true);
     });
 
     // --- Tab Navigation Clicks ---

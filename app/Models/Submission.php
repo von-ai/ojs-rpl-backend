@@ -263,6 +263,16 @@ class Submission extends Model
     /**
      * Memeriksa apakah naskah ini wajib membayar biaya pemrosesan (APC)
      */
+    public function finalCopyeditFile(): ?FileEntry
+    {
+        $approval = CopyeditApproval::whereNull('invalidated_at')->where('decision', 'approved')
+            ->whereHas('copyedit', fn ($q) => $q->where('submission_id', $this->id)->where('status', 'completed'))
+            ->with('approvedFiles.file')->latest('approved_at')->first();
+
+        return $approval?->approvedFiles->first()?->file
+            ?? $this->files()->where('genre', 'copyedit_final')->with('file')->latest()->first()?->file;
+    }
+
     public function requiresPayment(): bool
     {
         return (bool) ($this->journal?->isPaidApc() ?? false);

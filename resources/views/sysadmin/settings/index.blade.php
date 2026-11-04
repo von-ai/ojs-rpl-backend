@@ -8,7 +8,7 @@
     <!-- Header Halaman -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Pengaturan Platform &amp; Kesehatan Server
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -48,7 +48,7 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-5">
                 <div class="border-b border-gray-100 pb-3">
-                    <h2 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+                    <h2 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                         Konfigurasi Parameter Global Situs (system_settings)
                     </h2>
                     <p class="text-xs text-gray-500 mt-0.5">
@@ -64,12 +64,12 @@
                         <label for="site_name" class="block text-xs font-semibold text-gray-700 mb-1">
                             Nama Resmi Platform Portal <span class="text-red-500">*</span>
                         </label>
-                        <input 
-                            type="text" 
-                            id="site_name" 
-                            name="site_name" 
+                        <input
+                            type="text"
+                            id="site_name"
+                            name="site_name"
                             value="{{ $settings['site_name'] }}"
-                            required 
+                            required
                             class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                         >
                     </div>
@@ -79,10 +79,10 @@
                         <label for="site_description" class="block text-xs font-semibold text-gray-700 mb-1">
                             Deskripsi Portal Repositori &amp; Publikasi
                         </label>
-                        <textarea 
-                            id="site_description" 
-                            name="site_description" 
-                            rows="2" 
+                        <textarea
+                            id="site_description"
+                            name="site_description"
+                            rows="2"
                             class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                         >{{ $settings['site_description'] }}</textarea>
                     </div>
@@ -99,11 +99,12 @@
                                 </p>
                             </div>
                             <div class="shrink-0 flex items-center">
-                                <input 
-                                    type="checkbox" 
-                                    id="maintenance_mode" 
-                                    name="maintenance_mode" 
-                                    value="1" 
+                                <input type="hidden" name="maintenance_mode" value="0">
+                                <input
+                                    type="checkbox"
+                                    id="maintenance_mode"
+                                    name="maintenance_mode"
+                                    value="1"
                                     {{ $settings['maintenance_mode'] ? 'checked' : '' }}
                                     class="w-4 h-4 rounded text-brand-maroon focus:ring-brand-maroon cursor-pointer"
                                 >
@@ -114,10 +115,10 @@
                             <label for="maintenance_message" class="block text-[11px] font-semibold text-amber-900 mb-1">
                                 Pesan Pemberitahuan Pemeliharaan
                             </label>
-                            <input 
-                                type="text" 
-                                id="maintenance_message" 
-                                name="maintenance_message" 
+                            <input
+                                type="text"
+                                id="maintenance_message"
+                                name="maintenance_message"
                                 value="{{ $settings['maintenance_message'] }}"
                                 class="w-full text-xs text-gray-900 bg-white border border-amber-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition"
                             >
@@ -130,13 +131,13 @@
                             <label for="max_upload_size_mb" class="block text-xs font-semibold text-gray-700 mb-1">
                                 Maks. Unggahan Berkas (MB)
                             </label>
-                            <input 
-                                type="number" 
-                                id="max_upload_size_mb" 
-                                name="max_upload_size_mb" 
+                            <input
+                                type="number"
+                                id="max_upload_size_mb"
+                                name="max_upload_size_mb"
                                 value="{{ $settings['max_upload_size_mb'] }}"
-                                min="5" 
-                                max="100" 
+                                min="5"
+                                max="100"
                                 class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                             >
                         </div>
@@ -146,10 +147,10 @@
                             <label for="allowed_file_extensions" class="block text-xs font-semibold text-gray-700 mb-1">
                                 Ekstensi Berkas
                             </label>
-                            <input 
-                                type="text" 
-                                id="allowed_file_extensions" 
-                                name="allowed_file_extensions" 
+                            <input
+                                type="text"
+                                id="allowed_file_extensions"
+                                name="allowed_file_extensions"
                                 value="{{ $settings['allowed_file_extensions'] }}"
                                 class="w-full text-xs font-mono text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                             >
@@ -160,21 +161,21 @@
                             <label for="session_lifetime_minutes" class="block text-xs font-semibold text-gray-700 mb-1">
                                 Masa Berlaku Sesi (Menit)
                             </label>
-                            <input 
-                                type="number" 
-                                id="session_lifetime_minutes" 
-                                name="session_lifetime_minutes" 
+                            <input
+                                type="number"
+                                id="session_lifetime_minutes"
+                                name="session_lifetime_minutes"
                                 value="{{ $settings['session_lifetime_minutes'] }}"
-                                min="15" 
-                                max="480" 
+                                min="15"
+                                max="120"
                                 class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                             >
                         </div>
                     </div>
 
                     <div class="flex justify-end pt-3 border-t border-gray-100">
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-xl transition duration-150 shadow-2xs cursor-pointer"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,7 +194,7 @@
             <!-- Kartu Kesehatan Server -->
             <div class="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs space-y-4">
                 <div class="border-b border-gray-100 pb-3">
-                    <h3 class="text-sm font-bold text-gray-900 tracking-tight font-serif flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-gray-900 tracking-tight font-sans flex items-center gap-2">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
@@ -245,7 +246,7 @@
             <!-- Kartu Operasional Cache Sistem -->
             <div class="bg-white rounded-xl border border-gray-200/90 p-5 shadow-2xs space-y-3">
                 <div class="border-b border-gray-100 pb-3">
-                    <h3 class="text-sm font-bold text-gray-900 tracking-tight font-serif flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-gray-900 tracking-tight font-sans flex items-center gap-2">
                         <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
@@ -258,8 +259,8 @@
 
                 <form action="{{ route('sysadmin.settings.clear-cache') }}" method="POST">
                     @csrf
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 min-h-11 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition shadow-2xs cursor-pointer"
                         title="Kosongkan seluruh cache aplikasi"
                     >

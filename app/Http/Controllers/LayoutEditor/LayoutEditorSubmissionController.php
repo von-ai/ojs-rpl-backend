@@ -9,8 +9,8 @@ use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
-use App\Models\User;
 use App\Services\LayoutEditor\LayoutEditorService;
+use App\Services\PrivateFileService;
 use App\ViewModels\LayoutEditorDetailViewModel;
 use App\ViewModels\LayoutEditorSubmissionsViewModel;
 use DomainException;
@@ -18,7 +18,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -74,34 +73,22 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function uploadGalley(Request $request): RedirectResponse
     {
-        $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
-        $label = (string) $request->input('galley_label', 'PDF Full Text');
-        $format = (string) $request->input('format', 'pdf');
-        $changeSummary = $request->input('change_summary');
-
-        $submission = $this->findSubmission($submissionParam);
+        $data = $request->validate([
+            'submission_id' => ['required', 'string'],
+            'file' => ['required', 'file', 'mimes:pdf,html', 'max:20480'],
+            'galley_label' => ['required', 'string', 'max:191'],
+            'format' => ['required', 'in:pdf,html'],
+            'change_summary' => ['nullable', 'string', 'max:4000'],
+        ]);
+        $submission = $this->findSubmission($data['submission_id']);
         $this->authorizeLayoutEditorForSubmission($submission);
-
-        $actor = Auth::user();
-
-        if ($submission && $actor && $request->hasFile('file')) {
-            try {
-                $this->layoutEditorService->uploadGalley(
-                    $submission,
-                    $request->file('file'),
-                    $label,
-                    $format,
-                    $actor,
-                    $changeSummary
-                );
-            } catch (DomainException $e) {
-                return redirect()->route('layouteditor.submissions.show', $submissionParam)
-                    ->withErrors(['file' => $e->getMessage()]);
-            }
+        try {
+            $this->layoutEditorService->uploadGalley($submission, $request->file('file'), $data['galley_label'], $data['format'], Auth::user(), $data['change_summary'] ?? null);
+        } catch (DomainException $e) {
+            return back()->withErrors(['file' => $e->getMessage()]);
         }
 
-        return redirect()->route('layouteditor.submissions.show', $submissionParam)
-            ->with('status', 'Berkas galai PDF berhasil diunggah dan diverifikasi checksum.');
+        return redirect()->route('layouteditor.submissions.show', $data['submission_id'])->with('status', 'Galai diunggah dan menunggu pemindaian keamanan.');
     }
 
     /**
@@ -109,27 +96,13 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function resolveNote(Request $request): RedirectResponse
     {
-        $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
-        $noteId = (string) $request->input('note_id', '');
-        $resolution = (string) $request->input('resolution', 'Telah diperbaiki.');
-
-        $submission = $this->findSubmission($submissionParam);
+        $data = $request->validate(['note_id' => ['required', 'string'], 'resolution' => ['required', 'string', 'max:4000']]);
+        $note = ProofreadingNote::with('galley.submission')->findOrFail($data['note_id']);
+        $submission = $note->galley?->submission;
         $this->authorizeLayoutEditorForSubmission($submission);
+        $this->layoutEditorService->resolveProofreadingNote($note, $data['resolution'], Auth::user());
 
-        try {
-            if ($noteId !== '' && class_exists(ProofreadingNote::class) && Schema::hasTable('proofreading_notes')) {
-                $note = ProofreadingNote::find($noteId);
-                $actor = Auth::user() ?? (Schema::hasTable('users') ? User::first() : null);
-                if ($note && $actor) {
-                    $this->layoutEditorService->resolveProofreadingNote($note, $resolution, $actor);
-                }
-            }
-        } catch (\Throwable) {
-            // Safe fallback
-        }
-
-        return redirect()->route('layouteditor.submissions.show', $submissionParam)
-            ->with('status', 'Catatan koreksi proofreading berhasil ditandai selesai.');
+        return redirect()->route('layouteditor.submissions.show', $request->input('submission_id', $note->galley->submission_id))->with('status', 'Catatan koreksi ditandai selesai dan menunggu verifikasi proofreader.');
     }
 
     /**
@@ -137,7 +110,7 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function requestProofread(Request $request): RedirectResponse
     {
-        $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionParam = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $submission = $this->findSubmission($submissionParam);
         $this->authorizeLayoutEditorForSubmission($submission);
 
@@ -161,8 +134,8 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function submitEscalation(Request $request): RedirectResponse
     {
-        $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
-        $reason = (string) $request->input('reason', 'Kendala format tata letak.');
+        $submissionParam = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
+        $reason = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:4000']])['reason'];
 
         $submission = $this->findSubmission($submissionParam);
         $this->authorizeLayoutEditorForSubmission($submission);
@@ -182,11 +155,20 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function requestFinalApproval(Request $request): RedirectResponse
     {
-        $submissionParam = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionParam = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $submission = $this->findSubmission($submissionParam);
         $this->authorizeLayoutEditorForSubmission($submission);
 
         $actor = Auth::user();
+
+        if ($submission && $actor) {
+            try {
+                $this->layoutEditorService->requestFinalApproval($submission, $actor);
+            } catch (DomainException $e) {
+                return redirect()->route('layouteditor.submissions.show', $submissionParam)
+                    ->withErrors(['general' => $e->getMessage()]);
+            }
+        }
 
         if ($submission && $actor) {
             try {
@@ -206,72 +188,10 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function downloadGalley(string $id): StreamedResponse
     {
-        $galley = null;
-        if (class_exists(Galley::class) && Schema::hasTable('galleys')) {
-            $galley = Galley::with('file')->find($id);
+        $galley = Galley::with('file')->findOrFail($id);
+        abort_unless($galley->file, 404);
 
-            if (! $galley) {
-                preg_match('/(\d{5})/', $id, $matches);
-                $code = $matches[1] ?? '';
-                if ($code !== '') {
-                    $galley = Galley::with('file')
-                        ->whereHas('submission', fn ($q) => $q->where('submission_number', 'like', "%{$code}%"))
-                        ->latest('version')
-                        ->first();
-                }
-            }
-        }
-
-        if ($galley && $galley->file) {
-            $file = $galley->file;
-            $disk = Storage::disk($file->storage_disk ?: config('filesystems.default', 'local'));
-
-            if ($disk->exists($file->storage_path)) {
-                return $disk->download(
-                    $file->storage_path,
-                    $file->original_name,
-                    ['Content-Type' => $file->mime_type]
-                );
-            }
-        }
-
-        // Cek langsung pada FileEntry
-        if (class_exists(FileEntry::class) && Schema::hasTable('files')) {
-            $fileEntry = FileEntry::find($id);
-            if (! $fileEntry) {
-                preg_match('/(\d{5})/', $id, $matches);
-                $code = $matches[1] ?? '';
-                if ($code !== '') {
-                    $fileEntry = FileEntry::where('original_name', 'like', "%{$code}%")
-                        ->where('original_name', 'like', '%.pdf')
-                        ->latest()
-                        ->first();
-                }
-            }
-
-            if ($fileEntry) {
-                $disk = Storage::disk($fileEntry->storage_disk ?: config('filesystems.default', 'local'));
-                if ($disk->exists($fileEntry->storage_path)) {
-                    return $disk->download(
-                        $fileEntry->storage_path,
-                        $fileEntry->original_name,
-                        ['Content-Type' => $fileEntry->mime_type]
-                    );
-                }
-            }
-        }
-
-        // Fallback streaming PDF standar
-        $filename = str_ends_with(strtolower($id), '.pdf') ? $id : "Galley_{$id}.pdf";
-
-        return response()->streamDownload(function () {
-            echo "%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"
-                ."3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n"
-                ."4 0 obj << /Length 65 >> stream\nBT /F1 14 Tf 50 750 Td (Galai Publikasi Resmi BRIDA Makassar) Tj ET\nendstream\nendobj\n"
-                ."5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000056 00000 n \n0000000111 00000 n \n0000000228 00000 n \n0000000344 00000 n \ntrailer << /Size 6 /Root 1 0 R >>\nstartxref\n415\n%%EOF\n";
-        }, $filename, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return app(PrivateFileService::class)->download($galley->file, Auth::user());
     }
 
     /**
@@ -279,44 +199,14 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function downloadFile(string $id): StreamedResponse
     {
-        $fileEntry = null;
-
-        if (class_exists(FileEntry::class) && Schema::hasTable('files')) {
-            $fileEntry = FileEntry::find($id);
-
-            if (! $fileEntry) {
-                preg_match('/(\d{5})/', $id, $matches);
-                $code = $matches[1] ?? '';
-
-                $query = FileEntry::query();
-                if ($code !== '') {
-                    $query->where(function ($q) use ($code, $id) {
-                        $q->where('original_name', 'like', "%{$code}%")
-                            ->orWhere('storage_path', 'like', "%{$code}%")
-                            ->orWhere('original_name', 'like', "%{$id}%")
-                            ->orWhere('storage_path', 'like', "%{$id}%");
-                    });
-                } else {
-                    $query->where('original_name', 'like', "%{$id}%")
-                        ->orWhere('storage_path', 'like', "%{$id}%");
-                }
-
-                $fileEntry = $query->latest()->first();
-            }
+        $file = FileEntry::find($id);
+        if (! $file) {
+            $submission = Submission::where('submission_number', $id)->firstOrFail();
+            $file = $submission->finalCopyeditFile();
         }
+        abort_unless($file, 404);
 
-        if ($fileEntry) {
-            $disk = Storage::disk($fileEntry->storage_disk ?: config('filesystems.default', 'local'));
-            if ($disk->exists($fileEntry->storage_path)) {
-                return $disk->download(
-                    $fileEntry->storage_path,
-                    $fileEntry->original_name,
-                    ['Content-Type' => $fileEntry->mime_type]
-                );
-            }
-        }
-
-        abort(404, 'Berkas naskah acuan copyediting tidak ditemukan di media penyimpanan.');
+        return app(PrivateFileService::class)->download($file, Auth::user());
     }
 
     private function findSubmission(string $identifier): ?Submission

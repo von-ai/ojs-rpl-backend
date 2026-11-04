@@ -179,7 +179,7 @@
                                 $rowNumber = ($viewModel->assignments->firstItem() ?? 1) + $loop->index;
                                 $round = $assignment->reviewRound;
                                 $submission = $round?->submission;
-                                $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
+                                $title = $round?->reviewer_title ?? 'Judul anonim belum disiapkan';
                                 $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
                                 $meta = $viewModel->statusMeta($assignment->status);
                             @endphp
@@ -293,7 +293,7 @@
                         $rowNumber = ($viewModel->assignments->firstItem() ?? 1) + $loop->index;
                         $round = $assignment->reviewRound;
                         $submission = $round?->submission;
-                        $title = $round?->reviewer_title ?? $submission?->title ?? 'Naskah Tanpa Judul';
+                        $title = $round?->reviewer_title ?? 'Judul anonim belum disiapkan';
                         $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
                         $meta = $viewModel->statusMeta($assignment->status);
                     @endphp

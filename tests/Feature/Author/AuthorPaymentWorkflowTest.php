@@ -105,6 +105,12 @@ class AuthorPaymentWorkflowTest extends TestCase
             'version' => 1,
         ]);
 
+        foreach ([$this->freeJournal, $this->paidJournal] as $journal) {
+            $this->grantRole($this->manager, 'manager', $journal->id);
+            $this->grantRole($this->eic, 'editor_in_chief', $journal->id);
+            $this->grantRole($this->sectionEditor, 'section_editor', $journal->id);
+        }
+
         $this->section = Section::create([
             'journal_id' => $this->paidJournal->id,
             'slug' => 'riset-terapan',
@@ -122,7 +128,7 @@ class AuthorPaymentWorkflowTest extends TestCase
     {
         $submission = Submission::create([
             'journal_id' => $this->freeJournal->id,
-            'section_id' => $this->section->id,
+            'section_id' => Section::create(['journal_id' => $this->freeJournal->id, 'name' => 'Riset gratis', 'slug' => 'riset-gratis'])->id,
             'author_id' => $this->author->id,
             'submission_number' => 'SUB-2026-FREE01',
             'title' => 'Inovasi Pelayanan Publik Bebas Biaya',
@@ -147,7 +153,7 @@ class AuthorPaymentWorkflowTest extends TestCase
     {
         $submission = Submission::create([
             'journal_id' => $this->freeJournal->id,
-            'section_id' => $this->section->id,
+            'section_id' => Section::create(['journal_id' => $this->freeJournal->id, 'name' => 'Riset gratis', 'slug' => 'riset-gratis'])->id,
             'author_id' => $this->author->id,
             'submission_number' => 'SUB-2026-FREE02',
             'title' => 'Studi Efektivitas Kebijakan Daerah',
@@ -252,6 +258,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($fileEntry->storage_path));
 
         // 4. Author dapat mengunduh kembali berkas bukti transfer
+        $this->scanTestUploads();
         $downloadResponse = $this->actingAs($this->author)
             ->get(route('author.submissions.payment.proof', $submission->id));
 
@@ -284,6 +291,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         ]);
 
         // Manajer Jurnal memverifikasi pembayaran
+        $this->scanTestUploads();
         $verifyResponse = $this->actingAs($this->manager)
             ->post(route('journalmanager.submissions.payment.verify', $submission->id), [
                 'notes' => 'Telah dicek pada mutasi rekening koran kas jurnal.',
@@ -323,6 +331,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         ]);
 
         // Manajer Jurnal menolak bukti
+        $this->scanTestUploads();
         $rejectResponse = $this->actingAs($this->manager)
             ->post(route('journalmanager.submissions.payment.reject', $submission->id), [
                 'reason' => 'Foto struk terpotong pada bagian nomor referensi dan tanggal transfer.',
@@ -368,6 +377,7 @@ class AuthorPaymentWorkflowTest extends TestCase
             'version' => 1,
         ]);
 
+        $this->scanTestUploads();
         $waiveResponse = $this->actingAs($this->manager)
             ->post(route('journalmanager.submissions.payment.waive', $submission->id), [
                 'waiver_reason' => 'Program afirmasi riset inklusif dan kolaborasi pemuda berprestasi.',
@@ -411,6 +421,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         ]);
 
         // EIC membuka halaman submission
+        $this->scanTestUploads();
         $eicPage = $this->actingAs($this->eic)
             ->get(route('eic.submissions.show', $submission->id));
         $eicPage->assertStatus(200);
@@ -418,11 +429,13 @@ class AuthorPaymentWorkflowTest extends TestCase
         $eicPage->assertSee('Bank Mandiri');
 
         // EIC mengunduh bukti transfer
+        $this->scanTestUploads();
         $eicDownload = $this->actingAs($this->eic)
             ->get(route('eic.submissions.payment.proof', $submission->id));
         $eicDownload->assertStatus(200);
 
         // EIC memverifikasi pembayaran
+        $this->scanTestUploads();
         $eicVerify = $this->actingAs($this->eic)
             ->post(route('eic.submissions.payment.verify', $submission->id));
         $eicVerify->assertRedirect();
@@ -434,6 +447,7 @@ class AuthorPaymentWorkflowTest extends TestCase
      */
     public function test_manajer_jurnal_dapat_mengubah_pengaturan_apc(): void
     {
+        $this->scanTestUploads();
         $response = $this->actingAs($this->manager)
             ->post(route('journalmanager.settings.update'), [
                 'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
@@ -555,11 +569,13 @@ class AuthorPaymentWorkflowTest extends TestCase
 
         // Penulis mengunggah bukti transfer
         $proof = UploadedFile::fake()->create('bukti_se.pdf', 300, 'application/pdf');
-        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+        $uploadRes = $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
             'payment_proof' => $proof,
             'amount_paid' => 750000,
             'sender_bank_name' => 'Bank Mandiri',
         ]);
+
+        $this->scanTestUploads();
 
         // Section Editor dapat mengunduh bukti transfer
         $downloadResponse = $this->actingAs($this->sectionEditor)
@@ -573,6 +589,15 @@ class AuthorPaymentWorkflowTest extends TestCase
             ]);
         $rejectResponse->assertRedirect();
         $this->assertEquals('rejected', ArticlePayment::where('submission_id', $submission->id)->first()->status);
+
+        // Penulis mengunggah bukti perbaikan
+        $correctedProof = UploadedFile::fake()->create('bukti_se_perbaikan.pdf', 300, 'application/pdf');
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => $correctedProof,
+            'amount_paid' => 750000,
+            'sender_bank_name' => 'Bank Mandiri',
+        ]);
+        $this->scanTestUploads();
 
         // Section Editor memverifikasi pembayaran setelah perbaikan
         $verifyResponse = $this->actingAs($this->sectionEditor)

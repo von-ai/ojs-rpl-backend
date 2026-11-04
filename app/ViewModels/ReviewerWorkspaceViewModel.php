@@ -24,7 +24,7 @@ class ReviewerWorkspaceViewModel
     public function title(): string
     {
         return $this->assignment->reviewRound->reviewer_title
-            ?? $this->assignment->reviewRound->submission->title;
+            ?? 'Judul anonim belum disiapkan';
     }
 
     /**
@@ -33,7 +33,7 @@ class ReviewerWorkspaceViewModel
     public function abstract(): string
     {
         return $this->assignment->reviewRound->reviewer_abstract
-            ?? $this->assignment->reviewRound->submission->abstract;
+            ?? 'Abstrak anonim belum disiapkan';
     }
 
     /**
@@ -43,16 +43,7 @@ class ReviewerWorkspaceViewModel
      */
     public function keywords(): array
     {
-        $keywords = $this->assignment->reviewRound?->submission?->keywords;
-
-        if (is_array($keywords)) {
-            return array_values(array_filter(array_map('trim', $keywords)));
-        }
-
-        if (is_string($keywords) && trim($keywords) !== '') {
-            return array_values(array_filter(array_map('trim', explode(',', $keywords))));
-        }
-
+        // Keywords on the submission are not an anonymized snapshot.
         return [];
     }
 
@@ -123,8 +114,7 @@ class ReviewerWorkspaceViewModel
 
     public function canSubmit(): bool
     {
-        return in_array($this->assignment->status, ['accepted', 'overdue'], true)
-            && $this->assignment->status !== 'completed';
+        return $this->assignment->effective_status === 'accepted' && $this->assignment->reviewRound->status === 'active';
     }
 
     public function canDownloadManuscript(): bool

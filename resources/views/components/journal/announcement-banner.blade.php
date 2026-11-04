@@ -11,7 +11,7 @@
                 <span class="font-bold text-brand-maroon ml-1">Batas Akhir: {{ $announcement['deadline'] ?? '15 November 2026' }}</span>
             </p>
         </div>
-        <a href="#pengumuman" class="inline-flex items-center gap-1 text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover shrink-0 hover:underline">
+        <a href="{{ route('journal.announcements.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover shrink-0 hover:underline">
             <span>Detail</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>

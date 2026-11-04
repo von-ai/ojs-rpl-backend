@@ -22,22 +22,22 @@
         </div>
 
         <div class="shrink-0">
-            <a 
-                href="{{ route('layouteditor.files.download', 'Template_Format_Galai_BRIDA.docx') }}" 
+            <a
+                href="{{ asset('docs/panduan-penulisan-jurnal-brida.pdf') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover text-white text-xs font-semibold rounded-xl shadow-2xs transition"
                 title="Unduh berkas template tata letak resmi"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>Unduh Template Galley (.docx/.indt)</span>
+                <span>Unduh Panduan Format (PDF) (.docx/.indt)</span>
             </a>
         </div>
     </div>
 
     <!-- Isi Panduan Terstruktur -->
     <div class="bg-white rounded-2xl border border-gray-200/90 p-6 sm:p-8 shadow-2xs space-y-8 text-sm text-gray-700 leading-relaxed">
-        
+
         <!-- Poin 1: Format Geometri & Grid Halaman -->
         <section class="space-y-3">
             <div class="flex items-center gap-2.5 border-b border-gray-100 pb-3">

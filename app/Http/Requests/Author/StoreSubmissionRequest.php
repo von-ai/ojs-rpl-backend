@@ -29,7 +29,7 @@ class StoreSubmissionRequest extends FormRequest
             $decoded = json_decode($rawKeywords, true);
 
             if (is_array($decoded)) {
-                $this->merge(['keywords' => array_values(array_filter(array_map('trim', $decoded)))]);
+                $this->merge(['keywords' => array_values(array_filter(array_map(fn ($value) => is_string($value) ? trim($value) : $value, $decoded)))]);
             } else {
                 $this->merge(['keywords' => array_values(array_filter(array_map('trim', explode(',', $rawKeywords))))]);
             }
@@ -94,7 +94,7 @@ class StoreSubmissionRequest extends FormRequest
             'keywords' => $isSubmit ? ['required', 'array', 'min:1', 'max:20'] : ['nullable', 'array', 'max:20'],
             'keywords.*' => ['nullable', 'string', 'max:100'],
             'subject_area' => ['nullable', 'string', 'max:255'],
-            'references' => ['nullable', 'string'],
+            'references' => ['nullable', 'string', 'max:100000'],
             'comments_for_editor' => ['nullable', 'string', 'max:2000'],
             'checklist_items' => ['nullable', 'array'],
             'checklist_items.*' => ['nullable', 'string'],

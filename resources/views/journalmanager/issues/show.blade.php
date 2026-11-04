@@ -8,8 +8,8 @@
     <!-- 1. Header Metadata Edisi & Tombol Navigasi -->
     <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
-            <a 
-                href="{{ route('journalmanager.issues.index') }}" 
+            <a
+                href="{{ route('journalmanager.issues.index') }}"
                 class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-maroon transition"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -37,7 +37,7 @@
                 <span>•</span>
                 <span class="text-gray-400 font-sans font-normal">DOI Prefix: {{ $issue['doi_prefix'] }}</span>
             </div>
-            <h1 class="text-lg sm:text-2xl font-serif font-bold text-gray-900 leading-snug tracking-tight">
+            <h1 class="text-lg sm:text-2xl font-sans font-bold text-gray-900 leading-snug tracking-tight">
                 {{ $issue['title'] }}
             </h1>
             @if(!empty($issue['description']))
@@ -85,7 +85,7 @@
                                             <span class="text-[10px] font-mono font-bold text-gray-400 block mb-0.5">
                                                 {{ $art['submission_number'] }} • {{ $art['section_title'] }}
                                             </span>
-                                            <h3 class="text-xs sm:text-sm font-serif font-bold text-gray-900 leading-snug">
+                                            <h3 class="text-xs sm:text-sm font-sans font-bold text-gray-900 leading-snug">
                                                 {{ $art['title'] }}
                                             </h3>
                                             <span class="text-[11px] text-gray-600 block mt-1">
@@ -101,8 +101,8 @@
                                                         {{ $art['payment_label'] ?? 'Bebas Biaya' }}
                                                     </span>
                                                     @if(!empty($art['is_paid_journal']))
-                                                        <button 
-                                                            type="button" 
+                                                        <button
+                                                            type="button"
                                                             onclick="document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.add('flex');"
                                                             class="text-brand-maroon hover:underline font-semibold cursor-pointer"
                                                         >
@@ -110,8 +110,8 @@
                                                         </button>
                                                     @endif
                                                 </div>
-                                                <a 
-                                                    href="{{ $art['galley_pdf_url'] }}" 
+                                                <a
+                                                    href="{{ $art['galley_pdf_url'] }}"
                                                     class="inline-flex items-center gap-1 text-xs font-semibold text-brand-maroon hover:underline"
                                                 >
                                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,7 +169,7 @@
                                     <span class="text-[10px] font-mono font-bold text-gray-400 block mb-0.5">
                                         {{ $ready['number'] }} • {{ $ready['section_title'] }}
                                     </span>
-                                    <h3 class="text-xs font-serif font-bold text-gray-900 leading-snug">
+                                    <h3 class="text-xs font-sans font-bold text-gray-900 leading-snug">
                                         {{ $ready['title'] }}
                                     </h3>
                                     <div class="flex items-center gap-2 text-[11px] text-gray-500 mt-1">
@@ -181,8 +181,8 @@
                                             {{ $ready['payment_label'] ?? 'Bebas Biaya' }}
                                         </span>
                                         @if(!empty($ready['is_paid_journal']))
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onclick="document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.add('flex');"
                                                 class="text-brand-maroon hover:underline font-semibold cursor-pointer"
                                             >
@@ -196,8 +196,8 @@
                                     @csrf
                                     <input type="hidden" name="article_id" value="{{ $ready['id'] }}">
                                     <input type="hidden" name="article_title" value="{{ $ready['title'] }}">
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition whitespace-nowrap"
                                     >
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -242,8 +242,8 @@
                     @if(!$issue['is_current'])
                         <form action="{{ route('journalmanager.issues.set-current', $issue['id']) }}" method="POST">
                             @csrf
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -282,8 +282,8 @@
                               data-confirm-cancel="Batal"
                               data-confirm-type="primary">
                             @csrf
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition"
                             >
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -345,4 +345,3 @@
 
 </div>
 @endsection
-

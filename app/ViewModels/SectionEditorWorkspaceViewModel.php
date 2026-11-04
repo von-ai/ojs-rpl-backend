@@ -60,7 +60,7 @@ class SectionEditorWorkspaceViewModel
 
     public function completedReviewsCount(): int
     {
-        return $this->activeRound->assignments->where('status', 'completed')->count();
+        return $this->activeRound->completedReviewCount();
     }
 
     public function minimumCompletedReviews(): int

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -31,12 +32,35 @@ use Illuminate\Support\Facades\Hash;
 #[Hidden(['password_hash', 'remember_token'])]
 class User extends Authenticatable
 {
+    protected ?string $rawRememberToken = null;
+
+    public function setRememberToken($value): void
+    {
+        $this->rawRememberToken = $value;
+        $this->attributes[$this->getRememberTokenName()] = $value ? hash_hmac('sha256', $value, (string) config('app.key')) : null;
+    }
+
+    public function getRememberToken(): ?string
+    {
+        return $this->rawRememberToken ?? $this->getAttribute($this->getRememberTokenName());
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUlids, Notifiable, SoftDeletes;
 
     /**
      * Get the password string for authentication.
      */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function getAuthPasswordName(): string
+    {
+        return 'password_hash';
+    }
+
     public function getAuthPassword(): string
     {
         return $this->password_hash ?? '';
@@ -154,10 +178,10 @@ class User extends Authenticatable
     public function isSysAdmin(): bool
     {
         if ($this->relationLoaded('userRoles')) {
-            return $this->userRoles->contains('role_code', 'sysadmin');
+            return $this->userRoles->contains(fn ($role) => $role->role_code === 'sysadmin' && $role->journal_id === null);
         }
 
-        return $this->userRoles()->where('role_code', 'sysadmin')->exists();
+        return $this->userRoles()->where('role_code', 'sysadmin')->whereNull('journal_id')->exists();
     }
 
     /**
@@ -172,6 +196,7 @@ class User extends Authenticatable
 
         try {
             $dbRoles = $this->userRoles()
+                ->where(fn ($q) => $q->where('role_code', '!=', 'sysadmin')->orWhereNull('journal_id'))
                 ->pluck('role_code')
                 ->filter(fn ($code) => is_string($code) && isset(UserRole::roleCatalog()[$code]))
                 ->unique()
@@ -181,9 +206,8 @@ class User extends Authenticatable
             $dbRoles = [];
         }
 
-        if (empty($dbRoles)) {
-            return ['author'];
-        }
+        $dbRoles[] = 'author';
+        $dbRoles = array_unique($dbRoles);
 
         // Urutkan sesuai urutan prioritas di roleCatalog()
         return array_values(array_intersect($catalogKeys, $dbRoles));
@@ -246,7 +270,7 @@ class User extends Authenticatable
         }
 
         // 3. Fallback ke peran pertama yang dimiliki pengguna
-        return $available[0] ?? 'author';
+        return collect($available)->first(fn ($role) => $role !== 'author') ?? 'author';
     }
 
     /**
@@ -265,7 +289,7 @@ class User extends Authenticatable
             // Abaikan
         }
 
-        $primaryRole = $available[0] ?? 'author';
+        $primaryRole = collect($available)->first(fn ($role) => $role !== 'author') ?? 'author';
 
         return UserRole::roleMeta($primaryRole)['route'];
     }
@@ -280,6 +304,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'locked_until' => 'datetime',
+            'remember_expires_at' => 'datetime',
             'last_failed_login_at' => 'datetime',
             'version' => 'integer',
             'failed_login_count' => 'integer',

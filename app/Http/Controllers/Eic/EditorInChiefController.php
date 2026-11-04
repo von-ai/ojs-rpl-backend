@@ -11,14 +11,13 @@ use App\Models\Submission;
 use App\Models\User;
 use App\Services\Eic\EditorInChiefService;
 use App\Services\Payment\ArticlePaymentService;
+use App\Services\PrivateFileService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -152,37 +151,7 @@ class EditorInChiefController extends Controller
                 ->with('error', 'Berkas manuskrip tidak ditemukan pada naskah ini.');
         }
 
-        $fileEntry = $subFile->file;
-
-        if ($fileEntry->virus_scan_status && $fileEntry->virus_scan_status !== 'clean') {
-            return redirect()
-                ->route('eic.submissions.show', $submission->id)
-                ->with('error', 'Berkas belum lulus pemindaian antivirus (status: '.$fileEntry->virus_scan_status.').');
-        }
-
-        $filename = $fileEntry->original_name ?: ('Manuskrip-'.$submission->submission_number.'.pdf');
-        $mimeType = $fileEntry->mime_type ?: 'application/octet-stream';
-
-        return response()->streamDownload(function () use ($submission, $fileEntry, $subFile): void {
-            if (Storage::disk($fileEntry->storage_disk ?: 'local')->exists($fileEntry->storage_path)) {
-                echo Storage::disk($fileEntry->storage_disk ?: 'local')->get($fileEntry->storage_path);
-
-                return;
-            }
-
-            echo "DOKUMEN MANUSKRIP RESMI SIRIDA KOTA MAKASSAR\n";
-            echo "============================================\n";
-            echo "Nomor Naskah : {$submission->submission_number}\n";
-            echo "Judul        : {$submission->title}\n";
-            echo "Nama Berkas  : {$fileEntry->original_name}\n";
-            echo 'Genre        : '.strtoupper((string) $subFile->genre)."\n";
-            echo "SHA-256      : {$fileEntry->checksum_sha256}\n\n";
-            echo "Abstrak:\n{$submission->abstract}\n";
-        }, $filename, [
-            'Content-Type' => $mimeType,
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return app(PrivateFileService::class)->stream($subFile->file);
     }
 
     /**
@@ -206,7 +175,7 @@ class EditorInChiefController extends Controller
         ]);
 
         try {
-            $user = $request->user() ?? User::firstOrFail();
+            $user = $request->user();
 
             $this->eicService->performDeskReview(
                 submission: $submission,
@@ -335,7 +304,7 @@ class EditorInChiefController extends Controller
         ]);
 
         try {
-            $eic = $request->user() ?? User::firstOrFail();
+            $eic = $request->user();
             $sectionEditor = User::findOrFail($validated['section_editor_id']);
 
             $this->eicService->assignSectionEditor(
@@ -378,7 +347,7 @@ class EditorInChiefController extends Controller
         ]);
 
         try {
-            $eic = $request->user() ?? User::firstOrFail();
+            $eic = $request->user();
 
             $decision = $this->eicService->makeEditorialDecision(
                 submission: $submission,
@@ -419,7 +388,7 @@ class EditorInChiefController extends Controller
         ]);
 
         try {
-            $eic = $request->user() ?? User::firstOrFail();
+            $eic = $request->user();
 
             $this->eicService->approveFinalGalley(
                 submission: $submission,
@@ -452,19 +421,7 @@ class EditorInChiefController extends Controller
             abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
         }
 
-        $fileEntry = $payment->fileEntry;
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk($fileEntry->storage_disk);
-
-        if (! $disk->exists($fileEntry->storage_path)) {
-            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
-        }
-
-        return $disk->download(
-            $fileEntry->storage_path,
-            $fileEntry->original_name,
-            ['Content-Type' => $fileEntry->mime_type]
-        );
+        return app(PrivateFileService::class)->stream($payment->fileEntry);
     }
 
     /**
@@ -483,7 +440,7 @@ class EditorInChiefController extends Controller
         }
 
         $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).');
-        $verifier = $request->user() ?? User::firstOrFail();
+        $verifier = $request->user();
 
         $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
 

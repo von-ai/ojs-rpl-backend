@@ -62,10 +62,10 @@
             <a href="{{ route('journal.index') }}" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap font-bold text-brand-maroon border-b-2 border-brand-maroon rounded-b-none">
                 Beranda
             </a>
-            <a href="#edisi-terkini" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap">
+            <a href="{{ route('journal.issues.current') }}" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap">
                 Edisi Terkini
             </a>
-            <a href="#arsip-edisi" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap">
+            <a href="{{ route('journal.archives') }}" class="px-3 py-2 rounded-md hover:text-brand-maroon transition-colors text-nowrap">
                 Arsip Edisi
             </a>
         @endif

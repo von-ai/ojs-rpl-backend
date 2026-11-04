@@ -121,14 +121,6 @@
                             $filesToDownload = collect();
                             if ($viewModel->assignment->reviewRound?->anonymizedFile) {
                                 $filesToDownload->push($viewModel->assignment->reviewRound->anonymizedFile);
-                            } elseif ($viewModel->assignment->reviewRound?->manuscriptFile) {
-                                $filesToDownload->push($viewModel->assignment->reviewRound->manuscriptFile);
-                            } else {
-                                foreach($viewModel->assignment->reviewRound->submission->files as $sf) {
-                                    if ($sf->file) {
-                                        $filesToDownload->push($sf->file);
-                                    }
-                                }
                             }
                         @endphp
 
@@ -140,7 +132,7 @@
                                     </svg>
                                     <div class="truncate">
                                         <span class="font-medium text-gray-800 truncate block">
-                                            {{ $fileEntry->original_name ?: 'Manuskrip_Anonim.pdf' }}
+                                            Manuskrip anonim
                                         </span>
                                         <span class="text-[10px] text-gray-400 font-mono">
                                             {{ number_format(($fileEntry->byte_size ?? $fileEntry->file_size ?? 0) / 1024, 1) }} KB

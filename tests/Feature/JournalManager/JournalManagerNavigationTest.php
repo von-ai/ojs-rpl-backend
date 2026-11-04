@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\Issue;
+use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\JournalManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -120,8 +122,14 @@ class JournalManagerNavigationTest extends TestCase
         $resStoreIssue->assertSessionHas('status');
 
         // 2. Tambah artikel ke edisi
+        $targetSubmission = Submission::whereDoesntHave('issueArticle')->firstOrFail();
+        $this->preparePublication($targetSubmission);
+        $issue = Issue::findOrFail('ISSUE-01JARK960A');
+        foreach ($issue->issueArticles as $entry) {
+            $this->preparePublication($entry->submission);
+        }
         $resAddArticle = $this->post('/journalmanager/issues/ISSUE-01JARK960A/add-article', [
-            'article_title' => 'Analisis Spasial RTH Makassar',
+            'article_id' => $targetSubmission->id,
         ]);
         $resAddArticle->assertRedirect('/journalmanager/issues/ISSUE-01JARK960A');
         $resAddArticle->assertSessionHas('status');
@@ -139,6 +147,7 @@ class JournalManagerNavigationTest extends TestCase
         // 5. Tetapkan peran pengguna
         $resAssignRole = $this->post('/journalmanager/users/assign-role', [
             'role_code' => 'Section Editor',
+            'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resAssignRole->assertRedirect('/journalmanager/users');
         $resAssignRole->assertSessionHas('status');

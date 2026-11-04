@@ -2,7 +2,7 @@
 ## Platform SIRIDA — Portal Penulis & Sistem Manajemen Jurnal Ilmiah
 **Pemerintah Kota Makassar — Badan Riset dan Inovasi Daerah (BRIDA)**
 
-Dokumen ini berisi spesifikasi sistem desain definitif, tokens CSS tersentralisasi, palet warna semantik alur naskah, tipografi dual-font, serta panduan implementasi komponen antarmuka pengguna (*UI/UX Components*) untuk seluruh ekosistem SIRIDA (`ojs-rpl-backend`).
+Dokumen ini berisi spesifikasi sistem desain definitif, tokens CSS tersentralisasi, palet warna semantik alur naskah, tipografi Inter, serta panduan implementasi komponen antarmuka pengguna (*UI/UX Components*) untuk seluruh ekosistem SIRIDA (`ojs-rpl-backend`).
 
 ---
 
@@ -14,10 +14,10 @@ Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas `r
 
 | Nama Token Tailwind v4 | Variabel CSS | Nilai Hex | Peruntukan & Hierarki Visual |
 | :--- | :--- | :--- | :--- |
-| `text-brand-logo` | `--color-brand-logo` | `#ED1C24` | **Warna Merah Standar BRIN.** Identitas warna resmi Badan Riset dan Inovasi Nasional (brin.go.id). |
-| `bg-brand-maroon` | `--color-brand-maroon` | `#ED1C24` | **Warna Primer Merek BRIN.** Digunakan pada tombol CTA utama, tombol submit naskah, active state sidebar, dan ring fokus formulir. |
-| `hover:bg-brand-maroon-hover` | `--color-brand-maroon-hover` | `#C8102E` | State *hover* interaktif pada tombol primer dan tautan penting. |
-| `active:bg-brand-maroon-active` | `--color-brand-maroon-active` | `#9E0012` | State *active / pressed* saat elemen diklik. |
+| `text-brand-logo` | `--color-brand-logo` | `#FA0019` | **Warna Merah Standar BRIN.** Identitas warna resmi Badan Riset dan Inovasi Nasional (brin.go.id). |
+| `bg-brand-maroon` | `--color-brand-maroon` | `#E40017` | **Warna Primer Merek BRIN.** Digunakan pada tombol CTA utama, tombol submit naskah, active state sidebar, dan ring fokus formulir. |
+| `hover:bg-brand-maroon-hover` | `--color-brand-maroon-hover` | `#C50014` | State *hover* interaktif pada tombol primer dan tautan penting. |
+| `active:bg-brand-maroon-active` | `--color-brand-maroon-active` | `#A00010` | State *active / pressed* saat elemen diklik. |
 | `bg-brand-maroon-light` | `--color-brand-maroon-light` | `#FEE2E2` | Latar belakang aksen halus untuk notifikasi, badge, dan kontainer seleksi. |
 | `text-brand-navy` | `--color-brand-navy` | `#002E72` | **Warna Sekunder Merek.** Identitas aksen publikasi akademik dan header portal OJS. |
 | `hover:text-brand-navy-hover` | `--color-brand-navy-hover` | `#001F54` | State *hover* untuk tautan beraksen navy. |
@@ -39,7 +39,7 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 | `revisions_requested` | Tahap 4 | `bg-orange-50 text-orange-800 border-orange-200` | `#9A3412` | Naskah membutuhkan revisi minor/mayor dan respon dari penulis. |
 | `accepted` | Tahap 5 | `bg-emerald-50 text-emerald-800 border-emerald-200` | `#065F46` | Naskah diterima resmi oleh dewan editor untuk diterbitkan. |
 | `in_production` | Tahap 5 | `bg-purple-50 text-purple-800 border-purple-200` | `#6B21A8` | Proses tata letak (*layout setting*), proofreading, & pembuatan galai. |
-| `published` | Tahap 6 | `bg-green-50 text-green-800 border-green-200` | `#166534` | Artikel terbit daring resmi (*Open Access*) dengan DOI Crossref aktif. |
+| `published` | Tahap 6 | `bg-green-50 text-green-800 border-green-200` | `#166534` | Artikel terbit daring resmi (*Open Access*) dengan DOI jika dikonfigurasi. |
 | `declined` | Terminasi | `bg-red-50 text-red-800 border-red-200` | `#991B1B` | Naskah tidak dapat diterima (*Desk Reject* atau evaluasi reviewer). |
 | `archived` | Terminasi | `bg-zinc-100 text-zinc-700 border-zinc-300` | `#3F3F46` | Naskah dibekukan/ditarik (*Withdrawn*) dari alur kerja editorial. |
 
@@ -49,8 +49,8 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 
 | Status Pemindaian | Utility Badge Tailwind | Representasi |
 | :--- | :--- | :--- |
-| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian Microsoft Defender for Storage dan aman diunduh. |
-| `pending_scan` | `bg-amber-50 text-amber-700 ring-1 ring-amber-200` | Berkas baru diunggah dan berada dalam antrean pemindaian otomatis. |
+| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian ClamAV yang dikonfigurasi dan aman diunduh. |
+| `pending` | `bg-amber-50 text-amber-700 ring-1 ring-amber-200` | Berkas baru diunggah dan berada dalam antrean pemindaian otomatis. |
 | `infected` | `bg-red-50 text-red-700 ring-1 ring-red-200` | Berkas terdeteksi malware/virus, dikarantina otomatis oleh sistem. |
 
 ---
@@ -59,12 +59,7 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 
 Sistem menggunakan standar **Single-Font Typography (`Inter` / `font-sans`)** yang menjamin keseragaman visual, keterbacaan tinggi, dan tampilan modern berstandar industri di seluruh portal peran:
 
-```html
-<!-- Google Fonts Embed di resources/views/layouts/ -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
-```
+Inter 400/500/600/700/800 dibundel melalui Vite (`fonts` di `vite.config.js`) dan disajikan dari aset aplikasi. Tidak ada permintaan font pihak ketiga dari browser.
 
 ### A. Panduan Penggunaan Font & Perataan Teks:
 1. **Inter (`font-sans`) Seragam di Seluruh Elemen:**
@@ -217,9 +212,9 @@ Komponen dalam folder ini dikhususkan untuk struktur tata letak (*layout shell*)
 Setiap antarmuka naskah wajib menerapkan aturan defensif berikut:
 
 1. **Pencegahan Teks Meluap (Anti-Broken Layout):**
-   * Seluruh judul naskah, abstrak, dan email panjang wajib menggunakan kombinasi:
+   * Seluruh judul naskah, abstrak, dan email panjang wajib menggunakan:
      ```html
-     class="break-words [overflow-wrap:anywhere]"
+     class="wrap-break-word"
      ```
 2. **Elemen yang Tidak Boleh Menciut (No-Shrink Protection):**
    * Seluruh badge status, tombol download berkas, dan ikon status wajib diberi class `shrink-0` agar bentuknya tetap sempurna di layar sempit.
@@ -252,3 +247,17 @@ Agar seluruh portal peran (Penulis, Pemimpin Redaksi, Editor Bagian, dan Mitra B
 5. **Keringkasan Tabel Antrean Editorial:**
    * Kolom **Status Naskah** hanya menampilkan satu badge status utama tanpa tambahan teks keterangan tahap di bawahnya.
    * Kolom **Section Editor & Review** hanya menampilkan nama editor bagian dan progres jumlah telaah selesai tanpa menampilkan tag rekomendasi tambahan.
+
+## Token radius dan perilaku dropdown
+
+Sumber acuan adalah `resources/css/app.css` dari pembaruan UI 2 November 2026.
+
+| Utility | Radius |
+| --- | --- |
+| rounded-sm | 2 px |
+| rounded-md | 4 px |
+| rounded-lg | 5 px |
+| rounded-xl | 6 px |
+| rounded-2xl / rounded-3xl | 8 px |
+
+Dropdown seluruh portal memakai `<x-dropdown>` atau peningkatan native select oleh `resources/js/app.js`. Pilihan disinkronkan ke native field untuk submit dan validasi. Keyboard mendukung panah, Home/End, pencarian huruf, Enter, Escape dan Tab. Status disabled, required, reset dan error mengikuti field asli. Sebelum JavaScript aktif, native select tetap dapat digunakan. Gunakan placeholder kosong yang eksplisit untuk pilihan wajib; jangan menampilkan pilihan pertama seolah telah dipilih.

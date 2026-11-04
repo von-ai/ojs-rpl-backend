@@ -20,9 +20,9 @@ return [
     ],
 
     'argon' => [
-        'memory' => 65536,
+        'memory' => (int) env('ARGON_MEMORY', 65536),
         'threads' => 1,
-        'time' => 4,
+        'time' => (int) env('ARGON_TIME', 4),
         'verify' => true,
     ],
     'rehash_on_login' => true,

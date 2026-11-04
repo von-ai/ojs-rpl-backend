@@ -8,7 +8,7 @@
 
 <section class="bg-white rounded-xl border border-gray-200 p-6 sm:p-7 space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3.5">
-        <div 
+        <div
             class="flex items-center gap-2.5 min-w-0 cursor-help"
             data-tooltip="Manajemen Putaran Telaah Sejawat"
             data-tooltip-desc="Pengelolaan mitra bestari, pemantauan kuorum telaah, dan evaluasi hasil review"
@@ -27,28 +27,23 @@
             <span class="px-2.5 py-1 rounded-md text-xs font-semibold border tabular-nums {{ $completedCount >= $minReq ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200' }}">
                 Kuorum Telaah: {{ $completedCount }}/{{ $minReq }} Selesai
             </span>
-
-            @if(!$isFinalized && $submission->revisions->isNotEmpty() && $completedCount >= $minReq)
-                <form action="{{ route('section-editor.rounds.store', $submission->id) }}" 
-                      method="POST" 
-                      class="inline m-0"
-                      data-confirm="Apakah Anda yakin ingin membuka putaran telaah baru untuk naskah ini? Putaran evaluasi berikutnya akan diaktifkan."
-                      data-confirm-title="Buka Putaran Telaah Baru?"
-                      data-confirm-btn="Buka Putaran Baru"
-                      data-confirm-cancel="Batal"
-                      data-confirm-type="primary">
-                    @csrf
-                    <button 
-                        type="submit" 
-                        class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg transition cursor-pointer"
-                        title="Buka putaran telaah baru pasca-revisi"
-                    >
-                        Buka Putaran Baru
-                    </button>
-                </form>
-            @endif
         </div>
     </div>
+
+    @if(!$isFinalized && (!$activeRound->exists || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
+        <form action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3 rounded-lg border border-gray-200 p-4">
+            @csrf
+            <h3 class="text-sm font-semibold text-gray-900">Siapkan putaran telaah anonim</h3>
+            <label for="anonymous_file" class="block text-xs font-medium text-gray-700">Berkas anonim PDF atau DOCX</label>
+            <x-input id="anonymous_file" type="file" name="anonymous_file" accept=".pdf,.docx" required />
+            <label for="reviewer_title" class="block text-xs font-medium text-gray-700">Judul tanpa identitas penulis</label>
+            <x-input id="reviewer_title" name="reviewer_title" maxlength="500" :value="old('reviewer_title')" required />
+            <label for="reviewer_abstract" class="block text-xs font-medium text-gray-700">Abstrak tanpa identitas penulis</label>
+            <textarea id="reviewer_abstract" name="reviewer_abstract" maxlength="20000" required rows="4" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-brand-maroon">{{ old('reviewer_abstract') }}</textarea>
+            <label class="flex items-start gap-2 text-xs text-gray-700"><input type="checkbox" name="anonymity_confirmed" value="1" required class="accent-brand-maroon">Saya telah menghapus identitas penulis dari isi, metadata dokumen, judul, dan abstrak.</label>
+            <x-button>Siapkan putaran baru</x-button>
+        </form>
+    @endif
 
     <!-- Banner Rekomendasi Editorial Section Editor jika sudah diberikan -->
     @if($viewModel->hasSeRecommendation())

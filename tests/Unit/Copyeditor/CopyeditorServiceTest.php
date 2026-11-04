@@ -53,6 +53,10 @@ class CopyeditorServiceTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantRole($this->copyEditor, 'copyeditor', $journal->id);
+        $this->grantRole($this->layoutEditor, 'layout_editor', $journal->id);
+        $this->actingAs($this->copyEditor);
+
         $section = Section::create([
             'journal_id' => $journal->id,
             'name' => 'Inovasi Kebijakan',
@@ -114,6 +118,7 @@ class CopyeditorServiceTest extends TestCase
         $fakeFile1 = UploadedFile::fake()->create('v1.docx', 300);
         $this->service->uploadOutputFile($this->copyedit, $fakeFile1, $this->copyEditor);
 
+        $this->scanTestUploads();
         $approval = $this->service->requestAuthorApproval($this->copyedit, 'Mohon ditinjau');
         $this->assertNull($approval->invalidated_at);
 
@@ -136,6 +141,7 @@ class CopyeditorServiceTest extends TestCase
         $fakeFile = UploadedFile::fake()->create('final_copyedit.docx', 400);
         $fileEntry = $this->service->uploadOutputFile($this->copyedit, $fakeFile, $this->copyEditor);
 
+        $this->scanTestUploads();
         $approval = $this->service->requestAuthorApproval($this->copyedit);
         $this->service->approveByAuthor($approval, $this->author, 'Sangat baik');
 
@@ -154,6 +160,7 @@ class CopyeditorServiceTest extends TestCase
     {
         $fakeFile = UploadedFile::fake()->create('v1.docx', 400);
         $this->service->uploadOutputFile($this->copyedit, $fakeFile, $this->copyEditor);
+        $this->scanTestUploads();
         $approval = $this->service->requestAuthorApproval($this->copyedit);
 
         $this->service->requestChangesByAuthor($approval, $this->author, 'Perbaiki penulisan istilah pada tabel 3');
@@ -176,7 +183,9 @@ class CopyeditorServiceTest extends TestCase
         $this->assertStringContainsString('Ketidaksesuaian Terminologi', $escalation->reason);
 
         // Resolve escalation
-        $this->service->resolveEscalation($escalation, 'Gunakan istilah baku sesuai KBBI V', 'in_progress');
+        $mediator = User::factory()->create();
+        $this->grantRole($mediator, 'editor_in_chief', $this->submission->journal_id);
+        $this->service->resolveEscalation($escalation, 'Gunakan istilah baku sesuai KBBI V', 'in_progress', $mediator);
 
         $this->assertFalse($escalation->fresh()->isActive());
         $this->assertEquals('resolved', $escalation->fresh()->status);
@@ -193,6 +202,7 @@ class CopyeditorServiceTest extends TestCase
         $this->service->uploadOutputFile($this->copyedit, $fakeFile, $this->copyEditor);
 
         // 3. Request and approve
+        $this->scanTestUploads();
         $approval = $this->service->requestAuthorApproval($this->copyedit);
         $this->service->approveByAuthor($approval, $this->author);
 
@@ -206,7 +216,9 @@ class CopyeditorServiceTest extends TestCase
         $this->assertFalse($readiness['is_ready']);
 
         // Resolve escalation
-        $this->service->resolveEscalation($escalation, 'Selesai');
+        $mediator = User::factory()->create();
+        $this->grantRole($mediator, 'editor_in_chief', $this->submission->journal_id);
+        $this->service->resolveEscalation($escalation, 'Selesai', 'in_progress', $mediator);
         $this->assertTrue($this->service->checkHandoffReadiness($this->copyedit)['is_ready']);
 
         // 6. Complete Handoff
@@ -219,6 +231,6 @@ class CopyeditorServiceTest extends TestCase
 
         $this->assertDatabaseHas('layout_assignments', ['id' => $assignment->id]);
         $this->assertEquals('completed', $this->copyedit->fresh()->status);
-        $this->assertEquals('layout', $this->submission->fresh()->status);
+        $this->assertEquals('in_production', $this->submission->fresh()->status);
     }
 }

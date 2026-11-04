@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // Default Author User (Dr. Andi Muhammad Ilyas)
         User::firstOrCreate(
             ['email' => 'andi.ilyas@unhas.ac.id'],

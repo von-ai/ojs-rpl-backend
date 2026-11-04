@@ -39,7 +39,7 @@
 
     <!-- Main Container: Filter Tabs, Pencarian, & Tabel Penugasan -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        
+
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Status -->
@@ -51,7 +51,7 @@
                     @php
                         $isActive = $tabs['active'] === $tabKey;
                     @endphp
-                    <a 
+                    <a
                         href="{{ route('layouteditor.submissions.index', ['tab' => $tabKey, 'q' => request('q')]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -71,16 +71,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="search" 
-                    name="q" 
+                <input
+                    type="search"
+                    name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari judul naskah atau penulis..."
                     class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                 @if(request('q'))
-                    <a 
-                        href="{{ route('layouteditor.submissions.index', ['tab' => $tabs['active']]) }}" 
+                    <a
+                        href="{{ route('layouteditor.submissions.index', ['tab' => $tabs['active']]) }}"
                         class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                         title="Hapus pencarian"
                     >
@@ -113,9 +113,9 @@
                                 <span class="text-[10px] font-mono font-bold text-gray-400 block mb-0.5">
                                     {{ $item['number'] }} • {{ $item['section_title'] }}
                                 </span>
-                                <a 
-                                    href="{{ $item['url_workspace'] }}" 
-                                    class="font-serif font-bold text-gray-900 group-hover:text-brand-maroon transition leading-snug line-clamp-2"
+                                <a
+                                    href="{{ $item['url_workspace'] }}"
+                                    class="font-sans font-bold text-gray-900 group-hover:text-brand-maroon transition leading-snug line-clamp-2"
                                     title="{{ $item['title'] }}"
                                 >
                                     {{ $item['title'] }}
@@ -177,8 +177,8 @@
 
                             <!-- Kolom Aksi -->
                             <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
-                                <a 
-                                    href="{{ $item['url_workspace'] }}" 
+                                <a
+                                    href="{{ $item['url_workspace'] }}"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-maroon bg-brand-maroon/5 hover:bg-brand-maroon hover:text-white rounded-lg transition duration-150 border border-brand-maroon/20"
                                     title="Buka Ruang Kerja Galai"
                                 >

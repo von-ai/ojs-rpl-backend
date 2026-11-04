@@ -6,6 +6,7 @@ namespace Tests\Feature\JournalManager;
 
 use App\Models\Issue;
 use App\Models\Journal;
+use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\JournalManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -178,11 +179,17 @@ class JournalManagerIssuesTest extends TestCase
     public function test_aksi_transaksional_manajemen_edisi(): void
     {
         // 1. Tambah artikel ke edisi
+        $targetSubmission = Submission::where('title', 'like', '%Model Partisipasi Pemuda%')->firstOrFail();
+        $this->preparePublication($targetSubmission);
+        $issue = Issue::findOrFail('ISSUE-01JARK960A');
+        foreach ($issue->issueArticles as $entry) {
+            $this->preparePublication($entry->submission);
+        }
         $resAdd = $this->post('/journalmanager/issues/ISSUE-01JARK960A/add-article', [
-            'article_title' => 'Model Partisipasi Pemuda',
+            'article_id' => $targetSubmission->id,
         ]);
         $resAdd->assertRedirect('/journalmanager/issues/ISSUE-01JARK960A');
-        $resAdd->assertSessionHas('status', "Naskah 'Model Partisipasi Pemuda' berhasil ditambahkan ke daftar isi edisi.");
+        $resAdd->assertSessionHas('status', "Naskah '{$targetSubmission->title}' berhasil ditambahkan ke daftar isi edisi.");
 
         // 2. Publikasikan edisi
         $resPublish = $this->post('/journalmanager/issues/ISSUE-01JARK960A/publish');

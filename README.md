@@ -1,8 +1,10 @@
 # SIRIDA — OJS RPL Backend (Laravel Monolith)
 
+Panduan perubahan keamanan, kontrak tampilan, dan pencocokan ERD: [audit 4 November 2026](docs/security-review-2026-11-04.md). Baca [panduan upgrade](docs/security-upgrade.md) sebelum menerapkan migrasi keamanan pada data lama.
+
 ## Status Implementasi & Arsitektur
 
-SIRIDA dikembangkan sebagai **Modular Monolith Laravel 13** menggunakan antarmuka **Blade, Livewire 4, dan Tailwind CSS 4**, dengan autentikasi berbasis sesi stateful bawaan Laravel (`auth:web`). Arsitektur ini menyederhanakan alur kerja tanpa memerlukan perantara REST API / JWT terpisah untuk antarmuka pengguna internal.
+SIRIDA dikembangkan sebagai **Modular Monolith Laravel 13** menggunakan antarmuka **Blade, JavaScript, dan Tailwind CSS 4**, dengan autentikasi berbasis sesi stateful bawaan Laravel (`auth:web`). Arsitektur ini menyederhanakan alur kerja tanpa memerlukan perantara REST API / JWT terpisah untuk antarmuka pengguna internal.
 
 Fitur registrasi, verifikasi email, kirim ulang email, dan autentikasi login pengguna telah berfungsi penuh melalui rute web (`/register` dan `/login`). Lihat [panduan registrasi](docs/registration.md), [panduan login](docs/login.md), serta [arsitektur teknologi](docs/architecture.md).
 
@@ -15,7 +17,7 @@ composer test
 vendor/bin/pint --test
 ```
 
-Pengujian otomatis dijalankan pada database SQLite *in-memory* dan kunci enkripsi test, sehingga tidak memerlukan `.env` khusus atau MySQL/PostgreSQL aktif untuk verifikasi lokal. Pengujian scaffold dan feature test dijalankan secara otomatis pada GitHub Actions di setiap pull request.
+Pengujian otomatis dijalankan pada database SQLite *in-memory* dan kunci enkripsi test, sehingga tidak memerlukan `.env` khusus atau MySQL/PostgreSQL aktif untuk verifikasi lokal. CI juga menjalankan suite pada MySQL 8.4 serta uji ClamAV asli. Pengujian feature dijalankan secara otomatis pada GitHub Actions di setiap pull request.
 
 ## Menjalankan Proyek (Running the Project Locally)
 

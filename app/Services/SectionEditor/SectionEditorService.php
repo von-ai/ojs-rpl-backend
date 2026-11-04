@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services\SectionEditor;
 
-use App\Mail\Reviewer\ReviewReminderMail;
+use App\Jobs\SendReviewNotice;
 use App\Models\EditorialDecision;
+use App\Models\FileEntry;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewExtension;
 use App\Models\ReviewReminder;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
-use App\Models\UserRole;
+use App\Services\PortalAccess;
+use App\Services\Reviewer\ReviewerService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 class SectionEditorService
@@ -68,7 +68,7 @@ class SectionEditorService
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('submission_number', 'like', "%{$search}%")
                     ->orWhereHas('author', function ($qa) use ($search) {
-                        $qa->where('name', 'like', "%{$search}%")
+                        $qa->where('full_name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
                     });
             });
@@ -80,41 +80,56 @@ class SectionEditorService
     /**
      * Memastikan adanya putaran review (Review Round) aktif untuk naskah ini.
      */
-    public function ensureActiveReviewRound(Submission $submission, ?string $note = null): ReviewRound
+    public function ensureActiveReviewRound(Submission $submission, ?string $note = null, ?FileEntry $anonymousFile = null, ?string $reviewerTitle = null, ?string $reviewerAbstract = null): ReviewRound
     {
-        $activeRound = $submission->reviewRounds()
-            ->where('status', 'active')
-            ->latest('round')
-            ->first();
-
-        if ($activeRound) {
-            return $activeRound;
-        }
-
-        $nextRoundNumber = ((int) $submission->reviewRounds()->max('round')) + 1;
-
-        return DB::transaction(function () use ($submission, $nextRoundNumber, $note): ReviewRound {
-            $primaryFile = $submission->files()->whereIn('genre', ['revision', 'manuscript'])->latest('created_at')->first() ?? $submission->files()->first();
-
-            $round = ReviewRound::create([
-                'submission_id' => $submission->id,
-                'round' => $nextRoundNumber,
-                'manuscript_file_id' => $primaryFile?->file_id,
-                'anonymized_file_id' => $primaryFile?->file_id,
-                'minimum_completed_reviews' => 2,
-                'status' => 'active',
-                'version' => 1,
-                'review_type' => 'double_blind',
-                'note' => $note,
-                'reviewer_title' => $submission->title,
-                'reviewer_abstract' => $submission->abstract,
-            ]);
+        return DB::transaction(function () use ($submission, $note, $anonymousFile, $reviewerTitle, $reviewerAbstract) {
+            $submission = PortalAccess::lockSubmission($submission, Auth::user(), 'section_editor');
+            if (! in_array($submission->status, ['submitted', 'in_review', 'under_review', 'revisions_requested'], true)) {
+                throw new InvalidArgumentException('Status naskah tidak mengizinkan putaran telaah baru.');
+            }
+            $active = $submission->reviewRounds()->where('status', 'active')->first();
+            if (! $anonymousFile) {
+                if ($active) {
+                    return $active;
+                }
+                throw new InvalidArgumentException('Siapkan berkas, judul, dan abstrak anonim sebelum membuka putaran telaah.');
+            }
+            if ($active && $active->assignments()->whereIn('status', ['invited', 'accepted', 'overdue'])->exists()) {
+                throw new InvalidArgumentException('Selesaikan penugasan pada putaran aktif sebelum membuka putaran baru.');
+            }
+            $primary = $submission->files()->with('file')->whereIn('genre', ['manuscript', 'revision'])->latest('created_at')->first()?->file;
+            if (! $primary || ! $reviewerTitle || ! $reviewerAbstract) {
+                throw new InvalidArgumentException('Naskah acuan, judul anonim, dan abstrak anonim wajib tersedia.');
+            }
+            // Editorial confirmation plus a conservative identity check prevents copying raw metadata blindly.
+            foreach ($submission->contributors as $contributor) {
+                foreach ([$contributor->full_name, $contributor->email] as $identity) {
+                    if ($identity && mb_strlen($identity) > 3 && (mb_stripos($reviewerTitle, $identity) !== false || mb_stripos($reviewerAbstract, $identity) !== false)) {
+                        throw new InvalidArgumentException('Identitas kontributor masih tercantum dalam proyeksi anonim.');
+                    }
+                }
+            }
+            if ($active) {
+                $active->update(['status' => 'closed', 'closed_at' => now(), 'version' => $active->version + 1]);
+            }
 
             if ($submission->status === 'submitted') {
                 $submission->update(['status' => 'in_review']);
             }
 
-            return $round;
+            return ReviewRound::create([
+                'submission_id' => $submission->id,
+                'round' => (int) $submission->reviewRounds()->max('round') + 1,
+                'manuscript_file_id' => $primary->id,
+                'manuscript_checksum' => $primary->checksum_sha256,
+                'anonymized_file_id' => $anonymousFile->id,
+                'anonymized_checksum' => $anonymousFile->checksum_sha256,
+                'reviewer_title' => $reviewerTitle,
+                'reviewer_abstract' => $reviewerAbstract,
+                'rubric_snapshot' => app(ReviewerService::class)->getDefaultRubricCriteria(),
+                'minimum_completed_reviews' => 2,
+                'status' => 'active', 'version' => 1, 'review_type' => 'double_blind', 'note' => $note,
+            ]);
         });
     }
 
@@ -125,60 +140,45 @@ class SectionEditorService
      */
     public function assignReviewer(ReviewRound $round, User $reviewer, array $data, User $actor): ReviewAssignment
     {
-        // 1. Guard: Putaran review harus berstatus aktif
-        if ($round->status !== 'active') {
-            throw new InvalidArgumentException('Tidak dapat menugaskan reviewer pada putaran review yang telah ditutup atau dibatalkan.');
-        }
+        return DB::transaction(function () use ($round, $reviewer, $data, $actor) {
+            PortalAccess::lockSubmission($round->submission, $actor, 'section_editor');
+            $round = ReviewRound::query()->lockForUpdate()->findOrFail($round->id);
+            if ($round->status !== 'active') {
+                throw new InvalidArgumentException('Putaran telaah sudah ditutup.');
+            }
 
-        // 2. Guard: Pencegahan konflik kepentingan / self-review (Penulis & kontributor tidak boleh menelaah naskah)
-        $submission = $round->submission;
-        $excludedUserIds = array_filter(array_merge(
-            [$submission->author_id],
-            $submission->contributors()->pluck('user_id')->all()
-        ));
-        $excludedEmails = array_filter(array_merge(
-            [$submission->author?->email],
-            $submission->contributors()->pluck('email')->all()
-        ));
+            if (! $round->anonymizedFile || $round->anonymizedFile->virus_scan_status !== 'clean' || ! $round->anonymized_checksum || $round->anonymized_file_id === $round->manuscript_file_id) {
+                throw new InvalidArgumentException('Berkas anonim terpisah harus selesai dipindai sebelum reviewer diundang.');
+            }
 
-        if (in_array($reviewer->id, $excludedUserIds, true) || in_array($reviewer->email, $excludedEmails, true)) {
-            throw new InvalidArgumentException('Penulis atau kontributor naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
-        }
+            // 1. Guard: Pencegahan konflik kepentingan / self-review (Penulis tidak boleh menelaah naskahnya sendiri)
+            $authorId = $round->submission->author_id;
+            if ($reviewer->id === $authorId || $round->submission->contributors()->where(fn ($q) => $q->where('user_id', $reviewer->id)->orWhere('email', $reviewer->email))->exists()) {
+                throw new InvalidArgumentException('Penulis naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
+            }
 
-        // 3. Guard: Peran Reviewer harus sah untuk jurnal terkait (standar OJS)
-        if (Schema::hasTable('user_roles') && UserRole::where('role_code', 'reviewer')->exists()) {
-            $hasReviewerRole = $reviewer->userRoles()
-                ->where('role_code', 'reviewer')
-                ->where(function ($q) use ($submission) {
-                    $q->where('journal_id', $submission->journal_id)
-                        ->orWhereNull('journal_id');
-                })
+            if (! $this->getAvailableReviewers($round->submission)->contains('id', $reviewer->id)) {
+                throw new InvalidArgumentException('Reviewer harus aktif, terverifikasi, dan terdaftar pada jurnal ini.');
+            }
+
+            // 2. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
+            $existingActive = $round->assignments()
+                ->where('reviewer_id', $reviewer->id)
+                ->whereIn('status', ['invited', 'accepted', 'overdue'])
                 ->exists();
 
-            if (! $hasReviewerRole && $reviewer->userRoles()->exists()) {
-                throw new InvalidArgumentException('Pengguna yang dipilih tidak memiliki peran mitra bestari (reviewer) yang sah untuk jurnal naskah ini.');
+            if ($existingActive) {
+                throw new InvalidArgumentException('Mitra bestari ini sudah memiliki penugasan aktif pada putaran telaah ini.');
             }
-        }
 
-        // 4. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
-        $existingActive = $round->assignments()
-            ->where('reviewer_id', $reviewer->id)
-            ->whereIn('status', ['invited', 'accepted', 'overdue'])
-            ->exists();
+            // 3. Validasi tanggal deadline
+            $responseDue = Carbon::parse($data['response_due_at'])->utc();
+            $reviewDue = Carbon::parse($data['review_due_at'])->utc();
 
-        if ($existingActive) {
-            throw new InvalidArgumentException('Mitra bestari ini sudah memiliki penugasan aktif pada putaran telaah ini.');
-        }
+            if ($responseDue->lessThanOrEqualTo(now()) || $reviewDue->lessThanOrEqualTo($responseDue)) {
+                throw new InvalidArgumentException('Batas waktu telaah (review due date) harus setelah batas waktu respon (response due date).');
+            }
 
-        // 4. Validasi tanggal deadline
-        $responseDue = Carbon::parse($data['response_due_at'])->utc();
-        $reviewDue = Carbon::parse($data['review_due_at'])->utc();
-
-        if ($reviewDue->lessThanOrEqualTo($responseDue)) {
-            throw new InvalidArgumentException('Batas waktu telaah (review due date) harus setelah batas waktu respon (response due date).');
-        }
-
-        return DB::transaction(function () use ($round, $reviewer, $responseDue, $reviewDue, $data): ReviewAssignment {
             $assignment = ReviewAssignment::create([
                 'review_round_id' => $round->id,
                 'reviewer_id' => $reviewer->id,
@@ -189,6 +189,9 @@ class SectionEditorService
                 'version' => 1,
                 'invitation_message' => $data['invitation_message'] ?? null,
             ]);
+
+            SendReviewNotice::dispatch($reviewer->email, 'Undangan telaah naskah SIRIDA',
+                'Anda diundang menelaah naskah anonim: '.$round->reviewer_title."\n".route('reviewer.assignments.show', $assignment->id));
 
             // Mutasi status naskah menjadi under_review
             $submission = $round->submission;
@@ -205,17 +208,22 @@ class SectionEditorService
      */
     public function cancelInvitation(ReviewAssignment $assignment, User $actor, ?string $reason = null): ReviewAssignment
     {
-        if ($assignment->status !== 'invited') {
-            throw new InvalidArgumentException('Pembatalan penugasan hanya diizinkan untuk undangan yang masih berstatus invited.');
-        }
+        return DB::transaction(function () use ($assignment, $actor) {
+            $assignment = ReviewAssignment::query()->lockForUpdate()->findOrFail($assignment->id);
+            PortalAccess::lockSubmission($assignment->reviewRound->submission, $actor, 'section_editor');
 
-        return DB::transaction(function () use ($assignment): ReviewAssignment {
-            $assignment->update([
-                'status' => 'cancelled',
-                'version' => $assignment->version + 1,
-            ]);
+            if ($assignment->status !== 'invited') {
+                throw new InvalidArgumentException('Pembatalan penugasan hanya diizinkan untuk undangan yang masih berstatus invited.');
+            }
 
-            return $assignment;
+            return DB::transaction(function () use ($assignment): ReviewAssignment {
+                $assignment->update([
+                    'status' => 'cancelled',
+                    'version' => $assignment->version + 1,
+                ]);
+
+                return $assignment;
+            });
         });
     }
 
@@ -224,38 +232,51 @@ class SectionEditorService
      */
     public function decideExtension(ReviewExtension $extension, string $decision, ?string $reason, User $editor): ReviewExtension
     {
-        if ($extension->status !== 'pending') {
-            throw new InvalidArgumentException('Permohonan perpanjangan waktu ini sudah pernah diputuskan sebelumnya.');
-        }
-
-        if (! in_array($decision, ['approved', 'rejected'], true)) {
-            throw new InvalidArgumentException('Keputusan perpanjangan waktu harus approved atau rejected.');
-        }
-
-        return DB::transaction(function () use ($extension, $decision, $reason, $editor): ReviewExtension {
-            $assignment = $extension->assignment;
-
-            $extension->update([
-                'status' => $decision,
-                'decided_by' => $editor->id,
-                'decision_reason' => $reason,
-                'decided_at' => Carbon::now('UTC'),
-                'version' => $extension->version + 1,
-            ]);
-
-            if ($decision === 'approved') {
-                // Perpanjang deadline dan pulihkan status jika sebelumnya overdue
-                $newStatus = $assignment->status === 'overdue' ? 'accepted' : $assignment->status;
-
-                $assignment->update([
-                    'review_due_at' => $extension->requested_due_at,
-                    'deadline_version' => $assignment->deadline_version + 1,
-                    'status' => $newStatus,
-                    'version' => $assignment->version + 1,
-                ]);
+        return DB::transaction(function () use ($extension, $decision, $reason, $editor) {
+            $assignment = ReviewAssignment::findOrFail($extension->assignment_id);
+            PortalAccess::lockSubmission($assignment->reviewRound->submission, $editor, 'section_editor');
+            $assignment = ReviewAssignment::query()->lockForUpdate()->findOrFail($assignment->id);
+            $extension = ReviewExtension::query()->lockForUpdate()->findOrFail($extension->id);
+            if ($assignment->reviewRound->status !== 'active' || ! in_array($assignment->status, ['accepted', 'overdue'], true)) {
+                throw new InvalidArgumentException('Penugasan telaah sudah ditutup.');
+            }
+            if ($decision === 'approved' && ($extension->requested_due_at->lte(now()) || $extension->requested_due_at->lte($assignment->review_due_at))) {
+                throw new InvalidArgumentException('Tanggal perpanjangan sudah tidak berlaku.');
             }
 
-            return $extension;
+            if ($extension->status !== 'pending') {
+                throw new InvalidArgumentException('Permohonan perpanjangan waktu ini sudah pernah diputuskan sebelumnya.');
+            }
+
+            if (! in_array($decision, ['approved', 'rejected'], true)) {
+                throw new InvalidArgumentException('Keputusan perpanjangan waktu harus approved atau rejected.');
+            }
+
+            return DB::transaction(function () use ($extension, $decision, $reason, $editor): ReviewExtension {
+                $assignment = $extension->assignment;
+
+                $extension->update([
+                    'status' => $decision,
+                    'decided_by' => $editor->id,
+                    'decision_reason' => $reason,
+                    'decided_at' => Carbon::now('UTC'),
+                    'version' => $extension->version + 1,
+                ]);
+
+                if ($decision === 'approved') {
+                    // Perpanjang deadline dan pulihkan status jika sebelumnya overdue
+                    $newStatus = $assignment->status === 'overdue' ? 'accepted' : $assignment->status;
+
+                    $assignment->update([
+                        'review_due_at' => $extension->requested_due_at,
+                        'deadline_version' => $assignment->deadline_version + 1,
+                        'status' => $newStatus,
+                        'version' => $assignment->version + 1,
+                    ]);
+                }
+
+                return $extension;
+            });
         });
     }
 
@@ -264,27 +285,21 @@ class SectionEditorService
      */
     public function sendReminder(ReviewAssignment $assignment, User $editor, ?string $message = null): ReviewReminder
     {
-        $reminder = ReviewReminder::create([
-            'assignment_id' => $assignment->id,
-            'sent_by' => $editor->id,
-            'queued_at' => Carbon::now('UTC'),
-            'delivery_status' => 'sent',
-            'message' => $message ?? 'Pengingat batas waktu penelaahan naskah ilmiah.',
-        ]);
+        return DB::transaction(function () use ($assignment, $editor, $message) {
+            $assignment = ReviewAssignment::query()->lockForUpdate()->findOrFail($assignment->id);
+            PortalAccess::lockSubmission($assignment->reviewRound->submission, $editor, 'section_editor');
 
-        if (! empty($assignment->reviewer?->email)) {
-            try {
-                Mail::to($assignment->reviewer->email)
-                    ->send(new ReviewReminderMail($assignment, $editor, $message));
-            } catch (\Throwable $e) {
-                Log::warning("Gagal mengirimkan email pengingat telaah ke {$assignment->reviewer->email}: {$e->getMessage()}", [
-                    'assignment_id' => $assignment->id,
-                    'reminder_id' => $reminder->id,
-                ]);
-            }
-        }
+            $reminder = ReviewReminder::create([
+                'assignment_id' => $assignment->id,
+                'sent_by' => $editor->id,
+                'queued_at' => Carbon::now('UTC'),
+                'delivery_status' => 'queued',
+                'message' => $message ?? 'Pengingat batas waktu penelaahan naskah ilmiah.',
+            ]);
+            SendReviewNotice::dispatch($assignment->reviewer->email, 'Pengingat telaah SIRIDA', $reminder->message."\n".route('reviewer.assignments.show', $assignment->id), $reminder->id);
 
-        return $reminder;
+            return $reminder;
+        });
     }
 
     /**
@@ -297,25 +312,29 @@ class SectionEditorService
         User $editor,
         ?string $overrideReason = null
     ): ReviewRound {
-        $allowed = ['accept', 'revisions_required', 'resubmit', 'decline'];
-        if (! in_array($recommendation, $allowed, true)) {
-            throw new InvalidArgumentException('Rekomendasi editorial tidak valid.');
-        }
-
-        // Guard Kuorum OJS & Aturan UC-12:
-        // Wajib memenuhi kuorum telaah, ATAU menyertakan alasan dispensasi/override khusus
-        $completedCount = $round->assignments()->where('status', 'completed')->count();
-        $minReq = max(1, (int) $round->minimum_completed_reviews);
-        $isQuorumMet = $completedCount >= $minReq;
-
-        if (! $isQuorumMet) {
-            $trimmedOverride = trim((string) $overrideReason);
-            if (mb_strlen($trimmedOverride) < 10) {
-                throw new InvalidArgumentException("Kuorum telaah belum terpenuhi ({$completedCount}/{$minReq} review selesai). Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.");
+        return DB::transaction(function () use ($round, $recommendation, $note, $editor, $overrideReason): ReviewRound {
+            PortalAccess::lockSubmission($round->submission, $editor, 'section_editor');
+            $round = ReviewRound::query()->lockForUpdate()->findOrFail($round->id);
+            if ($round->status !== 'active') {
+                throw new InvalidArgumentException('Putaran telaah sudah ditutup.');
             }
-        }
 
-        return DB::transaction(function () use ($round, $recommendation, $note, $editor, $isQuorumMet, $overrideReason): ReviewRound {
+            $allowed = ['accept', 'revisions_required', 'resubmit', 'decline'];
+            if (! in_array($recommendation, $allowed, true)) {
+                throw new InvalidArgumentException('Rekomendasi editorial tidak valid.');
+            }
+
+            $completedCount = $round->completedReviewCount();
+            $minReq = max(1, (int) $round->minimum_completed_reviews);
+            $isQuorumMet = $completedCount >= $minReq;
+
+            if (! $isQuorumMet) {
+                $trimmedOverride = trim((string) $overrideReason);
+                if (mb_strlen($trimmedOverride) < 10) {
+                    throw new InvalidArgumentException("Kuorum telaah belum terpenuhi ({$completedCount}/{$minReq} review selesai). Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.");
+                }
+            }
+
             $round->update([
                 'se_recommendation' => $recommendation,
                 'se_recommendation_note' => $note,
@@ -332,7 +351,7 @@ class SectionEditorService
                 [
                     'decided_by' => $editor->id,
                     'decision' => $recommendation,
-                    'note_for_author' => 'Menunggu finalisasi keputusan resmi oleh Pemimpin Redaksi.',
+                    'note_for_author' => $note,
                     'internal_note' => "Rekomendasi dari Section Editor {$editor->name}: {$note}",
                     'minimum_review_override_reason' => (! $isQuorumMet && ! empty($overrideReason)) ? trim($overrideReason) : null,
                     'version' => 1,
@@ -354,61 +373,20 @@ class SectionEditorService
      */
     public function getAvailableReviewers(Submission $submission)
     {
-        // 1. Kumpulkan seluruh ID & email penulis / kontributor naskah guna pencegahan COI
-        $excludedUserIds = array_filter(array_merge(
-            [$submission->author_id],
-            $submission->contributors()->pluck('user_id')->all()
-        ));
-
-        $excludedEmails = array_filter(array_merge(
-            [$submission->author?->email],
-            $submission->contributors()->pluck('email')->all()
-        ));
-
-        // 2. Query calon mitra bestari yang sah untuk jurnal ini
-        $query = User::query()
-            ->whereNotIn('id', $excludedUserIds)
-            ->whereNotIn('email', $excludedEmails)
-            ->where('status', 'active');
-
-        $hasRolesTable = Schema::hasTable('user_roles');
-        $hasReviewerRoleData = $hasRolesTable && UserRole::where('role_code', 'reviewer')->exists();
-
-        if ($hasReviewerRoleData) {
-            $query->whereHas('userRoles', function ($q) use ($submission): void {
-                $q->where('role_code', 'reviewer')
-                    ->where(function ($qj) use ($submission): void {
-                        $qj->where('journal_id', $submission->journal_id)
-                            ->orWhereNull('journal_id');
-                    });
-            })->with([
-                'userRoles' => function ($q) use ($submission): void {
-                    $q->where('role_code', 'reviewer')
-                        ->where(function ($qj) use ($submission): void {
-                            $qj->where('journal_id', $submission->journal_id)
-                                ->orWhereNull('journal_id');
-                        });
-                },
-            ]);
-        } elseif ($hasRolesTable) {
-            $query->where(function ($q): void {
-                $q->whereHas('userRoles', function ($qr): void {
-                    $qr->where('role_code', 'reviewer');
-                })->orWhereDoesntHave('userRoles');
-            });
-        }
-
-        if (Schema::hasTable('review_assignments')) {
-            $query->withCount([
-                'reviewAssignments as active_reviews_count' => function ($q): void {
-                    $q->whereIn('status', ['invited', 'accepted', 'overdue']);
-                },
-                'reviewAssignments as completed_reviews_count' => function ($q): void {
-                    $q->where('status', 'completed');
-                },
-            ]);
-        }
-
-        return $query->orderBy('full_name')->get();
+        return User::query()
+            ->where('id', '!=', $submission->author_id)
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->whereNotIn('id', DB::table('submission_contributors')->select('user_id')->where('submission_id', $submission->id)->whereNotNull('user_id'))
+            ->whereNotIn('email', DB::table('submission_contributors')->select('email')->where('submission_id', $submission->id)->whereNotNull('email'))
+            ->whereHas('userRoles', fn ($q) => $q->where('role_code', 'reviewer')->where(function ($qj) use ($submission): void {
+                $qj->where('journal_id', $submission->journal_id)->orWhereNull('journal_id');
+            }))
+            ->withCount([
+                'reviewAssignments as active_reviews_count' => fn ($q) => $q->whereIn('status', ['invited', 'accepted', 'overdue']),
+                'reviewAssignments as completed_reviews_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
+            ->orderBy('full_name')
+            ->get();
     }
 }

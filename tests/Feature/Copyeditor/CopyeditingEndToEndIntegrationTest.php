@@ -53,14 +53,14 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $detailResponse->assertSee('SUB2026-00106_Copyedit_Final_Clean.docx');
 
         // Uji unduh naskah sumber dan pastikan Content-Length cocok dengan byte_size database & disk
-        $downloadSrc = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'));
+        $downloadSrc = $this->get(route('copyeditor.files.download', FileEntry::where('original_name', 'SUB2026-00106_Source_Accepted.docx')->firstOrFail()->id));
         $downloadSrc->assertStatus(200);
-        $downloadSrc->assertHeader('Content-Length', '2244000');
+        $downloadSrc->assertHeader('Content-Length', (string) FileEntry::where('original_name', 'SUB2026-00106_Source_Accepted.docx')->firstOrFail()->byte_size);
 
         // Uji unduh naskah hasil suntingan dan pastikan Content-Length cocok
-        $downloadClean = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Copyedit_Final_Clean.docx'));
+        $downloadClean = $this->get(route('copyeditor.files.download', FileEntry::where('original_name', 'SUB2026-00106_Copyedit_Final_Clean.docx')->firstOrFail()->id));
         $downloadClean->assertStatus(200);
-        $downloadClean->assertHeader('Content-Length', '2149580');
+        $downloadClean->assertHeader('Content-Length', (string) FileEntry::where('original_name', 'SUB2026-00106_Copyedit_Final_Clean.docx')->firstOrFail()->byte_size);
     }
 
     /**
@@ -89,6 +89,7 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
         $this->assertSame(hash('sha256', (string) $disk->get($newFileEntry->storage_path)), $newFileEntry->checksum_sha256);
 
         // Pastikan berkas hasil unggahan dapat diunduh dengan Content-Length yang cocok persis
+        $this->scanTestUploads();
         $downloadUploaded = $this->get(route('copyeditor.files.download', $newFileEntry->id));
         $downloadUploaded->assertStatus(200);
         $downloadUploaded->assertHeader('Content-Length', (string) $newFileEntry->byte_size);
@@ -113,7 +114,7 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
             'decision' => 'approved',
             'note' => 'Disetujui, teks dan tabel sudah tepat.',
         ]);
-        $decisionResp->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
+        $decisionResp->assertRedirect(route('author.submissions.show', $copyedit->submission_id));
 
         $activeApproval = $copyedit->fresh()->approvals()->whereNull('invalidated_at')->firstOrFail();
         $this->assertEquals('approved', $activeApproval->decision);
@@ -130,7 +131,7 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
 
         // 5. Verifikasi status akhir di database
         $this->assertEquals('completed', $copyedit->fresh()->status);
-        $this->assertEquals('layout', $copyedit->submission->fresh()->status);
+        $this->assertEquals('in_production', $copyedit->submission->fresh()->status);
         $this->assertDatabaseHas('layout_assignments', [
             'submission_id' => $copyedit->submission_id,
         ]);

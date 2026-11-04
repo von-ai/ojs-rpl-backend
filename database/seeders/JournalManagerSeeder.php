@@ -23,6 +23,10 @@ class JournalManagerSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Inisialisasi Jurnal Utama dengan Metadata Lengkap
         $journal = Journal::firstOrCreate(
             ['slug' => 'sirida-makassar'],

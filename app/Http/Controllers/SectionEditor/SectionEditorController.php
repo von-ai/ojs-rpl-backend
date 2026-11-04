@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace App\Http\Controllers\SectionEditor;
 
 use App\Http\Controllers\Controller;
+use App\Models\FileEntry;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewExtension;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\Payment\ArticlePaymentService;
+use App\Services\PrivateFileService;
 use App\Services\SectionEditor\SectionEditorService;
 use App\ViewModels\SectionEditorSubmissionsViewModel;
 use App\ViewModels\SectionEditorWorkspaceViewModel;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -142,7 +144,7 @@ class SectionEditorController extends Controller
 
         $this->authorizeSectionEditorForSubmission($submission, $editor);
 
-        $activeRound = $this->sectionEditorService->ensureActiveReviewRound($submission);
+        $activeRound = $submission->currentReviewRound ?? new ReviewRound(['submission_id' => $submission->id, 'round' => (int) $submission->reviewRounds()->max('round') + 1, 'status' => 'not_started', 'minimum_completed_reviews' => 2]);
         $activeRound->load([
             'assignments.reviewer',
             'assignments.review',
@@ -181,37 +183,7 @@ class SectionEditorController extends Controller
                 ->with('error', 'Berkas manuskrip tidak ditemukan pada naskah ini.');
         }
 
-        $fileEntry = $subFile->file;
-
-        if ($fileEntry->virus_scan_status && $fileEntry->virus_scan_status !== 'clean') {
-            return redirect()
-                ->route('section-editor.submissions.show', $submission->id)
-                ->with('error', 'Berkas belum lulus pemindaian antivirus (status: '.$fileEntry->virus_scan_status.').');
-        }
-
-        $filename = $fileEntry->original_name ?: ('Manuskrip-'.$submission->submission_number.'.pdf');
-        $mimeType = $fileEntry->mime_type ?: 'application/octet-stream';
-
-        return response()->streamDownload(function () use ($submission, $fileEntry, $subFile): void {
-            if (Storage::disk($fileEntry->storage_disk ?: 'local')->exists($fileEntry->storage_path)) {
-                echo Storage::disk($fileEntry->storage_disk ?: 'local')->get($fileEntry->storage_path);
-
-                return;
-            }
-
-            echo "DOKUMEN MANUSKRIP RESMI SIRIDA KOTA MAKASSAR\n";
-            echo "============================================\n";
-            echo "Nomor Naskah : {$submission->submission_number}\n";
-            echo "Judul        : {$submission->title}\n";
-            echo "Nama Berkas  : {$fileEntry->original_name}\n";
-            echo 'Genre        : '.strtoupper((string) $subFile->genre)."\n";
-            echo "SHA-256      : {$fileEntry->checksum_sha256}\n\n";
-            echo "Abstrak:\n{$submission->abstract}\n";
-        }, $filename, [
-            'Content-Type' => $mimeType,
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return app(PrivateFileService::class)->stream($subFile->file);
     }
 
     /**
@@ -224,12 +196,35 @@ class SectionEditorController extends Controller
         $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
         $this->authorizeSectionEditorForSubmission($submission, $editor);
 
-        $note = $request->input('note');
+        $data = $request->validate([
+            'anonymous_file' => ['required', 'file', 'mimes:pdf,docx', 'max:20480'],
+            'reviewer_title' => ['required', 'string', 'max:500'],
+            'reviewer_abstract' => ['required', 'string', 'max:20000'],
+            'anonymity_confirmed' => ['required', 'accepted'],
+            'note' => ['nullable', 'string', 'max:4000'],
+        ]);
+        $upload = $request->file('anonymous_file');
+        $disk = config('filesecurity.disk', 'local');
+        $path = $upload->store('review-anonymous/'.$submission->id, $disk);
+        try {
+            DB::transaction(function () use ($submission, $upload, $disk, $path, $data) {
+                $entry = FileEntry::create([
+                    'storage_disk' => $disk, 'storage_path' => $path, 'original_name' => 'manuskrip-anonim.'.$upload->extension(),
+                    'mime_type' => $upload->getMimeType(), 'byte_size' => (int) Storage::disk($disk)->size($path),
+                    'checksum_sha256' => hash_file('sha256', $upload->getRealPath()), 'virus_scan_status' => 'pending', 'created_by' => Auth::id(),
+                ]);
+                $this->sectionEditorService->ensureActiveReviewRound($submission, $data['note'] ?? null, $entry, $data['reviewer_title'], $data['reviewer_abstract']);
+            });
+        } catch (InvalidArgumentException $e) {
+            Storage::disk($disk)->delete($path);
 
-        $this->sectionEditorService->ensureActiveReviewRound($submission, $note);
+            return back()->withErrors(['round' => $e->getMessage()])->withInput();
+        } catch (\Throwable $e) {
+            Storage::disk($disk)->delete($path);
+            throw $e;
+        }
 
-        return redirect()->route('section-editor.submissions.show', $submission->id)
-            ->with('success', 'Putaran telaah naskah (Review Round) berhasil dipersiapkan.');
+        return redirect()->route('section-editor.submissions.show', $submission->id)->with('success', 'Putaran disiapkan. Undangan tersedia setelah berkas anonim lulus pemindaian.');
     }
 
     /**
@@ -447,19 +442,7 @@ class SectionEditorController extends Controller
             abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
         }
 
-        $fileEntry = $payment->fileEntry;
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk($fileEntry->storage_disk);
-
-        if (! $disk->exists($fileEntry->storage_path)) {
-            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
-        }
-
-        return $disk->download(
-            $fileEntry->storage_path,
-            $fileEntry->original_name,
-            ['Content-Type' => $fileEntry->mime_type]
-        );
+        return app(PrivateFileService::class)->stream($payment->fileEntry);
     }
 
     /**

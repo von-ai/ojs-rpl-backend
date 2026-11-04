@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Auth\SessionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,7 @@ class LoginController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->put(app(SessionRegistry::class)->start(Auth::user()));
 
         return redirect()->intended(route('dashboard'))
             ->with('status', 'Selamat datang kembali di Portal Penulis BRIDA Makassar!');
@@ -37,6 +39,7 @@ class LoginController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
+        app(SessionRegistry::class)->revoke($request->session()->get('auth_session_id'));
         Auth::logout();
 
         $request->session()->invalidate();

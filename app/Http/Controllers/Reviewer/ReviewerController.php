@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Reviewer;
 use App\Http\Controllers\Controller;
 use App\Models\ReviewAssignment;
 use App\Models\User;
+use App\Services\PrivateFileService;
 use App\Services\Reviewer\ReviewerService;
 use App\ViewModels\ReviewerAssignmentsViewModel;
 use App\ViewModels\ReviewerWorkspaceViewModel;
@@ -14,7 +15,6 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -126,7 +126,7 @@ class ReviewerController extends Controller
         ])->where('reviewer_id', $reviewer->id)
             ->findOrFail($id);
 
-        $rubricCriteria = $this->reviewerService->getDefaultRubricCriteria();
+        $rubricCriteria = $assignment->reviewRound->rubric_snapshot ?? [];
         $viewModel = new ReviewerWorkspaceViewModel($assignment, $reviewer, $rubricCriteria);
 
         return view('reviewer.assignments.show', compact('viewModel'));
@@ -154,58 +154,16 @@ class ReviewerController extends Controller
                 ->with('error', 'Anda harus menerima surat undangan telaah terlebih dahulu sebelum dapat mengunduh naskah.');
         }
 
-        /** @var ?File $fileEntry */
-        $fileEntry = null;
+        $round = $assignment->reviewRound;
+        abort_unless($round && $round->review_type === 'double_blind' && $round->anonymized_file_id !== $round->manuscript_file_id && $round->anonymized_file_id === $fileId && $round->anonymizedFile, 404);
+        abort_unless($round->anonymized_checksum && hash_equals($round->anonymized_checksum, (string) $round->anonymizedFile->checksum_sha256), 409);
+        $extension = match ($round->anonymizedFile->mime_type) {
+            'application/pdf' => 'pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            default => 'document',
+        };
 
-        // Cari di anonymizedFile atau manuscriptFile pada reviewRound
-        if ($assignment->reviewRound?->anonymizedFile && ($assignment->reviewRound->anonymizedFile->id === $fileId || $assignment->reviewRound->anonymized_file_id === $fileId)) {
-            $fileEntry = $assignment->reviewRound->anonymizedFile;
-        } elseif ($assignment->reviewRound?->manuscriptFile && ($assignment->reviewRound->manuscriptFile->id === $fileId || $assignment->reviewRound->manuscript_file_id === $fileId)) {
-            $fileEntry = $assignment->reviewRound->manuscriptFile;
-        } else {
-            // Cari di submission files
-            $subFile = $assignment->reviewRound?->submission?->files->first(function ($item) use ($fileId): bool {
-                return $item->id === $fileId || $item->file_id === $fileId;
-            });
-            if ($subFile && $subFile->file) {
-                $fileEntry = $subFile->file;
-            }
-        }
-
-        if (! $fileEntry) {
-            return redirect()
-                ->route('reviewer.assignments.show', $assignment->id)
-                ->with('error', 'Berkas naskah tidak ditemukan.');
-        }
-
-        if ($fileEntry->virus_scan_status && $fileEntry->virus_scan_status !== 'clean') {
-            return redirect()
-                ->route('reviewer.assignments.show', $assignment->id)
-                ->with('error', 'Berkas belum lulus pemindaian antivirus (status: '.$fileEntry->virus_scan_status.').');
-        }
-
-        $submission = $assignment->reviewRound->submission;
-        $filename = $fileEntry->original_name ?: ('Manuskrip-Anonim-'.$submission->submission_number.'.pdf');
-        $mimeType = $fileEntry->mime_type ?: 'application/octet-stream';
-
-        return response()->streamDownload(function () use ($submission, $fileEntry): void {
-            if (Storage::disk($fileEntry->storage_disk ?: 'local')->exists($fileEntry->storage_path)) {
-                echo Storage::disk($fileEntry->storage_disk ?: 'local')->get($fileEntry->storage_path);
-
-                return;
-            }
-
-            echo "DOKUMEN MANUSKRIP RESMI SIRIDA KOTA MAKASSAR (DOUBLE-BLIND)\n";
-            echo "========================================================\n";
-            echo "Nomor Naskah : {$submission->submission_number}\n";
-            echo "Judul Naskah : {$submission->title}\n";
-            echo "Nama Berkas  : {$fileEntry->original_name}\n";
-            echo "SHA-256      : {$fileEntry->checksum_sha256}\n\n";
-            echo "Abstrak:\n{$submission->abstract}\n";
-        }, $filename, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        ]);
+        return app(PrivateFileService::class)->stream($round->anonymizedFile, 'Manuskrip-Anonim.'.$extension);
     }
 
     /**

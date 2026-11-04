@@ -17,8 +17,8 @@
         </div>
 
         <div class="flex items-center gap-2.5 shrink-0">
-            <a 
-                href="{{ route('reviewer.assignments.index') }}" 
+            <a
+                href="{{ route('reviewer.assignments.index') }}"
                 class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg transition"
             >
                 <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,7 +102,7 @@
                         @foreach($priorityAssignments as $assignment)
                             @php
                                 $sub = $assignment->reviewRound?->submission;
-                                $displayTitle = $assignment->reviewRound?->reviewer_title ?: ($sub?->title ?? 'Naskah Ilmiah');
+                                $displayTitle = $assignment->reviewRound?->reviewer_title ?: 'Judul anonim belum disiapkan';
                                 $sectionName = $sub?->section?->name ?: ($sub?->section?->title ?: 'Umum');
                                 $subNumber = $sub?->submission_number ?: "SUB-{$sub?->id}";
                                 $dueAt = $assignment->review_due_at;
@@ -142,8 +142,8 @@
                                 </div>
 
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                                    <a
+                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition"
                                     >
                                         <span>Ruang Telaah</span>
@@ -187,7 +187,7 @@
                         @foreach($pendingInvitations as $invitation)
                             @php
                                 $sub = $invitation->reviewRound?->submission;
-                                $displayTitle = $invitation->reviewRound?->reviewer_title ?: ($sub?->title ?? 'Naskah Ilmiah');
+                                $displayTitle = $invitation->reviewRound?->reviewer_title ?: 'Judul anonim belum disiapkan';
                                 $sectionName = $sub?->section?->name ?: ($sub?->section?->title ?: 'Umum');
                                 $subNumber = $sub?->submission_number ?: "SUB-{$sub?->id}";
                             @endphp
@@ -215,8 +215,8 @@
                                 </div>
 
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $invitation->id) }}" 
+                                    <a
+                                        href="{{ route('reviewer.assignments.show', $invitation->id) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition"
                                     >
                                         <span>Tanggapi Undangan</span>
@@ -254,7 +254,7 @@
                         @foreach($recentCompleted as $comp)
                             @php
                                 $sub = $comp->reviewRound?->submission;
-                                $displayTitle = $comp->reviewRound?->reviewer_title ?: ($sub?->title ?? 'Naskah Ilmiah');
+                                $displayTitle = $comp->reviewRound?->reviewer_title ?: 'Judul anonim belum disiapkan';
                                 $recommendation = $comp->review?->recommendation ?? 'accept';
                                 $badgeRec = match($recommendation) {
                                     'accept' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -307,8 +307,8 @@
                     Sistem secara otomatis menyaring seluruh data identitas penulis, institusi asal, dan metadata berkas untuk menjamin objektivitas saintifik.
                 </p>
                 <div class="pt-2">
-                    <a 
-                        href="{{ route('reviewer.guidelines') }}" 
+                    <a
+                        href="{{ route('reviewer.guidelines') }}"
                         class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 underline"
                     >
                         <span>Baca Pedoman & Etika Lengkap</span>

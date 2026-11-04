@@ -23,7 +23,7 @@
             <div class="space-y-2 text-xs text-gray-700">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Keputusan Redaksi:</span>
-                    <strong class="text-gray-900 font-bold text-right break-words">{{ $submission['editorial_feedback']['decision'] }}</strong>
+                    <strong class="text-gray-900 font-bold text-right wrap-break-word">{{ $submission['editorial_feedback']['decision'] }}</strong>
                 </div>
                 @if(!empty($submission['editorial_feedback']['deadline']))
                     <div class="flex items-start justify-between gap-2">
@@ -35,7 +35,7 @@
 
             <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700 leading-relaxed space-y-1.5">
                 <span class="block font-bold text-gray-900 text-[11px] uppercase tracking-wider">Catatan Dewan Redaksi:</span>
-                <div class="text-gray-700 text-xs leading-relaxed break-words [overflow-wrap:anywhere]">
+                <div class="text-gray-700 text-xs leading-relaxed wrap-anywhere">
                     {!! nl2br(e(str_replace(['<br>', '<br/>', '<br />'], "\n", $submission['editorial_feedback']['comments']))) !!}
                 </div>
             </div>
@@ -53,7 +53,7 @@
                                     {{ $peerReview['reviewer_label'] }}
                                 </span>
                             </div>
-                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line break-words">
+                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line wrap-break-word">
                                 {{ $peerReview['comments_for_author'] }}
                             </div>
                             @if(!empty($peerReview['files']))
@@ -139,11 +139,11 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Terbitan:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words">{{ $submission['publication']['volume'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right wrap-break-word">{{ $submission['publication']['volume'] }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Edisi:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words">{{ $submission['publication']['issue_title'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right wrap-break-word">{{ $submission['publication']['issue_title'] }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Halaman:</span>
@@ -290,7 +290,7 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Evaluasi Ruang Lingkup:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words">{{ $submission['initial_screening']['scope_status'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right wrap-break-word">{{ $submission['initial_screening']['scope_status'] }}</strong>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Uji Kesamaan:</span>
@@ -309,7 +309,7 @@
                 </div>
             </div>
 
-            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed break-words [overflow-wrap:anywhere]">
+            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed wrap-anywhere">
                 {{ $submission['initial_screening']['notes'] }}
             </div>
         </div>
@@ -335,14 +335,14 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Metode Telaah:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words min-w-0">{{ $submission['review_info']['method'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right wrap-break-word min-w-0">{{ $submission['review_info']['method'] }}</strong>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Mitra Bestari Ditugaskan:</span>
                     @if(($submission['review_info']['reviewers_assigned'] ?? 0) > 0)
-                        <span class="font-bold text-gray-800 text-right min-w-0 break-words">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
+                        <span class="font-bold text-gray-800 text-right min-w-0 wrap-break-word">{{ $submission['review_info']['reviewers_assigned'] }} Penilai Independen</span>
                     @else
-                        <span class="font-medium text-amber-700 text-right min-w-0 break-words">Sedang Dialokasikan</span>
+                        <span class="font-medium text-amber-700 text-right min-w-0 wrap-break-word">Sedang Dialokasikan</span>
                     @endif
                 </div>
                 <div class="flex items-center justify-between gap-2">
@@ -351,7 +351,7 @@
                 </div>
             </div>
 
-            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed space-y-1 break-words [overflow-wrap:anywhere]">
+            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed space-y-1 wrap-anywhere">
                 <span class="block font-bold text-gray-800 uppercase tracking-wider text-[10px]">Privasi Mitra Bestari:</span>
                 <p>{{ $submission['review_info']['confidentiality_assurance'] }}</p>
             </div>
@@ -368,7 +368,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold leading-snug break-words" title="{{ $submission['production_info']['stage_title'] }}">{{ $submission['production_info']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold leading-snug wrap-break-word" title="{{ $submission['production_info']['stage_title'] }}">{{ $submission['production_info']['stage_title'] }}</h3>
                 </div>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 shrink-0">
                     Penerbitan
@@ -378,23 +378,23 @@
             <div class="text-xs text-gray-700 space-y-2.5">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Status Keputusan:</span>
-                    <strong class="text-emerald-700 font-bold text-right break-words min-w-0">{{ $submission['production_info']['decision'] }}</strong>
+                    <strong class="text-emerald-700 font-bold text-right wrap-break-word min-w-0">{{ $submission['production_info']['decision'] }}</strong>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Target Edisi:</span>
-                    <strong class="text-gray-900 font-semibold text-right break-words min-w-0">{{ $submission['production_info']['target_issue'] }}</strong>
+                    <strong class="text-gray-900 font-semibold text-right wrap-break-word min-w-0">{{ $submission['production_info']['target_issue'] }}</strong>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Bahasa:</span>
-                    <span class="font-semibold text-emerald-700 text-right break-words min-w-0">{{ $submission['production_info']['copyediting_status'] }}</span>
+                    <span class="font-semibold text-emerald-700 text-right wrap-break-word min-w-0">{{ $submission['production_info']['copyediting_status'] }}</span>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Letak:</span>
-                    <span class="font-semibold text-purple-800 text-right break-words min-w-0">{{ $submission['production_info']['layout_status'] }}</span>
+                    <span class="font-semibold text-purple-800 text-right wrap-break-word min-w-0">{{ $submission['production_info']['layout_status'] }}</span>
                 </div>
             </div>
 
-            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed break-words [overflow-wrap:anywhere]">
+            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed wrap-anywhere">
                 {{ $submission['production_info']['instructions'] }}
             </div>
         </div>
@@ -605,7 +605,7 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Status Keputusan:</span>
-                    <strong class="text-rose-900 font-bold text-right break-words">{{ $submission['declined_info']['decision'] }}</strong>
+                    <strong class="text-rose-900 font-bold text-right wrap-break-word">{{ $submission['declined_info']['decision'] }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tanggal Keputusan:</span>
@@ -615,7 +615,7 @@
 
             <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700 leading-relaxed space-y-1.5">
                 <span class="block font-bold text-gray-900 text-[11px] uppercase tracking-wider">Catatan Dewan Redaksi:</span>
-                <div class="text-gray-700 text-xs leading-relaxed break-words [overflow-wrap:anywhere]">
+                <div class="text-gray-700 text-xs leading-relaxed wrap-anywhere">
                     {!! nl2br(e(str_replace(['<br>', '<br/>', '<br />'], "\n", $submission['declined_info']['reason']))) !!}
                 </div>
             </div>
@@ -633,7 +633,7 @@
                                     {{ $peerReview['reviewer_label'] }}
                                 </span>
                             </div>
-                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line break-words">
+                            <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line wrap-break-word">
                                 {{ $peerReview['comments_for_author'] }}
                             </div>
                             @if(!empty($peerReview['files']))
@@ -654,7 +654,7 @@
                 </div>
             @endif
 
-            <p class="text-[11px] text-gray-500 leading-tight break-words [overflow-wrap:anywhere]">
+            <p class="text-[11px] text-gray-500 leading-tight wrap-anywhere">
                 {{ $submission['declined_info']['guidance'] }}
             </p>
         </div>
@@ -680,7 +680,7 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Status Penarikan:</span>
-                    <strong class="text-zinc-900 font-bold text-right break-words">{{ $submission['withdrawn_info']['status'] }}</strong>
+                    <strong class="text-zinc-900 font-bold text-right wrap-break-word">{{ $submission['withdrawn_info']['status'] }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tanggal Disetujui:</span>
@@ -688,7 +688,7 @@
                 </div>
             </div>
 
-            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed break-words [overflow-wrap:anywhere]">
+            <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed wrap-anywhere">
                 {{ $submission['withdrawn_info']['statement'] }}
             </div>
         </div>
@@ -706,7 +706,7 @@
         <div class="space-y-2.5 text-xs">
             <div>
                 <span class="text-gray-400 block text-[11px]">Jurnal:</span>
-                <span class="font-bold text-gray-900 leading-snug block pt-0.5 break-words" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
+                <span class="font-bold text-gray-900 leading-snug block pt-0.5 wrap-break-word" title="{{ $submission['journal_name'] }}">{{ $submission['journal_name'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px] shrink-0">e-ISSN:</span>
@@ -714,7 +714,7 @@
             </div>
             <div class="flex items-start justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px] shrink-0">Seksi Rubrik:</span>
-                <span class="font-semibold text-gray-800 text-right break-words min-w-0" title="{{ $submission['section'] }}">{{ $submission['section'] }}</span>
+                <span class="font-semibold text-gray-800 text-right wrap-break-word min-w-0" title="{{ $submission['section'] }}">{{ $submission['section'] }}</span>
             </div>
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <span class="text-gray-500 text-[11px] shrink-0">Penerbit Resmi:</span>

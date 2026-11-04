@@ -6,7 +6,7 @@
 <div class="w-full max-w-md lg:max-w-5xl mx-auto my-auto py-6">
     <!-- Main Register Card Container -->
     <div class="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        
+
         <!-- Sisi Kiri: Panel Informasi (Desktop Lg Ke Atas) -->
         <div class="hidden lg:flex lg:col-span-4 xl:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-gray-200/90 flex-col justify-between">
             <div>
@@ -14,12 +14,12 @@
                 <span class="text-[11px] font-bold tracking-wider text-brand-maroon uppercase block mb-3">
                     PORTAL SIRIDA
                 </span>
-                
+
                 <!-- Main Headline -->
                 <h2 class="text-2xl sm:text-[26px] font-bold text-gray-900 leading-tight tracking-tight mb-3">
                     Mari bergabung bersama kami.
                 </h2>
-                
+
                 <!-- Description -->
                 <p class="text-sm text-gray-600 leading-relaxed mb-6">
                     Buat akun untuk mulai mempublikasikan riset Anda dan mendukung inovasi daerah Kota Makassar.
@@ -84,18 +84,18 @@
                     <!-- Row 1: Nama Lengkap -->
                     <div>
                         <x-label for="full_name" value="Nama Lengkap" />
-                        <x-input 
-                            type="text" 
-                            name="full_name" 
-                            id="full_name" 
-                            :value="old('full_name')" 
+                        <x-input
+                            type="text"
+                            name="full_name"
+                            id="full_name"
+                            :value="old('full_name')"
                             :error="$errors->has('full_name')"
-                            minlength="2" 
+                            minlength="2"
                             maxlength="200"
-                            required 
+                            required
                             autofocus
                             autocomplete="name"
-                            placeholder="Contoh: Budi Santoso" 
+                            placeholder="Contoh: Budi Santoso"
                         />
                         @error('full_name')
                             <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
@@ -106,18 +106,18 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <x-label for="username" value="Username" />
-                            <x-input 
-                                type="text" 
-                                name="username" 
-                                id="username" 
-                                :value="old('username')" 
+                            <x-input
+                                type="text"
+                                name="username"
+                                id="username"
+                                :value="old('username')"
                                 :error="$errors->has('username')"
-                                pattern="[A-Za-z0-9_.-]{3,50}" 
-                                minlength="3" 
+                                pattern="[A-Za-z0-9_.-]{3,50}"
+                                minlength="3"
                                 maxlength="50"
-                                required 
+                                required
                                 autocomplete="username"
-                                placeholder="budi_santoso" 
+                                placeholder="budi_santoso"
                             />
                             @error('username')
                                 <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
@@ -126,16 +126,16 @@
 
                         <div>
                             <x-label for="email" value="Alamat Email" />
-                            <x-input 
-                                type="email" 
-                                name="email" 
-                                id="email" 
-                                :value="old('email')" 
+                            <x-input
+                                type="email"
+                                name="email"
+                                id="email"
+                                :value="old('email')"
                                 :error="$errors->has('email')"
                                 maxlength="255"
-                                required 
+                                required
                                 autocomplete="email"
-                                placeholder="budi@contoh.com" 
+                                placeholder="budi@contoh.com"
                             />
                             @error('email')
                                 <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
@@ -146,17 +146,17 @@
                     <!-- Row 3: Afiliasi Institusi -->
                     <div>
                         <x-label for="affiliation" value="Afiliasi Institusi" />
-                        <x-input 
-                            type="text" 
-                            name="affiliation" 
-                            id="affiliation" 
-                            :value="old('affiliation')" 
+                        <x-input
+                            type="text"
+                            name="affiliation"
+                            id="affiliation"
+                            :value="old('affiliation')"
                             :error="$errors->has('affiliation')"
-                            minlength="2" 
+                            minlength="2"
                             maxlength="255"
-                            required 
+                            required
                             autocomplete="organization"
-                            placeholder="Contoh: Universitas Hasanuddin" 
+                            placeholder="Contoh: Universitas Hasanuddin"
                         />
                         @error('affiliation')
                             <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
@@ -168,16 +168,16 @@
                         <div>
                             <x-label for="password" value="Kata Sandi" />
                             <div class="relative">
-                                <x-input 
-                                    type="password" 
-                                    name="password" 
-                                    id="password" 
+                                <x-input
+                                    type="password"
+                                    name="password"
+                                    id="password"
                                     :error="$errors->has('password')"
-                                    minlength="12" 
+                                    minlength="12"
                                     maxlength="128"
-                                    required 
+                                    required
                                     autocomplete="new-password"
-                                    placeholder="Minimal 12 karakter" 
+                                    placeholder="Minimal 12 karakter"
                                     class="pl-3.5 pr-10"
                                 />
                                 <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1" data-target="password">
@@ -193,16 +193,16 @@
                         <div>
                             <x-label for="password_confirmation" value="Konfirmasi Kata Sandi" />
                             <div class="relative">
-                                <x-input 
-                                    type="password" 
-                                    name="password_confirmation" 
-                                    id="password_confirmation" 
+                                <x-input
+                                    type="password"
+                                    name="password_confirmation"
+                                    id="password_confirmation"
                                     :error="$errors->has('password_confirmation')"
-                                    minlength="12" 
+                                    minlength="12"
                                     maxlength="128"
-                                    required 
+                                    required
                                     autocomplete="new-password"
-                                    placeholder="Ulangi kata sandi" 
+                                    placeholder="Ulangi kata sandi"
                                     class="pl-3.5 pr-10"
                                 />
                                 <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1" data-target="password_confirmation">
@@ -240,7 +240,7 @@
                         Masuk di sini
                     </a>
                 @else
-                    <a href="#" class="ml-1 text-brand-maroon font-bold hover:underline">
+                    <a href="{{ route('journal.about.contact') }}" class="ml-1 text-brand-maroon font-bold hover:underline">
                         Masuk di sini
                     </a>
                 @endif
@@ -259,7 +259,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Handle multiple password toggles
         const toggleButtons = document.querySelectorAll('.toggle-password');
-        
+
         toggleButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const targetId = this.getAttribute('data-target');
@@ -270,7 +270,7 @@
                 if (passwordInput) {
                     const isPassword = passwordInput.getAttribute('type') === 'password';
                     passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-                    
+
                     eyeIcon.classList.toggle('hidden', isPassword);
                     eyeOffIcon.classList.toggle('hidden', !isPassword);
                 }

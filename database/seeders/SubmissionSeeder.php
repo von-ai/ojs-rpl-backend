@@ -21,6 +21,10 @@ class SubmissionSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Inisialisasi User Penulis Utama
         $author = User::firstOrCreate(
             ['email' => 'andi.ilyas@unhas.ac.id'],

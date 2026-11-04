@@ -13,8 +13,10 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\Reviewer\ReviewerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ReviewerWorkflowTest extends TestCase
@@ -94,6 +96,7 @@ class ReviewerWorkflowTest extends TestCase
             'submission_id' => $this->submission->id,
             'round' => 1,
             'status' => 'active',
+            'rubric_snapshot' => app(ReviewerService::class)->getDefaultRubricCriteria(),
             'reviewer_title' => 'Evaluasi Partisipasi Publik dalam Perencanaan Tata Ruang Pesisir Makassar',
             'reviewer_abstract' => 'Penelitian ini menganalisis efektivitas pelibatan masyarakat pesisir dalam perumusan kebijakan zonasi.',
             'minimum_completed_reviews' => 2,
@@ -425,8 +428,10 @@ class ReviewerWorkflowTest extends TestCase
 
         $this->reviewRound->update([
             'anonymized_file_id' => $file->id,
+            'anonymized_checksum' => $file->checksum_sha256,
         ]);
 
+        Storage::disk('local')->put($file->storage_path, 'dummy content');
         // 1. Saat status masih 'invited', unduh berkas ditolak (guard ERD baris 1571)
         $invitedResponse = $this->actingAs($this->reviewer)
             ->get(route('reviewer.files.download', [

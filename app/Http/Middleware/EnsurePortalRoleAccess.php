@@ -39,6 +39,8 @@ class EnsurePortalRoleAccess
                 ->with('error', $message);
         }
 
+        $request->attributes->set('portal.role', $roleCode);
+
         if ($request->hasSession()) {
             $request->session()->put('active_role', $roleCode);
         }

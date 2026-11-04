@@ -9,6 +9,7 @@ use App\Mail\Proofreader\ProofreaderEscalationSubmittedMail;
 use App\Mail\Proofreader\ProofreadingNoteVerifiedMail;
 use App\Mail\Proofreader\ProofreadingSignoffCompletedMail;
 use App\Models\Galley;
+use App\Models\ProductionEscalation;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
@@ -204,7 +205,7 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $this->assertSame('completed', $assignment->status);
 
         $galley = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))->firstOrFail();
-        $this->assertSame('approved', $galley->stage);
+        $this->assertSame('proofread', $galley->stage);
 
         Mail::assertSent(ProofreadingSignoffCompletedMail::class, function ($mail) {
             return $mail->submission->submission_number === 'SUB-2026-00105';
@@ -259,26 +260,15 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $proofreader = User::where('email', 'sitti.aminah@brida.makassar.go.id')->firstOrFail();
         $this->actingAs($proofreader);
 
-        $galley108 = Galley::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00108'))->firstOrFail();
-        ProofAssignment::firstOrCreate([
-            'galley_id' => $galley108->id,
-            'proofreader_id' => $proofreader->id,
-        ], [
-            'file_id' => $galley108->file_id,
-            'due_at' => now()->addDays(3),
-            'status' => 'in_progress',
-            'assigned_at' => now()->subDays(2),
-            'checksum_sha256' => substr((string) $galley108->checksum_sha256, 0, 64),
-        ]);
-
-        // SUB-2026-00108 sudah memiliki tiket eskalasi berstatus 'open'
-        $response = $this->post('/proofreader/escalate', [
-            'submission_id' => 'SUB-2026-00108',
+        $this->post('/proofreader/escalate', [
+            'submission_id' => 'SUB-2026-00105',
+            'reason' => 'Ketidaksesuaian naskah memerlukan mediasi editorial.',
+        ])->assertSessionHasNoErrors();
+        $this->post('/proofreader/escalate', [
+            'submission_id' => 'SUB-2026-00105',
             'reason' => 'Mencoba membuat eskalasi kedua pada naskah yang sama.',
-        ]);
-
-        $response->assertRedirect(route('proofreader.submissions.show', 'SUB-2026-00108'));
-        $response->assertSessionHasErrors(['general']);
+        ])->assertSessionHasErrors(['general']);
+        $this->assertSame(1, ProductionEscalation::whereHas('submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00105'))->where('status', 'open')->count());
     }
 
     /**

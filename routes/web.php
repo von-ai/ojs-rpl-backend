@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\RoleSwitchController;
 use App\Http\Controllers\Author\AuthorSubmissionController;
 use App\Http\Controllers\Copyeditor\CopyeditorSubmissionController;
+use App\Http\Controllers\EditorialMediationController;
 use App\Http\Controllers\Eic\EditorInChiefController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
@@ -44,10 +46,17 @@ Route::name('journal.')->group(function () {
     Route::get('/announcements/{id}', [PublicJournalController::class, 'showAnnouncement'])->name('announcements.show');
 });
 
+Route::middleware(['guest', 'throttle:identity'])->group(function () {
+    Route::get('/password/forgot', [PasswordResetController::class, 'requestForm'])->name('password.request');
+    Route::post('/password/forgot', [PasswordResetController::class, 'send'])->name('password.email');
+    Route::get('/password/reset/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
+    Route::post('/password/reset', [PasswordResetController::class, 'reset'])->name('password.update');
+});
+
 // Autentikasi Pengguna (Login & Logout)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
 });
 
 Route::middleware('throttle:identity')->group(function () {
@@ -86,6 +95,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
     Route::get('/submissions/{id}/editors/search', [EditorInChiefController::class, 'searchEditors'])->name('submissions.editors.search');
+    Route::post('/submissions/{id}/escalations/{escalationId}/resolve', [EditorialMediationController::class, 'resolve'])->name('submissions.escalations.resolve');
     Route::get('/submissions/{id}/files/{fileId}/download', [EditorInChiefController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
@@ -103,6 +113,7 @@ Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-edito
     Route::get('/guidelines', [SectionEditorController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [SectionEditorController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [SectionEditorController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{id}/escalations/{escalationId}/resolve', [EditorialMediationController::class, 'resolve'])->name('submissions.escalations.resolve');
     Route::get('/submissions/{id}/files/{fileId}/download', [SectionEditorController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/rounds', [SectionEditorController::class, 'storeRound'])->name('rounds.store');
     Route::post('/rounds/{roundId}/assign-reviewer', [SectionEditorController::class, 'assignReviewer'])->name('reviewers.assign');
@@ -144,7 +155,7 @@ Route::middleware(['auth', 'role.access:copyeditor'])->prefix('copyeditor')->nam
     Route::post('/complete-handoff', [CopyeditorSubmissionController::class, 'completeHandoff'])->name('complete-handoff');
     Route::get('/files/{id}/download', [CopyeditorSubmissionController::class, 'downloadFile'])->withoutMiddleware('role.access:copyeditor')->name('files.download');
     Route::post('/author-decision', [CopyeditorSubmissionController::class, 'authorDecision'])->withoutMiddleware('role.access:copyeditor')->name('author-decision');
-    Route::post('/resolve-escalation', [CopyeditorSubmissionController::class, 'resolveEscalation'])->name('resolve-escalation');
+    Route::post('/resolve-escalation', [CopyeditorSubmissionController::class, 'resolveEscalation'])->withoutMiddleware('role.access:copyeditor')->name('resolve-escalation');
 });
 
 // Portal Layout Editor (Produksi Galai Publikasi & Proofreading)

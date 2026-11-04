@@ -2,8 +2,8 @@
 <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
     <!-- Navigasi Kembali & Status Utama -->
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
-        <a 
-            href="{{ route('layouteditor.submissions.index') }}" 
+        <a
+            href="{{ route('layouteditor.submissions.index') }}"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-maroon transition"
         >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,11 +36,11 @@
             <span>•</span>
             <span class="text-gray-400">{{ $submission['assignment_code'] }}</span>
         </div>
-        <h1 class="text-lg sm:text-2xl font-serif font-bold text-gray-900 leading-snug tracking-tight">
+        <h1 class="text-lg sm:text-2xl font-sans font-bold text-gray-900 leading-snug tracking-tight">
             {{ $submission['title'] }}
         </h1>
         <p class="text-xs sm:text-sm text-gray-600 mt-1">
-            Penulis Korespondensi: <strong class="text-gray-900">{{ $submission['corresponding_author']['name'] }}</strong> 
+            Penulis Korespondensi: <strong class="text-gray-900">{{ $submission['corresponding_author']['name'] }}</strong>
             <span class="text-gray-400 font-normal">({{ $submission['corresponding_author']['affiliation'] }})</span>
         </p>
     </div>
@@ -67,8 +67,9 @@
                 </div>
             </div>
 
-            <a 
-                href="{{ $submission['copyedit_final_file']['download_url'] }}" 
+            @if($submission['copyedit_final_file']['download_url'])
+            <a
+                href="{{ $submission['copyedit_final_file']['download_url'] }}"
                 class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-gray-900 rounded-lg transition border border-gray-300 shadow-2xs whitespace-nowrap self-start sm:self-center"
                 title="Unduh berkas Word acuan susun layout"
             >
@@ -77,6 +78,9 @@
                 </svg>
                 <span>Unduh Naskah Final (.docx)</span>
             </a>
+            @else
+                <span class="text-xs text-gray-500">Berkas belum tersedia</span>
+            @endif
         </div>
 
         @if(!empty($submission['copyedit_final_file']['notes_from_copyeditor']))

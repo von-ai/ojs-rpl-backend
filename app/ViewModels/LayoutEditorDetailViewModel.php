@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
-use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\LayoutAssignment;
 use App\Models\Submission;
@@ -306,40 +305,15 @@ class LayoutEditorDetailViewModel
 
         // Resolusi berkas naskah acuan copyediting final
         $cleanNumber = str_replace('-', '', (string) ($sub->submission_number ?? $this->submissionId));
-        $copyeditFile = null;
-
-        if (class_exists(FileEntry::class) && Schema::hasTable('files')) {
-            $copyeditFile = FileEntry::where('storage_path', 'like', "submissions/{$sub->id}/%Copyedit%")
-                ->orWhere(function ($q) use ($sub, $cleanNumber) {
-                    $q->where('storage_path', 'like', "%{$sub->id}%.docx")
-                        ->orWhere('original_name', 'like', "%{$cleanNumber}%Copyedit%")
-                        ->orWhere('original_name', 'like', "%{$sub->submission_number}%Copyedit%");
-                })
-                ->latest()
-                ->first();
-        }
-
-        if ($copyeditFile) {
-            $copyeditFinalFile = [
-                'id' => $copyeditFile->id,
-                'name' => $copyeditFile->original_name,
-                'size_formatted' => number_format($copyeditFile->byte_size / 1048576, 2).' MB',
-                'checksum_sha256' => $copyeditFile->checksum_sha256,
-                'download_url' => route('layouteditor.files.download', $copyeditFile->id),
-                'notes_from_copyeditor' => 'Naskah telah selesai disunting dan diserahterimakan untuk penataan letak.',
-            ];
-        } else {
-            $fileTargetId = (string) ($sub->submission_number ?? $this->submissionId);
-            $cleanName = str_replace('-', '', (string) ($sub->submission_number ?? $this->submissionId));
-            $copyeditFinalFile = [
-                'id' => 'FILE-CE-FINAL-'.$cleanName,
-                'name' => "{$sub->submission_number}_Copyedit_Final_Approved.docx",
-                'size_formatted' => '2.05 MB',
-                'checksum_sha256' => hash('sha256', (string) $sub->id),
-                'download_url' => route('layouteditor.files.download', $fileTargetId),
-                'notes_from_copyeditor' => 'Naskah telah disetujui Section Editor untuk proses layout.',
-            ];
-        }
+        $copyeditFile = $sub->finalCopyeditFile();
+        $copyeditFinalFile = [
+            'id' => $copyeditFile?->id,
+            'name' => $copyeditFile?->original_name ?? 'Naskah final belum tersedia',
+            'size_formatted' => $copyeditFile ? number_format($copyeditFile->byte_size / 1048576, 2).' MB' : '—',
+            'checksum_sha256' => $copyeditFile?->checksum_sha256 ?? '',
+            'download_url' => $copyeditFile ? route('layouteditor.files.download', $copyeditFile->id) : null,
+            'notes_from_copyeditor' => $copyeditFile ? 'Berkas final yang terhubung pada naskah ini.' : 'Menunggu serah terima copyediting.',
+        ];
 
         $proofAssignments = $galleys->flatMap->proofAssignments;
         $hasProofAssignment = $proofAssignments->isNotEmpty();

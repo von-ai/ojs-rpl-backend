@@ -2,6 +2,8 @@
 <html lang="id" class="h-full bg-canvas">
 <head>
     <meta charset="UTF-8">
+    <meta name="application-name" content="{{ $platformSettings['site_name'] ?? config('app.name') }}">
+    <meta name="description" content="{{ $platformSettings['site_description'] ?? 'Portal jurnal ilmiah BRIDA Makassar' }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Jurnal Riset & Inovasi BRIDA Makassar (JRID-MKS)')</title>
@@ -10,9 +12,6 @@
     <link rel="icon" type="image/png" href="{{ asset('images/brida-logo.png') }}">
 
     <!-- Google Fonts: Inter (Akademis, Rapi & Seragam) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
