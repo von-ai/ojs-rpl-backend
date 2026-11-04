@@ -24,7 +24,7 @@ Berdasarkan analisis kebutuhan proposal SRS dan evaluasi berbagai opsi layanan c
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **Komputasi Web** | Azure VM, App Service, Azure Container Apps (ACA) | **Azure Container Apps (ACA)** | Docker Desktop / Compose | Serverless container, *scale-to-zero* saat idle, *cold start* cepat (5–15 detik), Envoy Ingress terkelola, kuota gratis 180.000 vCPU-s/bln. |
 | 2 | **Komputasi Worker** | Azure VM, Celery/Supervisor, Dedicated ACA | **ACA Dedicated Worker** | Docker Container | Menjalankan `php artisan queue:work` secara asinkron (pemrosesan PDF dan pemindaian berkas), isolasi proses dari traffic web. |
-| 3 | **Komputasi Scheduler** | Cron VM, Azure Function, ACA Scheduled Job | **ACA Scheduled Job** | Host Cron / Artisan | Menjalankan `php artisan schedule:run` setiap 1 menit untuk deadline review & outbox retry tanpa server standby 24/7. |
+| 3 | **Komputasi Scheduler** | ACA Scheduled Job (Cron), Azure Function, Dedicated ACA Daemon | **ACA Scheduler Daemon** | Host Cron / Artisan | Menjalankan `php artisan schedule:work` secara kontinu (min 1, max 1 replika). Dipilih karena pola ACA Scheduled Job 1-menit (`* * * * *`) di Azure Container Apps memiliki keterbatasan latensi cold-start (15–30 dtk) dan potensi overlap, sedangkan daemon loop internal PHP menjamin eksekusi tepat waktu di detik ke-0. |
 | 4 | **RDBMS** | Azure Database for MySQL, TiDB Serverless, AWS RDS | **TiDB Cloud Serverless** | Container MySQL 8.0 | 100% MySQL 8.0 wire protocol, *scale-to-zero*, bebas biaya sewa disk tetap, kuota gratis 5 GB storage & 50M Request Units/bln. |
 | 5 | **In-Memory Cache & Broker** | Azure Managed Redis, Upstash, DB Store | **Azure Managed Redis (AMR Balanced_B0)** | Container Redis | Layanan Redis Enterprise terkelola native Azure dengan mesin multi-threading performa tinggi, dedicated in-memory store untuk session, atomic locking naskah, dan cache layer (~Rp 210 rb/bln saat aktif atau Rp 0 saat di-destroy). |
 | 6 | **Object Storage** | Azure Blob Storage, AWS S3, Cloudflare R2 | **Azure Blob Storage** | Azurite Container (Port 10000) | Penyimpanan objek terkelola native Azure dengan integrasi langsung Microsoft Defender for Storage (Malware Scanning). Enkripsi data at-rest otomatis (AES-256), integrasi SAS (Shared Access Signature) token, dan manajemen lifecycle versi berkas 30 hari. |
@@ -72,8 +72,8 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                          │ │ php artisan queue:work (Worker)   │ │
                                          │ └───────────────────────────────────┘ │
                                          │ ┌───────────────────────────────────┐ │
-                                         │ │ Scheduled Job (Cron Pemicu)       │ │
-                                         │ │ php artisan schedule:run (* * * *)│ │
+                                         │ │ Scheduler Container (Daemon)      │ │
+                                         │ │ php artisan schedule:work (Min 1) │ │
                                          │ └───────────────────────────────────┘ │
                                          │ • ACA Encrypted Secrets               │
                                          │ • Azure Log Analytics (stdout/stderr) │
@@ -123,7 +123,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 | :--- | :---: | :---: | :--- | :--- |
 | **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
 | **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
-| **ACA Scheduled Job** | 0.25 vCPU | 0.5 GiB | Trigger cron `* * * * *` (Maks durasi eksekusi: 60 detik) | Hidup hanya beberapa detik tiap menit untuk `schedule:run`. |
+| **ACA Scheduler Daemon** | 0.25 vCPU | 0.5 GiB | Dedicated Daemon (min 1, max 1 replika) | Menjalankan `php artisan schedule:work` secara kontinu di memori tanpa penalti cold-start 1-menit. |
 | **Redis Container (ACA)**| 0.25 vCPU | 0.5 GiB | Min 1 replika (Internal TCP Ingress Port 6379) | Collocated di dalam ACA Environment (latensi < 1 ms), $0 gratis masuk kuota ACA. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
 | **Azure Blob Storage** | - | Pay-as-you-go | Unlimited kapasitas | Hot Tier dengan enkripsi AES-256 bawaan; kuota gratis 100 GB egress/bulan dari Azure. |
