@@ -136,7 +136,7 @@ resource "azurerm_container_app" "worker" {
       image   = var.container_image
       cpu     = var.aca_worker_cpu
       memory  = var.aca_worker_memory
-      command = ["php", "/var/www/html/artisan", "queue:work", "--queue=default,identity", "--verbose", "--tries=3", "--timeout=90"]
+      command = ["php", "/var/www/html/artisan", "queue:work", "--queue=default,identity,notifications,imports,file-security", "--verbose", "--tries=3", "--timeout=180"]
 
       dynamic "env" {
         for_each = local.common_env_vars

@@ -1,9 +1,15 @@
 <?php
 
+use App\Http\Middleware\EnforcePlatformPolicy;
+use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsurePortalRoleAccess;
+use App\Http\Middleware\LoadPlatformSettings;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrustedHosts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustHosts;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +18,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $middleware->trustHosts(at: function () {
+            $hosts = [(string) parse_url(config('app.url'), PHP_URL_HOST)];
+            $hosts = array_merge($hosts, array_filter(array_map('trim', explode(',', (string) env('TRUSTED_HOSTS', '')))));
+            if (! app()->environment('production')) {
+                $hosts = array_merge($hosts, ['localhost', '127.0.0.1', '[::1]']);
+            }
+
+            return array_map(fn ($host) => '^'.preg_quote($host).'$', array_filter($hosts));
+        }, subdomains: false);
+        $middleware->replace(TrustHosts::class, TrustedHosts::class);
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: array_filter(array_map('trim', explode(',', $proxies))));
+        }
+        $middleware->append(SecurityHeaders::class);
+        $middleware->web(prepend: [LoadPlatformSettings::class], append: [EnsureActiveAccount::class, EnforcePlatformPolicy::class]);
 
         $middleware->alias([
             'role.access' => EnsurePortalRoleAccess::class,

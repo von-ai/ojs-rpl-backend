@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Copyeditor;
 
 use App\Models\Copyedit;
+use App\Models\CopyeditOutput;
 use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\Section;
@@ -51,6 +52,8 @@ class CopyeditorTransactionalControllerTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantRole($this->copyEditor, 'copyeditor', $journal->id);
+        $this->grantRole($this->layoutEditor, 'layout_editor', $journal->id);
         $section = Section::create([
             'journal_id' => $journal->id,
             'name' => 'Kajian Kebijakan',
@@ -124,6 +127,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         ]);
 
         // Request approval
+        $this->scanTestUploads();
         $response = $this->post('/copyeditor/request-approval', [
             'submission_id' => 'SUB-2026-00555',
             'note' => 'Silakan ditinjau hasil suntingan tata bahasa kami.',
@@ -140,13 +144,14 @@ class CopyeditorTransactionalControllerTest extends TestCase
 
         // Author decision (approve)
         $this->actingAs($this->author);
+        $this->actingAs($this->author);
         $decisionResponse = $this->post('/copyeditor/author-decision', [
             'submission_id' => 'SUB-2026-00555',
             'decision' => 'approved',
             'note' => 'Sudah sesuai format jurnal.',
         ]);
 
-        $decisionResponse->assertRedirect('/copyeditor/submissions/SUB-2026-00555');
+        $decisionResponse->assertRedirect(route('author.submissions.show', $this->submission->id));
 
         $this->assertDatabaseHas('copyedit_approvals', [
             'copyedit_id' => $this->copyedit->id,
@@ -177,6 +182,9 @@ class CopyeditorTransactionalControllerTest extends TestCase
         ]);
 
         // Resolve escalation
+        $mediator = User::factory()->create();
+        $this->grantRole($mediator, 'editor_in_chief', $this->submission->journal_id);
+        $this->actingAs($mediator);
         $resolveResponse = $this->post('/copyeditor/resolve-escalation', [
             'submission_id' => 'SUB-2026-00555',
             'resolution' => 'Gunakan istilah baku SNI.',
@@ -199,9 +207,12 @@ class CopyeditorTransactionalControllerTest extends TestCase
             'submission_id' => 'SUB-2026-00555',
             'copyedit_file' => UploadedFile::fake()->create('edited_final.docx', 400),
         ]);
+        $this->scanTestUploads();
         $this->post('/copyeditor/request-approval', ['submission_id' => 'SUB-2026-00555']);
+        $this->actingAs($this->author);
         $this->post('/copyeditor/author-decision', ['submission_id' => 'SUB-2026-00555', 'decision' => 'approved']);
 
+        $this->actingAs($this->copyEditor);
         // Complete handoff
         $response = $this->post('/copyeditor/complete-handoff', [
             'submission_id' => 'SUB-2026-00555',
@@ -212,7 +223,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $response->assertSessionHas('status');
 
         $this->assertEquals('completed', $this->copyedit->fresh()->status);
-        $this->assertEquals('layout', $this->submission->fresh()->status);
+        $this->assertEquals('in_production', $this->submission->fresh()->status);
         $this->assertDatabaseHas('layout_assignments', [
             'submission_id' => $this->submission->id,
         ]);
@@ -231,10 +242,11 @@ class CopyeditorTransactionalControllerTest extends TestCase
             'original_name' => 'manuscript_to_download.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'byte_size' => 300 * 1024,
-            'checksum_sha256' => hash('sha256', 'dummy'),
-            'created_by' => $this->copyEditor->id,
+            'checksum_sha256' => hash('sha256', Storage::disk('local')->get($path)),
+            'created_by' => $this->copyEditor->id, 'virus_scan_status' => 'clean',
         ]);
 
+        CopyeditOutput::create(['copyedit_id' => $this->copyedit->id, 'file_id' => $fileEntry->id, 'position' => 1]);
         $response = $this->get(route('copyeditor.files.download', $fileEntry->id));
 
         $response->assertStatus(200);
@@ -270,7 +282,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_controller_download_file_supports_lookup_by_original_name_when_exists_on_disk(): void
+    public function test_controller_download_file_rejects_filename_lookup_even_when_file_exists(): void
     {
         $this->actingAs($this->copyEditor);
 
@@ -289,8 +301,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
 
         $response = $this->get(route('copyeditor.files.download', 'SUB2026-00106_Source_Accepted.docx'));
 
-        $response->assertStatus(200);
-        $response->assertHeader('content-disposition', 'attachment; filename=SUB2026-00106_Source_Accepted.docx');
+        $response->assertNotFound();
     }
 
     public function test_controller_upload_file_validation_rejects_disallowed_mime(): void

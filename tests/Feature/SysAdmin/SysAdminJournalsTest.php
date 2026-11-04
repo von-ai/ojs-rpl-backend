@@ -99,7 +99,7 @@ class SysAdminJournalsTest extends TestCase
         $responseStore->assertSessionHas('status');
 
         // Ubah status jurnal
-        $responseStatus = $this->post('/sysadmin/journals/JOURNAL-01JARK-01/status', [
+        $responseStatus = $this->post('/sysadmin/journals/'.Journal::where('slug', 'jtiik-makassar')->firstOrFail()->id.'/status', [
             'status' => 'archived',
         ]);
         $responseStatus->assertRedirect(route('sysadmin.journals.index'));

@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Models\UserRole;
 use Database\Seeders\CopyeditSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -170,23 +169,10 @@ class CopyeditorCatalogPageTest extends TestCase
     /**
      * Pengujian aksi form transaksional menghasilkan flash message dan pengalihan ke ruang kerja naskah.
      */
-    public function test_aksi_transaksional_copyeditor_mengembalikan_redirect_dengan_status(): void
+    public function test_aksi_copyeditor_tanpa_berkas_ditolak_tanpa_pesan_sukses(): void
     {
-        $responseUpload = $this->post('/copyeditor/upload', ['submission_id' => 'SUB-2026-00106']);
-        $responseUpload->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseUpload->assertSessionHas('status');
-
-        $responseApproval = $this->post('/copyeditor/request-approval', ['submission_id' => 'SUB-2026-00106']);
-        $responseApproval->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseApproval->assertSessionHas('status');
-
-        $responseEscalate = $this->post('/copyeditor/escalate', ['submission_id' => 'SUB-2026-00106']);
-        $responseEscalate->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseEscalate->assertSessionHas('status');
-
-        $responseHandoff = $this->post('/copyeditor/complete-handoff', ['submission_id' => 'SUB-2026-00109']);
-        $responseHandoff->assertRedirect('/copyeditor/submissions/SUB-2026-00109');
-        $responseHandoff->assertSessionHas('status');
+        $response = $this->from('/copyeditor/submissions/SUB-2026-00106')->post('/copyeditor/upload', ['submission_id' => 'SUB-2026-00106']);
+        $response->assertRedirect('/copyeditor/submissions/SUB-2026-00106')->assertSessionHasErrors('copyedit_file')->assertSessionMissing('status');
     }
 
     /**
@@ -228,13 +214,11 @@ class CopyeditorCatalogPageTest extends TestCase
      */
     public function test_empty_state_tampil_ketika_belum_ada_penugasan_copyedit(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF');
         CopyeditApprovedFile::query()->delete();
         CopyeditApproval::query()->delete();
         CopyeditOutput::query()->delete();
         ProductionEscalation::query()->delete();
         Copyedit::query()->delete();
-        DB::statement('PRAGMA foreign_keys = ON');
 
         $response = $this->get('/copyeditor/submissions');
         $response->assertStatus(200);

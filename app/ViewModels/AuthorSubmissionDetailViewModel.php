@@ -631,7 +631,7 @@ class AuthorSubmissionDetailViewModel
             return false;
         }
 
-        if (Schema::hasTable('review_assignments') && DB::table('review_assignments')->where('submission_id', $sub->id)->exists()) {
+        if (Schema::hasTable('review_assignments') && DB::table('review_assignments')->whereIn('review_round_id', DB::table('review_rounds')->select('id')->where('submission_id', $sub->id))->exists()) {
             return false;
         }
 

@@ -444,64 +444,9 @@ class AuthorSubmissionsViewModel
      */
     public function wizardJournalSections(): array
     {
-        try {
-            if (Schema::hasTable('sections')) {
-                $dbSections = Section::where('accepting_submissions', true)
-                    ->orderBy('position')
-                    ->get();
-
-                if ($dbSections->isNotEmpty()) {
-                    return $dbSections->map(fn (Section $s): array => [
-                        'id' => $s->slug ?: $s->id,
-                        'raw_id' => $s->id,
-                        'name' => $s->name,
-                        'description' => $s->description ?? '',
-                        'policy' => $s->policy ?? '',
-                    ])->toArray();
-                }
-            }
-        } catch (\Throwable) {
-            // Fallback graceful jika koneksi DB atau tabel belum siap
-        }
-
-        return [
-            [
-                'id' => 'sec-riset-orisinil',
-                'name' => 'Artikel Riset Orisinil',
-                'description' => 'Laporan hasil penelitian empiris atau teoritis primer yang orisinil dan relevan dengan pembangunan daerah Kota Makassar.',
-                'policy' => 'Wajib memuat metodologi riset yang jelas, data empiris primer/sekunder terverifikasi, dan analisis kebaruan.',
-            ],
-            [
-                'id' => 'sec-kajian-kebijakan',
-                'name' => 'Kajian Kebijakan Strategis',
-                'description' => 'Telaah kritis berbasis bukti ilmiah untuk rekomendasi kebijakan publik dan inovasi daerah.',
-                'policy' => 'Fokus pada rekomendasi actionable bagi Pemerintah Kota Makassar dan pemangku kepentingan.',
-            ],
-            [
-                'id' => 'sec-studi-kasus',
-                'name' => 'Studi Kasus & Inovasi Daerah',
-                'description' => 'Dokumentasi implementasi inovasi tata kelola pemerintahan, layanan publik, atau teknologi tepat guna.',
-                'policy' => 'Menguraikan tantangan nyata, proses implementasi solusi, dan dampak terukur terhadap masyarakat.',
-            ],
-            [
-                'id' => 'sec-tinjauan-literatur',
-                'name' => 'Tinjauan Pustaka Sistematis',
-                'description' => 'Sintesis komprehensif dan meta-analisis literatur ilmiah terkini mengenai topik strategis perkotaan dan sains terapan.',
-                'policy' => 'Wajib menggunakan protokol telaah terstandar seperti PRISMA dan mencantumkan kriteria inklusi serta eksklusi rujukan yang jelas.',
-            ],
-            [
-                'id' => 'sec-komunikasi-pendek',
-                'name' => 'Komunikasi Singkat Riset',
-                'description' => 'Laporan ringkas hasil riset penting tahap awal atau temuan eksperimen mendesak yang membutuhkan publikasi cepat.',
-                'policy' => 'Memprioritaskan temuan baru berurgensi tinggi dengan visualisasi data yang padat dan informatif.',
-            ],
-            [
-                'id' => 'sec-opini-kebijakan',
-                'name' => 'Opini Kebijakan & Komentar Ilmiah',
-                'description' => 'Perspektif analitis dari pakar atau akademisi terhadap fenomena sosial-ekonomi atau regulasi daerah Kota Makassar.',
-                'policy' => 'Gagasan harus berargumen rasional, didukung data faktual, dan menyajikan solusi konstruktif bagi pemangku kebijakan.',
-            ],
-        ];
+        return Section::where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'))->orderBy('position')->orderBy('id')->get()->map(fn ($s) => [
+            'id' => $s->id, 'raw_id' => $s->id, 'name' => $s->name, 'description' => $s->description ?? '', 'policy' => $s->policy ?? '',
+        ])->all();
     }
 
     /**

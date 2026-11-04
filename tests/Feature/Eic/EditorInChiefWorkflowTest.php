@@ -253,6 +253,8 @@ class EditorInChiefWorkflowTest extends TestCase
      */
     public function test_eic_dapat_menerima_naskah_untuk_produksi(): void
     {
+        $this->completeReviewRound($this->submission);
+        $this->grantRole(User::factory()->create(), 'copyeditor', $this->submission->journal_id);
         $this->actingAs($this->eic);
 
         $response = $this->post(route('eic.submissions.decision', $this->submission->id), [

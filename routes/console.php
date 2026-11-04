@@ -2,6 +2,8 @@
 
 use App\Jobs\CheckReviewDeadlinesJob;
 use App\Jobs\PruneExpiredChallengesJob;
+use App\Jobs\ScanFile;
+use App\Models\FileEntry;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -26,3 +28,14 @@ Schedule::job(new CheckReviewDeadlinesJob)->everyMinute();
 
 // Pembersihan berkas & token tantangan registrasi kedaluwarsa setiap hari
 Schedule::job(new PruneExpiredChallengesJob)->daily();
+
+Artisan::command('files:scan-pending', function () {
+    $count = 0;
+    FileEntry::whereIn('virus_scan_status', ['pending', 'error'])->chunkById(100, function ($files) use (&$count) {
+        foreach ($files as $file) {
+            ScanFile::dispatch($file->id);
+            $count++;
+        }
+    });
+    $this->info("{$count} berkas masuk antrean pemindaian.");
+})->purpose('Antrekan ulang pemindaian berkas yang belum terverifikasi');

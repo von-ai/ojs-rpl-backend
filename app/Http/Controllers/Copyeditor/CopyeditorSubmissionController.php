@@ -7,16 +7,17 @@ namespace App\Http\Controllers\Copyeditor;
 use App\Http\Controllers\Controller;
 use App\Models\Copyedit;
 use App\Models\FileEntry;
+use App\Models\Submission;
 use App\Models\User;
 use App\Services\Copyeditor\CopyeditorService;
+use App\Services\PortalAccess;
+use App\Services\PrivateFileService;
 use App\ViewModels\CopyeditorSubmissionDetailViewModel;
 use App\ViewModels\CopyeditorSubmissionsViewModel;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -75,24 +76,9 @@ class CopyeditorSubmissionController extends Controller
      */
     public function downloadFile(string $id): StreamedResponse
     {
-        $file = null;
-        if (Schema::hasTable('files')) {
-            $file = FileEntry::where('id', $id)
-                ->orWhere('original_name', $id)
-                ->first();
-        }
+        $file = FileEntry::findOrFail($id);
 
-        if (! $file) {
-            abort(404, 'Data berkas tidak ditemukan di basis data.');
-        }
-
-        $disk = Storage::disk($file->storage_disk ?: 'local');
-
-        if (! $disk->exists($file->storage_path)) {
-            abort(404, 'Berkas fisik tidak ditemukan di penyimpanan server.');
-        }
-
-        return $disk->download($file->storage_path, $file->original_name);
+        return app(PrivateFileService::class)->download($file, Auth::user());
     }
 
     /**
@@ -102,14 +88,14 @@ class CopyeditorSubmissionController extends Controller
     {
         $request->validate([
             'submission_id' => 'required|string',
-            'copyedit_file' => 'nullable|file|mimes:docx,doc,pdf|max:20480',
+            'copyedit_file' => 'required|file|mimes:docx,doc,pdf|max:20480',
         ]);
 
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
 
         if ($copyedit && $request->hasFile('copyedit_file') && $request->file('copyedit_file')->isValid()) {
-            $user = Auth::user() ?? $copyedit->copyEditor;
+            $user = Auth::user();
             $this->copyeditorService->uploadOutputFile($copyedit, $request->file('copyedit_file'), $user);
         }
 
@@ -122,7 +108,7 @@ class CopyeditorSubmissionController extends Controller
      */
     public function requestApproval(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
 
         if ($copyedit) {
@@ -134,7 +120,7 @@ class CopyeditorSubmissionController extends Controller
             }
         }
 
-        $authorName = $copyedit?->submission?->author?->name ?? 'Dr. Nurfadillah Bahar';
+        $authorName = $copyedit->submission->author?->name ?? 'Penulis korespondensi';
 
         return redirect()->route('copyeditor.submissions.show', $submissionId)
             ->with('status', "Permintaan persetujuan telah dikirimkan ke Penulis Korespondensi ({$authorName}). Notifikasi telah masuk ke antrean email.");
@@ -145,11 +131,11 @@ class CopyeditorSubmissionController extends Controller
      */
     public function submitEscalation(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
 
         if ($copyedit) {
-            $user = Auth::user() ?? $copyedit->copyEditor;
+            $user = Auth::user();
             $reason = (string) $request->input('reason', 'Keberatan terhadap hasil suntingan teks');
             $category = $request->input('category');
 
@@ -162,7 +148,7 @@ class CopyeditorSubmissionController extends Controller
         }
 
         return redirect()->route('copyeditor.submissions.show', $submissionId)
-            ->with('status', 'Tiket mediasi berhasil diajukan ke Section Editor (Prof. Hamka, Ph.D.). Tim redaksi akan membantu penyelesaian catatan.');
+            ->with('status', 'Tiket mediasi berhasil diajukan ke Section Editor (editor yang ditugaskan). Tim redaksi akan membantu penyelesaian catatan.');
     }
 
     /**
@@ -170,14 +156,16 @@ class CopyeditorSubmissionController extends Controller
      */
     public function completeHandoff(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
+        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
 
         if ($copyedit) {
-            $user = Auth::user() ?? $copyedit->copyEditor;
-            $layoutEditor = User::whereHas('layoutAssignments')->first()
-                ?? User::where('id', '!=', $copyedit->copy_editor_id)->first()
-                ?? $user;
+            $user = Auth::user();
+            $layoutEditor = User::where('status', 'active')->whereNotNull('email_verified_at')
+                ->whereHas('userRoles', fn ($q) => $q->where('role_code', 'layout_editor')->where('journal_id', $copyedit->submission->journal_id))->first();
+            if (! $layoutEditor) {
+                return back()->withErrors(['handoff' => 'Belum ada Layout Editor aktif pada jurnal ini.']);
+            }
 
             try {
                 $this->copyeditorService->completeHandoff(
@@ -201,26 +189,20 @@ class CopyeditorSubmissionController extends Controller
      */
     public function authorDecision(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
-        $decision = (string) $request->input('decision', 'approved');
-        $copyedit = $this->findCopyedit($submissionId);
-
-        if ($copyedit) {
-            $author = Auth::user() ?? $copyedit->submission?->author ?? $copyedit->copyEditor;
-            $approval = $copyedit->approvals()->whereNull('invalidated_at')->first();
-
-            if ($approval) {
-                if ($decision === 'approved') {
-                    $this->copyeditorService->approveByAuthor($approval, $author, $request->input('note'));
-                } else {
-                    $reason = (string) $request->input('reason', 'Penulis meminta perubahan hasil suntingan.');
-                    $this->copyeditorService->requestChangesByAuthor($approval, $author, $reason);
-                }
+        $data = $request->validate(['submission_id' => ['required', 'string'], 'decision' => ['required', 'in:approved,revisions_requested'], 'note' => ['nullable', 'string', 'max:4000'], 'reason' => ['required_if:decision,revisions_requested', 'nullable', 'string', 'max:4000']]);
+        $copyedit = $this->findCopyedit($data['submission_id']);
+        $approval = $copyedit->approvals()->where('author_id', Auth::id())->whereNull('invalidated_at')->where('decision', 'requested')->firstOrFail();
+        try {
+            if ($data['decision'] === 'approved') {
+                $this->copyeditorService->approveByAuthor($approval, Auth::user(), $data['note'] ?? null);
+            } else {
+                $this->copyeditorService->requestChangesByAuthor($approval, Auth::user(), $data['reason']);
             }
+        } catch (DomainException $e) {
+            return back()->withErrors(['approval' => $e->getMessage()]);
         }
 
-        return redirect()->route('copyeditor.submissions.show', $submissionId)
-            ->with('status', 'Respon penulis atas hasil copyediting berhasil dicatat.');
+        return redirect()->route('author.submissions.show', $copyedit->submission_id)->with('success', 'Tanggapan atas hasil copyediting berhasil dicatat.');
     }
 
     /**
@@ -228,8 +210,11 @@ class CopyeditorSubmissionController extends Controller
      */
     public function resolveEscalation(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->input('submission_id', 'SUB-2026-00106');
-        $copyedit = $this->findCopyedit($submissionId);
+        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
+        $submission = Submission::where('submission_number', $submissionId)->orWhere('id', $submissionId)->firstOrFail();
+        $role = Auth::user()->hasRole('editor_in_chief') ? 'editor_in_chief' : 'section_editor';
+        abort_unless(PortalAccess::visibleSubmissions(Auth::user(), $role)->whereKey($submission->id)->exists(), 403);
+        $copyedit = $submission->copyedit;
 
         if ($copyedit) {
             $activeEscalation = $copyedit->escalations()->whereIn('status', ['open', 'investigating'])->first();
@@ -248,20 +233,16 @@ class CopyeditorSubmissionController extends Controller
      */
     private function findCopyedit(string $identifier): ?Copyedit
     {
-        try {
-            if (! Schema::hasTable('copyedits')) {
-                return null;
-            }
-
-            return Copyedit::with(['submission.author', 'submission.contributors', 'copyEditor', 'outputs.file'])
-                ->where('id', $identifier)
-                ->orWhereHas('submission', function ($q) use ($identifier) {
-                    $q->where('submission_number', $identifier)
-                        ->orWhere('id', $identifier);
-                })
-                ->first();
-        } catch (\Throwable) {
-            return null;
+        $query = Copyedit::with(['submission.author', 'submission.contributors', 'copyEditor', 'outputs.file'])
+            ->where(function ($q) use ($identifier) {
+                $q->where('id', $identifier)->orWhereHas('submission', fn ($sq) => $sq->where('submission_number', $identifier)->orWhere('id', $identifier));
+            });
+        if (request()->routeIs('copyeditor.author-decision')) {
+            $query->whereHas('submission', fn ($q) => $q->where('author_id', Auth::id())->orWhereHas('contributors', fn ($cq) => $cq->where('user_id', Auth::id())->where('is_corresponding', true)));
+        } else {
+            $query->where('copy_editor_id', Auth::id());
         }
+
+        return $query->firstOrFail();
     }
 }

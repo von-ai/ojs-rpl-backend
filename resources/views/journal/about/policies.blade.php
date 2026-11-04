@@ -29,10 +29,10 @@
 
     <!-- Main Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
+
         <!-- Konten Utama (2 Kolom Kiri) -->
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
-            
+
             <x-journal.about-subnav />
 
             <!-- 1. Kebijakan Akses Terbuka (Open Access Policy - Dari Database) -->
@@ -44,10 +44,10 @@
                     <span>Kebijakan Akses Terbuka (Open Access Policy)</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     {{ $journal->open_access_policy ?: 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.' }}
                 </p>
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     Pembaca dapat mengunduh, membaca, menyalin, mendistribusikan, dan menyitir naskah lengkap setiap artikel terbit tanpa hambatan biaya (paywall) maupun keharusan berlangganan.
                 </p>
             </section>
@@ -61,11 +61,11 @@
                     <span>Protokol Telaah Sejawat (Peer Review Policy)</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     {{ $journal->peer_review_policy ?: 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).' }}
                 </p>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     Setiap naskah yang lolos tahap evaluasi awal (Desk Review / Screening) oleh Dewan Redaksi akan ditugaskan kepada sekurang-kurangnya 2 (dua) orang Mitra Bestari independen. Penelaah mengevaluasi kelayakan saintifik secara objektif dan bebas dari benturan kepentingan.
                 </p>
 
@@ -89,10 +89,10 @@
                     <span>Integritas Akademik & Pencegahan Plagiarisme</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     Redaksi menjunjung tinggi standar etika publikasi internasional Committee on Publication Ethics (COPE). Setiap naskah yang masuk diperiksa menggunakan sistem deteksi kesamaan (Turnitin / iThenticate). Batas maksimal tingkat kemiripan (similarity index) adalah <strong>20%</strong> (tidak termasuk bibliografi dan kutipan yang diapit tanda kutip resmi).
                 </p>
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     Pelanggaran etika berupa pemalsuan data (falsification), fabrikasi temuan, publikasi ganda (redundant publication), atau manipulasi kepenulisan (ghost authorship) akan berakibat pada penolakan naskah atau penarikan artikel (retraction).
                 </p>
             </section>
@@ -125,7 +125,7 @@
                     <span>Pernyataan Hak Cipta & Lisensi (Copyright Notice)</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     Penulis memegang hak cipta penuh atas naskah yang diterbitkan (authors retain copyright). Hak penerbitan pertama diberikan kepada {{ $journal->name ?: 'Jurnal Riset dan Inovasi Daerah (SIRIDA)' }} dengan lisensi distribusi:
                 </p>
 

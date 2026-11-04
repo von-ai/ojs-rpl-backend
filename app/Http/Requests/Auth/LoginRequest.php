@@ -30,9 +30,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login' => ['required_without:email', 'nullable', 'string'],
-            'email' => ['required_without:login', 'nullable', 'string'],
-            'password' => ['required', 'string'],
+            'login' => ['required_without:email', 'nullable', 'string', 'max:254'],
+            'email' => ['required_without:login', 'nullable', 'string', 'max:254'],
+            'password' => ['required', 'string', 'max:128'],
         ];
     }
 
@@ -67,6 +67,12 @@ class LoginRequest extends FormRequest
 
         try {
             $user = $authService->authenticateWeb($loginInput, $password, $this->ip());
+            if ($remember) {
+                $user->setRememberToken(Str::random(60));
+                $user->remember_expires_at = now()->addDay();
+                $user->save();
+            }
+            Auth::guard()->setRememberDuration(1440);
             Auth::login($user, $remember);
             RateLimiter::clear($this->throttleKey());
         } catch (ValidationException $e) {
@@ -108,6 +114,6 @@ class LoginRequest extends FormRequest
     {
         $loginInput = (string) ($this->input('login') ?? $this->input('email'));
 
-        return Str::transliterate(Str::lower($loginInput).'|'.$this->ip());
+        return hash_hmac('sha256', Str::lower(trim($loginInput)).'|'.$this->ip(), (string) config('app.key'));
     }
 }

@@ -212,7 +212,7 @@ class LoginPageTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(5, $user->failed_login_count);
-        $this->assertEquals('locked', $user->status);
+        $this->assertEquals('active', $user->status);
         $this->assertNotNull($user->locked_until);
         $this->assertTrue($user->locked_until->isFuture());
 

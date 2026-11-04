@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use App\Models\Journal;
 use App\Models\User;
 use Database\Seeders\SysAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -112,7 +113,7 @@ class SysAdminNavigationTest extends TestCase
         $resStoreJournal->assertSessionHas('status');
 
         // 2. Perbarui status publikasi jurnal
-        $resUpdateStatus = $this->post('/sysadmin/journals/JOURNAL-01JARK-01/status', [
+        $resUpdateStatus = $this->post('/sysadmin/journals/'.Journal::where('slug', 'jtiik-makassar')->firstOrFail()->id.'/status', [
             'status' => 'archived',
         ]);
         $resUpdateStatus->assertRedirect(route('sysadmin.journals.index'));
@@ -120,14 +121,15 @@ class SysAdminNavigationTest extends TestCase
 
         // 3. Berikan hak akses SysAdmin
         $resAssign = $this->post('/sysadmin/users/assign-sysadmin', [
-            'user_id' => 'USER-01JARK-99',
+            'user_id' => User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail()->id,
         ]);
         $resAssign->assertRedirect(route('sysadmin.users.index'));
         $resAssign->assertSessionHas('status');
+        $this->assertTrue(User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail()->isSysAdmin());
 
         // 4. Cabut hak akses SysAdmin
         $resRevoke = $this->post('/sysadmin/users/revoke-sysadmin', [
-            'user_id' => 'USER-01JARK-99',
+            'user_id' => User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail()->id,
         ]);
         $resRevoke->assertRedirect(route('sysadmin.users.index'));
         $resRevoke->assertSessionHas('status');
@@ -136,8 +138,8 @@ class SysAdminNavigationTest extends TestCase
         $resImport = $this->post('/sysadmin/users/import', [
             'journal_id' => 'JOURNAL-01JARK-01',
         ]);
-        $resImport->assertRedirect(route('sysadmin.users.index'));
-        $resImport->assertSessionHas('status');
+        $resImport->assertSessionHasErrors(['file', 'journal_id']);
+        $resImport->assertSessionMissing('status');
 
         // 6. Perbarui konfigurasi platform
         $resSettings = $this->post('/sysadmin/settings', [

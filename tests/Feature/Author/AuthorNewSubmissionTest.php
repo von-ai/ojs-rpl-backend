@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Author;
 
 use App\Models\User;
+use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,7 @@ class AuthorNewSubmissionTest extends TestCase
             'email' => 'andi.ilyas@unhas.ac.id',
         ]);
 
+        $this->seed(SectionSeeder::class);
         $this->actingAs($this->user);
     }
 

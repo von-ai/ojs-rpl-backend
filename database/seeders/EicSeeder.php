@@ -24,6 +24,10 @@ class EicSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Pastikan aktor EIC, Section Editors, dan Reviewers tersedia
         $eic = User::firstOrCreate(
             ['email' => 'nasaruddin.eic@unhas.ac.id'],

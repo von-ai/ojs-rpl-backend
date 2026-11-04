@@ -8,10 +8,10 @@ use App\Models\Announcement;
 use App\Models\Article;
 use App\Models\ArticleMetric;
 use App\Models\FileEntry;
-use App\Models\Galley;
 use App\Models\Issue;
 use App\Models\Journal;
 use App\Models\UserRole;
+use App\Services\PrivateFileService;
 use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,7 +20,6 @@ use Illuminate\Pagination\LengthAwarePaginator as ConcretePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -31,7 +30,7 @@ class PublicArticleService
      */
     public function getJournal(): Journal
     {
-        return Journal::with(['sections' => fn ($q) => $q->orderBy('position')])->first()
+        return Journal::where('status', 'active')->with(['sections' => fn ($q) => $q->orderBy('position')])->first()
             ?? new Journal([
                 'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
                 'slug' => 'sirida-makassar',
@@ -61,7 +60,7 @@ class PublicArticleService
                 return null;
             }
 
-            $journal = $journal ?? Journal::first();
+            $journal = $journal ?? Journal::where('status', 'active')->first();
             if (! $journal) {
                 return null;
             }
@@ -89,7 +88,7 @@ class PublicArticleService
                 return collect();
             }
 
-            $journal = $journal ?? Journal::first();
+            $journal = $journal ?? Journal::where('status', 'active')->first();
             if (! $journal) {
                 return collect();
             }
@@ -124,7 +123,7 @@ class PublicArticleService
             }
 
             $query = Article::with(['contributors', 'section', 'galleys', 'issues'])
-                ->where('status', 'published');
+                ->where('status', 'published')->whereHas('journal', fn ($q) => $q->where('status', 'active'));
 
             // Filter kata kunci (judul, abstrak, referensi)
             if (! empty($filters['q'])) {
@@ -179,7 +178,7 @@ class PublicArticleService
     public function findPublishedArticle(string $slugOrId): ?Article
     {
         return Article::with(['contributors', 'section', 'galleys', 'issues.journal', 'journal'])
-            ->where('status', 'published')
+            ->where('status', 'published')->whereHas('journal', fn ($q) => $q->where('status', 'active'))
             ->where(function ($q) use ($slugOrId): void {
                 $q->where('id', $slugOrId)
                     ->orWhere('slug', $slugOrId);
@@ -243,36 +242,12 @@ class PublicArticleService
             throw new DomainException('Artikel belum resmi dipublikasikan.');
         }
 
-        $galley = $article->galleys()->where('galleys.id', $galleyId)->first();
-        if (! $galley) {
-            // Cek jika galleyId adalah relasi id langsung
-            $galley = Galley::where('id', $galleyId)->first();
-            if (! $galley || $galley->submission_id !== $article->submission_id) {
-                throw new DomainException('Berkas galai tidak ditemukan untuk artikel ini.');
-            }
-        }
-
-        $fileEntry = FileEntry::where('id', $galley->file_id)->first();
-        if (! $fileEntry) {
-            throw new DomainException('Berkas naskah digital tidak ditemukan di sistem penyimpanan.');
-        }
-
-        // Catat metrik unduhan galai
+        $galley = $article->galleys()->where('galleys.id', $galleyId)->where('galleys.status', 'active')->firstOrFail();
+        $fileEntry = FileEntry::findOrFail($galley->file_id);
+        $response = app(PrivateFileService::class)->stream($fileEntry);
         $this->recordMetric($article, 'galley_download', $request, $galley->id);
 
-        $disk = Storage::disk($fileEntry->storage_disk ?: 'local');
-        if (! $disk->exists($fileEntry->storage_path)) {
-            throw new DomainException('Berkas fisik galai publikasi belum tersedia di media penyimpanan.');
-        }
-
-        return $disk->download(
-            $fileEntry->storage_path,
-            $fileEntry->original_name ?: "{$article->slug}.pdf",
-            [
-                'Content-Type' => $fileEntry->mime_type ?: 'application/pdf',
-                'X-Checksum-SHA256' => (string) $fileEntry->checksum_sha256,
-            ]
-        );
+        return $response;
     }
 
     /**
@@ -337,7 +312,7 @@ class PublicArticleService
                 return new ConcretePaginator([], 0, $perPage);
             }
 
-            $journal = $journal ?? Journal::first();
+            $journal = $journal ?? Journal::where('status', 'active')->first();
             $query = Issue::withCount(['articles' => fn ($q) => $q->where('status', 'published')])
                 ->where('status', 'published')
                 ->when($journal, fn ($q) => $q->where('journal_id', $journal->id))
@@ -370,7 +345,7 @@ class PublicArticleService
                 return $this->getFallbackEditorialTeam();
             }
 
-            $journal = $journal ?? Journal::first();
+            $journal = $journal ?? Journal::where('status', 'active')->first();
             $roles = UserRole::with(['user.profile'])
                 ->when($journal, fn ($q) => $q->where('journal_id', $journal->id))
                 ->whereIn('role_code', ['editor_in_chief', 'managing_editor', 'section_editor', 'reviewer'])
@@ -500,7 +475,7 @@ class PublicArticleService
                 return new ConcretePaginator([], 0, $perPage);
             }
 
-            $journal = $journal ?? Journal::first();
+            $journal = $journal ?? Journal::where('status', 'active')->first();
 
             return Announcement::where('is_published', true)
                 ->when($journal, fn ($q) => $q->where('journal_id', $journal->id))

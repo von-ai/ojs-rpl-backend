@@ -53,6 +53,7 @@ class LayoutEditorMailNotificationTest extends TestCase
         Mail::fake();
 
         $service = app(LayoutEditorService::class);
+        $this->grantRole($this->sectionEditor, 'editor_in_chief', $this->submission->journal_id);
         $service->assignLayoutEditor(
             $this->submission,
             $this->layoutEditor,
@@ -177,7 +178,7 @@ class LayoutEditorMailNotificationTest extends TestCase
         );
 
         Mail::assertSent(FinalApprovalRequestedMail::class, function ($mail) {
-            return $mail->hasTo('prof.hamka@unhas.ac.id')
+            return $mail->hasTo(User::where('status', 'active')->whereNotNull('email_verified_at')->whereHas('userRoles', fn ($q) => $q->where('journal_id', $this->submission->journal_id)->where('role_code', 'editor_in_chief'))->firstOrFail()->email)
                 && $mail->submission->submission_number === 'SUB-2026-00106';
         });
     }

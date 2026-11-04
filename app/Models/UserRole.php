@@ -176,7 +176,6 @@ class UserRole extends Model
             'proofreader' => 'Proofreader',
             'reviewer' => 'Peer Reviewer',
             'author' => 'Author',
-            'sysadmin' => 'System Administrator',
             default => ucfirst(str_replace('_', ' ', $roleCode)),
         };
     }
@@ -184,7 +183,7 @@ class UserRole extends Model
     public static function roleBadgeClass(string $roleCode): string
     {
         return match ($roleCode) {
-            'sysadmin' => 'bg-purple-50 text-purple-800 border-purple-200',
+            'sysadmin' => 'bg-rose-50 text-rose-800 border-rose-200',
             'manager' => 'bg-purple-50 text-purple-800 border-purple-200',
             'editor_in_chief' => 'bg-brand-maroon text-white border-brand-maroon',
             'section_editor' => 'bg-blue-50 text-blue-800 border-blue-200',
@@ -193,7 +192,6 @@ class UserRole extends Model
             'proofreader' => 'bg-indigo-50 text-indigo-800 border-indigo-200',
             'reviewer' => 'bg-blue-50 text-blue-700 border-blue-200',
             'author' => 'bg-gray-100 text-gray-700 border-gray-200',
-            'sysadmin' => 'bg-rose-50 text-rose-800 border-rose-200',
             default => 'bg-gray-100 text-gray-700 border-gray-200',
         };
     }

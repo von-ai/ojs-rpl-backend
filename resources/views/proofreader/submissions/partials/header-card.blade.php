@@ -1,8 +1,8 @@
 <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
     <!-- Tombol Kembali & Baris Status Cepat -->
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
-        <a 
-            href="{{ route('proofreader.submissions.index') }}" 
+        <a
+            href="{{ route('proofreader.submissions.index') }}"
             class="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-brand-maroon transition min-h-11 min-w-11"
             title="Kembali ke Daftar Penugasan Proofreading"
         >
@@ -27,7 +27,7 @@
         <span class="text-xs font-mono font-bold text-brand-maroon uppercase tracking-wide block mb-1">
             {{ $submission['number'] }} • {{ $submission['section_title'] }}
         </span>
-        <h1 class="text-xl sm:text-2xl font-bold font-serif text-gray-900 leading-snug tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-bold font-sans text-gray-900 leading-snug tracking-tight">
             {{ $submission['title'] }}
         </h1>
     </div>

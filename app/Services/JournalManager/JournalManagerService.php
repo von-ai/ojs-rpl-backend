@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\JournalManager;
 
 use App\Mail\JournalManager\IssuePublishedMail;
-use App\Mail\JournalManager\PasswordResetRequestedMail;
 use App\Mail\JournalManager\RoleAssignedMail;
 use App\Models\Issue;
 use App\Models\IssueArticle;
@@ -14,9 +13,13 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\LayoutEditor\LayoutEditorService;
+use App\Services\PortalAccess;
+use App\Services\PublicationService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class JournalManagerService
@@ -50,7 +53,7 @@ class JournalManagerService
             ? "Vol. {$volume} No. {$number} ({$year}): {$titleInput}"
             : "Vol. {$volume} No. {$number} ({$year})";
 
-        $doiPrefix = "10.61234/sirida.v{$volume}i{$number}";
+        $doiPrefix = ! empty($data['doi_prefix']) ? trim($data['doi_prefix']) : null;
 
         return DB::transaction(function () use ($journal, $volume, $number, $year, $title, $data, $doiPrefix) {
             return Issue::create([
@@ -73,42 +76,53 @@ class JournalManagerService
      */
     public function addArticleToIssue(Issue $issue, Submission $submission, array $options = [], ?User $actor = null): IssueArticle
     {
-        if ($issue->isPublished()) {
-            throw new DomainException('Tidak dapat menambahkan naskah ke edisi yang sudah berstatus terbit resmi.');
-        }
-
-        if ($issue->issueArticles()->where('submission_id', $submission->id)->exists()) {
-            throw new DomainException("Naskah '{$submission->title}' sudah terdaftar di dalam edisi ini.");
-        }
-
-        return DB::transaction(function () use ($issue, $submission, $options) {
-            $nextPosition = ($issue->issueArticles()->max('position') ?? 0) + 1;
-
-            // Hitung rentang halaman naskah otomatis jika tidak ditentukan
-            if (! empty($options['pages'])) {
-                $pages = (string) $options['pages'];
-            } else {
-                $lastArticle = $issue->issueArticles()->orderByDesc('position')->first();
-                $startPage = 1;
-                if ($lastArticle && ! empty($lastArticle->pages) && preg_match('/-(\d+)$/', $lastArticle->pages, $matches)) {
-                    $startPage = ((int) $matches[1]) + 1;
-                }
-                $endPage = $startPage + 13;
-                $pages = "{$startPage}-{$endPage}";
+        return DB::transaction(function () use ($issue, $submission, $options, $actor) {
+            if ($actor) {
+                abort_unless($actor->userRoles()->where('journal_id', $issue->journal_id)->where('role_code', 'manager')->exists(), 403);
+            }
+            $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
+            $submission = Submission::query()->lockForUpdate()->findOrFail($submission->id);
+            if ($submission->journal_id !== $issue->journal_id || ! app(LayoutEditorService::class)->checkPublicationReadiness($submission)['is_ready']) {
+                throw new DomainException('Naskah belum siap terbit atau berasal dari jurnal lain.');
             }
 
-            $doi = ! empty($issue->doi_prefix)
-                ? "{$issue->doi_prefix}.".str_pad((string) $nextPosition, 2, '0', STR_PAD_LEFT)
-                : null;
+            if ($issue->isPublished()) {
+                throw new DomainException('Tidak dapat menambahkan naskah ke edisi yang sudah berstatus terbit resmi.');
+            }
 
-            return IssueArticle::create([
-                'issue_id' => $issue->id,
-                'submission_id' => $submission->id,
-                'position' => $nextPosition,
-                'pages' => $pages,
-                'doi' => $doi,
-                'version' => 1,
-            ]);
+            if ($issue->issueArticles()->where('submission_id', $submission->id)->exists()) {
+                throw new DomainException("Naskah '{$submission->title}' sudah terdaftar di dalam edisi ini.");
+            }
+
+            return DB::transaction(function () use ($issue, $submission, $options) {
+                $nextPosition = ($issue->issueArticles()->max('position') ?? 0) + 1;
+
+                // Hitung rentang halaman naskah otomatis jika tidak ditentukan
+                if (! empty($options['pages'])) {
+                    $pages = (string) $options['pages'];
+                } else {
+                    $lastArticle = $issue->issueArticles()->orderByDesc('position')->first();
+                    $startPage = 1;
+                    if ($lastArticle && ! empty($lastArticle->pages) && preg_match('/-(\d+)$/', $lastArticle->pages, $matches)) {
+                        $startPage = ((int) $matches[1]) + 1;
+                    }
+                    $endPage = $startPage + 13;
+                    $pages = "{$startPage}-{$endPage}";
+                }
+
+                $doi = ! empty($issue->doi_prefix)
+                    ? "{$issue->doi_prefix}.".str_pad((string) $nextPosition, 2, '0', STR_PAD_LEFT)
+                    : null;
+
+                return IssueArticle::create([
+                    'issue_id' => $issue->id,
+                    'submission_id' => $submission->id,
+                    'position' => $nextPosition,
+                    'pages' => $pages,
+                    'doi' => $doi,
+                    'version' => 1,
+                ]);
+            });
         });
     }
 
@@ -117,54 +131,65 @@ class JournalManagerService
      */
     public function publishIssue(Issue $issue, ?User $actor = null): Issue
     {
-        if ($issue->isPublished()) {
-            throw new DomainException('Edisi terbitan ini sudah berstatus publikasi resmi.');
-        }
-
-        // Invariant Guard: Edisi wajib memiliki minimal 1 naskah sebelum dipublikasikan
-        $articlesCount = $issue->issueArticles()->count();
-        if ($articlesCount === 0) {
-            throw new DomainException('Edisi wajib memiliki minimal 1 naskah sah sebelum dapat dipublikasikan.');
-        }
-
-        return DB::transaction(function () use ($issue) {
-            $issue->update([
-                'status' => 'published',
-                'published_at' => now(),
-            ]);
-
-            // Mutasikan status seluruh naskah di dalam edisi menjadi published
-            $submissionIds = $issue->issueArticles()->pluck('submission_id');
-            Submission::whereIn('id', $submissionIds)->update([
-                'status' => 'published',
-            ]);
-
-            // Jika jurnal belum memiliki current issue, tetapkan edisi ini sebagai current
-            $journal = $issue->journal;
-            if ($journal && empty($journal->current_issue_id)) {
-                $journal->update(['current_issue_id' => $issue->id]);
-                $issue->update(['is_current' => true]);
+        return DB::transaction(function () use ($issue, $actor) {
+            if ($actor) {
+                abort_unless($actor->userRoles()->where('journal_id', $issue->journal_id)->where('role_code', 'manager')->exists(), 403);
+            }
+            $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
+            foreach ($issue->issueArticles()->orderBy('submission_id')->get() as $entry) {
+                app(PublicationService::class)->publish($issue, $entry);
             }
 
-            // Kirim notifikasi email publikasi terbitan
-            try {
-                $recipients = UserRole::where('journal_id', $issue->journal_id)
-                    ->whereIn('role_code', ['manager', 'editor_in_chief', 'section_editor'])
-                    ->with('user')
-                    ->get()
-                    ->pluck('user.email')
-                    ->filter()
-                    ->push('jurnal.brida@makassar.go.id')
-                    ->unique();
+            if ($issue->isPublished()) {
+                throw new DomainException('Edisi terbitan ini sudah berstatus publikasi resmi.');
+            }
 
-                foreach ($recipients as $email) {
-                    Mail::to($email)->send(new IssuePublishedMail($issue));
+            // Invariant Guard: Edisi wajib memiliki minimal 1 naskah sebelum dipublikasikan
+            $articlesCount = $issue->issueArticles()->count();
+            if ($articlesCount === 0) {
+                throw new DomainException('Edisi wajib memiliki minimal 1 naskah sah sebelum dapat dipublikasikan.');
+            }
+
+            return DB::transaction(function () use ($issue) {
+                $issue->update([
+                    'status' => 'published',
+                    'published_at' => now(),
+                    'publication_date' => now()->toDateString(),
+                ]);
+
+                // Mutasikan status seluruh naskah di dalam edisi menjadi published
+                $submissionIds = $issue->issueArticles()->pluck('submission_id');
+                Submission::whereIn('id', $submissionIds)->update([
+                    'status' => 'published',
+                ]);
+
+                // Jika jurnal belum memiliki current issue, tetapkan edisi ini sebagai current
+                $journal = $issue->journal;
+                if ($journal && empty($journal->current_issue_id)) {
+                    $journal->update(['current_issue_id' => $issue->id]);
+                    $issue->update(['is_current' => true]);
                 }
-            } catch (\Throwable) {
-                // Silently bypass delivery exceptions during offline operations
-            }
 
-            return $issue->fresh();
+                // Kirim notifikasi email publikasi terbitan
+                try {
+                    $recipients = UserRole::where('journal_id', $issue->journal_id)
+                        ->whereIn('role_code', ['manager', 'editor_in_chief', 'section_editor'])
+                        ->with('user')
+                        ->get()
+                        ->pluck('user.email')
+                        ->filter()
+                        ->push('jurnal.brida@makassar.go.id')
+                        ->unique();
+
+                    foreach ($recipients as $email) {
+                        Mail::to($email)->send(new IssuePublishedMail($issue));
+                    }
+                } catch (\Throwable) {
+                    // Silently bypass delivery exceptions during offline operations
+                }
+
+                return $issue->fresh();
+            });
         });
     }
 
@@ -173,21 +198,28 @@ class JournalManagerService
      */
     public function setCurrentIssue(Issue $issue, ?User $actor = null): Issue
     {
-        if (! $issue->isPublished()) {
-            throw new DomainException('Hanya edisi yang sudah berstatus terbit resmi yang dapat ditetapkan sebagai Current Issue.');
-        }
+        return DB::transaction(function () use ($issue, $actor) {
+            if ($actor) {
+                abort_unless($actor->userRoles()->where('journal_id', $issue->journal_id)->where('role_code', 'manager')->exists(), 403);
+            }
+            $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
 
-        return DB::transaction(function () use ($issue) {
-            // Nonaktifkan is_current pada seluruh edisi jurnal terkait
-            Issue::where('journal_id', $issue->journal_id)->update(['is_current' => false]);
-
-            $issue->update(['is_current' => true]);
-
-            if ($issue->journal) {
-                $issue->journal->update(['current_issue_id' => $issue->id]);
+            if (! $issue->isPublished()) {
+                throw new DomainException('Hanya edisi yang sudah berstatus terbit resmi yang dapat ditetapkan sebagai Current Issue.');
             }
 
-            return $issue->fresh();
+            return DB::transaction(function () use ($issue) {
+                // Nonaktifkan is_current pada seluruh edisi jurnal terkait
+                Issue::where('journal_id', $issue->journal_id)->update(['is_current' => false]);
+
+                $issue->update(['is_current' => true]);
+
+                if ($issue->journal) {
+                    $issue->journal->update(['current_issue_id' => $issue->id]);
+                }
+
+                return $issue->fresh();
+            });
         });
     }
 
@@ -336,13 +368,12 @@ class JournalManagerService
             throw new DomainException("Pengguna dengan alamat email '{$email}' tidak ditemukan di sistem.");
         }
 
-        $token = Str::random(64);
-        $resetUrl = url("/password/reset/{$token}?email=".urlencode($user->email));
-
-        try {
-            Mail::to($user->email)->send(new PasswordResetRequestedMail($user, $resetUrl));
-        } catch (\Throwable) {
-            // Silently bypass delivery exceptions during offline operations
+        if ($actor && ! $actor->isSysAdmin()) {
+            $journals = PortalAccess::journalIds($actor, 'manager');
+            if (! $user->userRoles()->whereIn('journal_id', $journals)->exists()) {
+                throw new DomainException('Pengguna tidak termasuk jurnal yang Anda kelola.');
+            }
         }
+        Password::sendResetLink(['email' => $user->email]);
     }
 }

@@ -33,8 +33,8 @@
 
         <!-- Tombol Buka Modal Pop-up -->
         <div class="shrink-0">
-            <button 
-                type="button" 
+            <button
+                type="button"
                 id="openModalCatalogBtn"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-sm font-semibold rounded-lg shadow-sm transition cursor-pointer"
                 title="Buka dialog dalam bentuk modal pop-up interaktif"
@@ -50,8 +50,8 @@
     <!-- 4-Tab Navigation / Stepper Transaksional -->
     <div class="bg-surface-subtle border border-gray-200/90 rounded-xl p-1.5 flex flex-wrap sm:flex-nowrap gap-1">
         <!-- Tab 1: Unggah Berkas -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="switchTab('upload')"
             id="tab-btn-upload"
             class="tab-btn flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition duration-150 {{ $activeTab === 'upload' ? 'bg-white text-brand-maroon shadow-xs border border-gray-200/80' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50' }}"
@@ -63,8 +63,8 @@
         </button>
 
         <!-- Tab 2: Persetujuan Checksum -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="switchTab('checksum')"
             id="tab-btn-checksum"
             class="tab-btn flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition duration-150 {{ $activeTab === 'checksum' ? 'bg-white text-brand-maroon shadow-xs border border-gray-200/80' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50' }}"
@@ -76,8 +76,8 @@
         </button>
 
         <!-- Tab 3: Eskalasi / Mediasi -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="switchTab('escalation')"
             id="tab-btn-escalation"
             class="tab-btn flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition duration-150 {{ $activeTab === 'escalation' ? 'bg-white text-brand-maroon shadow-xs border border-gray-200/80' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50' }}"
@@ -89,8 +89,8 @@
         </button>
 
         <!-- Tab 4: Penyelesaian & Serah Terima -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="switchTab('handoff')"
             id="tab-btn-handoff"
             class="tab-btn flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition duration-150 {{ $activeTab === 'handoff' ? 'bg-white text-brand-maroon shadow-xs border border-gray-200/80' : 'text-gray-600 hover:text-gray-900 hover:bg-white/50' }}"
@@ -163,7 +163,7 @@
         <!-- TAB 1: UNGGAH BERKAS HASIL SUNTINGAN (COPYEDIT OUTPUT)    -->
         <!-- ======================================================== -->
         <div id="panel-upload" class="tab-panel {{ $activeTab === 'upload' ? '' : 'hidden' }} p-6 sm:p-8 space-y-6">
-            
+
             <!-- Header Dialog -->
             <div class="flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
                 <div>
@@ -208,7 +208,7 @@
             <!-- Drag & Drop Upload Zone -->
             <form method="POST" action="{{ route('copyeditor.upload') }}" enctype="multipart/form-data" id="copyeditUploadForm" class="space-y-6">
                 @csrf
-                <div 
+                <div
                     id="dropzone"
                     class="border-2 border-dashed border-gray-300 hover:border-brand-maroon bg-gray-50/60 hover:bg-red-50/20 rounded-xl p-8 sm:p-10 text-center transition cursor-pointer flex flex-col items-center justify-center gap-3 group"
                 >
@@ -290,16 +290,16 @@
 
                 <!-- Footer Action Buttons -->
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onclick="window.toast.info('Operasi unggah dibatalkan.')"
                         class="px-4 py-2.5 text-xs sm:text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer"
                     >
                         Batal
                     </button>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -348,8 +348,8 @@
                     <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">
                         CHECKSUM HASH SELURUH OUTPUT SET (ATOMIC SHA-256 MANIFEST)
                     </span>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onclick="copyText('{{ $submission['set_checksum'] }}')"
                         class="text-xs font-bold text-brand-maroon hover:underline flex items-center gap-1 cursor-pointer"
                     >
@@ -447,7 +447,7 @@
                     </span>
                 </div>
 
-                <p class="text-sm text-gray-800 leading-relaxed font-serif bg-white p-4 rounded-lg border border-amber-200/80">
+                <p class="text-sm text-gray-800 leading-relaxed font-sans bg-white p-4 rounded-lg border border-amber-200/80">
                     "{{ $submission['escalation']['author_note'] }}"
                 </p>
 
@@ -463,9 +463,9 @@
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                         Tanggapan & Usulan Copyeditor untuk Section Editor
                     </label>
-                    <textarea 
-                        name="mediation_notes" 
-                        rows="4" 
+                    <textarea
+                        name="mediation_notes"
+                        rows="4"
                         class="w-full px-4 py-3 rounded-lg border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed"
                         placeholder="Uraikan pertimbangan kaidah selingkung atau rekomendasi mediasi untuk diputuskan oleh Section Editor (Prof. Hamka, Ph.D.)..."
                         required
@@ -547,10 +547,10 @@
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                         Layout Editor Ditugaskan
                     </label>
-                    <input 
-                        type="text" 
-                        value="{{ $submission['layout_handoff']['assigned_layout_editor'] }}" 
-                        disabled 
+                    <input
+                        type="text"
+                        value="{{ $submission['layout_handoff']['assigned_layout_editor'] }}"
+                        disabled
                         class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs sm:text-sm text-gray-700 font-semibold"
                     >
                 </div>
@@ -559,17 +559,17 @@
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                         Catatan & Instruksi Tata Letak Khusus untuk Layout Editor (Opsional)
                     </label>
-                    <textarea 
-                        name="layout_instructions" 
-                        rows="3" 
+                    <textarea
+                        name="layout_instructions"
+                        rows="3"
                         class="w-full px-4 py-3 rounded-lg border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon leading-relaxed"
                         placeholder="{{ $submission['layout_handoff']['notes_placeholder'] }}"
                     ></textarea>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="px-5 py-3 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -589,7 +589,7 @@
 <!-- ======================================================== -->
 <div id="modalCatalogDialog" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-950/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-2xl w-full p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-        
+
         <!-- Modal Top Header -->
         <div class="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
             <div>
@@ -628,8 +628,8 @@
             <button type="button" id="closeModalCatalogBtn2" class="px-4 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer">
                 Tutup
             </button>
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="window.toast.success('Pemeriksaan integritas checksum valid. Tidak ada byte mutasi.'); closeModal();"
                 class="px-4 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg transition cursor-pointer"
             >

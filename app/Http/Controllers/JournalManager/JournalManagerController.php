@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserRole;
 use App\Services\JournalManager\JournalManagerService;
 use App\Services\Payment\ArticlePaymentService;
+use App\Services\PrivateFileService;
 use App\ViewModels\JournalManagerIssueDetailViewModel;
 use App\ViewModels\JournalManagerIssuesViewModel;
 use App\ViewModels\JournalManagerSectionsViewModel;
@@ -22,7 +23,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -53,6 +53,7 @@ class JournalManagerController extends Controller
      */
     public function storeIssue(Request $request): RedirectResponse
     {
+        $request->validate(['volume' => ['required', 'string', 'max:20'], 'number' => ['required', 'string', 'max:20'], 'year' => ['required', 'integer', 'min:1900', 'max:9999'], 'title' => ['nullable', 'string', 'max:500'], 'description' => ['nullable', 'string', 'max:10000'], 'doi_prefix' => ['nullable', 'string', 'max:191', 'regex:~^10\.\d{4,9}/[A-Za-z0-9._;()/:+-]+$~']]);
         $volume = (string) $request->input('volume', '6');
         $number = (string) $request->input('number', '2');
         $year = (string) $request->input('year', '2026');
@@ -91,35 +92,16 @@ class JournalManagerController extends Controller
      */
     public function addArticleToIssue(string $id, Request $request): RedirectResponse
     {
-        $articleTitle = (string) $request->input('article_title', 'Artikel');
-        $articleId = $request->input('article_id');
-
+        $data = $request->validate(['article_id' => ['required', 'string'], 'pages' => ['nullable', 'string', 'max:50']]);
+        $issue = Issue::findOrFail($id);
+        $submission = Submission::where('id', $data['article_id'])->orWhere('submission_number', $data['article_id'])->firstOrFail();
         try {
-            if (Schema::hasTable('issues') && Schema::hasTable('submissions')) {
-                $issue = Issue::where('id', $id)->first();
-                $submission = null;
-
-                if (! empty($articleId)) {
-                    $submission = Submission::where('id', $articleId)
-                        ->orWhere('submission_number', $articleId)
-                        ->first();
-                }
-
-                if (! $submission && $articleTitle !== '') {
-                    $submission = Submission::where('title', 'like', "%{$articleTitle}%")->first();
-                }
-
-                if ($issue && $submission) {
-                    $this->journalManagerService->addArticleToIssue($issue, $submission, $request->all(), Auth::user());
-                }
-            }
-
-            return redirect()->route('journalmanager.issues.show', $id)
-                ->with('status', "Naskah '{$articleTitle}' berhasil ditambahkan ke daftar isi edisi.");
+            $this->journalManagerService->addArticleToIssue($issue, $submission, $data, Auth::user());
         } catch (DomainException $e) {
-            return redirect()->route('journalmanager.issues.show', $id)
-                ->withErrors(['article' => $e->getMessage()]);
+            return redirect()->route('journalmanager.issues.show', $id)->withErrors(['article' => $e->getMessage()]);
         }
+
+        return redirect()->route('journalmanager.issues.show', $id)->with('status', "Naskah '{$submission->title}' berhasil ditambahkan ke daftar isi edisi.");
     }
 
     /**
@@ -127,20 +109,14 @@ class JournalManagerController extends Controller
      */
     public function publishIssue(string $id, Request $request): RedirectResponse
     {
+        $issue = Issue::findOrFail($id);
         try {
-            if (Schema::hasTable('issues')) {
-                $issue = Issue::where('id', $id)->first();
-                if ($issue) {
-                    $this->journalManagerService->publishIssue($issue, Auth::user());
-                }
-            }
-
-            return redirect()->route('journalmanager.issues.show', $id)
-                ->with('status', 'Edisi terbitan berkala resmi dipublikasikan ke pembaca dan katalog indeks.');
+            $this->journalManagerService->publishIssue($issue, Auth::user());
         } catch (DomainException $e) {
-            return redirect()->route('journalmanager.issues.show', $id)
-                ->withErrors(['publish' => $e->getMessage()]);
+            return redirect()->route('journalmanager.issues.show', $id)->withErrors(['publish' => $e->getMessage()]);
         }
+
+        return redirect()->route('journalmanager.issues.show', $id)->with('status', 'Edisi terbitan berkala resmi dipublikasikan ke pembaca dan katalog indeks.');
     }
 
     /**
@@ -148,20 +124,14 @@ class JournalManagerController extends Controller
      */
     public function setCurrentIssue(string $id, Request $request): RedirectResponse
     {
+        $issue = Issue::findOrFail($id);
         try {
-            if (Schema::hasTable('issues')) {
-                $issue = Issue::where('id', $id)->first();
-                if ($issue) {
-                    $this->journalManagerService->setCurrentIssue($issue, Auth::user());
-                }
-            }
-
-            return redirect()->route('journalmanager.issues.index')
-                ->with('status', 'Edisi berhasil ditetapkan sebagai Terbitan Berjalan (Current Issue) jurnal.');
+            $this->journalManagerService->setCurrentIssue($issue, Auth::user());
         } catch (DomainException $e) {
-            return redirect()->route('journalmanager.issues.index')
-                ->withErrors(['current' => $e->getMessage()]);
+            return redirect()->route('journalmanager.issues.index')->withErrors(['current' => $e->getMessage()]);
         }
+
+        return redirect()->route('journalmanager.issues.index')->with('status', 'Edisi berhasil ditetapkan sebagai Terbitan Berjalan (Current Issue) jurnal.');
     }
 
     /**
@@ -208,7 +178,7 @@ class JournalManagerController extends Controller
                     }
                 }
                 if (! $user) {
-                    $user = User::first();
+                    throw new DomainException('Pilih pengguna terdaftar yang akan menerima peran.');
                 }
 
                 $journal = $this->resolveJournal();
@@ -408,18 +378,7 @@ class JournalManagerController extends Controller
             abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
         }
 
-        $fileEntry = $payment->fileEntry;
-        $disk = Storage::disk($fileEntry->storage_disk);
-
-        if (! $disk->exists($fileEntry->storage_path)) {
-            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
-        }
-
-        return $disk->download(
-            $fileEntry->storage_path,
-            $fileEntry->original_name,
-            ['Content-Type' => $fileEntry->mime_type]
-        );
+        return app(PrivateFileService::class)->stream($payment->fileEntry);
     }
 
     /**
@@ -427,15 +386,6 @@ class JournalManagerController extends Controller
      */
     private function resolveJournal(): Journal
     {
-        return Journal::firstOrCreate(
-            ['slug' => 'sirida-makassar'],
-            [
-                'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
-                'issn' => '2985-7821',
-                'eissn' => '2985-7821',
-                'status' => 'active',
-                'version' => 1,
-            ]
-        );
+        return Journal::query()->firstOrFail();
     }
 }

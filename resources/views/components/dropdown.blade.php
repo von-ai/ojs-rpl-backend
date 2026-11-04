@@ -30,7 +30,7 @@
                 'value' => (string) ($optVal->value ?? $optVal->id ?? $optKey),
                 'label' => (string) ($optVal->label ?? $optVal->name ?? $optVal->title ?? $optKey),
             ];
-        } elseif (is_numeric($optKey) && is_string($optVal)) {
+        } elseif (array_is_list((array) $options) && is_string($optVal)) {
             $normalizedOptions[] = [
                 'value' => (string) $optVal,
                 'label' => (string) $optVal,
@@ -52,28 +52,31 @@
         }
     }
     if ($activeLabel === null) {
-        $activeLabel = !empty($normalizedOptions) && $currentValue === '' && isset($normalizedOptions[0]) 
-            ? $normalizedOptions[0]['label'] 
-            : $placeholder;
+        $activeLabel = $placeholder;
+        $currentValue = '';
     }
 @endphp
 
-<div 
+<div
     class="relative custom-dropdown-container inline-block text-left {{ $containerClass }}"
     data-dropdown="{{ $name }}"
+    data-native-dropdown
+    data-placeholder="{{ $placeholder }}"
     @if($autoSubmit) data-auto-submit="true" @endif
 >
     <!-- Hidden native select for form serialization, accessibility, and tests -->
-    <select 
-        name="{{ $name }}" 
-        id="{{ $id }}" 
-        class="sr-only" 
+    <select
+        name="{{ $name }}"
+        id="{{ $id }}"
+        class="custom-dropdown-native w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white text-sm"
         tabindex="-1"
         {{ $required ? 'required' : '' }}
         {{ $disabled ? 'disabled' : '' }}
-        aria-hidden="true"
         {{ $attributes->whereStartsWith('on') }}
     >
+        @if(!collect($normalizedOptions)->contains(fn ($opt) => $opt['value'] === ''))
+            <option value="" @selected($currentValue === '') @disabled($required)>{{ $placeholder }}</option>
+        @endif
         @foreach($normalizedOptions as $opt)
             <option value="{{ $opt['value'] }}" {{ $opt['value'] === $currentValue ? 'selected' : '' }}>
                 {{ $opt['label'] }}
@@ -82,9 +85,11 @@
     </select>
 
     <!-- Custom Trigger Button -->
-    <button 
-        type="button" 
+    <button
+        type="button"
         class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-md px-3 py-2.5 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon {{ $buttonClass }}"
+        id="{{ $id }}-trigger"
+        aria-controls="{{ $id }}-listbox"
         aria-haspopup="listbox"
         aria-expanded="false"
         {{ $disabled ? 'disabled' : '' }}
@@ -96,11 +101,11 @@
     </button>
 
     <!-- Custom Options Floating Panel -->
-    <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-full sm:min-w-44 w-max max-w-xs sm:max-w-sm max-h-60 overflow-y-auto bg-white rounded-md border border-gray-200 shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1 z-50 space-y-0.5 {{ $panelClass }}">
+    <div id="{{ $id }}-listbox" role="listbox" aria-labelledby="{{ $id }}-trigger" class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-full sm:min-w-44 w-max max-w-xs sm:max-w-sm max-h-60 overflow-y-auto bg-white rounded-md border border-gray-200 shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1 z-50 space-y-0.5 {{ $panelClass }}">
         @foreach($normalizedOptions as $opt)
             @php $isSelected = ($opt['value'] === $currentValue); @endphp
-            <div 
-                class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded cursor-pointer transition {{ $isSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+            <div
+                class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded cursor-pointer transition {{ $isSelected ? 'bg-brand-maroon-light text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                 data-value="{{ $opt['value'] }}"
                 data-label="{{ $opt['label'] }}"
                 role="option"

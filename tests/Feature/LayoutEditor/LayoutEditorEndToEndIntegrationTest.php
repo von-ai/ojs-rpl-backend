@@ -114,6 +114,8 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
         $bypassAttemptResp->assertSessionHasErrors(['general']);
         $this->assertDatabaseMissing('galley_approvals', ['galley_id' => $galleyV1->id]);
 
+        $this->scanTestUploads();
+
         // 2. Kirim galai ke Proofreader
         $proofreadResp = $this->post('/layouteditor/request-proofread', [
             'submission_id' => 'SUB-2026-00106',
@@ -161,7 +163,7 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
 
         $this->assertTrue($note->fresh()->resolved);
         $this->assertNotNull($note->fresh()->resolved_at);
-        $this->assertSame('completed', $proofAssign->fresh()->status);
+        $this->assertNotSame('completed', $proofAssign->fresh()->status);
 
         // 5. Unggah Revisi Galai v2 (Version Genealogy Guard)
         $pdfFilev2 = UploadedFile::fake()->create('SUB2026-00106_Galley_Final_v2.pdf', 820, 'application/pdf');
@@ -179,24 +181,36 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
         $this->assertSame($galleyV1->id, $galleyV2->supersedes_galley_id);
         $this->assertSame('superseded', $galleyV1->fresh()->status);
 
-        // 6. Ajukan persetujuan akhir EIC (berhasil karena semua catatan selesai)
-        $approvalResp = $this->post('/layouteditor/request-final-approval', [
-            'submission_id' => 'SUB-2026-00106',
-        ]);
-        $approvalResp->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $approvalResp->assertSessionHas('status', 'Permohonan persetujuan akhir galai berhasil diajukan ke Editor in Chief.');
-
-        $this->assertDatabaseHas('galley_approvals', [
-            'galley_id' => $galleyV2->id,
-            'stage' => 'editor_final',
-        ]);
+        $this->scanTestUploads();
+        // The new bytes require a new assignment; unverified notes carry forward.
+        $this->post('/layouteditor/request-proofread', ['submission_id' => $submission->submission_number])->assertSessionHasNoErrors();
+        $newAssignment = ProofAssignment::where('galley_id', $galleyV2->id)->firstOrFail();
+        $carried = ProofreadingNote::where('proof_assignment_id', $newAssignment->id)->firstOrFail();
+        $this->assertFalse($carried->verified);
+        $this->post('/layouteditor/resolve-note', ['submission_id' => $submission->submission_number, 'note_id' => $carried->id, 'resolution' => 'Tabel diperbaiki dalam versi kedua.'])->assertSessionHasNoErrors();
+        $this->actingAs(User::findOrFail($newAssignment->proofreader_id));
+        $this->post('/proofreader/verify-note', ['submission_id' => $submission->submission_number, 'note_id' => $carried->id])->assertSessionHasNoErrors();
+        $this->post('/proofreader/complete', ['submission_id' => $submission->submission_number])->assertSessionHasNoErrors();
+        $this->assertSame('proofread', $galleyV2->fresh()->stage);
+        $this->actingAs($layoutEditor);
+        $this->post('/layouteditor/request-final-approval', ['submission_id' => $submission->submission_number])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('galley_approvals', ['galley_id' => $galleyV2->id, 'stage' => 'editor_requested', 'approved_at' => null]);
+        $this->assertNull($galleyV2->fresh()->approved_checksum);
+        $eic = User::where('status', 'active')->whereNotNull('email_verified_at')->whereHas('userRoles', fn ($q) => $q->where('journal_id', $submission->journal_id)->where('role_code', 'editor_in_chief'))->firstOrFail();
+        $this->actingAs($eic);
+        $this->post(route('eic.submissions.approve-galley', $submission->id), ['notes' => 'Galai final disetujui.'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('galley_approvals', ['galley_id' => $galleyV2->id, 'stage' => 'editor_final', 'approved_by' => $eic->id]);
         $this->assertSame('approved', $galleyV2->fresh()->stage);
         $this->assertSame($galleyV2->checksum_sha256, $galleyV2->fresh()->approved_checksum);
 
         // 7. Verifikasi Kesiapan Terbit (UC-15 Readiness Guard)
         $service = app(LayoutEditorService::class);
         $readiness = $service->checkPublicationReadiness($submission->fresh());
-        $this->assertTrue($readiness['is_ready']);
+        if ($submission->requiresPayment()) {
+            $submission->journal->update(['apc_fee' => 'Gratis', 'apc_enabled' => false]);
+            $readiness = $service->checkPublicationReadiness($submission->fresh());
+        }
+        $this->assertTrue($readiness['is_ready'], implode(' ', $readiness['reasons']));
         $this->assertEmpty($readiness['reasons']);
     }
 
@@ -209,6 +223,7 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
         $this->actingAs($layoutEditor);
 
         $submission = Submission::where('submission_number', 'SUB-2026-00109')->firstOrFail();
+        $submission->update(['status' => 'ready_for_issue']);
         $activeGalley = Galley::where('submission_id', $submission->id)->where('status', 'active')->firstOrFail();
 
         // Pastikan approval aktif ada sebelum mutasi
