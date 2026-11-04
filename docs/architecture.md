@@ -24,7 +24,7 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Berkas | Azure Blob Storage melalui Laravel Filesystem/Flysystem | Adapter Azure Blob teruji, container privat, direct upload melalui SAS (Shared Access Signature) URL, enkripsi server-side bawaan. Azurite untuk dev lokal. |
 | Pemeriksaan berkas | Microsoft Defender for Storage (Malware Scanning), inspeksi MIME/checksum, sanitizer HTML/XML | Pemindaian malware otomatis near real-time oleh Microsoft Defender for Storage di cloud; mock scanner pada dev lokal; berkas berstatus karantina jika terdeteksi ancaman. |
 | Autentikasi & Sesi | Stateful Session Cookie (`auth:web`), CSRF token, HttpOnly, SameSite=Lax | Menggunakan sistem session bawaan Laravel dengan proteksi lockout 15 menit dan audit log. Disederhanakan tanpa JWT/Bearer token. |
-| Pencarian | MySQL Full-Text Search (indeks `FULLTEXT`); konfigurasi boolean mode untuk teks Indonesia | Menggunakan query MATCH(...) AGAINST(...). Tidak perlu Elasticsearch pada baseline. |
+| Pencarian | Pencarian multi-field berindeks (judul, abstrak, kontributor) | Menggunakan query pencarian Eloquent yang kompatibel penuh dan konsisten antara TiDB Cloud Serverless, MySQL 8.0, dan SQLite pengujian otomatis tanpa keterbatasan parser FTS boolean mode. |
 | Integrasi | SMTP (Azure Communication Services untuk produksi, Mailpit untuk pengembangan lokal), ORCID authorization code callback, Crossref deposit (outbox worker), OAI-PMH 2.0/Dublin Core XML (`/oai`) | Layanan terintegrasi via worker backend dan rute web khusus OAI-PMH / OAuth callback. Mailpit digunakan untuk inspeksi visual email lokal. |
 | Notifikasi UI | Polling terkelola / Server-rendered refresh | Notifikasi persisten dari database sebagai sumber utama. |
 | Pengujian | PHPUnit 12, Pint, GitHub Actions | Feature test web, integration test, dan automated style checking tanpa overhead pengujian skema kontrak JSON API. |
@@ -34,7 +34,7 @@ Referensi teknis: [deployment Laravel](https://laravel.com/docs/13.x/deployment)
 [scheduler](https://laravel.com/docs/13.x/scheduling),
 [filesystem](https://laravel.com/docs/13.x/filesystem),
 [Laravel Blade](https://laravel.com/docs/13.x/blade),
-[MySQL FTS](https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html).
+[Laravel Eloquent](https://laravel.com/docs/13.x/eloquent).
 Versi PHP minimum repository mengikuti dependency terkunci, bukan hanya minimum
 framework.
 
