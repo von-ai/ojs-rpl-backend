@@ -30,6 +30,8 @@ class AzureBlobStorageClient
 
     protected ?string $prefix;
 
+    protected ?string $publicBaseUrl;
+
     protected string $apiVersion = '2021-08-06';
 
     public function __construct(
@@ -38,12 +40,14 @@ class AzureBlobStorageClient
         string $container,
         ?string $baseUrl = null,
         ?string $prefix = null,
-        int $timeout = 30
+        int $timeout = 30,
+        ?string $publicBaseUrl = null
     ) {
         $this->accountName = trim($accountName);
         $this->accountKey = trim($accountKey);
         $this->container = trim($container, '/');
         $this->prefix = $prefix ? trim($prefix, '/') : null;
+        $this->publicBaseUrl = ! empty($publicBaseUrl) ? rtrim($publicBaseUrl, '/') : null;
 
         if (! empty($baseUrl)) {
             $this->baseUrl = rtrim($baseUrl, '/');
@@ -92,12 +96,18 @@ class AzureBlobStorageClient
     {
         $resolved = $this->resolvePath($path);
 
-        // Jika baseUrl sudah mengandung nama akun (misal Azurite: http://127.0.0.1:10000/devstoreaccount1)
-        if (str_ends_with($this->baseUrl, "/{$this->accountName}")) {
-            return "{$this->baseUrl}/{$this->container}/{$resolved}";
-        }
-
         return "{$this->baseUrl}/{$this->container}/{$resolved}";
+    }
+
+    /**
+     * Membentuk URL publik yang dapat diakses oleh browser/klien (mendukung override via publicBaseUrl).
+     */
+    public function getPublicBlobUrl(string $path): string
+    {
+        $base = ! empty($this->publicBaseUrl) ? $this->publicBaseUrl : $this->baseUrl;
+        $resolved = $this->resolvePath($path);
+
+        return "{$base}/{$this->container}/{$resolved}";
     }
 
     /**
@@ -279,7 +289,7 @@ class AzureBlobStorageClient
     public function generateSasUrl(string $path, DateTimeInterface $expiry, string $permissions = 'r'): string
     {
         $resolved = $this->resolvePath($path);
-        $blobUrl = $this->getBlobUrl($path);
+        $blobUrl = $this->getPublicBlobUrl($path);
 
         $signedPermissions = $permissions;
         $signedStart = gmdate('Y-m-d\TH:i:s\Z', time() - 300); // 5 menit mundur untuk toleransi clock skew

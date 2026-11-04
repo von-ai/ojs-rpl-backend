@@ -42,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
                 container: (string) ($config['container'] ?? 'sirida-manuscripts'),
                 baseUrl: ! empty($config['url']) ? (string) $config['url'] : null,
                 prefix: ! empty($config['prefix']) ? (string) $config['prefix'] : null,
+                publicBaseUrl: ! empty($config['public_url']) ? (string) $config['public_url'] : null,
             );
 
             $adapter = new AzureBlobStorageAdapter($client);

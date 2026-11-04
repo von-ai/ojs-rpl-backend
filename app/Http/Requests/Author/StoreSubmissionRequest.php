@@ -89,7 +89,12 @@ class StoreSubmissionRequest extends FormRequest
 
         if ($isSubmit) {
             $rules['author_guidelines_accepted'] = ['accepted'];
-            $rules['manuscript_file'] = ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
+            $rules['manuscript_file'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
+            $rules['blob_path'] = ['nullable', 'string', 'max:500'];
+            $rules['blob_name'] = ['nullable', 'string', 'max:255'];
+            $rules['blob_size'] = ['nullable', 'integer', 'min:1', 'max:20971520'];
+            $rules['blob_mime'] = ['nullable', 'string', 'max:100'];
+            $rules['blob_checksum'] = ['nullable', 'string', 'max:64'];
             $rules['contributors'] = ['required', 'array', 'min:1', 'max:100'];
             $rules['contributors.*.given_name'] = ['required', 'string', 'min:1', 'max:100'];
             $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];
@@ -142,6 +147,13 @@ class StoreSubmissionRequest extends FormRequest
             }
 
             if ($this->input('action') === 'submit') {
+                if (! $this->hasFile('manuscript_file') && ! $this->filled('blob_path')) {
+                    $validator->errors()->add(
+                        'manuscript_file',
+                        'Berkas manuskrip utama wajib diunggah sebelum mengirim naskah.'
+                    );
+                }
+
                 $contributors = $this->input('contributors', []);
 
                 if (is_array($contributors)) {

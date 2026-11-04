@@ -32,6 +32,14 @@ resource "azurerm_storage_account" "storage" {
     container_delete_retention_policy {
       days = var.storage_retention_days
     }
+
+    cors_rule {
+      allowed_headers    = ["*"]
+      allowed_methods    = ["GET", "HEAD", "PUT", "OPTIONS"]
+      allowed_origins    = ["https://${var.custom_domain}", "http://localhost", "http://localhost:8000", "http://127.0.0.1:8000"]
+      exposed_headers    = ["*"]
+      max_age_in_seconds = 3600
+    }
   }
 
   tags = var.tags

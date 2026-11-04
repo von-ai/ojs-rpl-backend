@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
     const STORAGE_KEY = 'sirida_submission_draft_v1';
     let currentStep = 1;
@@ -387,15 +387,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const checklistItems = document.querySelectorAll('.checklist-item');
     const masterAccepted = document.getElementById('author_guidelines_accepted');
 
-    // Step 2: File upload
+    // Step 2: File upload & Azure Direct SAS Upload (SRS NF-01)
     const manuscriptInput = document.getElementById('manuscript_file');
     const dropzonePrompt = document.getElementById('dropzone-prompt');
+    const dropzoneUploading = document.getElementById('dropzone-uploading');
     const dropzoneSelected = document.getElementById('dropzone-selected');
+    const uploadingFileName = document.getElementById('uploading-file-name');
+    const uploadingFileStats = document.getElementById('uploading-file-stats');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const btnCancelUpload = document.getElementById('btn-cancel-upload');
     const selectedFileName = document.getElementById('selected-file-name');
     const selectedFileSize = document.getElementById('selected-file-size');
     const btnReselectFile = document.getElementById('btn-reselect-file');
     const btnRemoveFile = document.getElementById('btn-remove-file');
     const fileErrorMsg = document.getElementById('file-error-msg');
+
+    const blobPathInput = document.getElementById('blob_path');
+    const blobNameInput = document.getElementById('blob_name');
+    const blobSizeInput = document.getElementById('blob_size');
+    const blobMimeInput = document.getElementById('blob_mime');
+    const blobChecksumInput = document.getElementById('blob_checksum');
+
+    const UPLOAD_SESSION_URL = "{{ route('author.submissions.upload-session') }}";
+    let currentUploadXhr = null;
+    let isUploadingToAzure = false;
 
     // Step 3: Metadata
     const titleInput = document.getElementById('title');
@@ -571,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Helper fungsi update status visual dropzone naskah
     function updateDropzoneUI(hasFile, fileName = '', fileSize = 0) {
+        if (dropzoneUploading) dropzoneUploading.classList.add('hidden');
         if (hasFile) {
             if (selectedFileName) selectedFileName.textContent = fileName;
             if (selectedFileSize) selectedFileSize.textContent = formatFileSize(fileSize);
@@ -585,6 +601,132 @@ document.addEventListener('DOMContentLoaded', function () {
                 dropzoneSelected.classList.add('hidden');
                 dropzoneSelected.classList.remove('flex');
             }
+        }
+    }
+
+    function handleUploadFailure(message) {
+        isUploadingToAzure = false;
+        currentUploadXhr = null;
+        if (dropzoneUploading) dropzoneUploading.classList.add('hidden');
+        updateDropzoneUI(false);
+        if (fileErrorMsg) {
+            fileErrorMsg.textContent = message;
+            fileErrorMsg.classList.remove('hidden');
+        }
+        if (blobPathInput) blobPathInput.value = '';
+        if (blobNameInput) blobNameInput.value = '';
+        if (blobSizeInput) blobSizeInput.value = '';
+        if (blobMimeInput) blobMimeInput.value = '';
+        if (blobChecksumInput) blobChecksumInput.value = '';
+        if (manuscriptInput) manuscriptInput.value = '';
+    }
+
+    async function uploadFileDirectToAzure(file) {
+        isUploadingToAzure = true;
+        if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
+
+        // Reset & tampilkan Progress Bar (SRS NF-01)
+        if (uploadingFileName) uploadingFileName.textContent = file.name;
+        if (uploadProgressBar) uploadProgressBar.style.width = '0%';
+        if (uploadingFileStats) uploadingFileStats.textContent = `0% (0 KB / ${formatFileSize(file.size)})`;
+
+        if (dropzonePrompt) dropzonePrompt.classList.add('hidden');
+        if (dropzoneSelected) {
+            dropzoneSelected.classList.add('hidden');
+            dropzoneSelected.classList.remove('flex');
+        }
+        if (dropzoneUploading) dropzoneUploading.classList.remove('hidden');
+
+        try {
+            const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+            const sessionRes = await fetch(UPLOAD_SESSION_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    filename: file.name,
+                    byte_size: file.size,
+                    mime_type: file.type || 'application/octet-stream'
+                })
+            });
+
+            if (!sessionRes.ok) {
+                const errData = await sessionRes.json().catch(() => ({}));
+                throw new Error(errData.message || 'Gagal membuat sesi izin unggah ke penyimpanan cloud.');
+            }
+
+            const sessionData = await sessionRes.json();
+            const uploadUrl = sessionData.upload_url;
+            const headers = sessionData.headers || {};
+
+            // Mengunggah langsung dari peramban ke Azure Blob Storage (Bypass server Laravel)
+            const xhr = new XMLHttpRequest();
+            currentUploadXhr = xhr;
+
+            xhr.open('PUT', uploadUrl, true);
+            for (const [k, v] of Object.entries(headers)) {
+                xhr.setRequestHeader(k, v);
+            }
+            xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
+                    if (uploadProgressBar) uploadProgressBar.style.width = pct + '%';
+                    if (uploadingFileStats) {
+                        uploadingFileStats.textContent = `${pct}% (${formatFileSize(e.loaded)} / ${formatFileSize(e.total)})`;
+                    }
+                }
+            };
+
+            xhr.onload = async function () {
+                isUploadingToAzure = false;
+                currentUploadXhr = null;
+
+                if (xhr.status === 200 || xhr.status === 201) {
+                    if (blobPathInput) blobPathInput.value = sessionData.blob_path;
+                    if (blobNameInput) blobNameInput.value = sessionData.file_name;
+                    if (blobSizeInput) blobSizeInput.value = sessionData.byte_size;
+                    if (blobMimeInput) blobMimeInput.value = sessionData.mime_type;
+
+                    try {
+                        const buffer = await file.arrayBuffer();
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        if (blobChecksumInput) blobChecksumInput.value = hex;
+                    } catch (e) {
+                        console.warn('Browser SHA256 calc error:', e);
+                    }
+
+                    updateDropzoneUI(true, file.name, file.size);
+                    await saveFileToDraftDB(file);
+                    saveDraftToStorage();
+
+                    if (window.toast && typeof window.toast.success === 'function') {
+                        window.toast.success('Berkas naskah berhasil diunggah langsung ke Azure Blob Storage.', 'Unggah Sukses');
+                    }
+                } else {
+                    handleUploadFailure('Gagal mengunggah berkas ke Azure Blob Storage (HTTP ' + xhr.status + ').');
+                }
+            };
+
+            xhr.onerror = function () {
+                handleUploadFailure('Terjadi gangguan koneksi saat mengunggah langsung ke Azure Blob Storage.');
+            };
+
+            xhr.onabort = function () {
+                isUploadingToAzure = false;
+                currentUploadXhr = null;
+                updateDropzoneUI(false);
+            };
+
+            xhr.send(file);
+        } catch (err) {
+            handleUploadFailure(err.message || 'Gagal memulai sesi unggah ke Azure Blob Storage.');
         }
     }
 
@@ -618,12 +760,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
-                updateDropzoneUI(true, file.name, file.size);
-
-                // Simpan berkas ke IndexedDB & perbarui draf
-                await saveFileToDraftDB(file);
-                saveDraftToStorage();
+                // Jalankan proses unggah langsung ke Azure Blob Storage via SAS URL (NF-01)
+                await uploadFileDirectToAzure(file);
             }
+        });
+    }
+
+    if (btnCancelUpload) {
+        btnCancelUpload.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentUploadXhr) {
+                currentUploadXhr.abort();
+            }
+            isUploadingToAzure = false;
+            updateDropzoneUI(false);
+            if (manuscriptInput) manuscriptInput.value = '';
         });
     }
 
@@ -639,7 +790,16 @@ document.addEventListener('DOMContentLoaded', function () {
         btnRemoveFile.addEventListener('click', async function (e) {
             e.preventDefault();
             e.stopPropagation();
+            if (currentUploadXhr) {
+                currentUploadXhr.abort();
+            }
+            isUploadingToAzure = false;
             manuscriptInput.value = '';
+            if (blobPathInput) blobPathInput.value = '';
+            if (blobNameInput) blobNameInput.value = '';
+            if (blobSizeInput) blobSizeInput.value = '';
+            if (blobMimeInput) blobMimeInput.value = '';
+            if (blobChecksumInput) blobChecksumInput.value = '';
             updateDropzoneUI(false);
             fileErrorMsg.classList.add('hidden');
 
@@ -1337,8 +1497,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             }
         } else if (step === 2) {
-            // Manuscript file is required for final submit, warning here if empty
-            if (!manuscriptInput.files || !manuscriptInput.files[0]) {
+            if (isUploadingToAzure) {
+                await window.showAlertModal({
+                    title: 'Unggahan Sedang Berjalan',
+                    message: 'Mohon tunggu hingga proses unggah berkas ke penyimpanan cloud selesai 100%.',
+                    type: 'warning'
+                });
+                return false;
+            }
+            const hasBlob = blobPathInput && blobPathInput.value;
+            const hasFile = manuscriptInput && manuscriptInput.files && manuscriptInput.files[0];
+            if (!hasBlob && !hasFile) {
                 const proceedWithoutFile = await window.showConfirmModal({
                     title: 'Lanjutkan Tanpa Berkas?',
                     message: 'Berkas naskah utama belum diunggah. Anda tetap dapat melanjutkan pengisian draf, namun berkas wajib diunggah sebelum pengiriman final.',
@@ -1473,7 +1642,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Form final submit protection
     form.addEventListener('submit', async function (e) {
         if (formAction.value === 'submit') {
-            if (!manuscriptInput.files || !manuscriptInput.files[0]) {
+            if (isUploadingToAzure) {
+                e.preventDefault();
+                await window.showAlertModal({
+                    title: 'Unggahan Sedang Berjalan',
+                    message: 'Mohon tunggu hingga proses unggah berkas ke penyimpanan cloud selesai 100%.',
+                    type: 'warning'
+                });
+                setStep(2);
+                return;
+            }
+            const hasBlob = blobPathInput && blobPathInput.value;
+            const hasFile = manuscriptInput.files && manuscriptInput.files[0];
+            if (!hasBlob && !hasFile) {
                 e.preventDefault();
                 await window.showAlertModal({
                     title: 'Berkas Naskah Wajib Diunggah',
@@ -1580,6 +1761,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 has_file: hasFile,
                 file_name: fileName,
                 file_size: fileSize,
+                blob_path: blobPathInput?.value || '',
+                blob_name: blobNameInput?.value || '',
+                blob_size: blobSizeInput?.value || '',
+                blob_mime: blobMimeInput?.value || '',
+                blob_checksum: blobChecksumInput?.value || '',
                 step: currentStep,
                 updated_at: new Date().toISOString()
             };
@@ -1654,20 +1840,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderContributors();
             }
 
-            // Restore manuscript file from IndexedDB
-            const storedFile = await getFileFromDraftDB();
-            if (storedFile && manuscriptInput) {
-                try {
-                    const dt = new DataTransfer();
-                    dt.items.add(storedFile);
-                    manuscriptInput.files = dt.files;
-                } catch (dtError) {
-                    console.warn('DataTransfer tidak didukung oleh browser:', dtError);
+            // Restore Azure Blob metadata if present
+            if (draftData.blob_path) {
+                if (blobPathInput) blobPathInput.value = draftData.blob_path;
+                if (blobNameInput) blobNameInput.value = draftData.blob_name || draftData.file_name || '';
+                if (blobSizeInput) blobSizeInput.value = draftData.blob_size || draftData.file_size || '';
+                if (blobMimeInput) blobMimeInput.value = draftData.blob_mime || '';
+                if (blobChecksumInput) blobChecksumInput.value = draftData.blob_checksum || '';
+                updateDropzoneUI(true, draftData.blob_name || draftData.file_name || 'naskah.pdf', draftData.blob_size || draftData.file_size || 0);
+            } else {
+                // Restore manuscript file from IndexedDB
+                const storedFile = await getFileFromDraftDB();
+                if (storedFile && manuscriptInput) {
+                    try {
+                        const dt = new DataTransfer();
+                        dt.items.add(storedFile);
+                        manuscriptInput.files = dt.files;
+                    } catch (dtError) {
+                        console.warn('DataTransfer tidak didukung oleh browser:', dtError);
+                    }
+                    updateDropzoneUI(true, storedFile.name, storedFile.size);
+                    if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
+                } else if (draftData.file_name && manuscriptInput) {
+                    updateDropzoneUI(true, draftData.file_name, draftData.file_size || 0);
                 }
-                updateDropzoneUI(true, storedFile.name, storedFile.size);
-                if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
-            } else if (draftData.file_name && manuscriptInput) {
-                updateDropzoneUI(true, draftData.file_name, draftData.file_size || 0);
             }
 
             // Show alert
@@ -1732,6 +1928,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Reset Berkas
             if (manuscriptInput) manuscriptInput.value = '';
+            if (blobPathInput) blobPathInput.value = '';
+            if (blobNameInput) blobNameInput.value = '';
+            if (blobSizeInput) blobSizeInput.value = '';
+            if (blobMimeInput) blobMimeInput.value = '';
+            if (blobChecksumInput) blobChecksumInput.value = '';
             updateDropzoneUI(false);
             if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
 

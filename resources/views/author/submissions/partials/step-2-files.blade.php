@@ -47,7 +47,50 @@
                 </div>
             </div>
 
-            <!-- State 2: Kartu Berkas Terpilih -->
+            <!-- State 2: Visual Progress Bar Unggah Langsung ke Azure Blob Storage (SRS NF-01) -->
+            <div 
+                id="dropzone-uploading" 
+                class="hidden rounded-xl border border-red-200 bg-red-50/30 py-4 px-4 sm:px-5 space-y-3 shadow-2xs transition-all duration-200"
+            >
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-9 h-9 rounded-lg bg-red-100 text-brand-maroon flex items-center justify-center shrink-0 animate-pulse">
+                            <svg class="w-5 h-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <p id="uploading-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">naskah.pdf</p>
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                    Mengunggah ke Cloud...
+                                </span>
+                            </div>
+                            <p id="uploading-file-stats" class="text-[11px] text-gray-500 mt-0.5 tabular-nums">
+                                0% (0 KB / 0 KB)
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        type="button" 
+                        id="btn-cancel-upload" 
+                        class="px-2.5 py-1 text-xs font-semibold text-gray-600 hover:text-red-700 hover:bg-red-50 border border-gray-300 rounded-lg transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                        Batal
+                    </button>
+                </div>
+
+                <!-- Progress Bar Animasi -->
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                        id="upload-progress-bar" 
+                        class="bg-brand-maroon h-2.5 rounded-full transition-all duration-150 ease-out" 
+                        style="width: 0%"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- State 3: Kartu Berkas Terpilih & Terunggah -->
             <div 
                 id="dropzone-selected" 
                 class="hidden rounded-xl border border-gray-200 bg-white py-3 px-4 sm:px-5 items-center justify-between gap-3.5 shadow-2xs transition-all duration-200"
@@ -65,13 +108,13 @@
                                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                Siap Diunggah
+                                Tersimpan di Cloud
                             </span>
                         </div>
                         <div class="flex items-center gap-2 mt-0.5 text-gray-500 text-[11px]">
                             <span id="selected-file-size" class="tabular-nums font-medium">0 KB</span>
                             <span class="text-gray-300">&bull;</span>
-                            <span class="text-gray-400">Berkas Naskah Utama</span>
+                            <span class="text-gray-400">Azure Blob Storage</span>
                         </div>
                     </div>
                 </div>
@@ -102,6 +145,13 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Hidden Inputs Metadata Direct Blob Upload (NF-01) -->
+            <input type="hidden" name="blob_path" id="blob_path" value="{{ old('blob_path') }}">
+            <input type="hidden" name="blob_name" id="blob_name" value="{{ old('blob_name') }}">
+            <input type="hidden" name="blob_size" id="blob_size" value="{{ old('blob_size') }}">
+            <input type="hidden" name="blob_mime" id="blob_mime" value="{{ old('blob_mime') }}">
+            <input type="hidden" name="blob_checksum" id="blob_checksum" value="{{ old('blob_checksum') }}">
         </div>
         <p id="file-error-msg" class="hidden text-xs text-red-600 font-semibold"></p>
     </div>
