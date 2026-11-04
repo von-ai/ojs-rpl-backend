@@ -115,6 +115,17 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
    * Backend memvalidasi hak akses (otorisasi double-blind) lalu menghasilkan *SAS GET URL* berdurasi terbatas.
    * File diunduh langsung dari Azure Blob Storage.
 
+### 4.3 Strategi Pembagian Wilayah Multi-Region Azure (*Multi-Region Split Strategy*)
+Untuk mengoptimalkan latensi pengguna lokal sekaligus memanfaatkan ketersediaan fitur keamanan cloud tercanggih:
+1. **Region Komputasi & Telemetri (`indonesiacentral` / Jakarta)**:
+   * Menampung ACA Environment (Web, Queue Worker, Scheduler Daemon), Redis container, Log Analytics Workspace, dan Application Insights.
+   * Memberikan latensi ultra-rendah (< 20 ms) ke pengguna di Indonesia dan memenuhi prinsip kedekatan pemrosesan data.
+2. **Region Objek & Pemindaian Berkas (`southeastasia` / Singapura)**:
+   * Menampung Storage Account (`sirida-manuscripts`, `sirida-backups`) dan modul keamanan **Microsoft Defender for Storage (Malware Scanning)**.
+   * Dipilih karena layanan Defender for Storage Malware Scanning memerlukan dukungan fitur cloud AI terkelola yang stabil di region `southeastasia`.
+3. **Konektivitas Antar-Region**:
+   * Komunikasi antara ACA di Jakarta dan Azure Blob Storage di Singapura berjalan melalui jalur privat berkecepatan tinggi *Azure Global Backbone*, sehingga latensi transfer antar-region tetap sangat minim (~10–15 ms).
+
 ---
 
 ## 5. Spesifikasi Teknis & Dimensi Resource (*Sizing*)

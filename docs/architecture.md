@@ -15,7 +15,7 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Lapisan | Baseline | Bukti/status di repository |
 | --- | --- | --- |
 | Aplikasi | Modular monolith Laravel 13, PHP 8.4.1+ | Laravel `^13.17`, PHP `^8.4.1` pada Composer. Menggunakan arsitektur monolitik murni tanpa layer API service terpisah. |
-| UI | Blade, Livewire 4, Tailwind CSS 4 | Blade/Tailwind tersedia; Livewire dipilih untuk reaktivitas UI server-side terkelola. |
+| UI | Blade, ViewModel Pattern (OOP), Tailwind CSS 4, Alpine.js / Vanilla JS | Blade & Tailwind CSS 4 terintegrasi; arsitektur menggunakan Server-Side Rendering (SSR) berbasis *ViewModel Pattern* (terkapsulasi di `app/ViewModels`) untuk pemisahan logika presentasi yang rapi dan pengujian independen tanpa dependensi eksternal Livewire. Interaktivitas mikro UI ditangani via Alpine.js dan Vanilla JS. |
 | Aset dan build | Vite 8; Node 22+; Tailwind CSS 4 | Dependency build/asset bundling tersedia. Produksi hanya menerima hasil build aset, tanpa proses Node di runtime. |
 | Database | MySQL 8.0 / TiDB Cloud Serverless, Eloquent, migrations | TiDB Serverless untuk produksi/PoC; MySQL 8.0 Compose untuk pengembangan lokal. |
 | Web server | Linux milik/dikelola Kominfo, Nginx + PHP-FPM, HTTPS | Target deployment. Document root hanya `public/`. |
@@ -26,14 +26,14 @@ harus tercatat saat review, bukan dianggap kutipan persetujuan mitra.
 | Autentikasi & Sesi | Stateful Session Cookie (`auth:web`), CSRF token, HttpOnly, SameSite=Lax | Menggunakan sistem session bawaan Laravel dengan proteksi lockout 15 menit dan audit log. Disederhanakan tanpa JWT/Bearer token. |
 | Pencarian | MySQL Full-Text Search (indeks `FULLTEXT`); konfigurasi boolean mode untuk teks Indonesia | Menggunakan query MATCH(...) AGAINST(...). Tidak perlu Elasticsearch pada baseline. |
 | Integrasi | SMTP (Azure Communication Services untuk produksi, Mailpit untuk pengembangan lokal), ORCID authorization code callback, Crossref deposit (outbox worker), OAI-PMH 2.0/Dublin Core XML (`/oai`) | Layanan terintegrasi via worker backend dan rute web khusus OAI-PMH / OAuth callback. Mailpit digunakan untuk inspeksi visual email lokal. |
-| Notifikasi UI | Polling terkelola / Livewire refresh | Notifikasi persisten dari database sebagai sumber utama. |
+| Notifikasi UI | Polling terkelola / Server-rendered refresh | Notifikasi persisten dari database sebagai sumber utama. |
 | Pengujian | PHPUnit 12, Pint, GitHub Actions | Feature test web, integration test, dan automated style checking tanpa overhead pengujian skema kontrak JSON API. |
 
 Referensi teknis: [deployment Laravel](https://laravel.com/docs/13.x/deployment),
 [queue](https://laravel.com/docs/13.x/queues),
 [scheduler](https://laravel.com/docs/13.x/scheduling),
 [filesystem](https://laravel.com/docs/13.x/filesystem),
-[Livewire](https://livewire.laravel.com/docs/4.x/installation),
+[Laravel Blade](https://laravel.com/docs/13.x/blade),
 [MySQL FTS](https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html).
 Versi PHP minimum repository mengikuti dependency terkunci, bukan hanya minimum
 framework.
@@ -41,9 +41,9 @@ framework.
 ## Batas modul dan transaksi
 
 Modul: Identity & Membership, Journal Configuration, Submission & Files, Peer Review,
-Editorial Decision, Production, Publication, Notifications & Audit, Integrations.
-Controller Web dan aksi Livewire memanggil application service dan policy yang sama;
-jangan menggandakan aturan workflow dalam UI. Gunakan Form Requests untuk input dan
+Editorial Decision, Production, Publication, Payment & APC, Notifications & Audit, Integrations.
+Controller Web dan ViewModels memanggil application service dan policy yang sama;
+jangan menggandakan aturan workflow dalam UI. Gunakan Form Requests untuk validasi input dan
 Policy untuk pemeriksaan hak akses journal/ownership/assignment.
 
 MySQL / TiDB menyimpan sumber kebenaran. Setiap transisi mengunci aggregate terkait,
@@ -59,10 +59,10 @@ Semua perbandingan deadline memakai jam database UTC setelah lock, bukan jam bro
 
 ## Browser dan autentikasi
 
-UI Blade/Livewire menggunakan session HttpOnly, Secure, SameSite=Lax dan CSRF token.
+UI Blade menggunakan session HttpOnly, Secure, SameSite=Lax dan CSRF token.
 Aplikasi menggunakan sistem autentikasi sesi stateful Laravel (`auth:web`).
 Tidak ada perantara REST API atau Bearer JWT; seluruh pertukaran data antarmuka terjadi
-langsung antara browser dan komponen Livewire/Blade server-side.
+langsung melalui controller berbasis server-side rendering dengan data yang disiapkan oleh kelas ViewModel terstruktur.
 
 Baseline konfigurasi: absolute session 24 jam, password minimum 12 karakter,
 proteksi lockout otomatis 15 menit setelah 5 kali kegagalan login berturut-turut
@@ -71,7 +71,7 @@ meregenerasi CSRF token secara otomatis.
 
 ## Deployment yang dapat diterima
 
-Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps, TiDB Serverless MySQL, Azure Blob Storage, Cloudflare WAF/DNS, Redis Container di ACA). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduler Daemon via `schedule:work`), storage privat (Azure Blob Storage), scanner (Microsoft Defender for Storage), SMTP (Azure Communication Services untuk produksi, Mailpit untuk lokal dev), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
+Target infrastruktur (lihat spesifikasi detail pada [docs/infrastructure.md](infrastructure.md)) mengusung multi-cloud serverless (Azure Container Apps di `indonesiacentral`, TiDB Serverless MySQL, Azure Blob Storage di `southeastasia` untuk dukungan Microsoft Defender for Storage, Cloudflare WAF/DNS, Redis Container di ACA). Lingkungan ini menyediakan runtime PHP yang sesuai lockfile + `pdo_mysql`, MySQL/TiDB, worker terawasi (ACA), scheduler (ACA Scheduler Daemon via `schedule:work`), storage privat (Azure Blob Storage), scanner (Microsoft Defender for Storage), SMTP (Azure Communication Services untuk produksi, Mailpit untuk lokal dev), DNS/TLS (Cloudflare) dan outbound allowlist ke provider. Shared hosting yang hanya melayani request PHP tanpa worker, cron atau penyimpanan privat **tidak memenuhi baseline**; Docker Compose lokal bukan bukti produksi siap.
 
 Simpan secret di konfigurasi operator/secret store yang tidak berada di document
 root atau Git. Reference integrasi dipetakan server-side; jangan menerima arbitrary
@@ -100,11 +100,9 @@ status yang terlihat. `/up` scaffold tidak membuktikan readiness domain.
 | Deadline undangan/review eksplisit, tidak ada durasi tersembunyi | Setting hari hanya membantu pengisian; tanggal absolut per assignment menjadi acuan. |
 | Multi-Cloud Ephemeral PoC (Azure + Cloudflare + TiDB) | Detail pada docs/infrastructure.md; menggantikan asumsi AWS monolitik dan Kominfo on-premise untuk efisiensi demo PoC 1–2 jam. |
 | Polling baseline; SSE kemampuan tambahan | Infrastruktur sederhana tetap berfungsi, real-time push bukan syarat deployment awal. |
+| Alur Pembayaran APC Manual & Waiver | Sesuai kebutuhan publikasi jurnal, sistem mengimplementasikan modul Article Processing Charge (APC) berbasis verifikasi manual institusional: Jurnal dapat mengonfigurasi skema APC (`free`, `fixed`, `per_page`), penulis mengunggah berkas bukti transfer, dan Pengelola Jurnal / Editor-in-Chief memverifikasi, menolak dengan catatan alasan, atau memberikan pembebasan biaya (*waiver*). Pelunasan APC (`isPaymentCleared`) bertindak sebagai gerbang (*gate*) sebelum naskah dapat diterbitkan ke dalam Issue. |
 
-Tidak menambah pembayaran/APC, aplikasi native, AI layout atau mesin plagiarisme
-internal. Enum model akses jurnal hanya metadata kebijakan; tidak mengimplementasikan
-paywall/billing. Pilihan di atas merupakan keputusan engineering untuk baseline ini,
-bukan bukti bahwa proposal atau notulen sumber telah diubah.
+Tidak menambah payment gateway komersial pihak ketiga (Midtrans/Stripe), aplikasi native, AI layout, atau mesin plagiarisme internal. Pilihan di atas merupakan keputusan engineering untuk baseline ini, bukan bukti bahwa proposal atau notulen sumber telah diubah.
 
 ## Penerimaan non-fungsional
 
