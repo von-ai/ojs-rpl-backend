@@ -125,32 +125,27 @@ class CopyeditorViewModelsTest extends TestCase
         $this->assertEquals('output_final.docx', $detail['output_files'][0]['name']);
     }
 
-    public function test_view_model_fallback_works_when_database_is_empty(): void
+    public function test_view_model_returns_empty_state_when_database_is_empty(): void
     {
         $indexVm = new CopyeditorSubmissionsViewModel('all');
         $submissions = $indexVm->submissions();
 
-        // Fallback returns mock submissions
-        $this->assertNotEmpty($submissions);
-        $this->assertEquals('SUB-2026-00106', $submissions[0]['number']);
+        // Empty database returns empty array
+        $this->assertEmpty($submissions);
 
         $detailVm = new CopyeditorSubmissionDetailViewModel('SUB-2026-00106');
         $detail = $detailVm->submission();
 
-        $this->assertEquals('SUB-2026-00106', $detail['number']);
-        $this->assertNotEmpty($detail['output_files']);
+        $this->assertNull($detail);
 
-        // Tab count parity on fallback mock
+        // Tab count parity on empty database
         $tabs = ['all', 'editing', 'awaiting_approval', 'escalated', 'completed'];
         foreach ($tabs as $tabKey) {
             $tabVm = new CopyeditorSubmissionsViewModel($tabKey);
             $tabCount = $tabVm->tabs()['items'][$tabKey]['count'];
+            $this->assertEquals(0, $tabCount);
             $submissionsList = $tabVm->submissions();
-            $this->assertCount(
-                $tabCount,
-                $submissionsList,
-                "Tab [{$tabKey}] count ({$tabCount}) does not match submissions count (".count($submissionsList).') in fallback mode.'
-            );
+            $this->assertCount(0, $submissionsList);
         }
     }
 

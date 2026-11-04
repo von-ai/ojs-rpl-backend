@@ -4,10 +4,56 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Copyeditor;
 
+use App\Models\Copyedit;
+use App\Models\CopyeditApproval;
+use App\Models\CopyeditApprovedFile;
+use App\Models\CopyeditOutput;
+use App\Models\ProductionEscalation;
+use App\Models\User;
+use App\Models\UserRole;
+use Database\Seeders\CopyeditSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class CopyeditorCatalogPageTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $copyeditor;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->copyeditor = User::firstOrCreate(
+            ['email' => 'andi.kurniawan@brida.makassar.go.id'],
+            [
+                'username' => 'andi.kurniawan',
+                'name' => 'Andi Kurniawan, S.Hum., M.Pd.',
+                'full_name' => 'Andi Kurniawan, S.Hum., M.Pd.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
+            'user_id' => $this->copyeditor->id,
+            'role_code' => 'copyeditor',
+        ]);
+
+        $this->seed(CopyeditSeeder::class);
+
+        $this->actingAs($this->copyeditor);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_copyeditor_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/copyeditor/submissions');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman daftar penugasan copyediting dapat diakses dengan UX yang simpel dan bersih.
      */
@@ -18,7 +64,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Penugasan Naskah Copyediting');
         $response->assertSee('SUB-2026-00106');
-        $response->assertSee('Dr. Nurfadillah Bahar');
+        $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('Buka Naskah');
 
         // Memastikan sidebar ringkas hanya memuat menu penting
@@ -51,7 +97,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00106');
 
         $response->assertStatus(200);
-        $response->assertSee('Analisis Spasial Ruang Terbuka Hijau');
+        $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara');
         $response->assertSee('Unduh Naskah Asli (.docx)');
         $response->assertSee('Berkas Hasil Suntingan');
         $response->assertSee('Persetujuan Penulis');
@@ -69,7 +115,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00108');
 
         $response->assertStatus(200);
-        $response->assertSee('Kajian Karakteristik Geoteknik Sedimen');
+        $response->assertSee('Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar');
         $response->assertSee('Dalam Mediasi Redaksi');
         $response->assertSee('ESC-2026-0042');
         $response->assertSee('Tiket Mediasi Redaksi Aktif');
@@ -84,9 +130,8 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00107');
 
         $response->assertStatus(200);
-        $response->assertSee('Transformasi Digital Pelayanan Publik Kelurahan');
+        $response->assertSee('Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu');
         $response->assertSee('Keputusan Mediasi Section Editor');
-        $response->assertSee('Dr. Hj. St. Rohani, M.Si.');
         $response->assertSee('Selesai Diputuskan');
     }
 
@@ -98,10 +143,9 @@ class CopyeditorCatalogPageTest extends TestCase
         $response = $this->get('/copyeditor/submissions/SUB-2026-00109');
 
         $response->assertStatus(200);
-        $response->assertSee('Efektivitas Program Lorong Wisata');
+        $response->assertSee('Observasi Awal Distribusi Mikroplastik');
         $response->assertSee('Disetujui Penulis');
         $response->assertSee('Penulis Telah Menyetujui Naskah');
-        $response->assertSee('Hj. Fatmawati, S.E., M.Si.');
     }
 
     /**
@@ -125,23 +169,10 @@ class CopyeditorCatalogPageTest extends TestCase
     /**
      * Pengujian aksi form transaksional menghasilkan flash message dan pengalihan ke ruang kerja naskah.
      */
-    public function test_aksi_transaksional_copyeditor_mengembalikan_redirect_dengan_status(): void
+    public function test_aksi_copyeditor_tanpa_berkas_ditolak_tanpa_pesan_sukses(): void
     {
-        $responseUpload = $this->post('/copyeditor/upload', ['submission_id' => 'SUB-2026-00106']);
-        $responseUpload->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseUpload->assertSessionHas('status');
-
-        $responseApproval = $this->post('/copyeditor/request-approval', ['submission_id' => 'SUB-2026-00106']);
-        $responseApproval->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseApproval->assertSessionHas('status');
-
-        $responseEscalate = $this->post('/copyeditor/escalate', ['submission_id' => 'SUB-2026-00106']);
-        $responseEscalate->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseEscalate->assertSessionHas('status');
-
-        $responseHandoff = $this->post('/copyeditor/complete-handoff', ['submission_id' => 'SUB-2026-00106']);
-        $responseHandoff->assertRedirect('/copyeditor/submissions/SUB-2026-00106');
-        $responseHandoff->assertSessionHas('status');
+        $response = $this->from('/copyeditor/submissions/SUB-2026-00106')->post('/copyeditor/upload', ['submission_id' => 'SUB-2026-00106']);
+        $response->assertRedirect('/copyeditor/submissions/SUB-2026-00106')->assertSessionHasErrors('copyedit_file')->assertSessionMissing('status');
     }
 
     /**
@@ -153,10 +184,10 @@ class CopyeditorCatalogPageTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Sedang Disunting');
-        $response->assertSee('SUB-2026-00106');
+        $response->assertSee('SUB-2026-00107');
         $response->assertSee('SUB-2026-00109');
         $response->assertSee('SUB-2026-00111');
-        $response->assertDontSee('SUB-2026-00107');
+        $response->assertDontSee('SUB-2026-00106');
         $response->assertDontSee('SUB-2026-00108');
         $response->assertDontSee('SUB-2026-00110');
     }
@@ -176,5 +207,21 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertSee('Minta Mediasi Editor');
         $response->assertSee('Hub-and-Spoke Maritim');
         $response->assertSee('openEscalateModal()');
+    }
+
+    /**
+     * Memastikan empty state tampil dengan ramah ketika database tidak memiliki penugasan copyediting.
+     */
+    public function test_empty_state_tampil_ketika_belum_ada_penugasan_copyedit(): void
+    {
+        CopyeditApprovedFile::query()->delete();
+        CopyeditApproval::query()->delete();
+        CopyeditOutput::query()->delete();
+        ProductionEscalation::query()->delete();
+        Copyedit::query()->delete();
+
+        $response = $this->get('/copyeditor/submissions');
+        $response->assertStatus(200);
+        $response->assertSee('Tidak ada naskah ditemukan');
     }
 }

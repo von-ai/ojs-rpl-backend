@@ -2,7 +2,7 @@
 @php
     $activeRound = $viewModel->activeRound;
     $availableReviewers = $viewModel->availableReviewers;
-    $isFinalized = $viewModel->isWorkflowFinalized();
+    $isFinalized = $viewModel->isWorkflowFinalized() || ! $activeRound->exists || $activeRound->anonymizedFile?->virus_scan_status !== 'clean';
     $canRecommend = $viewModel->canRecommendToEic();
     $completedCount = $viewModel->completedReviewsCount();
     $minReq = $viewModel->minimumCompletedReviews();
@@ -36,7 +36,7 @@
     <!-- Kartu 1: Undang Mitra Bestari -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
+            <div
                 class="flex items-center gap-2 min-w-0 cursor-help"
                 data-tooltip="Undang Mitra Bestari"
                 data-tooltip-desc="Kirimkan penugasan telaah sejawat independen dengan batas waktu respons dan evaluasi"
@@ -77,8 +77,8 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -93,7 +93,7 @@
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
                             @foreach($availableReviewers as $reviewer)
                                 @php $isRevSelected = ($selectedReviewerId === (string) $reviewer->id); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isRevSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $reviewer->id }}"
                                     data-label="{{ $reviewer->name }}"
@@ -116,25 +116,25 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="space-y-1.5">
                         <label for="response_due_at" class="font-bold text-gray-700 block">Batas Respon <span class="text-rose-500">*</span></label>
-                        <input 
-                            type="date" 
-                            id="response_due_at" 
-                            name="response_due_at" 
-                            required 
-                            value="{{ old('response_due_at', now()->addDays(7)->format('Y-m-d')) }}" 
-                            min="{{ now()->addDay()->format('Y-m-d') }}" 
+                        <input
+                            type="date"
+                            id="response_due_at"
+                            name="response_due_at"
+                            required
+                            value="{{ old('response_due_at', now()->addDays(7)->format('Y-m-d')) }}"
+                            min="{{ now()->addDay()->format('Y-m-d') }}"
                             class="w-full px-3 py-2 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon tabular-nums font-medium transition"
                         >
                     </div>
                     <div class="space-y-1.5">
                         <label for="review_due_at" class="font-bold text-gray-700 block">Batas Telaah <span class="text-rose-500">*</span></label>
-                        <input 
-                            type="date" 
-                            id="review_due_at" 
-                            name="review_due_at" 
-                            required 
-                            value="{{ old('review_due_at', now()->addDays(21)->format('Y-m-d')) }}" 
-                            min="{{ now()->addDays(2)->format('Y-m-d') }}" 
+                        <input
+                            type="date"
+                            id="review_due_at"
+                            name="review_due_at"
+                            required
+                            value="{{ old('review_due_at', now()->addDays(21)->format('Y-m-d')) }}"
+                            min="{{ now()->addDays(2)->format('Y-m-d') }}"
                             class="w-full px-3 py-2 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon tabular-nums font-medium transition"
                         >
                     </div>
@@ -143,17 +143,17 @@
                 <!-- Pesan Undangan (Opsional) -->
                 <div class="space-y-1.5">
                     <label for="invitation_message" class="font-bold text-gray-700 block">Pesan Undangan (Opsional)</label>
-                    <textarea 
-                        id="invitation_message" 
-                        name="invitation_message" 
-                        rows="2" 
+                    <textarea
+                        id="invitation_message"
+                        name="invitation_message"
+                        rows="2"
                         placeholder="Pesan pengantar dari Editor Bagian mengenai relevansi kepakaran atau fokus evaluasi..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('invitation_message') }}</textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full min-h-10 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold rounded-lg transition cursor-pointer"
                 >
                     Kirim Undangan Reviewer
@@ -169,7 +169,7 @@
     <!-- Kartu 2: Rekomendasi Editorial untuk Pemimpin Redaksi (EIC) -->
     <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div 
+            <div
                 class="flex items-center gap-2 min-w-0 cursor-help"
                 data-tooltip="Rekomendasi ke EIC"
                 data-tooltip-desc="Sintesis hasil telaah mitra bestari dan pengajuan rekomendasi resmi kepada Pemimpin Redaksi"
@@ -220,8 +220,8 @@
                                 <option value="{{ $val }}" {{ $currentRec === $val ? 'selected' : '' }}>{{ $opt['label'] }}</option>
                             @endforeach
                         </select>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
                             aria-haspopup="listbox"
                             aria-expanded="false"
@@ -236,7 +236,7 @@
                         <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-1.5 z-30 space-y-1 absolute">
                             @foreach($recommendationOptions as $val => $opt)
                                 @php $isRecSelected = ($currentRec === $val); @endphp
-                                <div 
+                                <div
                                     class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isRecSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                     data-value="{{ $val }}"
                                     data-label="{{ $opt['label'] }}"
@@ -259,18 +259,18 @@
                     <label for="note" class="font-bold text-gray-700 block">
                         Catatan Evaluasi Substantif untuk EIC <span class="text-rose-500">*</span>
                     </label>
-                    <textarea 
-                        id="note" 
-                        name="note" 
-                        rows="4" 
-                        required 
+                    <textarea
+                        id="note"
+                        name="note"
+                        rows="4"
+                        required
                         placeholder="Tuliskan sintesis akademis, konsistensi masukan penelaah, dan dasar rekomendasi editorial ini..."
                         class="w-full p-3 text-xs bg-gray-50/70 focus:bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon leading-relaxed transition"
                     >{{ old('note', $activeRound->se_recommendation_note) }}</textarea>
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="w-full min-h-10 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-semibold rounded-lg transition cursor-pointer"
                 >
                     {{ $viewModel->hasSeRecommendation() ? 'Perbarui Rekomendasi ke EIC' : 'Kirim Rekomendasi ke EIC' }}
@@ -284,90 +284,3 @@
     </section>
 
 </aside>
-
-@pushOnce('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const dropdownContainers = document.querySelectorAll('.custom-dropdown-container');
-
-        function openDropdown(panel, btn, chevron) {
-            closeAllDropdowns();
-            panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            btn.setAttribute('aria-expanded', 'true');
-            if (chevron) chevron.classList.add('rotate-180');
-        }
-
-        function closeDropdown(panel, btn, chevron) {
-            panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
-            panel.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-            btn.setAttribute('aria-expanded', 'false');
-            if (chevron) chevron.classList.remove('rotate-180');
-        }
-
-        function closeAllDropdowns() {
-            dropdownContainers.forEach(container => {
-                const panel = container.querySelector('.custom-dropdown-panel');
-                const btn = container.querySelector('.custom-dropdown-btn');
-                const chevron = container.querySelector('.custom-dropdown-chevron');
-                if (panel && btn) closeDropdown(panel, btn, chevron);
-            });
-        }
-
-        dropdownContainers.forEach(container => {
-            const btn = container.querySelector('.custom-dropdown-btn');
-            const panel = container.querySelector('.custom-dropdown-panel');
-            const chevron = container.querySelector('.custom-dropdown-chevron');
-            const labelSpan = container.querySelector('.custom-dropdown-label');
-            const selectEl = container.querySelector('select');
-            const items = container.querySelectorAll('.custom-dropdown-item');
-
-            if (!btn || !panel || !selectEl) return;
-
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const isOpen = panel.classList.contains('visible');
-                if (isOpen) {
-                    closeDropdown(panel, btn, chevron);
-                } else {
-                    openDropdown(panel, btn, chevron);
-                }
-            });
-
-            items.forEach(item => {
-                item.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const val = item.getAttribute('data-value');
-                    const label = item.getAttribute('data-label');
-
-                    selectEl.value = val;
-                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-
-                    if (labelSpan) labelSpan.textContent = label;
-
-                    items.forEach(it => {
-                        const check = it.querySelector('.custom-dropdown-check');
-                        if (it === item) {
-                            it.classList.add('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.remove('text-gray-700');
-                            if (check) check.classList.remove('hidden');
-                        } else {
-                            it.classList.remove('bg-red-50', 'text-brand-maroon', 'font-semibold');
-                            it.classList.add('text-gray-700');
-                            if (check) check.classList.add('hidden');
-                        }
-                    });
-
-                    closeDropdown(panel, btn, chevron);
-                });
-            });
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.custom-dropdown-container')) {
-                closeAllDropdowns();
-            }
-        });
-    });
-</script>
-@endpushOnce

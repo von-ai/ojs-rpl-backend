@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use App\Jobs\ProcessUserImport;
 use App\Mail\SysAdmin\JournalStatusChangedMail;
 use App\Mail\SysAdmin\SysAdminRoleAssignedMail;
 use App\Mail\SysAdmin\SysAdminRoleRevokedMail;
@@ -13,6 +14,7 @@ use App\Models\Journal;
 use App\Models\Section;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Models\UserImport;
 use App\Models\UserRole;
 use App\Services\SysAdmin\SysAdminService;
 use App\ViewModels\SysAdminJournalsViewModel;
@@ -25,6 +27,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SysAdminEndToEndIntegrationTest extends TestCase
@@ -267,6 +270,12 @@ class SysAdminEndToEndIntegrationTest extends TestCase
 
         $response->assertRedirect(route('sysadmin.users.index'));
 
+        $import = UserImport::where('file_name', 'reviewer_import_batch.csv')->firstOrFail();
+        $this->assertSame('queued', $import->status);
+        $this->assertTrue($import->send_invitation_email);
+        Notification::fake();
+        $this->scanTestUploads();
+        (new ProcessUserImport($import->id))->handle();
         // Pastikan tabel user_imports mencatat hasil impor
         $this->assertDatabaseHas('user_imports', [
             'file_name' => 'reviewer_import_batch.csv',
@@ -310,7 +319,7 @@ class SysAdminEndToEndIntegrationTest extends TestCase
             'maintenance_message' => 'Sistem sedang dalam proses pemeliharaan darurat.',
             'max_upload_size_mb' => '50',
             'allowed_file_extensions' => 'pdf, docx, csv, xlsx',
-            'session_lifetime_minutes' => '180',
+            'session_lifetime_minutes' => '120',
         ]);
 
         $response->assertRedirect(route('sysadmin.settings.index'));

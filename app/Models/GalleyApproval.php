@@ -14,6 +14,7 @@ class GalleyApproval extends Model
     use HasFactory, HasUlids;
 
     protected $fillable = [
+        'requested_at',
         'galley_id',
         'approved_by',
         'stage',
@@ -25,6 +26,7 @@ class GalleyApproval extends Model
     ];
 
     protected $casts = [
+        'requested_at' => 'datetime',
         'approved_at' => 'datetime',
         'invalidated_at' => 'datetime',
     ];

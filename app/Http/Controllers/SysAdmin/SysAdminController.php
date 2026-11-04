@@ -13,10 +13,10 @@ use App\ViewModels\SysAdminJournalsViewModel;
 use App\ViewModels\SysAdminSettingsViewModel;
 use App\ViewModels\SysAdminUsersViewModel;
 use DomainException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -29,24 +29,12 @@ class SysAdminController extends Controller
     /**
      * Resolusi aktor pelaksana (User yang login atau SysAdmin aktif).
      */
-    protected function resolveActor(): ?User
+    protected function resolveActor(): User
     {
-        try {
-            $user = Auth::user();
+        $user = Auth::user();
+        abort_unless($user?->isSysAdmin(), 403);
 
-            if ($user instanceof User) {
-                return $user;
-            }
-
-            if (! Schema::hasTable('users')) {
-                return null;
-            }
-
-            return User::whereHas('userRoles', fn ($q) => $q->where('role_code', 'sysadmin'))->first()
-                ?? User::first();
-        } catch (\Throwable) {
-            return null;
-        }
+        return $user;
     }
 
     /**
@@ -70,33 +58,34 @@ class SysAdminController extends Controller
         $actor = $this->resolveActor();
         $name = trim((string) $request->input('name', 'Jurnal Ilmiah Baru'));
         $slug = trim((string) $request->input('slug', Str::slug($name)));
-        $primaryContact = trim((string) $request->input('primary_contact', 'Fahri Azis, S.T.'));
+        $primaryContact = trim((string) $request->input('primary_contact', $actor->name));
         $issn = $request->input('issn');
         $eissn = $request->input('eissn');
         $description = $request->input('description');
         $managerUserId = $request->input('manager_user_id');
 
         try {
-            if (Schema::hasTable('journals')) {
-                $journal = $this->sysAdminService->createJournal([
-                    'name' => $name,
-                    'slug' => $slug,
-                    'primary_contact' => $primaryContact,
-                    'issn' => $issn ? (string) $issn : null,
-                    'eissn' => $eissn ? (string) $eissn : null,
-                    'description' => $description ? (string) $description : null,
-                    'manager_user_id' => $managerUserId ? (string) $managerUserId : null,
-                ], $actor);
+            $journal = $this->sysAdminService->createJournal([
+                'name' => $name,
+                'slug' => $slug,
+                'primary_contact' => $primaryContact,
+                'issn' => $issn ? (string) $issn : null,
+                'eissn' => $eissn ? (string) $eissn : null,
+                'description' => $description ? (string) $description : null,
+                'manager_user_id' => $managerUserId ? (string) $managerUserId : null,
+            ], $actor);
 
-                return redirect()->route('sysadmin.journals.index')
-                    ->with('status', "Instansi jurnal '{$journal->name}' berhasil didaftarkan dan diinisialisasi.");
-            }
+            return redirect()->route('sysadmin.journals.index')
+                ->with('status', "Instansi jurnal '{$journal->name}' berhasil didaftarkan dan diinisialisasi.");
+        } catch (DomainException|\InvalidArgumentException $e) {
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => $e->getMessage()]);
         } catch (\Throwable $e) {
-            // Graceful fallback for mock tests
-        }
+            report($e);
 
-        return redirect()->route('sysadmin.journals.index')
-            ->with('status', "Instansi jurnal '{$name}' berhasil didaftarkan dan diinisialisasi.");
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**
@@ -108,18 +97,19 @@ class SysAdminController extends Controller
         $status = (string) $request->input('status', 'active');
 
         try {
-            if (Schema::hasTable('journals')) {
-                $journal = $this->sysAdminService->updateJournalStatus($id, $status, $actor);
+            $journal = $this->sysAdminService->updateJournalStatus($id, $status, $actor);
 
-                return redirect()->route('sysadmin.journals.index')
-                    ->with('status', "Status jurnal ID {$id} berhasil diperbarui menjadi {$status}.");
-            }
+            return redirect()->route('sysadmin.journals.index')
+                ->with('status', "Status jurnal ID {$id} berhasil diperbarui menjadi {$status}.");
+        } catch (DomainException|\InvalidArgumentException $e) {
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => $e->getMessage()]);
         } catch (\Throwable $e) {
-            // Graceful fallback
-        }
+            report($e);
 
-        return redirect()->route('sysadmin.journals.index')
-            ->with('status', "Status jurnal ID {$id} berhasil diperbarui menjadi {$status}.");
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**
@@ -143,18 +133,28 @@ class SysAdminController extends Controller
         $actor = $this->resolveActor();
         $userId = (string) $request->input('user_id', '');
 
-        if ($userId !== '') {
-            try {
-                if (Schema::hasTable('users')) {
-                    $this->sysAdminService->assignSysAdmin($userId, $actor);
-                }
-            } catch (\Throwable) {
-                // Graceful fallback for mock tests
-            }
+        if ($userId === '') {
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', 'ID Pengguna wajib diisi.');
         }
 
-        return redirect()->route('sysadmin.users.index')
-            ->with('status', 'Hak akses System Administrator berhasil diberikan kepada pengguna.');
+        try {
+            $this->sysAdminService->assignSysAdmin($userId, $actor);
+
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', 'Hak akses System Administrator berhasil diberikan kepada pengguna.');
+        } catch (ModelNotFoundException) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['user_id' => 'Pengguna tidak ditemukan.']);
+        } catch (DomainException $e) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**
@@ -165,21 +165,28 @@ class SysAdminController extends Controller
         $actor = $this->resolveActor();
         $userId = (string) $request->input('user_id', '');
 
-        if ($userId !== '') {
-            try {
-                if (Schema::hasTable('users')) {
-                    $this->sysAdminService->revokeSysAdmin($userId, $actor);
-                }
-            } catch (DomainException $e) {
-                return redirect()->route('sysadmin.users.index')
-                    ->with('status', $e->getMessage());
-            } catch (\Throwable) {
-                // Graceful fallback
-            }
+        if ($userId === '') {
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', 'ID Pengguna wajib diisi.');
         }
 
-        return redirect()->route('sysadmin.users.index')
-            ->with('status', 'Hak akses System Administrator berhasil dicabut.');
+        try {
+            $this->sysAdminService->revokeSysAdmin($userId, $actor);
+
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', 'Hak akses System Administrator berhasil dicabut.');
+        } catch (ModelNotFoundException) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['user_id' => 'Pengguna tidak ditemukan.']);
+        } catch (DomainException $e) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**
@@ -194,29 +201,27 @@ class SysAdminController extends Controller
         $expertise = $request->input('expertise_keywords');
 
         try {
-            if (Schema::hasTable('user_roles') && Schema::hasTable('users') && Schema::hasTable('journals')) {
-                $this->sysAdminService->assignJournalRole(
-                    $userId,
-                    $journalId,
-                    $roleCode,
-                    $expertise ? (string) $expertise : null,
-                    $actor
-                );
+            $this->sysAdminService->assignJournalRole(
+                $userId,
+                $journalId,
+                $roleCode,
+                $expertise ? (string) $expertise : null,
+                $actor
+            );
 
-                $roleLabel = UserRole::roleLabel($roleCode);
+            $roleLabel = UserRole::roleLabel($roleCode);
 
-                return redirect()->route('sysadmin.users.index')
-                    ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil ditetapkan kepada pengguna.");
-            }
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil ditetapkan kepada pengguna.");
         } catch (DomainException $e) {
             return redirect()->route('sysadmin.users.index')
                 ->withErrors(['role' => $e->getMessage()]);
-        } catch (\Throwable) {
-            // Graceful fallback
-        }
+        } catch (\Throwable $e) {
+            report($e);
 
-        return redirect()->route('sysadmin.users.index')
-            ->with('status', 'Peran jurnal berhasil ditetapkan kepada pengguna.');
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['role' => 'Gagal menetapkan peran jurnal. Silakan coba kembali.']);
+        }
     }
 
     /**
@@ -230,20 +235,21 @@ class SysAdminController extends Controller
         $roleCode = (string) $request->input('role_code', '');
 
         try {
-            if (Schema::hasTable('user_roles')) {
-                $this->sysAdminService->revokeJournalRole($userId, $journalId, $roleCode, $actor);
+            $this->sysAdminService->revokeJournalRole($userId, $journalId, $roleCode, $actor);
 
-                $roleLabel = UserRole::roleLabel($roleCode);
+            $roleLabel = UserRole::roleLabel($roleCode);
 
-                return redirect()->route('sysadmin.users.index')
-                    ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil dicabut.");
-            }
-        } catch (\Throwable) {
-            // Graceful fallback
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', "Peran '{$roleLabel}' pada jurnal berhasil dicabut.");
+        } catch (DomainException $e) {
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
         }
-
-        return redirect()->route('sysadmin.users.index')
-            ->with('status', 'Peran jurnal berhasil dicabut.');
     }
 
     /**
@@ -252,24 +258,26 @@ class SysAdminController extends Controller
     public function importUsers(Request $request): RedirectResponse
     {
         $actor = $this->resolveActor();
+        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:500'], 'journal_id' => ['nullable', 'exists:journals,id']]);
         $journalId = $request->input('journal_id');
-        $sendInvitation = (bool) $request->input('send_invitation_email', false);
+        $sendInvitation = $request->boolean('send_invitation_email');
 
         if ($request->hasFile('file')) {
             try {
-                if (Schema::hasTable('user_imports')) {
-                    $import = $this->sysAdminService->importUsersFromCsv(
-                        $request->file('file'),
-                        $journalId ? (string) $journalId : null,
-                        $sendInvitation,
-                        $actor
-                    );
+                $import = $this->sysAdminService->importUsersFromCsv(
+                    $request->file('file'),
+                    $journalId ? (string) $journalId : null,
+                    $sendInvitation,
+                    $actor
+                );
 
-                    return redirect()->route('sysadmin.users.index')
-                        ->with('status', "Berkas CSV impor pengguna '{$import->file_name}' berhasil diproses ({$import->processed_rows} berhasil, {$import->failed_rows} gagal).");
-                }
+                return redirect()->route('sysadmin.users.index')
+                    ->with('status', "Berkas CSV impor pengguna '{$import->file_name}' masuk antrean pemindaian dan impor.");
             } catch (\Throwable $e) {
-                // Graceful fallback
+                report($e);
+
+                return redirect()->route('sysadmin.users.index')
+                    ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
             }
         }
 
@@ -293,21 +301,24 @@ class SysAdminController extends Controller
     public function updateSettings(Request $request): RedirectResponse
     {
         $actor = $this->resolveActor();
-        $data = $request->except(['_token']);
+        $data = $request->validate(['site_name' => ['sometimes', 'required', 'string', 'max:191'], 'site_description' => ['nullable', 'string', 'max:4000'], 'maintenance_message' => ['nullable', 'string', 'max:4000'], 'max_upload_size_mb' => ['sometimes', 'required', 'integer', 'min:5', 'max:100'], 'allowed_file_extensions' => ['sometimes', 'required', 'string', 'max:200'], 'session_lifetime_minutes' => ['sometimes', 'required', 'integer', 'min:15', 'max:120']]);
 
         // Handle checkbox boolean
-        $data['maintenance_mode'] = $request->has('maintenance_mode');
-
-        try {
-            if (Schema::hasTable('system_settings')) {
-                $this->sysAdminService->updatePlatformSettings($data, $actor);
-            }
-        } catch (\Throwable) {
-            // Graceful fallback
+        if ($request->has('maintenance_mode')) {
+            $data['maintenance_mode'] = $request->boolean('maintenance_mode');
         }
 
-        return redirect()->route('sysadmin.settings.index')
-            ->with('status', 'Konfigurasi platform SIRIDA berhasil diperbarui dan disinkronkan ke cache sistem.');
+        try {
+            $this->sysAdminService->updatePlatformSettings($data, $actor);
+
+            return redirect()->route('sysadmin.settings.index')
+                ->with('status', 'Konfigurasi platform SIRIDA berhasil diperbarui dan disinkronkan ke cache sistem.');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.settings.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**
@@ -318,15 +329,16 @@ class SysAdminController extends Controller
         $actor = $this->resolveActor();
 
         try {
-            if (Schema::hasTable('audit_logs')) {
-                $this->sysAdminService->clearSystemCache($actor);
-            }
-        } catch (\Throwable) {
-            // Graceful fallback
-        }
+            $this->sysAdminService->clearSystemCache($actor);
 
-        return redirect()->route('sysadmin.settings.index')
-            ->with('status', 'Cache sistem, rute, konfigurasi, dan view berhasil dibersihkan.');
+            return redirect()->route('sysadmin.settings.index')
+                ->with('status', 'Cache sistem, rute, konfigurasi, dan view berhasil dibersihkan.');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.settings.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
     }
 
     /**

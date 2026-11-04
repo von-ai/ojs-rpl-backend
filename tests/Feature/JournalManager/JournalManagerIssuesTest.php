@@ -4,10 +4,38 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\Issue;
+use App\Models\Journal;
+use App\Models\Submission;
+use App\Models\User;
+use Database\Seeders\JournalManagerSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class JournalManagerIssuesTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(JournalManagerSeeder::class);
+
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
+        $this->actingAs($this->manager);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_journal_manager_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/journalmanager/issues');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman katalog edisi terbitan menampilkan 4 kartu metrik, tabel edisi, dan modal buat baru.
      */
@@ -42,6 +70,18 @@ class JournalManagerIssuesTest extends TestCase
      */
     public function test_filter_tab_status_edisi_terbitan(): void
     {
+        $journal = Journal::first();
+        Issue::create([
+            'journal_id' => $journal->id,
+            'volume' => '7',
+            'number' => '1',
+            'year' => 2027,
+            'title' => 'Vol. 7 No. 1 (2027): Edisi Terjadwal',
+            'status' => 'scheduled',
+            'is_current' => false,
+            'doi_prefix' => '10.61234/sirida.v7i1',
+        ]);
+
         // Tab All: menampilkan semua edisi
         $responseAll = $this->get('/journalmanager/issues?tab=all');
         $responseAll->assertStatus(200);
@@ -139,11 +179,17 @@ class JournalManagerIssuesTest extends TestCase
     public function test_aksi_transaksional_manajemen_edisi(): void
     {
         // 1. Tambah artikel ke edisi
+        $targetSubmission = Submission::where('title', 'like', '%Model Partisipasi Pemuda%')->firstOrFail();
+        $this->preparePublication($targetSubmission);
+        $issue = Issue::findOrFail('ISSUE-01JARK960A');
+        foreach ($issue->issueArticles as $entry) {
+            $this->preparePublication($entry->submission);
+        }
         $resAdd = $this->post('/journalmanager/issues/ISSUE-01JARK960A/add-article', [
-            'article_title' => 'Model Partisipasi Pemuda',
+            'article_id' => $targetSubmission->id,
         ]);
         $resAdd->assertRedirect('/journalmanager/issues/ISSUE-01JARK960A');
-        $resAdd->assertSessionHas('status', "Naskah 'Model Partisipasi Pemuda' berhasil ditambahkan ke daftar isi edisi.");
+        $resAdd->assertSessionHas('status', "Naskah '{$targetSubmission->title}' berhasil ditambahkan ke daftar isi edisi.");
 
         // 2. Publikasikan edisi
         $resPublish = $this->post('/journalmanager/issues/ISSUE-01JARK960A/publish');

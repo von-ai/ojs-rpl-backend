@@ -19,28 +19,31 @@ class EnsurePortalRoleAccess
         $user = $request->user();
 
         if (! $user) {
-            return $next($request);
+            if ($request->expectsJson()) {
+                abort(401, 'Unauthenticated.');
+            }
+
+            return redirect()->guest(route('login'));
         }
 
-        // Jika pengguna memiliki penetapan peran eksplisit pada tabel user_roles, wajib validasi kepemilikan peran
-        if ($user->userRoles()->exists()) {
-            if (! $user->hasRole($roleCode)) {
-                $targetMeta = UserRole::roleMeta($roleCode);
-                $message = "Anda tidak memiliki hak akses ke {$targetMeta['portal_label']}.";
+        if (! $user->hasRole($roleCode)) {
+            $targetMeta = UserRole::roleMeta($roleCode);
+            $message = "Anda tidak memiliki hak akses ke {$targetMeta['portal_label']}.";
 
-                if ($request->expectsJson()) {
-                    abort(403, $message);
-                }
-
-                return redirect()
-                    ->route($user->defaultPortalRoute())
-                    ->with('error', $message)
-                    ->with('status', $message);
+            if ($request->expectsJson()) {
+                abort(403, $message);
             }
 
-            if ($request->hasSession()) {
-                $request->session()->put('active_role', $roleCode);
-            }
+            return redirect()
+                ->route($user->defaultPortalRoute())
+                ->with('error', $message)
+                ->with('status', $message);
+        }
+
+        $request->attributes->set('portal.role', $roleCode);
+
+        if ($request->hasSession()) {
+            $request->session()->put('active_role', $roleCode);
         }
 
         return $next($request);

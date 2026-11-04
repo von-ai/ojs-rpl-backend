@@ -6,7 +6,7 @@
 <div class="w-full max-w-md lg:max-w-5xl mx-auto my-auto">
     <!-- Main Login Card Container -->
     <div class="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        
+
         <!-- Sisi Kiri: Panel Informasi Portal (Desktop Lg Ke Atas) -->
         <div class="hidden lg:flex lg:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-gray-200/90 flex-col justify-between">
             <div>
@@ -14,12 +14,12 @@
                 <span class="text-[11px] font-bold tracking-wider text-brand-maroon uppercase block mb-3">
                     PORTAL JURNAL ILMIAH
                 </span>
-                
+
                 <!-- Main Headline -->
                 <h2 class="text-2xl sm:text-[26px] font-bold text-gray-900 leading-tight tracking-tight mb-3">
                     Riset dan inovasi untuk Kota Makassar.
                 </h2>
-                
+
                 <!-- Description -->
                 <p class="text-sm text-gray-600 leading-relaxed mb-6">
                     Ruang publikasi ilmiah untuk berbagi pengetahuan dan mendukung pembangunan daerah berbasis riset.
@@ -111,15 +111,15 @@
                     <!-- Input 1: Email atau Username -->
                     <div>
                         <x-label for="login" value="Email atau Username" />
-                        <x-input 
-                            type="text" 
-                            name="login" 
-                            id="login" 
-                            :value="old('login', old('email'))" 
+                        <x-input
+                            type="text"
+                            name="login"
+                            id="login"
+                            :value="old('login', old('email'))"
                             :error="$errors->has('login') || $errors->has('email')"
-                            required 
+                            required
                             autofocus
-                            placeholder="Masukkan email atau username" 
+                            placeholder="Masukkan email atau username"
                             aria-invalid="{{ ($errors->has('login') || $errors->has('email')) ? 'true' : 'false' }}"
                             aria-describedby="{{ ($errors->has('login') || $errors->has('email')) ? 'login-error' : '' }}"
                         />
@@ -134,20 +134,20 @@
                     <div>
                         <x-label for="password" value="Kata sandi" />
                         <div class="relative">
-                            <x-input 
-                                type="password" 
-                                name="password" 
-                                id="password" 
+                            <x-input
+                                type="password"
+                                name="password"
+                                id="password"
                                 :error="$errors->has('password')"
-                                required 
-                                placeholder="Masukkan kata sandi" 
+                                required
+                                placeholder="Masukkan kata sandi"
                                 class="pl-3.5 pr-10 sm:pl-4 sm:pr-11"
                                 aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}"
                                 aria-describedby="{{ $errors->has('password') ? 'password-error' : '' }}"
                             />
                             <!-- Eye Toggle Button -->
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 id="togglePassword"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1"
                                 aria-label="Tampilkan atau sembunyikan kata sandi"
@@ -169,10 +169,10 @@
                     <!-- Checkbox & Forgot Password Row -->
                     <div class="flex items-center justify-between pt-0.5">
                         <label class="inline-flex items-center cursor-pointer select-none">
-                            <input 
-                                type="checkbox" 
-                                name="remember" 
-                                id="remember" 
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                id="remember"
                                 class="w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon cursor-pointer transition"
                                 {{ old('remember') ? 'checked' : '' }}
                             >
@@ -184,7 +184,7 @@
                                 Lupa kata sandi?
                             </a>
                         @else
-                            <a href="#" class="text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover transition-colors">
+                            <a href="{{ route('password.request') }}" class="text-xs font-bold text-brand-maroon hover:text-brand-maroon-hover transition-colors">
                                 Lupa kata sandi?
                             </a>
                         @endif
@@ -214,7 +214,7 @@
                         Daftar akun
                     </a>
                 @else
-                    <a href="#" class="ml-1 text-brand-maroon font-bold hover:underline">
+                    <a href="{{ route('journal.about.contact') }}" class="ml-1 text-brand-maroon font-bold hover:underline">
                         Daftar akun
                     </a>
                 @endif
@@ -247,7 +247,7 @@
             togglePassword.addEventListener('click', function () {
                 const isPassword = passwordInput.getAttribute('type') === 'password';
                 passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-                
+
                 eyeIcon.classList.toggle('hidden', isPassword);
                 eyeOffIcon.classList.toggle('hidden', !isPassword);
             });

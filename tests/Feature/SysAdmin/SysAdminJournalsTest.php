@@ -19,6 +19,17 @@ class SysAdminJournalsTest extends TestCase
         parent::setUp();
 
         $this->seed(SysAdminSeeder::class);
+
+        $admin = User::where('email', 'fahri.azis@makassar.go.id')->firstOrFail();
+        $this->actingAs($admin);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_sysadmin_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/sysadmin/journals');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -88,7 +99,7 @@ class SysAdminJournalsTest extends TestCase
         $responseStore->assertSessionHas('status');
 
         // Ubah status jurnal
-        $responseStatus = $this->post('/sysadmin/journals/JOURNAL-01JARK-01/status', [
+        $responseStatus = $this->post('/sysadmin/journals/'.Journal::where('slug', 'jtiik-makassar')->firstOrFail()->id.'/status', [
             'status' => 'archived',
         ]);
         $responseStatus->assertRedirect(route('sysadmin.journals.index'));

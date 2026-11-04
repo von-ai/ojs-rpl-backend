@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\VerifyRegistrationEmail;
 use App\Models\User;
+use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -238,7 +239,9 @@ class RegistrationTest extends TestCase
 
     public function test_queue_failure_rolls_back_the_entire_registration(): void
     {
-        DB::statement('DROP TABLE jobs');
+        $queue = \Mockery::mock(Queue::class);
+        $queue->shouldReceive('push')->andThrow(new \RuntimeException('Simulated durable queue failure'));
+        \Illuminate\Support\Facades\Queue::partialMock()->shouldReceive('connection')->with('identity')->andReturn($queue);
         try {
             $this->post('/register', $this->payload());
         } catch (\Throwable) {

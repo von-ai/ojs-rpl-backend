@@ -13,7 +13,7 @@
     </nav>
 
     <!-- Header Halaman -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
             INFORMASI RESMI PENERBITAN
         </span>
@@ -27,10 +27,10 @@
 
     <!-- Main Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
+
         <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 space-y-8">
-            
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
+
             <x-journal.about-subnav />
 
             <!-- Seksi 1: Profil & Identitas Jurnal (Data Backend & ERD) -->
@@ -41,8 +41,8 @@
                     </svg>
                     <span>Profil dan Identitas Jurnal</span>
                 </h2>
-                
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     <strong>{{ $journal->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)' }}</strong> diterbitkan oleh {{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar' }} sebagai wadah ilmiah bagi para peneliti, akademisi, perekayasa, dan praktisi untuk mendiseminasikan naskah ilmiah orisinal yang berimplikasi langsung terhadap perumusan kebijakan pembangunan berkelanjutan dan ketahanan perkotaan.
                 </p>
 
@@ -89,7 +89,7 @@
                     <span>Fokus dan Ruang Lingkup (Focus and Scope)</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data (evidence-based policy) yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
                 </p>
 
@@ -160,7 +160,7 @@
                     <span>Frekuensi Penerbitan</span>
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                <p class="text-xs text-gray-600 leading-relaxed text-left">
                     {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat (double-blind peer-reviewed).' }}
                 </p>
             </section>

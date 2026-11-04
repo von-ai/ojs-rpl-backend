@@ -4,10 +4,49 @@ declare(strict_types=1);
 
 namespace Tests\Feature\LayoutEditor;
 
+use App\Models\User;
+use App\Models\UserRole;
+use Database\Seeders\LayoutEditorSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class LayoutEditorCatalogPageTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $layoutEditor;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->layoutEditor = User::firstOrCreate(
+            ['email' => 'rahmat.hidayat@brida.makassar.go.id'],
+            [
+                'username' => 'rahmat.hidayat',
+                'name' => 'Rahmat Hidayat, S.Kom.',
+                'full_name' => 'Rahmat Hidayat, S.Kom.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
+            'user_id' => $this->layoutEditor->id,
+            'role_code' => 'layout_editor',
+        ]);
+        $this->seed(LayoutEditorSeeder::class);
+        $this->actingAs($this->layoutEditor);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_layout_editor_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/layouteditor/submissions');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman daftar penugasan layout editor dapat diakses dengan UX yang simpel dan bersih.
      */
@@ -99,9 +138,9 @@ class LayoutEditorCatalogPageTest extends TestCase
         $responseSearch1->assertDontSee('SUB-2026-00108');
 
         // Pencarian dengan nama penulis
-        $responseSearch2 = $this->get('/layouteditor/submissions?q=Muhammad+Basri');
+        $responseSearch2 = $this->get('/layouteditor/submissions?q=Faisal+Syarif');
         $responseSearch2->assertStatus(200);
-        $responseSearch2->assertSee('SUB-2026-00107');
+        $responseSearch2->assertSee('SUB-2026-00111');
         $responseSearch2->assertDontSee('SUB-2026-00106');
 
         // Pencarian yang tidak menemukan hasil (Empty State)

@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Jobs\SendSecurityOutboxEmail;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +67,8 @@ class AuthenticationService
                 $user->failed_login_count = 0;
                 $user->last_failed_login_at = null;
                 if ($user->status === 'locked') {
-                    $user->status = 'active';
+                    // Legacy lock state needs an administrator decision; never reactivate implicitly.
+                    $user->status = 'inactive';
                 }
                 $user->version += 1;
                 $user->save();
@@ -87,7 +89,6 @@ class AuthenticationService
                 // 5 kegagalan berturut-turut mengunci akun 15 menit (ERD Aturan 01)
                 if ($user->failed_login_count >= 5) {
                     $user->locked_until = now()->addMinutes(15);
-                    $user->status = 'locked';
                     $user->version += 1;
                     $user->save();
 
@@ -112,6 +113,12 @@ class AuthenticationService
 
             if ($user->status !== 'active') {
                 return ['status' => 'inactive'];
+            }
+
+            if (Hash::needsRehash($user->password_hash)) {
+                $user->password_hash = Hash::make($password);
+                $user->version += 1;
+                $user->save();
             }
 
             // Login Berhasil: Reset counter kegagalan ke 0
@@ -175,8 +182,9 @@ class AuthenticationService
 
     protected function queueSecurityEmail(User $user): void
     {
+        $id = (string) Str::ulid();
         DB::table('outbox_messages')->insert([
-            'id' => (string) Str::ulid(),
+            'id' => $id,
             'type' => 'security.account_locked_email',
             'payload' => json_encode([
                 'user_id' => $user->id,
@@ -188,6 +196,7 @@ class AuthenticationService
             'status' => 'pending',
             'created_at' => now(),
         ]);
+        SendSecurityOutboxEmail::dispatch($id);
     }
 
     protected function recordAudit(string $userId, string $action, array $details, ?string $ip = null, ?string $requestId = null): void

@@ -19,6 +19,17 @@ class SysAdminUsersTest extends TestCase
         parent::setUp();
 
         $this->seed(SysAdminSeeder::class);
+
+        $admin = User::where('email', 'fahri.azis@makassar.go.id')->firstOrFail();
+        $this->actingAs($admin);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_sysadmin_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/sysadmin/users');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -86,14 +97,15 @@ class SysAdminUsersTest extends TestCase
     {
         // Jadikan SysAdmin
         $resAssign = $this->post('/sysadmin/users/assign-sysadmin', [
-            'user_id' => 'USER-01JARK-03',
+            'user_id' => User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail()->id,
         ]);
         $resAssign->assertRedirect(route('sysadmin.users.index'));
         $resAssign->assertSessionHas('status');
+        $this->assertTrue(User::where('email', 'rita.irmawaty@unhas.ac.id')->firstOrFail()->isSysAdmin());
 
         // Cabut SysAdmin
         $resRevoke = $this->post('/sysadmin/users/revoke-sysadmin', [
-            'user_id' => 'USER-01JARK-02',
+            'user_id' => User::where('email', 'ilham.kominfo@makassar.go.id')->firstOrFail()->id,
         ]);
         $resRevoke->assertRedirect(route('sysadmin.users.index'));
         $resRevoke->assertSessionHas('status');
@@ -102,8 +114,8 @@ class SysAdminUsersTest extends TestCase
         $resImport = $this->post('/sysadmin/users/import', [
             'journal_id' => 'JOURNAL-01JARK-01',
         ]);
-        $resImport->assertRedirect(route('sysadmin.users.index'));
-        $resImport->assertSessionHas('status');
+        $resImport->assertSessionHasErrors(['file', 'journal_id']);
+        $resImport->assertSessionMissing('status');
     }
 
     /**

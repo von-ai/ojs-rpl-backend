@@ -12,8 +12,11 @@ use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
+use App\Services\Reviewer\ReviewerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ReviewerWorkflowTest extends TestCase
@@ -67,6 +70,18 @@ class ReviewerWorkflowTest extends TestCase
             'email' => 'hendra.rev@itb.ac.id',
         ]);
 
+        UserRole::create([
+            'user_id' => $this->reviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->otherReviewer->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
         $this->submission = Submission::create([
             'submission_number' => 'SUB-2026-REV-001',
             'journal_id' => $this->journal->id,
@@ -81,6 +96,7 @@ class ReviewerWorkflowTest extends TestCase
             'submission_id' => $this->submission->id,
             'round' => 1,
             'status' => 'active',
+            'rubric_snapshot' => app(ReviewerService::class)->getDefaultRubricCriteria(),
             'reviewer_title' => 'Evaluasi Partisipasi Publik dalam Perencanaan Tata Ruang Pesisir Makassar',
             'reviewer_abstract' => 'Penelitian ini menganalisis efektivitas pelibatan masyarakat pesisir dalam perumusan kebijakan zonasi.',
             'minimum_completed_reviews' => 2,
@@ -359,8 +375,10 @@ class ReviewerWorkflowTest extends TestCase
 
         $this->reviewRound->update([
             'anonymized_file_id' => $file->id,
+            'anonymized_checksum' => $file->checksum_sha256,
         ]);
 
+        Storage::disk('local')->put($file->storage_path, 'dummy content');
         // 1. Saat status masih 'invited', unduh berkas ditolak (guard ERD baris 1571)
         $invitedResponse = $this->actingAs($this->reviewer)
             ->get(route('reviewer.files.download', [

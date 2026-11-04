@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
-use App\Models\FileEntry;
+use App\Models\Galley;
+use App\Models\LayoutAssignment;
 use App\Models\Submission;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 class LayoutEditorDetailViewModel
 {
     private string $submissionId;
 
-    public function __construct(string $submissionId = 'SUB-2026-00106')
+    public function __construct(string $submissionId)
     {
         $this->submissionId = $submissionId;
     }
@@ -22,7 +24,7 @@ class LayoutEditorDetailViewModel
      * Mengonsumsi data relasi layout_assignments, galleys, proof_assignments,
      * proofreading_notes, galley_approvals, dan production_escalations.
      *
-     * @return array{
+     * @return ?array{
      *     id: string,
      *     number: string,
      *     assignment_code: string,
@@ -114,24 +116,9 @@ class LayoutEditorDetailViewModel
      *     }>
      * }
      */
-    public function submission(): array
+    public function submission(): ?array
     {
-        $fromDb = $this->querySubmission();
-        if ($fromDb !== null) {
-            return $fromDb;
-        }
-
-        $dataset = $this->registry();
-
-        if (isset($dataset[$this->submissionId])) {
-            return $dataset[$this->submissionId];
-        }
-
-        // Fallback dinamis jika ID tidak ditemukan di simulasi dataset
-        return array_merge($dataset['SUB-2026-00106'], [
-            'id' => $this->submissionId,
-            'number' => $this->submissionId,
-        ]);
+        return $this->querySubmission();
     }
 
     private function querySubmission(): ?array
@@ -148,7 +135,7 @@ class LayoutEditorDetailViewModel
                 'galleys.proofAssignments.notes',
                 'galleys.proofAssignments.proofreader',
                 'galleys.approvals',
-                'layoutAssignments',
+                'layoutAssignments.assignedBy',
                 'escalations',
             ])->where('submission_number', $this->submissionId)
                 ->orWhere('id', $this->submissionId)
@@ -166,16 +153,13 @@ class LayoutEditorDetailViewModel
 
     private function formatSubmissionFromDb(Submission $sub): array
     {
-        $registry = $this->registry();
-        $fallback = $registry[$sub->submission_number] ?? $registry['SUB-2026-00106'];
-
         $corresp = $sub->contributors->firstWhere('is_corresponding', true) ?? $sub->contributors->first();
-        $authorName = $corresp?->full_name ?? $corresp?->given_name ?? $fallback['corresponding_author']['name'];
-        $authorEmail = $corresp?->email ?? $fallback['corresponding_author']['email'];
-        $authorAffil = $corresp?->affiliation ?? $fallback['corresponding_author']['affiliation'];
+        $authorName = $corresp?->full_name ?? $corresp?->given_name ?? 'Dr. Andi Muhammad Ilyas';
+        $authorEmail = $corresp?->email ?? 'andi.ilyas@unhas.ac.id';
+        $authorAffil = $corresp?->affiliation ?? 'Universitas Hasanuddin';
 
         $assignment = $sub->layoutAssignments->firstWhere('revoked_at', null) ?? $sub->layoutAssignments->last();
-        $assignmentCode = $assignment ? ('#LE-'.strtoupper(substr($assignment->id, 0, 10))) : $fallback['assignment_code'];
+        $assignmentCode = $assignment ? ('#LE-'.strtoupper(substr($assignment->id, 0, 10))) : ('#LE-'.strtoupper(substr(hash('sha256', $sub->id), 0, 10)));
 
         $galleys = $sub->galleys->sortByDesc('version');
         $hasGalleys = $galleys->isNotEmpty();
@@ -194,6 +178,10 @@ class LayoutEditorDetailViewModel
         $galleysList = [];
         if ($hasGalleys) {
             $galleysList = $galleys->map(function ($g) use ($stageLabels, $stageBadges) {
+                $isSuperseded = $g->status === 'superseded';
+                $stageLabel = $isSuperseded ? 'Tergantikan (Superseded)' : ($stageLabels[$g->stage] ?? ucfirst($g->stage));
+                $stageBadge = $isSuperseded ? 'bg-gray-100 text-gray-600 border-gray-200' : ($stageBadges[$g->stage] ?? 'bg-gray-100 text-gray-700 border-gray-200');
+
                 return [
                     'id' => $g->id,
                     'version' => (int) $g->version,
@@ -203,8 +191,8 @@ class LayoutEditorDetailViewModel
                     'size_formatted' => $g->file ? number_format($g->file->byte_size / 1048576, 2).' MB' : '1.35 MB',
                     'checksum_sha256' => $g->checksum_sha256,
                     'stage' => $g->stage,
-                    'stage_label' => $stageLabels[$g->stage] ?? ucfirst($g->stage),
-                    'stage_badge_class' => $stageBadges[$g->stage] ?? 'bg-gray-100 text-gray-700 border-gray-200',
+                    'stage_label' => $stageLabel,
+                    'stage_badge_class' => $stageBadge,
                     'status' => $g->status === 'active' ? 'active' : 'superseded',
                     'is_active' => $g->status === 'active',
                     'uploaded_at' => $g->created_at ? $g->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
@@ -245,14 +233,19 @@ class LayoutEditorDetailViewModel
                     'resolved_at' => $n->resolved_at ? $n->resolved_at->translatedFormat('d M Y H:i').' WITA' : null,
                 ];
             })->values()->all();
-        } elseif (! empty($fallback['proofreading']['notes'])) {
-            $notesList = $fallback['proofreading']['notes'];
-            $unresolvedCount = count(array_filter($notesList, fn ($n) => ! $n['resolved']));
         }
 
         // Approvals
-        $authorSignoff = $fallback['approval']['author_signoff'];
-        $editorFinal = $fallback['approval']['editor_final'];
+        $authorSignoff = [
+            'approved' => false,
+            'approved_at' => null,
+            'notes' => null,
+        ];
+        $editorFinal = [
+            'approved' => false,
+            'approved_at' => null,
+            'ready_for_publication' => false,
+        ];
 
         foreach ($galleys as $g) {
             $authApp = $g->approvals->where('stage', 'author_signoff')->whereNull('invalidated_at')->last();
@@ -274,20 +267,17 @@ class LayoutEditorDetailViewModel
         }
 
         // Escalation
-        $escalation = $fallback['escalation'];
         $activeEsc = $sub->escalations->whereIn('status', ['open', 'investigating'])->last();
-        if ($activeEsc) {
-            $escalation = [
-                'has_active' => true,
-                'ticket_id' => 'ESC-2026-'.strtoupper(substr($activeEsc->id, 0, 4)),
-                'reason' => $activeEsc->reason,
-                'status' => $activeEsc->status,
-                'status_label' => 'Menunggu Arahan Section Editor',
-                'resolution' => $activeEsc->resolution,
-                'resolved_at' => null,
-                'created_at' => $activeEsc->created_at ? $activeEsc->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
-            ];
-        }
+        $escalation = [
+            'has_active' => (bool) $activeEsc,
+            'ticket_id' => $activeEsc ? (str_starts_with((string) $activeEsc->id, 'ESC-') ? $activeEsc->id : 'ESC-2026-'.strtoupper(substr((string) $activeEsc->id, -4))) : null,
+            'reason' => $activeEsc?->reason,
+            'status' => $activeEsc?->status,
+            'status_label' => $activeEsc ? 'Menunggu Arahan Section Editor' : null,
+            'resolution' => $activeEsc?->resolution,
+            'resolved_at' => null,
+            'created_at' => $activeEsc?->created_at ? $activeEsc->created_at->translatedFormat('d M Y H:i').' WITA' : null,
+        ];
 
         // Status calculation
         $isCompleted = $editorFinal['ready_for_publication'];
@@ -295,6 +285,10 @@ class LayoutEditorDetailViewModel
             $status = 'ready';
             $statusLabel = 'Galai Disetujui EIC';
             $statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+        } elseif ($activeEsc) {
+            $status = 'escalated';
+            $statusLabel = 'Dalam Eskalasi Tata Letak';
+            $statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-200';
         } elseif ($unresolvedCount > 0 || ($allNotes->isNotEmpty() && $unresolvedCount === 0)) {
             $status = 'proofreading';
             $statusLabel = $unresolvedCount > 0 ? "{$unresolvedCount} Catatan Perlu Revisi" : 'Koreksi Selesai Diterapkan';
@@ -311,34 +305,15 @@ class LayoutEditorDetailViewModel
 
         // Resolusi berkas naskah acuan copyediting final
         $cleanNumber = str_replace('-', '', (string) ($sub->submission_number ?? $this->submissionId));
-        $copyeditFile = null;
-
-        if (class_exists(FileEntry::class) && Schema::hasTable('files')) {
-            $copyeditFile = FileEntry::where('storage_path', 'like', "submissions/{$sub->id}/%Copyedit%")
-                ->orWhere(function ($q) use ($sub, $cleanNumber) {
-                    $q->where('storage_path', 'like', "%{$sub->id}%.docx")
-                        ->orWhere('original_name', 'like', "%{$cleanNumber}%Copyedit%")
-                        ->orWhere('original_name', 'like', "%{$sub->submission_number}%Copyedit%");
-                })
-                ->latest()
-                ->first();
-        }
-
-        if ($copyeditFile) {
-            $copyeditFinalFile = [
-                'id' => $copyeditFile->id,
-                'name' => $copyeditFile->original_name,
-                'size_formatted' => number_format($copyeditFile->byte_size / 1048576, 2).' MB',
-                'checksum_sha256' => $copyeditFile->checksum_sha256,
-                'download_url' => route('layouteditor.files.download', $copyeditFile->id),
-                'notes_from_copyeditor' => $fallback['copyedit_final_file']['notes_from_copyeditor'] ?? 'Naskah telah selesai disunting dan diserahterimakan untuk penataan letak.',
-            ];
-        } else {
-            $fileTargetId = $fallback['copyedit_final_file']['id'] ?? ($sub->submission_number ?? $this->submissionId);
-            $copyeditFinalFile = array_merge($fallback['copyedit_final_file'], [
-                'download_url' => route('layouteditor.files.download', $fileTargetId),
-            ]);
-        }
+        $copyeditFile = $sub->finalCopyeditFile();
+        $copyeditFinalFile = [
+            'id' => $copyeditFile?->id,
+            'name' => $copyeditFile?->original_name ?? 'Naskah final belum tersedia',
+            'size_formatted' => $copyeditFile ? number_format($copyeditFile->byte_size / 1048576, 2).' MB' : '—',
+            'checksum_sha256' => $copyeditFile?->checksum_sha256 ?? '',
+            'download_url' => $copyeditFile ? route('layouteditor.files.download', $copyeditFile->id) : null,
+            'notes_from_copyeditor' => $copyeditFile ? 'Berkas final yang terhubung pada naskah ini.' : 'Menunggu serah terima copyediting.',
+        ];
 
         $proofAssignments = $galleys->flatMap->proofAssignments;
         $hasProofAssignment = $proofAssignments->isNotEmpty();
@@ -359,18 +334,18 @@ class LayoutEditorDetailViewModel
             'id' => $sub->submission_number ?? $this->submissionId,
             'number' => $sub->submission_number ?? $this->submissionId,
             'assignment_code' => $assignmentCode,
-            'title' => $sub->title ?? $fallback['title'],
-            'section_title' => $sub->section?->name ?? $fallback['section_title'],
+            'title' => $sub->title,
+            'section_title' => $sub->section?->title ?? $sub->section?->name ?? 'Inovasi Daerah & Kebijakan Publik',
             'corresponding_author' => [
                 'name' => $authorName,
                 'email' => $authorEmail,
                 'affiliation' => $authorAffil,
             ],
-            'section_editor' => $fallback['section_editor'],
-            'proofreader' => $fallback['proofreader'],
-            'assigned_at' => $assignment?->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : $fallback['assigned_at'],
-            'due_at' => $assignment?->due_at ? $assignment->due_at->translatedFormat('d M Y H:i').' WITA' : $fallback['due_at'],
-            'is_urgent' => $assignment?->due_at ? ($assignment->due_at->isPast() || $assignment->due_at->diffInDays(now()) <= 2) : $fallback['is_urgent'],
+            'section_editor' => 'Prof. Hamka, Ph.D.',
+            'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
+            'assigned_at' => $assignment?->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : ($sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i').' WITA' : '-'),
+            'due_at' => $assignment?->due_at ? $assignment->due_at->translatedFormat('d M Y H:i').' WITA' : '-',
+            'is_urgent' => $assignment?->due_at ? ($assignment->due_at->isPast() || $assignment->due_at->diffInDays(now()) <= 2) : false,
             'is_completed' => $isCompleted,
             'status' => $status,
             'status_label' => $statusLabel,
@@ -379,7 +354,7 @@ class LayoutEditorDetailViewModel
             'galleys' => $galleysList,
             'proofreading' => [
                 'has_assignment' => $hasProofAssignment,
-                'proofreader_name' => $fallback['proofreading']['proofreader_name'] ?? 'Dra. Sitti Aminah, M.Hum.',
+                'proofreader_name' => $proofAssignments->first()?->proofreader?->name ?? 'Dra. Sitti Aminah, M.Hum.',
                 'status' => $proofStatus,
                 'status_label' => $proofStatusLabel,
                 'total_notes_count' => count($notesList),
@@ -399,457 +374,69 @@ class LayoutEditorDetailViewModel
                     && ! $editorFinal['ready_for_publication'],
             ],
             'escalation' => $escalation,
-            'activity_timeline' => $fallback['activity_timeline'],
+            'activity_timeline' => $this->buildActivityTimeline($sub, $assignment, $galleys, $activeEsc, $editorFinal),
         ];
     }
 
     /**
-     * Kumpulan dataset skenario realistis ruang kerja layout editor.
+     * Menyusun jejak aktivitas produksi tata letak secara dinamis dari entitas database riil.
      *
-     * @return array<string, array<string, mixed>>
+     * @param  Collection<int, Galley>  $galleys
+     * @param  array{approved: bool, approved_at: ?string, ready_for_publication: bool}  $editorFinal
+     * @return array<int, array{title: string, actor: string, date: string, description: string, badge_class: string}>
      */
-    private function registry(): array
+    private function buildActivityTimeline(Submission $sub, ?LayoutAssignment $assignment, $galleys, $activeEsc, array $editorFinal): array
     {
-        return [
-            // 1. Skenario Awal: Baru diserahkan dari Copy Editor, belum ada berkas Galai
-            'SUB-2026-00106' => [
-                'id' => 'SUB-2026-00106',
-                'number' => 'SUB-2026-00106',
-                'assignment_code' => '#LE-01JARK948X',
-                'title' => 'Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time pada Kawasan Industri Biringkanaya Makassar',
-                'section_title' => 'Inovasi Daerah & Kebijakan Publik',
-                'corresponding_author' => [
-                    'name' => 'Dr. Nurfadillah Bahar, M.Kes.',
-                    'email' => 'nurfadillah.bahar@unhas.ac.id',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'assigned_at' => '24 Okt 2026 15:30 WITA',
-                'due_at' => '02 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_completed' => false,
-                'status' => 'drafting',
-                'status_label' => 'Perlu Draf Galai PDF',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'copyedit_final_file' => [
-                    'id' => 'FILE-CE-FINAL-00106',
-                    'name' => 'SUB2026-00106_Copyedit_Final_Approved.docx',
-                    'size_formatted' => '2.05 MB',
-                    'checksum_sha256' => 'a93b48f95c80dbb5a452ef32dc0e6e7890efcd12f451486791b40285a210b4f8',
-                    'download_url' => route('layouteditor.files.download', 'SUB-2026-00106'),
-                    'notes_from_copyeditor' => 'Naskah telah selesai disunting sesuai EYD Edisi V dan format APA 7th Edition. Seluruh gambar beresolusi tinggi (300 DPI) telah tersemat rapi.',
-                ],
-                'galleys' => [],
-                'proofreading' => [
-                    'has_assignment' => false,
-                    'proofreader_name' => 'Dra. Sitti Aminah, M.Hum.',
-                    'status' => 'waiting_galley',
-                    'status_label' => 'Menunggu Draf Galai Pertama',
-                    'total_notes_count' => 0,
-                    'unresolved_count' => 0,
-                    'is_completed' => false,
-                    'can_request_proofread' => false,
-                    'notes' => [],
-                ],
-                'approval' => [
-                    'author_signoff' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'notes' => null,
-                    ],
-                    'editor_final' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'ready_for_publication' => false,
-                    ],
-                    'can_request_eic' => false,
-                ],
-                'escalation' => [
-                    'has_active' => false,
-                    'ticket_id' => null,
-                    'reason' => null,
-                    'status' => null,
-                    'status_label' => null,
-                    'resolution' => null,
-                    'resolved_at' => null,
-                    'created_at' => null,
-                ],
-                'activity_timeline' => [
-                    [
-                        'title' => 'Naskah Diterima dari Copyeditor',
-                        'actor' => 'Sistem OJS (Serah Terima Copyeditor)',
-                        'date' => '24 Okt 2026 15:30 WITA',
-                        'description' => 'Naskah final copyediting selesai disetujui penulis dan dialihkan ke tahap produksi tata letak.',
-                        'badge_class' => 'bg-emerald-500',
-                    ],
-                    [
-                        'title' => 'Penugasan Layout Editor',
-                        'actor' => 'Prof. Hamka, Ph.D. (Section Editor)',
-                        'date' => '24 Okt 2026 15:35 WITA',
-                        'description' => 'Layout editor ditugaskan untuk menyusun berkas galai PDF 2-kolom standar jurnal BRIDA.',
-                        'badge_class' => 'bg-brand-maroon',
-                    ],
-                ],
-            ],
+        $timeline = [];
 
-            // 2. Skenario Proofreading Aktif: Galai v1 terunggah, ada catatan koreksi
-            'SUB-2026-00107' => [
-                'id' => 'SUB-2026-00107',
-                'number' => 'SUB-2026-00107',
-                'assignment_code' => '#LE-01JARK949Y',
-                'title' => 'Strategi Transformasi Digital Birokrasi Pelayanan Publik Terpadu Pemerintah Daerah Kota Makassar',
-                'section_title' => 'Sosial Humaniora & Tata Kelola',
-                'corresponding_author' => [
-                    'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
-                    'email' => 'm.basri@poliupg.ac.id',
-                    'affiliation' => 'Politeknik Negeri Ujung Pandang',
-                ],
-                'section_editor' => 'Dr. Hj. St. Rohani, M.Si.',
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'assigned_at' => '20 Okt 2026 09:15 WITA',
-                'due_at' => '28 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'is_completed' => false,
-                'status' => 'proofreading',
-                'status_label' => '2 Catatan Proofreading',
-                'status_badge_class' => 'bg-blue-50 text-blue-800 border-blue-200',
-                'copyedit_final_file' => [
-                    'id' => 'FILE-CE-FINAL-00107',
-                    'name' => 'SUB2026-00107_Copyedit_Final_Approved.docx',
-                    'size_formatted' => '1.88 MB',
-                    'checksum_sha256' => 'b18e7623a8e321cb821389bc714f3319028aefc2918bb1293a1098471bce43a1',
-                    'download_url' => route('layouteditor.files.download', 'SUB-2026-00107'),
-                    'notes_from_copyeditor' => 'Gaya sitasi telah distandarisasi.',
-                ],
-                'galleys' => [
-                    [
-                        'id' => 'GALLEY-00107-V1',
-                        'version' => 1,
-                        'label' => 'PDF Full Text (Draf v1)',
-                        'format' => 'pdf',
-                        'file_name' => 'SUB2026-00107_Galley_v1.pdf',
-                        'size_formatted' => '2.45 MB',
-                        'checksum_sha256' => '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b',
-                        'stage' => 'proofreading',
-                        'stage_label' => 'Tahap Proofreading',
-                        'stage_badge_class' => 'bg-blue-50 text-blue-700 border-blue-200',
-                        'status' => 'active',
-                        'is_active' => true,
-                        'uploaded_at' => '22 Okt 2026 11:20 WITA',
-                        'download_url' => route('layouteditor.galleys.download', 'GALLEY-00107-V1'),
-                    ],
-                ],
-                'proofreading' => [
-                    'has_assignment' => true,
-                    'proofreader_name' => 'Dra. Sitti Aminah, M.Hum.',
-                    'status' => 'notes_received',
-                    'status_label' => 'Catatan Koreksi Diterima',
-                    'total_notes_count' => 2,
-                    'unresolved_count' => 2,
-                    'can_request_proofread' => false,
-                    'notes' => [
-                        [
-                            'id' => 'NOTE-01JARK-01',
-                            'page' => 4,
-                            'category' => 'layout',
-                            'category_label' => 'Tata Letak / Tabel',
-                            'severity' => 'major',
-                            'severity_badge' => 'bg-purple-50 text-purple-800 border-purple-200',
-                            'description' => 'Tabel 2 (Matriks Evaluasi Fitur Aplikasi Lorong) terpotong secara canggung di antara kolom halaman 4 dan 5. Harap dibuat selebar 2-kolom di bagian atas halaman 5.',
-                            'resolved' => false,
-                            'resolution' => null,
-                            'resolved_at' => null,
-                        ],
-                        [
-                            'id' => 'NOTE-01JARK-02',
-                            'page' => 8,
-                            'category' => 'typo',
-                            'category_label' => 'Tipografi',
-                            'severity' => 'minor',
-                            'severity_badge' => 'bg-blue-50 text-blue-800 border-blue-200',
-                            'description' => 'Daftar Pustaka ke-12: nama jurnal "Jurnal Administrasi Publik" belum dicetak miring (italic).',
-                            'resolved' => false,
-                            'resolution' => null,
-                            'resolved_at' => null,
-                        ],
-                    ],
-                ],
-                'approval' => [
-                    'author_signoff' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'notes' => null,
-                    ],
-                    'editor_final' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'ready_for_publication' => false,
-                    ],
-                ],
-                'escalation' => [
-                    'has_active' => false,
-                    'ticket_id' => null,
-                    'reason' => null,
-                    'status' => null,
-                    'status_label' => null,
-                    'resolution' => null,
-                    'resolved_at' => null,
-                    'created_at' => null,
-                ],
-                'activity_timeline' => [
-                    [
-                        'title' => 'Catatan Proofreading Diterbitkan',
-                        'actor' => 'Dra. Sitti Aminah, M.Hum. (Proofreader)',
-                        'date' => '23 Okt 2026 16:45 WITA',
-                        'description' => 'Proofreader telah memasukkan 2 catatan koreksi tata letak dan tipografi pada berkas Galai v1.',
-                        'badge_class' => 'bg-amber-500',
-                    ],
-                    [
-                        'title' => 'Draf Galai v1 Diunggah',
-                        'actor' => 'Rahmat Hidayat, S.Kom. (Layout Editor)',
-                        'date' => '22 Okt 2026 11:20 WITA',
-                        'description' => 'Berkas draf awal galai PDF selesai disusun dan diteruskan ke putaran proofreading.',
-                        'badge_class' => 'bg-blue-500',
-                    ],
-                ],
-            ],
+        if ($editorFinal['approved']) {
+            $timeline[] = [
+                'title' => 'Galai Disetujui Editor in Chief (EIC)',
+                'actor' => 'Editor in Chief (EIC)',
+                'date' => $editorFinal['approved_at'] ?? now()->translatedFormat('d M Y H:i').' WITA',
+                'description' => 'Persetujuan akhir penerbitan galai telah diberikan.',
+                'badge_class' => 'bg-emerald-500',
+            ];
+        }
 
-            // 3. Skenario Eskalasi Kendala Tata Letak Aktif
-            'SUB-2026-00108' => [
-                'id' => 'SUB-2026-00108',
-                'number' => 'SUB-2026-00108',
-                'assignment_code' => '#LE-01JARK950Z',
-                'title' => 'Analisis Makroekonomi dan Dampak Fluktuasi Nilai Tukar terhadap APBD Kota Makassar Periode 2020-2024',
-                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
-                    'email' => 'faisal.syarif@eng.unhas.ac.id',
-                    'affiliation' => 'Fakultas Teknik Universitas Hasanuddin',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'proofreader' => 'Drs. H. Anwar Kasim, M.Pd.',
-                'assigned_at' => '19 Okt 2026 14:00 WITA',
-                'due_at' => '31 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'is_completed' => false,
-                'status' => 'escalated',
-                'status_label' => 'Dalam Eskalasi Tata Letak',
-                'status_badge_class' => 'bg-purple-50 text-purple-800 border-purple-200',
-                'copyedit_final_file' => [
-                    'id' => 'FILE-CE-FINAL-00108',
-                    'name' => 'SUB2026-00108_Copyedit_Final_Approved.docx',
-                    'size_formatted' => '3.40 MB',
-                    'checksum_sha256' => 'c8914bca82103810f928130491823bcdae123984124971249817298371928471',
-                    'download_url' => route('layouteditor.files.download', 'SUB-2026-00108'),
-                    'notes_from_copyeditor' => 'Peta batimetri resolusi tinggi disertakan.',
-                ],
-                'galleys' => [
-                    [
-                        'id' => 'GALLEY-00108-V1',
-                        'version' => 1,
-                        'label' => 'PDF Full Text (Draf v1)',
-                        'format' => 'pdf',
-                        'file_name' => 'SUB2026-00108_Galley_v1.pdf',
-                        'size_formatted' => '3.80 MB',
-                        'checksum_sha256' => '7182937192847192837192837192837192837192837192837192837192837192',
-                        'stage' => 'draft',
-                        'stage_label' => 'Draf Layout',
-                        'stage_badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
-                        'status' => 'active',
-                        'is_active' => true,
-                        'uploaded_at' => '21 Okt 2026 10:10 WITA',
-                        'download_url' => route('layouteditor.galleys.download', 'GALLEY-00108-V1'),
-                    ],
-                ],
-                'proofreading' => [
-                    'has_assignment' => true,
-                    'proofreader_name' => 'Drs. H. Anwar Kasim, M.Pd.',
-                    'status' => 'waiting_review',
-                    'status_label' => 'Tertahan Eskalasi Redaksi',
-                    'total_notes_count' => 1,
-                    'unresolved_count' => 1,
-                    'can_request_proofread' => false,
-                    'notes' => [
-                        [
-                            'id' => 'NOTE-01JARK-03',
-                            'page' => 6,
-                            'category' => 'layout',
-                            'category_label' => 'Format Gambar / Grafik',
-                            'severity' => 'critical',
-                            'severity_badge' => 'bg-red-50 text-red-800 border-red-200',
-                            'description' => 'Gambar peta batimetri Pantai Losari berorientasi lanskap melebar, koordinat UTM tidak terbaca jika dipaksa ke format potret 2-kolom.',
-                            'resolved' => false,
-                            'resolution' => null,
-                            'resolved_at' => null,
-                        ],
-                    ],
-                ],
-                'approval' => [
-                    'author_signoff' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'notes' => null,
-                    ],
-                    'editor_final' => [
-                        'approved' => false,
-                        'approved_at' => null,
-                        'ready_for_publication' => false,
-                    ],
-                ],
-                'escalation' => [
-                    'has_active' => true,
-                    'ticket_id' => 'ESC-2026-0071',
-                    'reason' => 'Gambar peta kontur batimetri pantai berdimensi lanskap sangat lebar. Memohon arahan Section Editor apakah diperkenankan menyisipkan 1 halaman lampiran khusus berorientasi lanskap dalam terbitan berkala.',
-                    'status' => 'in_review',
-                    'status_label' => 'Menunggu Arahan Section Editor',
-                    'resolution' => null,
-                    'resolved_at' => null,
-                    'created_at' => '23 Okt 2026 14:00 WITA',
-                ],
-                'activity_timeline' => [
-                    [
-                        'title' => 'Tiket Eskalasi Tata Letak Diterbitkan',
-                        'actor' => 'Rahmat Hidayat, S.Kom. (Layout Editor)',
-                        'date' => '23 Okt 2026 14:00 WITA',
-                        'description' => 'Tiket ESC-2026-0071 diajukan ke Section Editor terkait halaman lanskap khusus peta batimetri.',
-                        'badge_class' => 'bg-purple-600',
-                    ],
-                ],
-            ],
+        if ($activeEsc) {
+            $timeline[] = [
+                'title' => 'Tiket Eskalasi Tata Letak Dibuka',
+                'actor' => 'Layout Editor',
+                'date' => $activeEsc->created_at ? $activeEsc->created_at->translatedFormat('d M Y H:i').' WITA' : 'Baru saja',
+                'description' => $activeEsc->reason ?? 'Kendala format tata letak dilaporkan ke Section Editor.',
+                'badge_class' => 'bg-rose-500',
+            ];
+        }
 
-            // 4. Skenario Selesai & Disetujui Siap Terbit
-            'SUB-2026-00109' => [
-                'id' => 'SUB-2026-00109',
-                'number' => 'SUB-2026-00109',
-                'assignment_code' => '#LE-01JARK951A',
-                'title' => 'Observasi Awal Distribusi Mikroplastik pada Sedimen Muara Sungai Jeneberang Makassar',
-                'section_title' => 'Ekonomi Pembangunan & Pemberdayaan Masyarakat',
-                'corresponding_author' => [
-                    'name' => 'Hj. Fatmawati, S.E., M.Si.',
-                    'email' => 'fatmawati@unifa.ac.id',
-                    'affiliation' => 'Universitas Fajar Makassar',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'proofreader' => 'Dra. Sitti Aminah, M.Hum.',
-                'assigned_at' => '15 Okt 2026 08:30 WITA',
-                'due_at' => '05 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_completed' => true,
-                'status' => 'ready',
-                'status_label' => 'Galai Disetujui EIC (Siap Terbit)',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'copyedit_final_file' => [
-                    'id' => 'FILE-CE-FINAL-00109',
-                    'name' => 'SUB2026-00109_Copyedit_Final_Approved.docx',
-                    'size_formatted' => '1.75 MB',
-                    'checksum_sha256' => 'd819238471928471928371928471928471928471928471928471928471928471',
-                    'download_url' => route('layouteditor.files.download', 'SUB-2026-00109'),
-                    'notes_from_copyeditor' => 'Seluruh kutipan telah diverifikasi.',
-                ],
-                'galleys' => [
-                    [
-                        'id' => 'GALLEY-00109-V2',
-                        'version' => 2,
-                        'label' => 'PDF Full Text (v2 Final Terbit)',
-                        'format' => 'pdf',
-                        'file_name' => 'SUB2026-00109_Galley_v2_Final.pdf',
-                        'size_formatted' => '2.10 MB',
-                        'checksum_sha256' => '6543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba98',
-                        'stage' => 'approved',
-                        'stage_label' => 'Disetujui EIC',
-                        'stage_badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                        'status' => 'active',
-                        'is_active' => true,
-                        'uploaded_at' => '23 Okt 2026 10:15 WITA',
-                        'download_url' => route('layouteditor.galleys.download', 'GALLEY-00109-V2'),
-                    ],
-                    [
-                        'id' => 'GALLEY-00109-V1',
-                        'version' => 1,
-                        'label' => 'PDF Full Text (v1 Draf Awal)',
-                        'format' => 'pdf',
-                        'file_name' => 'SUB2026-00109_Galley_v1.pdf',
-                        'size_formatted' => '2.08 MB',
-                        'checksum_sha256' => '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-                        'stage' => 'draft',
-                        'stage_label' => 'Tergantikan (Superseded)',
-                        'stage_badge_class' => 'bg-gray-100 text-gray-600 border-gray-200',
-                        'status' => 'superseded',
-                        'is_active' => false,
-                        'uploaded_at' => '18 Okt 2026 14:20 WITA',
-                        'download_url' => route('layouteditor.galleys.download', 'GALLEY-00109-V1'),
-                    ],
-                ],
-                'proofreading' => [
-                    'has_assignment' => true,
-                    'proofreader_name' => 'Dra. Sitti Aminah, M.Hum.',
-                    'status' => 'all_resolved',
-                    'status_label' => 'Semua Catatan Selesai',
-                    'total_notes_count' => 1,
-                    'unresolved_count' => 0,
-                    'can_request_proofread' => false,
-                    'notes' => [
-                        [
-                            'id' => 'NOTE-01JARK-04',
-                            'page' => 2,
-                            'category' => 'metadata',
-                            'category_label' => 'Metadata / DOI',
-                            'severity' => 'minor',
-                            'severity_badge' => 'bg-blue-50 text-blue-800 border-blue-200',
-                            'description' => 'Penulisan DOI pada header halaman ganjil belum sinkron dengan tahun terbit 2026.',
-                            'resolved' => true,
-                            'resolution' => 'Header running DOI telah disesuaikan menjadi 10.61234/sirida.v6i2.2026 pada Galley v2.',
-                            'resolved_at' => '23 Okt 2026 10:00 WITA',
-                        ],
-                    ],
-                ],
-                'approval' => [
-                    'author_signoff' => [
-                        'approved' => true,
-                        'approved_at' => '23 Okt 2026 14:20 WITA',
-                        'notes' => 'Tata letak sudah sangat rapi dan sesuai dengan format publikasi kami.',
-                    ],
-                    'editor_final' => [
-                        'approved' => true,
-                        'approved_at' => '24 Okt 2026 09:30 WITA',
-                        'ready_for_publication' => true,
-                    ],
-                ],
-                'escalation' => [
-                    'has_active' => false,
-                    'ticket_id' => null,
-                    'reason' => null,
-                    'status' => null,
-                    'status_label' => null,
-                    'resolution' => null,
-                    'resolved_at' => null,
-                    'created_at' => null,
-                ],
-                'activity_timeline' => [
-                    [
-                        'title' => 'Persetujuan Final Editor in Chief',
-                        'actor' => 'Prof. Dr. Ir. H. Nasaruddin, M.T. (EIC)',
-                        'date' => '24 Okt 2026 09:30 WITA',
-                        'description' => 'Galai PDF v2 disetujui untuk dimasukkan dalam jadwal penerbitan Volume 6 Nomor 2 Tahun 2026.',
-                        'badge_class' => 'bg-emerald-600',
-                    ],
-                    [
-                        'title' => 'Persetujuan Akhir Penulis (Sign-off)',
-                        'actor' => 'Hj. Fatmawati, S.E., M.Si. (Penulis)',
-                        'date' => '23 Okt 2026 14:20 WITA',
-                        'description' => 'Penulis menyetujui galai PDF v2 tanpa catatan revisi tambahan.',
-                        'badge_class' => 'bg-blue-600',
-                    ],
-                    [
-                        'title' => 'Galai v2 Final Diunggah',
-                        'actor' => 'Rahmat Hidayat, S.Kom. (Layout Editor)',
-                        'date' => '23 Okt 2026 10:15 WITA',
-                        'description' => 'Galai versi 2 diterbitkan menggantikan versi 1 setelah seluruh catatan proofreading diselesaikan.',
-                        'badge_class' => 'bg-brand-maroon',
-                    ],
-                ],
-            ],
+        foreach ($galleys as $galley) {
+            $timeline[] = [
+                'title' => "Draf Galai Diunggah (v{$galley->version})",
+                'actor' => 'Layout Editor',
+                'date' => $galley->created_at ? $galley->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
+                'description' => "Berkas galai versi {$galley->version} ({$galley->label}) berhasil dimuat.",
+                'badge_class' => 'bg-blue-500',
+            ];
+        }
+
+        if ($assignment) {
+            $timeline[] = [
+                'title' => 'Penugasan Layout Editor',
+                'actor' => $assignment->assignedBy?->name ?? 'Prof. Hamka, Ph.D. (Section Editor)',
+                'date' => $assignment->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : ($sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i').' WITA' : '-'),
+                'description' => $assignment->reason ?? 'Penugasan penataan letak naskah ke format PDF 2-kolom standar.',
+                'badge_class' => 'bg-amber-500',
+            ];
+        }
+
+        $timeline[] = [
+            'title' => 'Naskah Diterima dari Copyeditor',
+            'actor' => 'Sistem OJS (Serah Terima Copyeditor)',
+            'date' => $assignment?->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : ($sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i').' WITA' : '-'),
+            'description' => 'Naskah final copyediting selesai disetujui penulis dan dialihkan ke tahap produksi tata letak.',
+            'badge_class' => 'bg-emerald-500',
         ];
+
+        return $timeline;
     }
 }

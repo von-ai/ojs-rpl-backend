@@ -51,10 +51,10 @@
 
     <!-- Grid 2 Kolom (Konten Artikel & Sidebar Info) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
+
         <!-- Kolom Konten Utama (2/3) -->
-        <article class="lg:col-span-2 space-y-8 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
-            
+        <article class="lg:col-span-2 space-y-8 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+
             <!-- Metadata Edisi & Kategori -->
             <div class="space-y-3 border-b border-gray-100 pb-6">
                 <div class="flex items-center gap-2 flex-wrap text-xs">
@@ -74,7 +74,7 @@
                 </div>
 
                 <!-- Judul Artikel Ilmiah -->
-                <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 leading-snug tracking-tight font-serif">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 leading-snug tracking-tight font-sans">
                     {{ $article->title }}
                 </h1>
 
@@ -126,7 +126,7 @@
                     </svg>
                     <span>Abstrak</span>
                 </h2>
-                <div class="text-xs sm:text-sm text-gray-700 leading-relaxed text-justify space-y-2">
+                <div class="text-xs sm:text-sm text-gray-700 leading-relaxed text-left space-y-2">
                     {!! nl2br(e($article->abstract)) !!}
                 </div>
             </div>
@@ -184,15 +184,15 @@
 
         <!-- Kolom Samping (Sidebar Aksi & Metrik) -->
         <aside class="lg:col-span-1 space-y-6">
-            
+
             <!-- Card Unduh Galai PDF Utama -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Berkas Galai Resmi</h3>
-                
+
                 @if($article->galleys->isNotEmpty())
                     @foreach($article->galleys as $galley)
-                        <a 
-                            href="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $galley->id]) }}" 
+                        <a
+                            href="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $galley->id]) }}"
                             class="w-full inline-flex items-center justify-between p-3.5 rounded-xl border border-red-200 bg-red-50/60 hover:bg-red-100/70 active:scale-[0.98] transition group cursor-pointer"
                         >
                             <div class="flex items-center gap-3">
@@ -211,8 +211,8 @@
                             </svg>
                         </a>
 
-                        <a 
-                            href="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $galley->id]) }}" 
+                        <a
+                            href="{{ route('journal.articles.galleys.download', ['slugOrId' => $article->slug, 'galleyId' => $galley->id]) }}"
                             target="_blank"
                             class="w-full inline-flex items-center justify-center gap-2 p-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold transition"
                         >
@@ -235,7 +235,7 @@
             </div>
 
             <!-- Card Statistik Metrik COUNTER -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 text-xs">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4 text-xs">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Statistik Pembaca</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
@@ -254,7 +254,7 @@
             </div>
 
             <!-- Card Hak Cipta & Lisensi Open Access -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Lisensi Publikasi</h3>
                 <div class="flex items-start gap-2.5">
                     <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">

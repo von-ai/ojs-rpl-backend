@@ -39,8 +39,8 @@
             </div>
 
             <div class="pt-1 space-y-2">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     onclick="document.getElementById('modal-upload-revisi').classList.remove('hidden'); document.getElementById('modal-upload-revisi').classList.add('flex');"
                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition duration-150 cursor-pointer shadow-xs"
                 >
@@ -56,11 +56,11 @@
             </div>
 
             <!-- Modal Formulir Pengunggahan Berkas Revisi (UC-07) -->
-            <div 
-                id="modal-upload-revisi" 
+            <div
+                id="modal-upload-revisi"
                 class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs transition-opacity duration-200"
-                role="dialog" 
-                aria-modal="true" 
+                role="dialog"
+                aria-modal="true"
                 aria-labelledby="modal-revisi-title"
             >
                 <div class="relative w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -77,8 +77,8 @@
                                 <p class="text-[11px] text-gray-500">Putaran telaah dan perbaikan naskah ilmiah</p>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onclick="document.getElementById('modal-upload-revisi').classList.add('hidden'); document.getElementById('modal-upload-revisi').classList.remove('flex');"
                             class="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
                             aria-label="Tutup dialog"
@@ -90,10 +90,10 @@
                     </div>
 
                     <!-- Form Pengunggahan -->
-                    <form 
-                        action="{{ route('author.submissions.revisions.store', $submission['id']) }}" 
-                        method="POST" 
-                        enctype="multipart/form-data" 
+                    <form
+                        action="{{ route('author.submissions.revisions.store', $submission['id']) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
                         class="p-6 space-y-4 text-xs"
                     >
                         @csrf
@@ -103,11 +103,11 @@
                             <label for="manuscript_file" class="block font-bold text-gray-800">
                                 Berkas Manuskrip Bersih (Revisi) <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="file" 
-                                id="manuscript_file" 
-                                name="manuscript_file" 
-                                required 
+                            <input
+                                type="file"
+                                id="manuscript_file"
+                                name="manuscript_file"
+                                required
                                 accept=".pdf,.doc,.docx"
                                 class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
                             >
@@ -119,10 +119,10 @@
                             <label for="response_letter_file" class="block font-bold text-gray-800">
                                 Berkas Respon / Response Letter (Opsional)
                             </label>
-                            <input 
-                                type="file" 
-                                id="response_letter_file" 
-                                name="response_letter_file" 
+                            <input
+                                type="file"
+                                id="response_letter_file"
+                                name="response_letter_file"
                                 accept=".pdf,.doc,.docx"
                                 class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
                             >
@@ -134,10 +134,10 @@
                             <label for="revision_note" class="block font-bold text-gray-800">
                                 Catatan untuk Dewan Redaksi (Opsional)
                             </label>
-                            <textarea 
-                                id="revision_note" 
-                                name="note" 
-                                rows="3" 
+                            <textarea
+                                id="revision_note"
+                                name="note"
+                                rows="3"
                                 maxlength="2000"
                                 placeholder="Jelaskan secara ringkas poin perbaikan utama yang telah Anda lakukan..."
                                 class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800"
@@ -146,15 +146,15 @@
 
                         <!-- Tombol Aksi Modal -->
                         <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onclick="document.getElementById('modal-upload-revisi').classList.add('hidden'); document.getElementById('modal-upload-revisi').classList.remove('flex');"
                                 class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition cursor-pointer"
                             >
                                 Batal
                             </button>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition cursor-pointer shadow-xs"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -183,8 +183,8 @@
             <p class="text-xs text-gray-600 leading-relaxed">
                 Naskah ini tersimpan sebagai draf dan belum diajukan secara resmi ke dewan redaksi. Anda dapat melanjutkan melengkapi berkas dan metadata kapan saja.
             </p>
-            <a 
-                href="{{ route('author.submissions.create') }}" 
+            <a
+                href="{{ route('author.submissions.create') }}"
                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg transition duration-150"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,10 +227,10 @@
                 </div>
                 <div class="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
                     <span class="text-gray-500 shrink-0">DOI:</span>
-                    <a 
-                        href="{{ $submission['publication']['doi_url'] }}" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                    <a
+                        href="{{ $submission['publication']['doi_url'] }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         class="underline font-mono text-emerald-800 hover:text-emerald-950 font-bold tabular-nums truncate max-w-44 text-right"
                         title="Buka publikasi via CrossRef DOI"
                     >
@@ -238,10 +238,10 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Tombol Unduh Galai Cetak PDF -->
-            <a 
-                href="{{ $submission['publication']['galley']['download_url'] }}" 
+            <a
+                href="{{ $submission['publication']['galley']['download_url'] }}"
                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 rounded-lg transition duration-150"
             >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -259,24 +259,24 @@
 
                 <!-- Tab Selector Sitasi -->
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 text-[11px] font-semibold text-gray-600">
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         id="tab-btn-apa"
                         onclick="switchCitationTab('apa')"
                         class="flex-1 py-1 px-2 rounded text-center bg-white text-emerald-900 font-bold border border-gray-200 transition cursor-pointer"
                     >
                         APA 7th
                     </button>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         id="tab-btn-ieee"
                         onclick="switchCitationTab('ieee')"
                         class="flex-1 py-1 px-2 rounded text-center hover:bg-gray-100 transition cursor-pointer"
                     >
                         IEEE
                     </button>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         id="tab-btn-bibtex"
                         onclick="switchCitationTab('bibtex')"
                         class="flex-1 py-1 px-2 rounded text-center hover:bg-gray-100 transition cursor-pointer"
@@ -287,7 +287,7 @@
 
                 <!-- Kotak Pratinjau Sitasi -->
                 <div class="relative group">
-                    <div id="citation-content-apa" class="citation-tab-panel p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs font-serif text-gray-800 leading-relaxed select-all">
+                    <div id="citation-content-apa" class="citation-tab-panel p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs font-sans text-gray-800 leading-relaxed select-all">
                         {{ $submission['publication']['citations']['apa'] }}
                     </div>
                     <div id="citation-content-ieee" class="citation-tab-panel hidden p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs font-mono text-gray-800 leading-relaxed select-all">
@@ -299,8 +299,8 @@
 
                     <!-- Tombol Salin Sitasi Aktif -->
                     <div class="mt-2 flex justify-end">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             id="btn-copy-active-citation"
                             onclick="copyActiveCitation()"
                             class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 transition cursor-pointer"
@@ -325,7 +325,7 @@
 
             function switchCitationTab(format) {
                 currentCitationFormat = format;
-                
+
                 ['apa', 'ieee', 'bibtex'].forEach(fmt => {
                     const btn = document.getElementById('tab-btn-' + fmt);
                     const panel = document.getElementById('citation-content-' + fmt);
@@ -544,8 +544,8 @@
                         <div class="text-xs text-gray-800 font-semibold">{{ $pay['bank_name'] }}</div>
                         <div class="flex items-center justify-between gap-2">
                             <span class="font-mono text-xs font-bold text-gray-900 tracking-wide select-all">{{ $pay['account_number'] }}</span>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onclick="copyTextToClipboard('{{ $pay['account_number'] }}', 'Nomor rekening {{ $pay['bank_name'] }} disalin')"
                                 class="inline-flex items-center gap-1 text-[11px] text-brand-maroon hover:text-brand-maroon/80 font-bold cursor-pointer"
                                 title="Salin nomor rekening"
@@ -565,8 +565,8 @@
                         {{ $pay['instructions'] }}
                     </div>
 
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onclick="document.getElementById('modal-upload-pembayaran').classList.remove('hidden'); document.getElementById('modal-upload-pembayaran').classList.add('flex');"
                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 rounded-lg transition duration-150 cursor-pointer shadow-xs"
                     >
@@ -593,8 +593,8 @@
                     </div>
 
                     @if($pay['has_proof'] && $pay['proof_download_url'])
-                        <a 
-                            href="{{ $pay['proof_download_url'] }}" 
+                        <a
+                            href="{{ $pay['proof_download_url'] }}"
                             target="_blank"
                             class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition"
                         >
@@ -611,8 +611,8 @@
                         <p class="text-[11px] text-rose-700 font-medium">Catatan Dewan Redaksi: "{{ $pay['verification_notes'] }}"</p>
                     </div>
 
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onclick="document.getElementById('modal-upload-pembayaran').classList.remove('hidden'); document.getElementById('modal-upload-pembayaran').classList.add('flex');"
                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg transition duration-150 cursor-pointer shadow-xs"
                     >
@@ -631,8 +631,8 @@
                     </div>
 
                     @if($pay['has_proof'] && $pay['proof_download_url'])
-                        <a 
-                            href="{{ $pay['proof_download_url'] }}" 
+                        <a
+                            href="{{ $pay['proof_download_url'] }}"
                             target="_blank"
                             class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
                         >
@@ -652,11 +652,11 @@
             </div>
 
             <!-- Modal Formulir Unggah Bukti Pembayaran APC -->
-            <div 
-                id="modal-upload-pembayaran" 
+            <div
+                id="modal-upload-pembayaran"
                 class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs transition-opacity duration-200"
-                role="dialog" 
-                aria-modal="true" 
+                role="dialog"
+                aria-modal="true"
                 aria-labelledby="modal-pembayaran-title"
             >
                 <div class="relative w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -672,8 +672,8 @@
                                 <p class="text-[11px] text-gray-500">Konfirmasi transfer biaya pemrosesan naskah</p>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onclick="document.getElementById('modal-upload-pembayaran').classList.add('hidden'); document.getElementById('modal-upload-pembayaran').classList.remove('flex');"
                             class="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
                             aria-label="Tutup dialog"
@@ -682,10 +682,10 @@
                         </button>
                     </div>
 
-                    <form 
-                        action="{{ route('author.submissions.payment.store', $submission['id']) }}" 
-                        method="POST" 
-                        enctype="multipart/form-data" 
+                    <form
+                        action="{{ route('author.submissions.payment.store', $submission['id']) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
                         class="p-6 space-y-4 text-xs"
                     >
                         @csrf
@@ -707,11 +707,11 @@
                             <label for="payment_proof" class="block font-bold text-gray-800">
                                 Berkas Bukti Transfer (Resi / Struk) <span class="text-rose-500">*</span>
                             </label>
-                            <input 
-                                type="file" 
-                                id="payment_proof" 
-                                name="payment_proof" 
-                                required 
+                            <input
+                                type="file"
+                                id="payment_proof"
+                                name="payment_proof"
+                                required
                                 accept=".pdf,.jpg,.jpeg,.png"
                                 class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                             >
@@ -722,10 +722,10 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="space-y-1">
                                 <label for="sender_bank_name" class="block font-semibold text-gray-700">Bank Pengirim</label>
-                                <input 
-                                    type="text" 
-                                    id="sender_bank_name" 
-                                    name="sender_bank_name" 
+                                <input
+                                    type="text"
+                                    id="sender_bank_name"
+                                    name="sender_bank_name"
                                     value="{{ old('sender_bank_name') }}"
                                     placeholder="Contoh: Mandiri / BCA / BNI"
                                     class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
@@ -733,10 +733,10 @@
                             </div>
                             <div class="space-y-1">
                                 <label for="sender_account_name" class="block font-semibold text-gray-700">Nama Pemilik Rekening</label>
-                                <input 
-                                    type="text" 
-                                    id="sender_account_name" 
-                                    name="sender_account_name" 
+                                <input
+                                    type="text"
+                                    id="sender_account_name"
+                                    name="sender_account_name"
                                     value="{{ old('sender_account_name') }}"
                                     placeholder="Nama sesuai buku tabungan"
                                     class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
@@ -748,20 +748,20 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="space-y-1">
                                 <label for="transfer_date" class="block font-semibold text-gray-700">Tanggal Transfer</label>
-                                <input 
-                                    type="date" 
-                                    id="transfer_date" 
-                                    name="transfer_date" 
+                                <input
+                                    type="date"
+                                    id="transfer_date"
+                                    name="transfer_date"
                                     value="{{ old('transfer_date', date('Y-m-d')) }}"
                                     class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                                 >
                             </div>
                             <div class="space-y-1">
                                 <label for="amount_paid" class="block font-semibold text-gray-700">Nominal Ditransfer (Rp)</label>
-                                <input 
-                                    type="number" 
-                                    id="amount_paid" 
-                                    name="amount_paid" 
+                                <input
+                                    type="number"
+                                    id="amount_paid"
+                                    name="amount_paid"
                                     value="{{ old('amount_paid', $pay['amount']) }}"
                                     class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                                 >
@@ -771,10 +771,10 @@
                         <!-- Catatan Penulis (Opsional) -->
                         <div class="space-y-1">
                             <label for="author_notes" class="block font-semibold text-gray-700">Catatan untuk Redaksi (Opsional)</label>
-                            <textarea 
-                                id="author_notes" 
-                                name="author_notes" 
-                                rows="2" 
+                            <textarea
+                                id="author_notes"
+                                name="author_notes"
+                                rows="2"
                                 placeholder="Tambahkan catatan jika diperlukan, misal referensi transaksi atau berita transfer..."
                                 class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                             ></textarea>
@@ -782,15 +782,15 @@
 
                         <!-- Tombol Aksi Modal -->
                         <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onclick="document.getElementById('modal-upload-pembayaran').classList.add('hidden'); document.getElementById('modal-upload-pembayaran').classList.remove('flex');"
                                 class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition cursor-pointer"
                             >
                                 Batal
                             </button>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 rounded-lg transition cursor-pointer shadow-xs"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -957,8 +957,8 @@
     <!-- 4. Pengajuan Penarikan Naskah (Hanya jika belum masuk review dan belum ada tindak lanjut role lain) -->
     @if($submission['can_withdraw'] ?? false)
         <div class="pt-1">
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="handleWithdrawalClick()"
                 class="w-full text-center py-2.5 px-3 text-xs font-semibold text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition duration-150 border border-dashed border-gray-300 hover:border-red-300 cursor-pointer active:scale-[0.98]"
             >

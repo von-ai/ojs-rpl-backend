@@ -13,6 +13,7 @@ use App\Models\LayoutAssignment;
 use App\Models\ProductionEscalation;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +25,10 @@ class CopyeditSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. User Copy Editor Utama
         $copyEditor = User::firstOrCreate(
             ['email' => 'andi.kurniawan@brida.makassar.go.id'],
@@ -60,7 +65,16 @@ class CopyeditSeeder extends Seeder
             ]
         );
 
+        UserRole::firstOrCreate([
+            'user_id' => $copyEditor->id,
+            'role_code' => 'copyeditor',
+        ]);
+
         // Pastikan submission dasar ada
+        if (Submission::whereIn('submission_number', ['SUB-2026-00106', 'SUB-2026-00107'])->count() === 0) {
+            $this->call(SubmissionSeeder::class);
+        }
+
         $submissions = Submission::whereIn('submission_number', [
             'SUB-2026-00106',
             'SUB-2026-00107',
@@ -69,6 +83,11 @@ class CopyeditSeeder extends Seeder
             'SUB-2026-00110',
             'SUB-2026-00111',
         ])->get()->keyBy('submission_number');
+
+        foreach ($submissions->pluck('journal_id')->unique() as $journalId) {
+            UserRole::firstOrCreate(['user_id' => $copyEditor->id, 'journal_id' => $journalId, 'role_code' => 'copyeditor']);
+            UserRole::firstOrCreate(['user_id' => $layoutEditor->id, 'journal_id' => $journalId, 'role_code' => 'layout_editor']);
+        }
 
         // Skenario 1: SUB-2026-00106 — Aktif & Menunggu Respon Penulis
         if ($sub106 = $submissions->get('SUB-2026-00106')) {
@@ -204,6 +223,7 @@ class CopyeditSeeder extends Seeder
             ProductionEscalation::firstOrCreate(
                 ['copyedit_id' => $copyedit108->id],
                 [
+                    'id' => 'ESC-2026-0042',
                     'submission_id' => $sub108->id,
                     'opened_by' => $copyEditor->id,
                     'reason' => '[Perbedaan Pendapat Substansi] Ketidaksepakatan format tabel statistik multivariat.',
@@ -469,6 +489,24 @@ class CopyeditSeeder extends Seeder
         foreach ($seededFiles as $file) {
             $this->ensureFileOnDisk($file);
         }
+        $fileIds = Copyedit::whereIn('submission_id', $submissions->pluck('id'))->pluck('source_file_id')
+            ->merge(CopyeditOutput::whereIn('copyedit_id', Copyedit::whereIn('submission_id', $submissions->pluck('id'))->select('id'))->pluck('file_id'))->filter()->unique();
+        foreach (FileEntry::whereIn('id', $fileIds)->get() as $entry) {
+            $disk = Storage::disk($entry->storage_disk);
+            if (! $disk->exists($entry->storage_path)) {
+                $temporary = tempnam(sys_get_temp_dir(), 'sirida-demo-');
+                $zip = new \ZipArchive;
+                $zip->open($temporary, \ZipArchive::OVERWRITE);
+                $zip->addFromString('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+                $zip->addFromString('_rels/.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+                $zip->addFromString('word/document.xml', '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Dokumen demonstrasi SIRIDA untuk pengujian lokal.</w:t></w:r></w:p></w:body></w:document>');
+                $zip->close();
+                $disk->put($entry->storage_path, file_get_contents($temporary));
+                unlink($temporary);
+            }
+            $entry->update(['byte_size' => $disk->size($entry->storage_path), 'checksum_sha256' => hash('sha256', $disk->get($entry->storage_path)), 'virus_scan_status' => 'clean']);
+        }
+
     }
 
     private function ensureFileOnDisk(FileEntry $file): void

@@ -2,40 +2,16 @@
 
 <div class="bg-gray-50 border-b border-gray-200 text-xs py-1.5 px-4 sm:px-8">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600">
-        <!-- Left Metadata & Badges -->
-        <div class="flex items-center flex-wrap gap-2.5 sm:gap-4">
-            <div class="flex items-center gap-2">
-                <span><strong class="font-semibold text-gray-700">p-ISSN:</strong> {{ $topbarData['p_issn'] ?? '2985-789X' }}</span>
-                <span class="text-gray-300">•</span>
-                <span><strong class="font-semibold text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
-            </div>
-
-            @if (!empty($topbarData['accreditation_badges']))
-                <div class="hidden md:flex items-center gap-1.5">
-                    @foreach ($topbarData['accreditation_badges'] as $badge)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border {{ $badge['class'] }}">
-                            {{ $badge['label'] }}
-                        </span>
-                    @endforeach
-                </div>
-            @endif
+        <!-- Left Metadata -->
+        <div class="flex items-center gap-2">
+            <span><strong class="font-semibold text-gray-700">p-ISSN:</strong> {{ $topbarData['p_issn'] ?? '2985-789X' }}</span>
+            <span class="text-gray-300">•</span>
+            <span><strong class="font-semibold text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
         </div>
 
         <!-- Right Quick Actions & Language -->
         <div class="flex items-center gap-4 text-xs">
-            <!-- Language Switcher -->
-            @if (!empty($topbarData['languages']))
-                <div class="flex items-center gap-1 font-semibold text-gray-500">
-                    @foreach ($topbarData['languages'] as $index => $lang)
-                        @if ($index > 0)
-                            <span class="text-gray-300">/</span>
-                        @endif
-                        <a href="#" class="{{ $lang['active'] ? 'text-brand-maroon font-bold' : 'hover:text-gray-900 transition-colors' }}">
-                            {{ $lang['label'] }}
-                        </a>
-                    @endforeach
-                </div>
-            @endif
+            <span class="font-semibold text-gray-500" lang="id">Bahasa Indonesia</span>
 
             <span class="text-gray-300">|</span>
 

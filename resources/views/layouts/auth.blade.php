@@ -2,21 +2,20 @@
 <html lang="id" class="h-full bg-canvas">
 <head>
     <meta charset="UTF-8">
+    <meta name="application-name" content="{{ $platformSettings['site_name'] ?? config('app.name') }}">
+    <meta name="description" content="{{ $platformSettings['site_description'] ?? 'Portal jurnal ilmiah BRIDA Makassar' }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Masuk | Portal Jurnal BRIDA Makassar')</title>
 
     <!-- Google Fonts: Instrument Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full font-sans antialiased text-gray-900 bg-canvas selection:bg-brand-maroon selection:text-white">
     <div class="min-h-full flex flex-col justify-between">
-        
+
         <!-- Header Bar -->
         <header class="bg-white border-b border-gray-200/80 px-4 sm:px-8 py-3 sticky top-0 z-30 shadow-2xs">
             <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
@@ -24,7 +23,7 @@
                 <a href="/" class="flex items-center gap-3 group">
                     <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-9 h-9 object-contain shrink-0 transition-transform group-hover:scale-105">
                     <div class="flex flex-col justify-center">
-                        <span class="text-xs sm:text-sm font-bold text-brand-maroon leading-tight tracking-tight">
+                        <span class="text-xs sm:text-sm font-bold text-brand-logo leading-tight tracking-tight">
                             Jurnal Riset & Inovasi
                         </span>
                         <span class="text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider leading-tight">
@@ -53,9 +52,9 @@
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2.5 text-center sm:text-left">
                 <p>&copy; {{ date('Y') }} Badan Riset dan Inovasi Daerah Kota Makassar. Seluruh hak cipta dilindungi.</p>
                 <div class="flex items-center gap-4 text-xs font-medium">
-                    <a href="#" class="hover:text-gray-800 transition-colors">Kebijakan Privasi</a>
+                    <a href="{{ route('journal.about.policies') }}" class="hover:text-gray-800 transition-colors">Kebijakan Privasi</a>
                     <span class="text-gray-300">•</span>
-                    <a href="#" class="hover:text-gray-800 transition-colors">Etika Publikasi</a>
+                    <a href="{{ route('journal.about.policies') }}" class="hover:text-gray-800 transition-colors">Etika Publikasi</a>
                 </div>
             </div>
         </footer>

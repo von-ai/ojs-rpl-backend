@@ -124,24 +124,18 @@ class CopyeditorSubmissionsViewModel
             ];
         }
 
-        $mock = $this->fallbackMockSubmissions();
-        $totalActive = count(array_filter($mock, fn ($i) => $i['status'] !== 'completed'));
-        $awaitingApproval = count(array_filter($mock, fn ($i) => $i['status'] === 'awaiting_author_approval'));
-        $escalated = count(array_filter($mock, fn ($i) => $i['status'] === 'escalated'));
-        $completed = count(array_filter($mock, fn ($i) => $i['status'] === 'completed'));
-
         return [
             [
                 'title' => 'Total Penugasan Aktif',
-                'value' => $totalActive,
+                'value' => 0,
                 'description' => 'Naskah dalam tanggung jawab Anda',
-                'badge_text' => "{$totalActive} Naskah",
+                'badge_text' => '0 Naskah',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
                 'icon' => 'document-text',
             ],
             [
                 'title' => 'Menunggu Persetujuan',
-                'value' => $awaitingApproval,
+                'value' => 0,
                 'description' => 'Output set dikirim ke penulis',
                 'badge_text' => 'Perlu Pantauan',
                 'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
@@ -149,7 +143,7 @@ class CopyeditorSubmissionsViewModel
             ],
             [
                 'title' => 'Eskalasi Produksi',
-                'value' => $escalated,
+                'value' => 0,
                 'description' => 'Dalam mediasi Section Editor',
                 'badge_text' => 'Perlu Mediasi',
                 'color_class' => 'text-red-700 bg-red-50 border-red-200',
@@ -157,7 +151,7 @@ class CopyeditorSubmissionsViewModel
             ],
             [
                 'title' => 'Riwayat Selesai',
-                'value' => $completed,
+                'value' => 0,
                 'description' => 'Telah diserahkan ke Galley Layout',
                 'badge_text' => 'Rampung',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -231,40 +225,33 @@ class CopyeditorSubmissionsViewModel
             ];
         }
 
-        $mock = $this->fallbackMockSubmissions();
-        $totalAll = count($mock);
-        $editingCount = count(array_filter($mock, fn ($i) => in_array($i['status'], ['in_progress', 'approved'], true)));
-        $awaitingCount = count(array_filter($mock, fn ($i) => $i['status'] === 'awaiting_author_approval'));
-        $escalatedCount = count(array_filter($mock, fn ($i) => $i['status'] === 'escalated'));
-        $completedCount = count(array_filter($mock, fn ($i) => $i['status'] === 'completed'));
-
         return [
             'active' => $this->activeTab,
             'items' => [
                 'all' => [
                     'key' => 'all',
                     'label' => 'Semua Penugasan',
-                    'count' => $totalAll,
+                    'count' => 0,
                 ],
                 'editing' => [
                     'key' => 'editing',
                     'label' => 'Sedang Disunting',
-                    'count' => $editingCount,
+                    'count' => 0,
                 ],
                 'awaiting_approval' => [
                     'key' => 'awaiting_approval',
                     'label' => 'Menunggu Penulis',
-                    'count' => $awaitingCount,
+                    'count' => 0,
                 ],
                 'escalated' => [
                     'key' => 'escalated',
                     'label' => 'Eskalasi Mediasi',
-                    'count' => $escalatedCount,
+                    'count' => 0,
                 ],
                 'completed' => [
                     'key' => 'completed',
                     'label' => 'Selesai Serah Terima',
-                    'count' => $completedCount,
+                    'count' => 0,
                 ],
             ],
         ];
@@ -329,7 +316,7 @@ class CopyeditorSubmissionsViewModel
     {
         $all = $this->hasDatabaseRecords()
             ? $this->buildSubmissionsFromDatabase()
-            : $this->fallbackMockSubmissions();
+            : [];
 
         // Filter berdasarkan tab
         $filtered = array_filter($all, function ($item) {
@@ -491,152 +478,5 @@ class CopyeditorSubmissionsViewModel
         }
 
         return $items;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function fallbackMockSubmissions(): array
-    {
-        return [
-            [
-                'id' => '01JARK948X0010600000000001',
-                'number' => 'SUB-2026-00106',
-                'title' => 'Analisis Spasial Ruang Terbuka Hijau Terhadap Efek Urban Heat Island Kota Makassar',
-                'section_title' => 'Inovasi Daerah & Kebijakan Publik',
-                'corresponding_author' => [
-                    'name' => 'Dr. Nurfadillah Bahar, M.Kes.',
-                    'email' => 'nurfadillah.bahar@unhas.ac.id',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'assigned_at' => '18 Okt 2026',
-                'due_at' => '29 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'is_overdue' => false,
-                'status' => 'in_progress',
-                'status_label' => 'Tahap Copyediting Aktif',
-                'status_badge_class' => 'bg-sky-50 text-sky-800 border-sky-200',
-                'output_set_version' => 'Output Set v2',
-                'files_count' => 2,
-                'has_active_escalation' => true,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00106'),
-            ],
-            [
-                'id' => '01JARK948X0010700000000002',
-                'number' => 'SUB-2026-00107',
-                'title' => 'Transformasi Digital Pelayanan Publik Kelurahan di Kota Makassar: Evaluasi Implementasi Aplikasi Lorong',
-                'section_title' => 'Sosial Humaniora & Tata Kelola',
-                'corresponding_author' => [
-                    'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
-                    'email' => 'm.basri@poliupg.ac.id',
-                    'affiliation' => 'Politeknik Negeri Ujung Pandang',
-                ],
-                'section_editor' => 'Dr. Hj. St. Rohani, M.Si.',
-                'assigned_at' => '19 Okt 2026',
-                'due_at' => '02 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_overdue' => false,
-                'status' => 'awaiting_author_approval',
-                'status_label' => 'Menunggu Persetujuan Penulis',
-                'status_badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
-                'output_set_version' => 'Output Set v1',
-                'files_count' => 1,
-                'has_active_escalation' => false,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00107'),
-            ],
-            [
-                'id' => '01JARK948X0010800000000003',
-                'number' => 'SUB-2026-00108',
-                'title' => 'Kajian Karakteristik Geoteknik Sedimen Pesisir Pantai Losari untuk Mitigasi Erosi Gelombang Pasang',
-                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
-                    'email' => 'faisal.syarif@unhas.ac.id',
-                    'affiliation' => 'Fakultas Teknik Universitas Hasanuddin',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'assigned_at' => '20 Okt 2026',
-                'due_at' => '30 Okt 2026 23:59 WITA',
-                'is_urgent' => true,
-                'is_overdue' => false,
-                'status' => 'escalated',
-                'status_label' => 'Eskalasi Mediasi Redaksi',
-                'status_badge_class' => 'bg-red-50 text-red-700 border-red-200',
-                'output_set_version' => 'Output Set v1',
-                'files_count' => 3,
-                'has_active_escalation' => true,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00108'),
-            ],
-            [
-                'id' => '01JARK948X0010900000000004',
-                'number' => 'SUB-2026-00109',
-                'title' => 'Efektivitas Program Lorong Wisata dalam Pemberdayaan UMKM Kuliner Tradisional Kota Makassar',
-                'section_title' => 'Ekonomi Pembangunan & Kewirausahaan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Hj. Fatmawati, S.E., M.Si.',
-                    'email' => 'fatmawati.se@unismuh.ac.id',
-                    'affiliation' => 'Universitas Muhammadiyah Makassar',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'assigned_at' => '21 Okt 2026',
-                'due_at' => '03 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_overdue' => false,
-                'status' => 'approved',
-                'status_label' => 'Disetujui Penulis',
-                'status_badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'output_set_version' => 'Output Set v2',
-                'files_count' => 2,
-                'has_active_escalation' => false,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00109'),
-            ],
-            [
-                'id' => '01JARK948X0011000000000005',
-                'number' => 'SUB-2026-00110',
-                'title' => 'Strategi Pengelolaan Sampah Berbasis Komunitas Melalui Bank Sampah Sektoral di Kecamatan Rappocini',
-                'section_title' => 'Lingkungan Hidup & Keberlanjutan',
-                'corresponding_author' => [
-                    'name' => 'Ir. Syamsul Rijal, M.Env.Sc.',
-                    'email' => 'syamsul.rijal@uim-makassar.ac.id',
-                    'affiliation' => 'Universitas Islam Makassar',
-                ],
-                'section_editor' => 'Dr. Hj. St. Rohani, M.Si.',
-                'assigned_at' => '15 Okt 2026',
-                'due_at' => '25 Okt 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_overdue' => false,
-                'status' => 'completed',
-                'status_label' => 'Selesai Diserahkan',
-                'status_badge_class' => 'bg-gray-100 text-gray-700 border-gray-200',
-                'output_set_version' => 'Output Set Final',
-                'files_count' => 2,
-                'has_active_escalation' => false,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00110'),
-            ],
-            [
-                'id' => '01JARK948X0011100000000006',
-                'number' => 'SUB-2026-00111',
-                'title' => 'Model Optimasi Rute Distribusi Logistik Maritim Antar-Pulau di Wilayah Kepulauan Sangkarrang',
-                'section_title' => 'Teknologi & Infrastruktur Berkelanjutan',
-                'corresponding_author' => [
-                    'name' => 'Dr. Eng. Ir. Faisal Syarif, S.T., M.Eng.',
-                    'email' => 'faisal.syarif@unhas.ac.id',
-                    'affiliation' => 'Universitas Hasanuddin',
-                ],
-                'section_editor' => 'Prof. Hamka, Ph.D.',
-                'assigned_at' => '22 Okt 2026',
-                'due_at' => '04 Nov 2026 23:59 WITA',
-                'is_urgent' => false,
-                'is_overdue' => false,
-                'status' => 'in_progress',
-                'status_label' => 'Permintaan Revisi Penulis',
-                'status_badge_class' => 'bg-orange-50 text-orange-800 border-orange-200',
-                'output_set_version' => 'Output Set v1',
-                'files_count' => 1,
-                'has_active_escalation' => false,
-                'url_workspace' => route('copyeditor.submissions.show', 'SUB-2026-00111'),
-            ],
-        ];
     }
 }

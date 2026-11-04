@@ -22,6 +22,10 @@ class SysAdminSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Pengguna Utama System Administrator (Fahri Azis, S.T.)
         $primaryAdmin = User::firstOrCreate(
             ['email' => 'fahri.azis@makassar.go.id'],

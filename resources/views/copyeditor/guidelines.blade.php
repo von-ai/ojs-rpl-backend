@@ -23,8 +23,8 @@
 
         <!-- Tombol Unduh Template Word -->
         <div class="shrink-0">
-            <a 
-                href="#unduh-template-naskah" 
+            <a
+                href="{{ asset('docs/panduan-penulisan-jurnal-brida.pdf') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover text-white text-xs font-semibold rounded-xl shadow-2xs transition"
                 title="Unduh berkas template Word resmi jurnal BRIDA"
             >
@@ -38,7 +38,7 @@
 
     <!-- Isi Panduan Terstruktur -->
     <div class="bg-white rounded-2xl border border-gray-200/90 p-6 sm:p-8 shadow-2xs space-y-8 text-sm text-gray-700 leading-relaxed">
-        
+
         <!-- Poin 1: Tata Bahasa & Ejaan -->
         <section class="space-y-3">
             <div class="flex items-center gap-2.5 border-b border-gray-100 pb-3">

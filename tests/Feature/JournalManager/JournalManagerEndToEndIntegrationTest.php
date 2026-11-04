@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\JournalManager;
 
 use App\Mail\JournalManager\IssuePublishedMail;
-use App\Mail\JournalManager\PasswordResetRequestedMail;
 use App\Mail\JournalManager\RoleAssignedMail;
 use App\Models\Issue;
 use App\Models\IssueArticle;
@@ -14,10 +13,12 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Notifications\ResetPasswordNotification;
 use App\ViewModels\JournalManagerUsersViewModel;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class JournalManagerEndToEndIntegrationTest extends TestCase
@@ -72,7 +73,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $this->assertSame('draft', $issue->status);
         $this->assertFalse($issue->is_current);
         $this->assertStringContainsString('Edisi Khusus Riset Kelautan', $issue->title);
-        $this->assertSame('10.61234/sirida.v7i1', $issue->doi_prefix);
+        $this->assertNull($issue->doi_prefix);
 
         // Uji Invariant Guard: Upaya duplikasi volume dan nomor pada tahun yang sama ditolak
         $duplicateResponse = $this->post('/journalmanager/issues', [
@@ -114,6 +115,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
 
         $this->assertGreaterThanOrEqual(1, $availableSubmissions->count());
         $sub1 = $availableSubmissions[0];
+        $this->preparePublication($sub1);
 
         // Masukkan naskah 1
         $resAdd1 = $this->post("/journalmanager/issues/{$issue->id}/add-article", [
@@ -140,6 +142,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         // Jika ada naskah kedua, masukkan dan verifikasi kelanjutan halaman 15-28
         if ($availableSubmissions->count() >= 2) {
             $sub2 = $availableSubmissions[1];
+            $this->preparePublication($sub2);
             $this->post("/journalmanager/issues/{$issue->id}/add-article", [
                 'article_id' => $sub2->id,
                 'article_title' => $sub2->title,
@@ -184,7 +187,8 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         Mail::assertNothingSent();
 
         // 2. Tambahkan 1 naskah ke edisi
-        $sub = Submission::where('journal_id', $journal->id)->firstOrFail();
+        $sub = Submission::where('journal_id', $journal->id)->whereDoesntHave('issueArticle')->firstOrFail();
+        $this->preparePublication($sub);
         IssueArticle::firstOrCreate(
             ['issue_id' => $emptyIssue->id, 'submission_id' => $sub->id],
             ['position' => 1, 'pages' => '1-12', 'doi' => '10.61234/sirida.v9i1.01']
@@ -377,7 +381,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
      */
     public function test_pemicuan_reset_kata_sandi_pengguna(): void
     {
-        Mail::fake();
+        Notification::fake();
 
         $manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
         $this->actingAs($manager);
@@ -392,9 +396,8 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $response->assertRedirect('/journalmanager/users');
         $response->assertSessionHas('status');
 
-        Mail::assertSent(PasswordResetRequestedMail::class, function (PasswordResetRequestedMail $mail) use ($user) {
-            return $mail->user->email === $user->email;
-        });
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $user->email]);
 
         // 2. Gagal jika email tidak terdaftar
         $resNotFound = $this->post('/journalmanager/users/reset-password', [
@@ -423,9 +426,10 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $resPage1->assertSee('page=2');
 
         // Halaman 2
+        $page2To = min(20, $totalUsers);
         $resPage2 = $this->get('/journalmanager/users?page=2');
         $resPage2->assertStatus(200);
-        $resPage2->assertSee("Menampilkan <strong class=\"text-gray-800\">11</strong> - <strong class=\"text-gray-800\">{$totalUsers}</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
+        $resPage2->assertSee("Menampilkan <strong class=\"text-gray-800\">11</strong> - <strong class=\"text-gray-800\">{$page2To}</strong> dari <strong class=\"text-gray-800\">{$totalUsers}</strong> pengguna", false);
         $resPage2->assertSee('Sebelumnya');
         $resPage2->assertSee('page=1');
     }

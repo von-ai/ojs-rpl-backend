@@ -9,16 +9,29 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: 'Lora', Cambria, Georgia, 'Times New Roman', serif;
 
-    --color-brand-maroon: #6A020A;
-    --color-brand-maroon-hover: #520208;
-    --color-brand-maroon-active: #3d0106;
-    --color-brand-maroon-light: #FFDAD6;
+    /* Identitas Warna Resmi BRIN & BRIDA (brin.go.id) */
+    --color-brand-logo: #FA0019;
+    --color-brand-maroon: #E40017;
+    --color-brand-maroon-hover: #C50014;
+    --color-brand-maroon-active: #A00010;
+    --color-brand-maroon-light: #FEE2E2;
+    --color-brand-red: #E40017;
+    --color-brand-red-hover: #C50014;
+    --color-brand-red-active: #A00010;
     --color-brand-navy: #002E72;
     --color-brand-navy-hover: #001F54;
 
     /* Token Warna Latar Canvas & Panel */
     --color-canvas: #F8F9FA;
     --color-surface-subtle: #F7F7F8;
+
+    /* Standarisasi Sudut Lengkungan (Compact & Subtle: 4px - 6px) */
+    --radius-3xl: 8px;
+    --radius-2xl: 8px;
+    --radius-xl: 6px;
+    --radius-lg: 5px;
+    --radius-md: 4px;
+    --radius-sm: 2px;
 }
 
 /* Optimasi Tipografi Akademis & Angka Tabular untuk Data Jurnal */
@@ -136,3 +149,13 @@
     display: none;
 }
 
+
+/* Progressive enhancement: native fields work before scripts initialize. */
+[data-native-dropdown]:not([data-dropdown-initialized]) .custom-dropdown-btn { display: none; }
+[data-native-dropdown][data-dropdown-initialized] .custom-dropdown-native {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+.custom-dropdown-btn:disabled { opacity: .6; cursor: not-allowed; }
+.custom-dropdown-btn[aria-invalid="true"] { border-color: var(--color-red-500); }
+.custom-dropdown-item:focus-visible { outline: 2px solid var(--color-brand-maroon); outline-offset: -2px; }

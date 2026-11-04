@@ -20,6 +20,10 @@ class ArticlePaymentSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Demo seeder tidak boleh dijalankan pada production.');
+        }
+
         // 1. Dapatkan atau aktifkan konfigurasi APC pada Jurnal SIRIDA Makassar
         $journal = Journal::where('slug', 'sirida-makassar')->first() ?? Journal::first();
 

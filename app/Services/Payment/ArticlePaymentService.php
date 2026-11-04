@@ -9,9 +9,11 @@ use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\PortalAccess;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ArticlePaymentService
@@ -102,10 +104,10 @@ class ArticlePaymentService
                 'storage_disk' => 'local',
                 'storage_path' => $path,
                 'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',
-                'byte_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                'byte_size' => (int) Storage::disk('local')->size($path),
                 'checksum_sha256' => $sha256,
-                'virus_scan_status' => 'clean',
+                'virus_scan_status' => 'pending',
                 'created_by' => $author->id,
             ]);
 
@@ -134,16 +136,31 @@ class ArticlePaymentService
      */
     public function verifyPayment(ArticlePayment $payment, User $verifier, ?string $notes = null): ArticlePayment
     {
-        return DB::transaction(function () use ($payment, $verifier, $notes): ArticlePayment {
-            $payment->update([
-                'status' => 'verified',
-                'verified_by' => $verifier->id,
-                'verified_at' => now(),
-                'verification_notes' => $notes ? trim($notes) : 'Pembayaran sah dan telah diverifikasi oleh dewan redaksi/pengelola jurnal.',
-                'version' => $payment->version + 1,
-            ]);
+        return DB::transaction(function () use ($payment, $verifier, $notes) {
+            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+            PortalAccess::lockSubmission($payment->submission, $verifier, $role);
+            $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
+            if ($payment->status !== 'pending_verification') {
+                throw new DomainException('Pembayaran tidak sedang menunggu verifikasi.');
+            }
+            if ($payment->fileEntry?->virus_scan_status !== 'clean') {
+                throw new DomainException('Bukti pembayaran belum lulus pemindaian keamanan.');
+            }
+            if ((int) str_replace('.', '', (string) $payment->amount_paid) < (int) str_replace('.', '', (string) $payment->amount)) {
+                throw new DomainException('Nominal pembayaran belum memenuhi tagihan APC.');
+            }
 
-            return $payment->fresh();
+            return DB::transaction(function () use ($payment, $verifier, $notes): ArticlePayment {
+                $payment->update([
+                    'status' => 'verified',
+                    'verified_by' => $verifier->id,
+                    'verified_at' => now(),
+                    'verification_notes' => $notes ? trim($notes) : 'Pembayaran sah dan telah diverifikasi oleh dewan redaksi/pengelola jurnal.',
+                    'version' => $payment->version + 1,
+                ]);
+
+                return $payment->fresh();
+            });
         });
     }
 
@@ -152,20 +169,29 @@ class ArticlePaymentService
      */
     public function rejectPayment(ArticlePayment $payment, User $verifier, string $reason): ArticlePayment
     {
-        if (trim($reason) === '') {
-            throw new DomainException('Alasan penolakan bukti pembayaran wajib diisi.');
-        }
+        return DB::transaction(function () use ($payment, $verifier, $reason) {
+            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+            PortalAccess::lockSubmission($payment->submission, $verifier, $role);
+            $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
+            if ($payment->status !== 'pending_verification') {
+                throw new DomainException('Pembayaran tidak sedang menunggu verifikasi.');
+            }
 
-        return DB::transaction(function () use ($payment, $verifier, $reason): ArticlePayment {
-            $payment->update([
-                'status' => 'rejected',
-                'verified_by' => $verifier->id,
-                'verified_at' => now(),
-                'verification_notes' => trim($reason),
-                'version' => $payment->version + 1,
-            ]);
+            if (trim($reason) === '') {
+                throw new DomainException('Alasan penolakan bukti pembayaran wajib diisi.');
+            }
 
-            return $payment->fresh();
+            return DB::transaction(function () use ($payment, $verifier, $reason): ArticlePayment {
+                $payment->update([
+                    'status' => 'rejected',
+                    'verified_by' => $verifier->id,
+                    'verified_at' => now(),
+                    'verification_notes' => trim($reason),
+                    'version' => $payment->version + 1,
+                ]);
+
+                return $payment->fresh();
+            });
         });
     }
 
@@ -174,20 +200,26 @@ class ArticlePaymentService
      */
     public function waivePayment(ArticlePayment $payment, User $verifier, string $reason): ArticlePayment
     {
-        if (trim($reason) === '') {
-            throw new DomainException('Alasan pembebasan biaya (waiver) wajib diisi.');
-        }
+        return DB::transaction(function () use ($payment, $verifier, $reason) {
+            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+            PortalAccess::lockSubmission($payment->submission, $verifier, $role);
+            $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
 
-        return DB::transaction(function () use ($payment, $verifier, $reason): ArticlePayment {
-            $payment->update([
-                'status' => 'waived',
-                'verified_by' => $verifier->id,
-                'verified_at' => now(),
-                'verification_notes' => trim($reason),
-                'version' => $payment->version + 1,
-            ]);
+            if (trim($reason) === '') {
+                throw new DomainException('Alasan pembebasan biaya (waiver) wajib diisi.');
+            }
 
-            return $payment->fresh();
+            return DB::transaction(function () use ($payment, $verifier, $reason): ArticlePayment {
+                $payment->update([
+                    'status' => 'waived',
+                    'verified_by' => $verifier->id,
+                    'verified_at' => now(),
+                    'verification_notes' => trim($reason),
+                    'version' => $payment->version + 1,
+                ]);
+
+                return $payment->fresh();
+            });
         });
     }
 

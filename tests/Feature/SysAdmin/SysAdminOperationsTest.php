@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SysAdmin;
 
+use App\Models\User;
 use Database\Seeders\SysAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SysAdminOperationsTest extends TestCase
@@ -17,6 +19,17 @@ class SysAdminOperationsTest extends TestCase
         parent::setUp();
 
         $this->seed(SysAdminSeeder::class);
+
+        $admin = User::where('email', 'fahri.azis@makassar.go.id')->firstOrFail();
+        $this->actingAs($admin);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_sysadmin_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/sysadmin/settings');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -34,8 +47,8 @@ class SysAdminOperationsTest extends TestCase
         // Diagnostik kesehatan server
         $response->assertSee('Diagnostik Kesehatan Server');
         $response->assertSee('PHP');
-        $response->assertSee('SQLite');
-        $response->assertSee('Defender');
+        $response->assertSee(DB::getDriverName() === 'sqlite' ? 'SQLite' : ucfirst(DB::getDriverName()));
+        $response->assertSee('Pemindai');
         $response->assertSee('Kosongkan Cache Aplikasi');
     }
 

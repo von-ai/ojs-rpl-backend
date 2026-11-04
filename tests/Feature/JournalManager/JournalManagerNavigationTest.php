@@ -4,10 +4,37 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\Issue;
+use App\Models\Submission;
+use App\Models\User;
+use Database\Seeders\JournalManagerSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class JournalManagerNavigationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(JournalManagerSeeder::class);
+        $this->manager = User::where('email', 'yusuf.brida@makassar.go.id')->firstOrFail();
+        $this->manager->update(['name' => 'Andi M. Yusuf, M.Si.']);
+        $this->actingAs($this->manager);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_portal_journal_manager_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/journalmanager/issues');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Halaman katalog edisi & terbitan dapat diakses dengan respons 200 OK.
      */
@@ -87,16 +114,22 @@ class JournalManagerNavigationTest extends TestCase
     {
         // 1. Simpan edisi baru
         $resStoreIssue = $this->post('/journalmanager/issues', [
-            'volume' => '6',
-            'number' => '2',
-            'year' => '2026',
+            'volume' => '7',
+            'number' => '1',
+            'year' => '2027',
         ]);
         $resStoreIssue->assertRedirect('/journalmanager/issues');
         $resStoreIssue->assertSessionHas('status');
 
         // 2. Tambah artikel ke edisi
+        $targetSubmission = Submission::whereDoesntHave('issueArticle')->firstOrFail();
+        $this->preparePublication($targetSubmission);
+        $issue = Issue::findOrFail('ISSUE-01JARK960A');
+        foreach ($issue->issueArticles as $entry) {
+            $this->preparePublication($entry->submission);
+        }
         $resAddArticle = $this->post('/journalmanager/issues/ISSUE-01JARK960A/add-article', [
-            'article_title' => 'Analisis Spasial RTH Makassar',
+            'article_id' => $targetSubmission->id,
         ]);
         $resAddArticle->assertRedirect('/journalmanager/issues/ISSUE-01JARK960A');
         $resAddArticle->assertSessionHas('status');
@@ -114,13 +147,14 @@ class JournalManagerNavigationTest extends TestCase
         // 5. Tetapkan peran pengguna
         $resAssignRole = $this->post('/journalmanager/users/assign-role', [
             'role_code' => 'Section Editor',
+            'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resAssignRole->assertRedirect('/journalmanager/users');
         $resAssignRole->assertSessionHas('status');
 
         // 6. Reset password pengguna
         $resReset = $this->post('/journalmanager/users/reset-password', [
-            'email' => 'reviewer@unhas.ac.id',
+            'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resReset->assertRedirect('/journalmanager/users');
         $resReset->assertSessionHas('status');

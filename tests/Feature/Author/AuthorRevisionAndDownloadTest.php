@@ -120,7 +120,7 @@ class AuthorRevisionAndDownloadTest extends TestCase
         $this->assertNotNull($manuscriptFile);
         $this->assertSame('manuskrip_revisi_r1.pdf', $manuscriptFile->original_name);
         $this->assertNotEmpty($manuscriptFile->checksum_sha256);
-        $this->assertSame('clean', $manuscriptFile->virus_scan_status);
+        $this->assertSame('pending', $manuscriptFile->virus_scan_status);
 
         // Relasi submission_files tercatat
         $this->assertDatabaseHas('submission_files', [
@@ -148,7 +148,7 @@ class AuthorRevisionAndDownloadTest extends TestCase
             'manuscript_file' => $manuscript,
         ]);
 
-        $response->assertRedirect(route('author.submissions.show', $this->submission->id));
+        $response->assertRedirect(route('author.submissions.index'));
         $response->assertSessionHas('error');
 
         // Status naskah tidak berubah
@@ -257,7 +257,7 @@ class AuthorRevisionAndDownloadTest extends TestCase
             'fileId' => $fileEntry->id,
         ]));
 
-        $response->assertRedirect(route('author.submissions.show', $this->submission->id));
+        $response->assertRedirect(route('author.submissions.index'));
         $response->assertSessionHas('error');
     }
 }

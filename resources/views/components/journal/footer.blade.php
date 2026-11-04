@@ -7,7 +7,7 @@
             <div class="space-y-3">
                 <a href="/" class="flex items-center gap-3">
                     <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-9 h-9 object-contain shrink-0">
-                    <span class="font-extrabold text-brand-maroon text-base tracking-tight block">
+                    <span class="font-extrabold text-brand-logo text-base tracking-tight block">
                         {{ $footerData['publisher_name'] ?? 'BRIDA KOTA MAKASSAR' }}
                     </span>
                 </a>
@@ -50,11 +50,11 @@
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500 text-center sm:text-left">
             <p>&copy; {{ date('Y') }} {{ $footerData['copyright'] ?? 'Badan Riset dan Inovasi Daerah Kota Makassar. Seluruh hak cipta dilindungi undang-undang.' }}</p>
             <div class="flex items-center gap-4 font-semibold text-gray-600">
-                <a href="#" class="hover:text-brand-maroon transition-colors">Kebijakan Privasi</a>
+                <a href="{{ route('journal.about.policies') }}" class="hover:text-brand-maroon transition-colors">Kebijakan Privasi</a>
                 <span>•</span>
-                <a href="#" class="hover:text-brand-maroon transition-colors">Etika Publikasi</a>
+                <a href="{{ route('journal.about.policies') }}" class="hover:text-brand-maroon transition-colors">Etika Publikasi</a>
                 <span>•</span>
-                <a href="#" class="hover:text-brand-maroon transition-colors">Peta Situs</a>
+                <a href="{{ route('journal.about') }}" class="hover:text-brand-maroon transition-colors">Tentang Jurnal</a>
             </div>
         </div>
     </div>

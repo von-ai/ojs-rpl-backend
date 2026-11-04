@@ -4,10 +4,51 @@ declare(strict_types=1);
 
 namespace Tests\Feature\LayoutEditor;
 
+use App\Models\ProofreadingNote;
+use App\Models\User;
+use App\Models\UserRole;
+use Database\Seeders\LayoutEditorSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class LayoutEditorWorkspaceTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $layoutEditor;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->layoutEditor = User::firstOrCreate(
+            ['email' => 'rahmat.hidayat@brida.makassar.go.id'],
+            [
+                'username' => 'rahmat.hidayat',
+                'name' => 'Rahmat Hidayat, S.Kom.',
+                'full_name' => 'Rahmat Hidayat, S.Kom.',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        UserRole::firstOrCreate([
+            'user_id' => $this->layoutEditor->id,
+            'role_code' => 'layout_editor',
+        ]);
+        $this->seed(LayoutEditorSeeder::class);
+        $this->actingAs($this->layoutEditor);
+    }
+
+    public function test_tamu_tidak_bisa_mengakses_ruang_kerja_layout_editor_dan_dialihkan_ke_login(): void
+    {
+        auth()->logout();
+
+        $response = $this->get('/layouteditor/submissions/SUB-2026-00106');
+        $response->assertRedirect(route('login'));
+    }
+
     /**
      * Skenario 1: Ruang kerja naskah baru dari copyeditor yang belum memiliki draf galai PDF.
      */
@@ -17,7 +58,7 @@ class LayoutEditorWorkspaceTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time');
-        $response->assertSee('Dr. Nurfadillah Bahar, M.Kes.');
+        $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('SUB2026-00106_Copyedit_Final_Approved.docx');
         $response->assertSee('Unduh Naskah Final (.docx)');
 
@@ -113,22 +154,27 @@ class LayoutEditorWorkspaceTest extends TestCase
     public function test_semua_aksi_transaksional_layout_editor_berfungsi(): void
     {
         // 1. Upload Galley
+        $fakeFile = UploadedFile::fake()->create('SUB2026-00106_Galley_Draft_v1.pdf', 500, 'application/pdf');
         $resUpload = $this->post('/layouteditor/upload-galley', [
             'submission_id' => 'SUB-2026-00106',
             'galley_label' => 'PDF Full Text (Draf v1)',
             'format' => 'pdf',
+            'file' => $fakeFile,
         ]);
         $resUpload->assertRedirect('/layouteditor/submissions/SUB-2026-00106');
-        $resUpload->assertSessionHas('status', 'Berkas galai PDF berhasil diunggah dan diverifikasi checksum.');
+        $resUpload->assertSessionHas('status', 'Galai diunggah dan menunggu pemindaian keamanan.');
 
         // 2. Resolve Note
+        $note = ProofreadingNote::whereHas('galley.submission', fn ($q) => $q->where('submission_number', 'SUB-2026-00107'))->first();
         $resResolve = $this->post('/layouteditor/resolve-note', [
             'submission_id' => 'SUB-2026-00107',
-            'note_id' => 'NOTE-01JARK-01',
+            'note_id' => $note?->id ?? 'NOTE-01JARK-01',
             'resolution' => 'Tabel 2 telah diposisikan ke awal halaman 5 format 2-kolom penuh.',
         ]);
         $resResolve->assertRedirect('/layouteditor/submissions/SUB-2026-00107');
-        $resResolve->assertSessionHas('status', 'Catatan koreksi proofreading berhasil ditandai selesai.');
+        $resResolve->assertSessionHas('status', 'Catatan koreksi ditandai selesai dan menunggu verifikasi proofreader.');
+
+        $this->scanTestUploads();
 
         // 3. Request Proofread
         $resProofread = $this->post('/layouteditor/request-proofread', [
@@ -142,7 +188,8 @@ class LayoutEditorWorkspaceTest extends TestCase
             'submission_id' => 'SUB-2026-00109',
         ]);
         $resApproval->assertRedirect('/layouteditor/submissions/SUB-2026-00109');
-        $resApproval->assertSessionHas('status', 'Permohonan persetujuan akhir galai berhasil diajukan ke Editor in Chief.');
+        $resApproval->assertSessionHasErrors('general');
+        $this->assertDatabaseHas('submissions', ['submission_number' => 'SUB-2026-00109', 'status' => 'archived']);
 
         // 5. Submit Escalation
         $resEscalate = $this->post('/layouteditor/escalate', [

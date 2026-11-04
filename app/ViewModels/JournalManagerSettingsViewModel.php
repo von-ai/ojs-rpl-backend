@@ -140,22 +140,7 @@ class JournalManagerSettingsViewModel
             }
         }
 
-        return [
-            [
-                'id' => 'ANN-01JARK-01',
-                'title' => 'Panggilan Pengajuan Naskah (Call for Papers) Vol. 6 No. 2 Tahun 2026',
-                'body' => 'Redaksi mengundang para akademisi, peneliti, dan praktisi kebijakan daerah untuk mengirimkan naskah hasil riset terbaik bertema Inovasi Kebijakan Publik dan Ketahanan Perkotaan. Batas akhir pengiriman naskah adalah 15 November 2026.',
-                'published_at' => '01 Okt 2026',
-                'is_published' => true,
-            ],
-            [
-                'id' => 'ANN-01JARK-02',
-                'title' => 'Pembaruan Panduan Gaya Selingkung (Author Guidelines) Tahun 2026',
-                'body' => 'Mulai Volume 6, seluruh rujukan wajib menggunakan standar sitasi APA Edisi ke-7 dengan minimal 80% rujukan bersumber dari artikel jurnal terindeks bereputasi 5 tahun terakhir.',
-                'published_at' => '15 Sep 2026',
-                'is_published' => true,
-            ],
-        ];
+        return [];
     }
 
     private function resolveJournal(): ?Journal

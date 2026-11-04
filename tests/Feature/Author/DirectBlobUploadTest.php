@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Author;
 
 use App\Models\User;
+use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -26,6 +27,7 @@ class DirectBlobUploadTest extends TestCase
             'email' => 'budi.hartono@makassar.go.id',
         ]);
 
+        $this->seed(SectionSeeder::class);
         $this->actingAs($this->user);
     }
 

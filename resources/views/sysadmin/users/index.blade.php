@@ -15,7 +15,7 @@
     <!-- Header Halaman & Tombol Impor -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Direktori Pengguna &amp; Hak Akses Global
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -24,8 +24,8 @@
         </div>
 
         <div class="shrink-0">
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="document.getElementById('modal-import-users').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 min-h-11 bg-brand-maroon hover:bg-brand-maroon-dark text-white text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
                 title="Impor Pengguna secara Massal melalui Berkas CSV"
@@ -60,7 +60,7 @@
 
     <!-- Container Utama 1: Direktori Pengguna Global -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        
+
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Peran Pengguna -->
@@ -72,7 +72,7 @@
                     @php
                         $isActive = $tabs['active'] === $tabKey;
                     @endphp
-                    <a 
+                    <a
                         href="{{ route('sysadmin.users.index', ['role' => $tabKey, 'q' => request('q')]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
@@ -92,16 +92,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="search" 
-                    name="q" 
+                <input
+                    type="search"
+                    name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari nama, surel, atau afiliasi..."
                     class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                 @if(request('q'))
-                    <a 
-                        href="{{ route('sysadmin.users.index', ['role' => $tabs['active']]) }}" 
+                    <a
+                        href="{{ route('sysadmin.users.index', ['role' => $tabs['active']]) }}"
                         class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                         title="Hapus filter pencarian"
                     >
@@ -184,8 +184,8 @@
                             <!-- Kolom Aksi -->
                             <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onclick="openJournalRoleModal('{{ $user['id'] }}', @js($user['name']), @js($user['email']), @js($user['journal_roles'] ?? []))"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-brand-maroon bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200 cursor-pointer"
                                         title="Kelola peran jurnal untuk pengguna ini"
@@ -200,8 +200,8 @@
                                         <form action="{{ route('sysadmin.users.revoke-sysadmin') }}" method="POST" class="inline">
                                             @csrf
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
-                                            <button 
-                                                type="submit" 
+                                            <button
+                                                type="submit"
                                                 class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200 cursor-pointer"
                                                 title="Cabut hak akses System Administrator"
                                             >
@@ -212,8 +212,8 @@
                                         <form action="{{ route('sysadmin.users.assign-sysadmin') }}" method="POST" class="inline">
                                             @csrf
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
-                                            <button 
-                                                type="submit" 
+                                            <button
+                                                type="submit"
                                                 class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition border border-purple-200 cursor-pointer"
                                                 title="Berikan hak akses System Administrator"
                                             >
@@ -273,8 +273,8 @@
     <!-- Container Utama 2: Riwayat Pengimporan Massal CSV (Tabel 54 user_imports) -->
     <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
         <div class="border-b border-gray-100 pb-3">
-            <h2 class="text-base font-bold text-gray-900 tracking-tight font-serif">
-                Riwayat Pengimporan Massal Pengguna via CSV (user_imports)
+            <h2 class="text-base font-bold text-gray-900 tracking-tight font-sans">
+                Riwayat Pengimporan Massal Pengguna via CSV
             </h2>
             <p class="text-xs text-gray-500 mt-0.5">
                 Audit rekam jejak operasi impor akun massal, validasi baris, dan penanganan kegagalan format.
@@ -338,11 +338,11 @@
 <div id="modal-import-users" class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+            <h3 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                 Impor Pengguna secara Massal (CSV)
             </h3>
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="document.getElementById('modal-import-users').classList.add('hidden')"
                 class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center"
             >
@@ -359,10 +359,10 @@
                 <label for="journal_id" class="block text-xs font-semibold text-gray-700 mb-1">
                     Jurnal Tujuan Alokasi Pengguna <span class="text-red-500">*</span>
                 </label>
-                <select 
-                    id="journal_id" 
-                    name="journal_id" 
-                    required 
+                <select
+                    id="journal_id"
+                    name="journal_id"
+                    required
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                     @foreach ($viewModel->selectableJournals() as $journalOption)
@@ -375,12 +375,12 @@
                 <label for="csv_file" class="block text-xs font-semibold text-gray-700 mb-1">
                     Berkas CSV Sumber Pengguna <span class="text-red-500">*</span>
                 </label>
-                <input 
-                    type="file" 
-                    id="csv_file" 
-                    name="file" 
+                <input
+                    type="file"
+                    id="csv_file"
+                    name="file"
                     accept=".csv"
-                    required 
+                    required
                     class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-maroon/10 file:text-brand-maroon hover:file:bg-brand-maroon/20 cursor-pointer border border-gray-300 rounded-lg p-1.5"
                 >
                 <p class="text-[11px] text-gray-400 mt-1">
@@ -389,11 +389,11 @@
             </div>
 
             <div class="flex items-start gap-2 pt-1">
-                <input 
-                    type="checkbox" 
-                    id="send_invitation" 
-                    name="send_invitation_email" 
-                    value="1" 
+                <input
+                    type="checkbox"
+                    id="send_invitation"
+                    name="send_invitation_email"
+                    value="1"
                     checked
                     class="mt-0.5 rounded text-brand-maroon focus:ring-brand-maroon"
                 >
@@ -403,15 +403,15 @@
             </div>
 
             <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     onclick="document.getElementById('modal-import-users').classList.add('hidden')"
                     class="px-4 py-2 min-h-11 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
                 >
                     Batal
                 </button>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="px-4 py-2 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition shadow-2xs"
                 >
                     Unggah &amp; Proses Antrean CSV
@@ -426,13 +426,13 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
-                <h3 class="text-base font-bold text-gray-900 tracking-tight font-serif">
+                <h3 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                     Kelola Peran Jurnal Pengguna
                 </h3>
                 <p id="modal-user-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
             </div>
-            <button 
-                type="button" 
+            <button
+                type="button"
                 onclick="closeJournalRoleModal()"
                 class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer"
             >
@@ -468,10 +468,10 @@
                 <label for="assign_journal_id" class="block text-xs font-semibold text-gray-700 mb-1">
                     Pilih Instansi Jurnal <span class="text-red-500">*</span>
                 </label>
-                <select 
-                    id="assign_journal_id" 
-                    name="journal_id" 
-                    required 
+                <select
+                    id="assign_journal_id"
+                    name="journal_id"
+                    required
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                     <option value="">-- Pilih Instansi Jurnal --</option>
@@ -485,10 +485,10 @@
                 <label for="assign_role_code" class="block text-xs font-semibold text-gray-700 mb-1">
                     Pilih Peran yang Diberikan <span class="text-red-500">*</span>
                 </label>
-                <select 
-                    id="assign_role_code" 
-                    name="role_code" 
-                    required 
+                <select
+                    id="assign_role_code"
+                    name="role_code"
+                    required
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
                     <option value="manager">Journal Manager (Manajer Jurnal)</option>
@@ -506,25 +506,25 @@
                 <label for="assign_expertise_keywords" class="block text-xs font-semibold text-gray-700 mb-1">
                     Kata Kunci Kepakaran (Khusus Reviewer)
                 </label>
-                <input 
-                    type="text" 
-                    id="assign_expertise_keywords" 
-                    name="expertise_keywords" 
+                <input
+                    type="text"
+                    id="assign_expertise_keywords"
+                    name="expertise_keywords"
                     placeholder="Contoh: Tata Kelola Publik, Smart City (pisahkan koma)"
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                 >
             </div>
 
             <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     onclick="closeJournalRoleModal()"
                     class="px-4 py-2 min-h-11 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                 >
                     Batal
                 </button>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="px-4 py-2 min-h-11 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-dark rounded-lg transition shadow-2xs cursor-pointer"
                 >
                     Simpan Peran Jurnal

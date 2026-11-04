@@ -27,6 +27,8 @@
         </div>
     @endif
 
+    @include('author.submissions.partials.copyedit-approval')
+
     <!-- Header & Breadcrumbs Navigasi -->
     @include('author.submissions.partials.detail-header', ['submission' => $submission])
 
@@ -35,7 +37,7 @@
 
     <!-- Tata Letak 2 Kolom Responsif (2/3 Konten Manuskrip, 1/3 Sidebar Editorial Sticky) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
+
         <!-- Kolom Konten Utama (2/3) -->
         <div class="lg:col-span-2 space-y-6 min-w-0">
             <!-- Metadata & Abstrak (Tipografi Lora Serif Sesuai guide-code.md) -->
@@ -63,7 +65,7 @@
      */
     function copyTextToClipboard(text, successMessage = 'Teks berhasil disalin ke papan klip') {
         if (!text) return;
-        
+
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(() => {
                 if (window.toast && window.toast.success) {
