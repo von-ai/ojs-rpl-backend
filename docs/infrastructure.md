@@ -50,7 +50,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                           ▼ HTTPS / TLS 1.3
    ┌─────────────────────────────────────────────────────────────────────────────┐
    │                       CLOUDFLARE EDGE PLATFORM                              │
-   │  • Anycast DNS (jurnal.makassar.go.id)                                      │
+   │  • Anycast DNS (sirida.web.id / jurnal.makassar.go.id)                      │
    │  • CDN Edge Caching (Aset Statis & Terbitan PDF Publik)                     │
    │  • Web Application Firewall (WAF) & DDoS Shield                             │
    └──────────────────────┬───────────────────────────────┬──────────────────────┘
@@ -79,14 +79,14 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                          │ • Azure Log Analytics (stdout/stderr) │
                                          └───────┬──────────────┬───────┬────────┘
                                                  │              │       │
-                                  TLS Port 4000  │ TLS Port 6380│       │ TLS Port 587
-                                  MySQL Protocol │ Redis Native │       │ SMTP Protocol
+                                  TLS Port 4000  │TLS Port 10000│       │ TLS Port 587
+                                  MySQL Protocol │Redis (AMR)   │       │ SMTP Protocol
                                                  ▼              ▼       ▼
                           ┌──────────────────────────────┐ ┌─────────┐ ┌─────────┐
                           │    TiDB CLOUD SERVERLESS     │ │ AZURE   │ │ AZURE   │
-                          │ • Dialek MySQL 8.0           │ │ REDIS   │ │ COMM    │
-                          │ • Auto-scaling & Zero Idle   │ │ (C0)    │ │ SERVICES│
-                          │ • Automated Snapshot Backup  │ │ Sub-1ms │ │ (ACS)   │
+                          │ • Dialek MySQL 8.0           │ │ MANAGED │ │ COMM    │
+                          │ • Auto-scaling & Zero Idle   │ │ REDIS   │ │ SERVICES│
+                          │ • Automated Snapshot Backup  │ │(Bld_B0) │ │ (ACS)   │
                           └──────────────────────────────┘ └─────────┘ └─────────┘
 ```
 

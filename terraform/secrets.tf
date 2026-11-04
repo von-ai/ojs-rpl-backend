@@ -63,6 +63,7 @@ locals {
     { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },
     { name = "AZURE_STORAGE_KEY", secret_name = "azure-storage-key" },
     { name = "AZURE_STORAGE_CONTAINER", value = azurerm_storage_container.manuscripts.name },
+    { name = "AZURE_BACKUP_CONTAINER", value = azurerm_storage_container.backups.name },
     { name = "AZURE_STORAGE_URL", value = azurerm_storage_account.storage.primary_blob_endpoint },
     { name = "MAIL_MAILER", value = "smtp" },
     { name = "MAIL_HOST", value = var.mail_host },

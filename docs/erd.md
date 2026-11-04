@@ -1,7 +1,7 @@
 # SIRIDA — Dokumentasi Skema Basis Data & ERD (Entity Relationship Diagram)
 
 **Baseline Arsitektur:** MySQL 8.0 / TiDB Cloud Serverless (InnoDB wire protocol) + Redis in-memory • Framework Laravel 13 (PHP 8.4)  
-**Revisi Desain:** 22 Oktober 2026 • **Arsitektur:** Modular Monolith Laravel 13 (Blade + Livewire 4)  
+**Revisi Desain:** 22 Oktober 2026 • **Arsitektur:** Modular Monolith Laravel 13 (Blade + ViewModel Pattern OOP)  
 **Metrik Desain:** 58 Tabel MySQL • 8 Modul Domain • 94 Relasi Foreign Key • Redis Key-Value Ledger
 
 ---
@@ -1593,7 +1593,7 @@ Berikut adalah 13 aturan persistensi arsitektural yang wajib dipatuhi pada layer
 
 ### 10 • Siklus Hidup Berkas dan Pemindaian Malware
 
-- Alur pengunggahan berkas: Berkas diunggah melalui antarmuka web/Livewire berbatas ukuran maksimal 20 MiB. Berkas disimpan langsung ke storage (Azure Blob / local) dan dicatat pada tabel `files` dengan status `pending_scan` (atau `clean` pada lingkungan lokal).
+- Alur pengunggahan berkas: Berkas diunggah melalui antarmuka web (Direct SAS Upload ke Azure Blob Storage) berbatas ukuran maksimal 20 MiB. Berkas disimpan langsung ke storage (Azure Blob / local) dan dicatat pada tabel `files` dengan status `pending_scan` (atau `clean` pada lingkungan lokal).
 - Backend storage, path bucket, dan storage key di-generate oleh server secara unik menggunakan ULID; storage key bersifat _immutable_. Berkas turunan (_derivative/anonymized_) dicatat dengan mereferensikan `anonymized_file_id` ke `files.id` induknya tanpa memerlukan sesi terpisah.
 - Server memverifikasi tipe MIME, ukuran berkas (maksimal 20 MiB), dan hash SHA-256 terhadap objek fisik. Integrasi Microsoft Defender for Storage mencatat setiap riwayat pemindaian pada `scan_attempts`. Berkas berstatus `quarantined` atau `infected` diblokir total dari seluruh proses editorial. URL unduh bertanda tangan (_Signed SAS URL_) di-generate secara temporer sesuai otorisasi sesi pengguna.
 

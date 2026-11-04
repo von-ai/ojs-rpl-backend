@@ -36,7 +36,7 @@ resource "azurerm_storage_account" "storage" {
     cors_rule {
       allowed_headers    = ["*"]
       allowed_methods    = ["GET", "HEAD", "PUT", "OPTIONS"]
-      allowed_origins    = ["https://${var.custom_domain}", "http://localhost", "http://localhost:8000", "http://127.0.0.1:8000"]
+      allowed_origins    = [var.subdomain == "@" ? "https://${var.domain_name}" : "https://${var.subdomain}.${var.domain_name}", "http://localhost", "http://localhost:8000", "http://127.0.0.1:8000"]
       exposed_headers    = ["*"]
       max_age_in_seconds = 3600
     }
