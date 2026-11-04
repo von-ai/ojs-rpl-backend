@@ -118,7 +118,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 ### 4.3 Strategi Pembagian Wilayah Multi-Region Azure (*Multi-Region Split Strategy*)
 Untuk mengoptimalkan latensi pengguna lokal sekaligus memanfaatkan ketersediaan fitur keamanan cloud tercanggih:
 1. **Region Komputasi & Telemetri (`indonesiacentral` / Jakarta)**:
-   * Menampung ACA Environment (Web, Queue Worker, Scheduler Daemon), Redis container, Log Analytics Workspace, dan Application Insights.
+   * Menampung ACA Environment (Web, Queue Worker, Scheduler Daemon), Azure Managed Redis (AMR Balanced_B0), Log Analytics Workspace, dan Application Insights.
    * Memberikan latensi ultra-rendah (< 20 ms) ke pengguna di Indonesia dan memenuhi prinsip kedekatan pemrosesan data.
 2. **Region Objek & Pemindaian Berkas (`southeastasia` / Singapura)**:
    * Menampung Storage Account (`sirida-manuscripts`, `sirida-backups`) dan modul keamanan **Microsoft Defender for Storage (Malware Scanning)**.
