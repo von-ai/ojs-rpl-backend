@@ -186,7 +186,7 @@
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button
                                         type="button"
-                                        onclick="openJournalRoleModal('{{ $user['id'] }}', @js($user['name']), @js($user['email']), @js($user['journal_roles'] ?? []))"
+                                        onclick="openJournalRoleModal(@js($user['id']), @js($user['name']), @js($user['email']), @js($user['journal_roles'] ?? []))"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-9 text-xs font-semibold text-brand-maroon bg-red-50 hover:bg-red-100 rounded-lg transition border border-red-200 cursor-pointer"
                                         title="Kelola peran jurnal untuk pengguna ini"
                                     >
@@ -450,6 +450,23 @@
             <div id="active-roles-list" class="space-y-2 max-h-40 overflow-y-auto">
                 <!-- Diisi secara dinamis lewat JS -->
             </div>
+            <template id="active-role-template">
+                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200/80 text-xs">
+                    <div class="min-w-0 pr-2">
+                        <span data-journal-name class="font-bold text-gray-900 block truncate"></span>
+                        <span data-role-label class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border mt-0.5"></span>
+                    </div>
+                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" method="POST" class="inline shrink-0" onsubmit="return confirm('Apakah Anda yakin ingin mencabut peran ini?');">
+                        @csrf
+                        <input type="hidden" name="user_id">
+                        <input type="hidden" name="journal_id">
+                        <input type="hidden" name="role_code">
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded transition cursor-pointer">
+                            Cabut
+                        </button>
+                    </form>
+                </div>
+            </template>
         </div>
 
         <!-- Garis Pemisah -->
@@ -540,31 +557,21 @@
         document.getElementById('modal-user-subtitle').textContent = userName + ' (' + userEmail + ')';
 
         const listContainer = document.getElementById('active-roles-list');
-        listContainer.innerHTML = '';
+        listContainer.replaceChildren();
 
         if (!roles || roles.length === 0) {
             listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200/60">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
         } else {
-            roles.forEach(function(r) {
-                const item = document.createElement('div');
-                item.className = 'flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200/80 text-xs';
-                item.innerHTML = `
-                    <div class="min-w-0 pr-2">
-                        <span class="font-bold text-gray-900 block truncate">${r.journal_name}</span>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${r.badge_class || 'bg-gray-100 text-gray-700 border-gray-200'} mt-0.5">
-                            ${r.role_label}
-                        </span>
-                    </div>
-                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" method="POST" class="inline shrink-0" onsubmit="return confirm('Apakah Anda yakin ingin mencabut peran ini?');">
-                        @csrf
-                        <input type="hidden" name="user_id" value="${userId}">
-                        <input type="hidden" name="journal_id" value="${r.journal_id}">
-                        <input type="hidden" name="role_code" value="${r.role_code}">
-                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded transition cursor-pointer">
-                            Cabut
-                        </button>
-                    </form>
-                `;
+            const template = document.getElementById('active-role-template');
+            roles.forEach(function(role) {
+                const item = template.content.cloneNode(true);
+                item.querySelector('[data-journal-name]').textContent = role.journal_name;
+                const label = item.querySelector('[data-role-label]');
+                label.textContent = role.role_label;
+                label.className += ' ' + (role.badge_class || 'bg-gray-100 text-gray-700 border-gray-200');
+                item.querySelector('[name="user_id"]').value = userId;
+                item.querySelector('[name="journal_id"]').value = role.journal_id;
+                item.querySelector('[name="role_code"]').value = role.role_code;
                 listContainer.appendChild(item);
             });
         }

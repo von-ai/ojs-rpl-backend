@@ -23,18 +23,14 @@ class ArticlePaymentService
      */
     public function resolveOrCreatePayment(Submission $submission, ?User $actor = null): ?ArticlePayment
     {
-        $journal = $submission->journal ?? Journal::first();
-        if (! $journal || ! $journal->isPaidApc()) {
-            return $submission->latestPayment;
-        }
+        return DB::transaction(function () use ($submission, $actor): ?ArticlePayment {
+            $submission = Submission::query()->lockForUpdate()->findOrFail($submission->id);
+            $payment = $submission->latestPayment()->lockForUpdate()->first();
+            $journal = $submission->journal ?? Journal::first();
+            if ($payment || ! $journal || ! $journal->isPaidApc()) {
+                return $payment;
+            }
 
-        // Cari transaksi pembayaran aktif
-        $payment = $submission->latestPayment;
-        if ($payment) {
-            return $payment;
-        }
-
-        return DB::transaction(function () use ($submission, $journal, $actor): ArticlePayment {
             $year = date('Y');
             $cleanNum = preg_replace('/[^0-9]/', '', (string) $submission->submission_number) ?: (string) rand(1000, 9999);
             $invoiceNumber = 'INV-'.$year.'-APC'.str_pad($cleanNum, 5, '0', STR_PAD_LEFT);
@@ -74,26 +70,25 @@ class ArticlePaymentService
         UploadedFile $file,
         array $data = []
     ): ArticlePayment {
-        // Invariant 1: Naskah harus dalam tahapan menjelang terbit (accepted, in_production, ready_for_issue)
-        $allowedStatuses = ['accepted', 'in_production', 'ready_for_issue', 'scheduled', 'published'];
-        if (! in_array($submission->status, $allowedStatuses, true)) {
-            throw new DomainException('Pembayaran hanya dapat dilakukan setelah naskah dinyatakan diterima untuk publikasi oleh dewan redaksi.');
-        }
-
-        // Invariant 2: Jurnal harus merupakan jurnal berbayar (memiliki biaya APC)
-        $journal = $submission->journal ?? Journal::first();
-        if (! $journal || ! $journal->isPaidApc()) {
-            throw new DomainException('Jurnal ini tidak memungut biaya publikasi (Gratis / Diamond Open Access). Anda tidak perlu mengunggah bukti pembayaran.');
-        }
-
         return DB::transaction(function () use ($submission, $author, $file, $data): ArticlePayment {
-            $payment = $submission->latestPayment;
-            if (! $payment) {
-                $payment = $this->resolveOrCreatePayment($submission, $author);
+            $submission = PortalAccess::lockSubmission($submission, $author, 'author');
+            if ($submission->status === 'published') {
+                throw new DomainException('Bukti pembayaran tidak dapat diubah setelah naskah terbit.');
+            }
+            if (! in_array($submission->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)) {
+                throw new DomainException('Pembayaran hanya dapat dilakukan setelah naskah dinyatakan diterima untuk publikasi oleh dewan redaksi.');
             }
 
+            if (! $submission->journal?->isPaidApc()) {
+                throw new DomainException('Jurnal ini tidak memungut biaya publikasi (Gratis / Diamond Open Access). Anda tidak perlu mengunggah bukti pembayaran.');
+            }
+
+            $payment = $this->resolveOrCreatePayment($submission, $author);
             if (! $payment) {
                 throw new DomainException('Gagal memproses data tagihan pembayaran naskah.');
+            }
+            if (! in_array($payment->status, ['pending_payment', 'rejected'], true)) {
+                throw new DomainException('Bukti hanya dapat diunggah untuk tagihan yang menunggu pembayaran atau bukti yang ditolak.');
             }
 
             // Simpan berkas fisik ke disk penyimpanan lokal
@@ -124,6 +119,9 @@ class ArticlePaymentService
                 'author_notes' => ! empty($data['author_notes']) ? trim((string) $data['author_notes']) : null,
                 'status' => 'pending_verification',
                 'uploaded_at' => now(),
+                'verified_by' => null,
+                'verified_at' => null,
+                'verification_notes' => null,
                 'version' => $payment->version + 1,
             ]);
 

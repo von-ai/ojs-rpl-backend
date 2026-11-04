@@ -141,7 +141,6 @@ class ReviewerController extends Controller
         $reviewer = Auth::user();
 
         $assignment = ReviewAssignment::with([
-            'reviewRound.submission.files.file',
             'reviewRound.anonymizedFile',
             'reviewRound.manuscriptFile',
         ])->where('reviewer_id', $reviewer->id)
@@ -156,7 +155,7 @@ class ReviewerController extends Controller
 
         $round = $assignment->reviewRound;
         abort_unless($round && $round->review_type === 'double_blind' && $round->anonymized_file_id !== $round->manuscript_file_id && $round->anonymized_file_id === $fileId && $round->anonymizedFile, 404);
-        abort_unless($round->anonymized_checksum && hash_equals($round->anonymized_checksum, (string) $round->anonymizedFile->checksum_sha256), 409);
+        abort_unless($round->hasDistinctAnonymizedFile(), 409);
         $extension = match ($round->anonymizedFile->mime_type) {
             'application/pdf' => 'pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',

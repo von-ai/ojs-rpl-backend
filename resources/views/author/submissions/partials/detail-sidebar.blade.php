@@ -546,7 +546,7 @@
                             <span class="font-mono text-xs font-bold text-gray-900 tracking-wide select-all">{{ $pay['account_number'] }}</span>
                             <button
                                 type="button"
-                                onclick="copyTextToClipboard('{{ $pay['account_number'] }}', 'Nomor rekening {{ $pay['bank_name'] }} disalin')"
+                                onclick="copyTextToClipboard(@js($pay['account_number']), @js('Nomor rekening '.$pay['bank_name'].' disalin'))"
                                 class="inline-flex items-center gap-1 text-[11px] text-brand-maroon hover:text-brand-maroon/80 font-bold cursor-pointer"
                                 title="Salin nomor rekening"
                             >
@@ -565,6 +565,7 @@
                         {{ $pay['instructions'] }}
                     </div>
 
+                    @if($pay['can_upload'])
                     <button
                         type="button"
                         onclick="document.getElementById('modal-upload-pembayaran').classList.remove('hidden'); document.getElementById('modal-upload-pembayaran').classList.add('flex');"
@@ -575,6 +576,7 @@
                         </svg>
                         <span>Unggah Bukti Transfer Pembayaran</span>
                     </button>
+                    @endif
                 @elseif($pay['status'] === 'pending_verification')
                     <div class="p-3 rounded-lg bg-sky-50 border border-sky-200 text-xs text-sky-900 leading-relaxed space-y-1">
                         <p class="font-bold flex items-center gap-1.5 text-sky-800">
@@ -611,6 +613,7 @@
                         <p class="text-[11px] text-rose-700 font-medium">Catatan Dewan Redaksi: "{{ $pay['verification_notes'] }}"</p>
                     </div>
 
+                    @if($pay['can_upload'])
                     <button
                         type="button"
                         onclick="document.getElementById('modal-upload-pembayaran').classList.remove('hidden'); document.getElementById('modal-upload-pembayaran').classList.add('flex');"
@@ -621,6 +624,7 @@
                         </svg>
                         <span>Unggah Ulang Bukti Pembayaran yang Benar</span>
                     </button>
+                    @endif
                 @elseif($pay['status'] === 'verified')
                     <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 leading-relaxed space-y-1">
                         <p class="font-bold flex items-center gap-1.5 text-emerald-800">
@@ -651,6 +655,7 @@
                 @endif
             </div>
 
+            @if($pay['can_upload'])
             <!-- Modal Formulir Unggah Bukti Pembayaran APC -->
             <div
                 id="modal-upload-pembayaran"
@@ -802,6 +807,7 @@
                     </form>
                 </div>
             </div>
+            @endif
         @endif
     @endif
 

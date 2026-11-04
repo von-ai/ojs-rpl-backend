@@ -111,7 +111,8 @@
                     <div class="space-y-2 text-xs">
                         @php
                             $filesToDownload = collect();
-                            if ($viewModel->assignment->reviewRound?->anonymizedFile) {
+                            $round = $viewModel->assignment->reviewRound;
+                            if ($round?->hasDistinctAnonymizedFile() && $round->anonymizedFile->virus_scan_status === 'clean') {
                                 $filesToDownload->push($viewModel->assignment->reviewRound->anonymizedFile);
                             }
 
@@ -144,7 +145,7 @@
                                 </a>
                             </div>
                         @empty
-                            <p class="text-gray-400 italic text-[11px] text-center py-2">Berkas naskah belum diunggah dewan editor.</p>
+                            <p class="text-gray-400 italic text-[11px] text-center py-2">Berkas anonim belum tersedia untuk diunduh. Hubungi editor jika diperlukan.</p>
                         @endforelse
                     </div>
                 @endif

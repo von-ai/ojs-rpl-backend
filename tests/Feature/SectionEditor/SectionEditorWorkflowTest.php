@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Models\UserRole;
 use App\Services\Reviewer\ReviewerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -158,6 +159,67 @@ class SectionEditorWorkflowTest extends TestCase
 
         $this->assertDatabaseCount('review_rounds', 0);
 
+    }
+
+    public function test_round_rejects_a_renamed_copy_of_the_original_manuscript(): void
+    {
+        Storage::fake('local');
+        $original = $this->cleanTestFile('asli.pdf');
+        $this->submission->files()->create(['file_id' => $original->id, 'genre' => 'manuscript', 'version' => 1]);
+
+        $this->actingAs($this->sectionEditor)->post(route('section-editor.rounds.store', $this->submission->id), [
+            'anonymous_file' => UploadedFile::fake()->createWithContent('anonim.pdf', Storage::disk('local')->get($original->storage_path)),
+            'reviewer_title' => 'Judul anonim',
+            'reviewer_abstract' => 'Abstrak anonim',
+            'anonymity_confirmed' => 1,
+        ])->assertSessionHasErrors(['round' => 'Berkas anonim harus berbeda isinya dari naskah acuan.']);
+
+        $this->assertDatabaseCount('review_rounds', 0);
+        $this->assertDatabaseCount('files', 1);
+        $this->assertSame([], Storage::disk('local')->allFiles('review-anonymous'));
+    }
+
+    public function test_editor_can_replace_a_legacy_round_with_an_identical_copy(): void
+    {
+        Storage::fake('local');
+        $original = $this->cleanTestFile('asli.pdf');
+        $copy = $this->cleanTestFile('asli.pdf');
+        $this->submission->files()->create(['file_id' => $original->id, 'genre' => 'manuscript', 'version' => 1]);
+        $round = $this->submission->reviewRounds()->create([
+            'round' => 1, 'status' => 'active',
+            'manuscript_file_id' => $original->id, 'manuscript_checksum' => $original->checksum_sha256,
+            'anonymized_file_id' => $copy->id, 'anonymized_checksum' => $copy->checksum_sha256,
+        ]);
+        $assignment = $round->assignments()->create([
+            'reviewer_id' => $this->reviewerA->id, 'status' => 'accepted',
+            'response_due_at' => now()->addDays(7), 'review_due_at' => now()->addDays(21),
+        ]);
+
+        $this->actingAs($this->reviewerA)
+            ->get(route('reviewer.files.download', [$assignment->id, $copy->id]))
+            ->assertStatus(409);
+        $this->get(route('reviewer.assignments.show', $assignment->id))
+            ->assertOk()->assertDontSee(route('reviewer.files.download', [$assignment->id, $copy->id]));
+
+        $this->actingAs($this->sectionEditor)->post(route('section-editor.reviewers.assign', $round->id), [
+            'reviewer_id' => $this->reviewerB->id,
+            'response_due_at' => now()->addDays(7)->toDateString(),
+            'review_due_at' => now()->addDays(21)->toDateString(),
+        ])->assertSessionHasErrors(['reviewer_id' => 'Siapkan putaran dengan berkas anonim yang berbeda dari naskah acuan.']);
+        $this->assertDatabaseCount('review_assignments', 1);
+
+        $this->get(route('section-editor.submissions.show', $this->submission->id))
+            ->assertOk()->assertSee('Siapkan putaran baru');
+        $this->post(route('section-editor.rounds.store', $this->submission->id), [
+            'anonymous_file' => UploadedFile::fake()->createWithContent('anonim.pdf', "%PDF-1.4\n% Isi anonim\n%%EOF"),
+            'reviewer_title' => 'Judul anonim',
+            'reviewer_abstract' => 'Abstrak anonim',
+            'anonymity_confirmed' => 1,
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertSame('closed', $round->fresh()->status);
+        $this->assertSame('cancelled', $assignment->fresh()->status);
+        $this->assertDatabaseHas('review_rounds', ['submission_id' => $this->submission->id, 'round' => 2, 'status' => 'active']);
     }
 
     public function test_section_editor_dapat_mengundang_mitra_bestari_dengan_batas_waktu_valid(): void

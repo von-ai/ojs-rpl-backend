@@ -45,7 +45,7 @@ trait CreatesWorkflowFixtures
 
     protected function cleanTestFile(string $name = 'galai-uji.pdf'): FileEntry
     {
-        $content = '%PDF-1.4 valid test fixture';
+        $content = '%PDF-1.4 valid test fixture '.$name;
         $path = 'test-fixtures/'.Str::ulid().'.pdf';
         Storage::disk('local')->put($path, $content);
 

@@ -2,7 +2,7 @@
 @php
     $activeRound = $viewModel->activeRound;
     $availableReviewers = $viewModel->availableReviewers;
-    $isFinalized = $viewModel->isWorkflowFinalized() || ! $activeRound->exists || $activeRound->anonymizedFile?->virus_scan_status !== 'clean';
+    $isFinalized = $viewModel->isWorkflowFinalized() || ! $activeRound->hasDistinctAnonymizedFile() || $activeRound->anonymizedFile->virus_scan_status !== 'clean';
     $canRecommend = $viewModel->canRecommendToEic();
     $completedCount = $viewModel->completedReviewsCount();
     $minReq = $viewModel->minimumCompletedReviews();
