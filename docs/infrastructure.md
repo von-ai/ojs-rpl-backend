@@ -135,7 +135,7 @@ Untuk mengoptimalkan latensi pengguna lokal sekaligus memanfaatkan ketersediaan 
 | **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
 | **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
 | **ACA Scheduler Daemon** | 0.25 vCPU | 0.5 GiB | Dedicated Daemon (min 1, max 1 replika) | Menjalankan `php artisan schedule:work` secara kontinu di memori tanpa penalti cold-start 1-menit. |
-| **Redis Container (ACA)**| 0.25 vCPU | 0.5 GiB | Min 1 replika (Internal TCP Ingress Port 6379) | Collocated di dalam ACA Environment (latensi < 1 ms), $0 gratis masuk kuota ACA. |
+| **Azure Managed Redis (AMR)** | Balanced_B0 (~500 MB) | Dedicated In-Memory | Redis Enterprise Engine terkelola | TLS Port 10000, latensi sub-1ms, dedicated cache, session store, dan atomic locks naskah. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
 | **Azure Blob Storage** | - | Pay-as-you-go | Unlimited kapasitas | Hot Tier dengan enkripsi AES-256 bawaan; kuota gratis 100 GB egress/bulan dari Azure. |
 | **Defender for Storage** | - | Cloud-native Security | On-demand scan | Pemindaian malware near real-time ($0.15/GB dipindai), menandai Blob Index Tags otomatis. |
@@ -182,7 +182,7 @@ terraform/
 ├── providers.tf       # Definisi provider azurerm (~> 4.0) dan cloudflare (~> 4.0)
 ├── variables.tf       # Variabel konfigurasi lingkungan (region, domain, credentials)
 ├── main.tf            # Azure Resource Group & Log Analytics Workspace
-├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduled Job
+├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduler Daemon
 ├── storage.tf         # Azure Storage Account, Blob Container, dan Defender for Storage
 ├── redis.tf           # Azure Managed Redis (AMR Balanced_B0, Redis Enterprise Engine)
 ├── monitoring.tf      # Azure Monitor Application Insights & Availability Web Test
@@ -198,7 +198,7 @@ Karena proyek ini berstatus *Proof of Concept* untuk pengujian dan expo berduras
    ```bash
    terraform apply -auto-approve
    ```
-   Dalam waktu 3 s.d. 5 menit, seluruh ekosistem (ACA, Azure Blob Storage, Defender for Storage, DNS, dan WAF) telah berdiri dan dapat diakses langsung secara global melalui URL resmi `https://jurnal.makassar.go.id`.
+   Dalam waktu 3 s.d. 5 menit, seluruh ekosistem (ACA, Azure Blob Storage, Defender for Storage, DNS, dan WAF) telah berdiri dan dapat diakses langsung secara global melalui URL resmi `https://sirida.web.id` (atau domain instansi `https://jurnal.makassar.go.id`).
 2. **Fase Evaluasi / Pengujian (Durasi 1–2 Jam)**:
    Aplikasi dan seluruh worker bekerja secara penuh untuk melayani demonstrasi alur peer-review naskah.
 3. **Fase Pembersihan (*Tear-Down*)**:
