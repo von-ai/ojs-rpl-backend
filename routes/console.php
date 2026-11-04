@@ -2,6 +2,7 @@
 
 use App\Jobs\BackupDatabaseToAzureJob;
 use App\Jobs\CheckReviewDeadlinesJob;
+use App\Jobs\ProcessOutboxJob;
 use App\Jobs\PruneExpiredChallengesJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -24,6 +25,9 @@ Artisan::command('inspire', function () {
 
 // Evaluasi batas waktu peer-review naskah setiap menit
 Schedule::job(new CheckReviewDeadlinesJob)->everyMinute();
+
+// Pemrosesan pesan transactional outbox (outbox_messages) setiap menit
+Schedule::job(new ProcessOutboxJob)->everyMinute();
 
 // Pembersihan berkas & token tantangan registrasi kedaluwarsa setiap hari
 Schedule::job(new PruneExpiredChallengesJob)->daily();

@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Jobs\BackupDatabaseToAzureJob;
 use App\Jobs\CheckReviewDeadlinesJob;
+use App\Jobs\ProcessOutboxJob;
 use App\Jobs\PruneExpiredChallengesJob;
 use App\Models\User;
 use Carbon\Carbon;
@@ -25,6 +26,7 @@ class SchedulerQueuePatternTest extends TestCase
         $this->assertTrue(is_subclass_of(CheckReviewDeadlinesJob::class, ShouldQueue::class));
         $this->assertTrue(is_subclass_of(PruneExpiredChallengesJob::class, ShouldQueue::class));
         $this->assertTrue(is_subclass_of(BackupDatabaseToAzureJob::class, ShouldQueue::class));
+        $this->assertTrue(is_subclass_of(ProcessOutboxJob::class, ShouldQueue::class));
     }
 
     public function test_scheduler_registers_queued_jobs(): void
@@ -47,9 +49,15 @@ class SchedulerQueuePatternTest extends TestCase
                 || str_contains((string) $event->command, BackupDatabaseToAzureJob::class);
         });
 
+        $hasOutboxJob = $events->contains(function ($event) {
+            return str_contains($event->description ?? '', ProcessOutboxJob::class)
+                || str_contains((string) $event->command, ProcessOutboxJob::class);
+        });
+
         $this->assertTrue($hasDeadlineJob, 'CheckReviewDeadlinesJob harus terdaftar di scheduler.');
         $this->assertTrue($hasPruneJob, 'PruneExpiredChallengesJob harus terdaftar di scheduler.');
         $this->assertTrue($hasBackupJob, 'BackupDatabaseToAzureJob harus terdaftar di scheduler.');
+        $this->assertTrue($hasOutboxJob, 'ProcessOutboxJob harus terdaftar di scheduler.');
     }
 
     public function test_prune_expired_challenges_job_cleans_up_stale_records(): void
