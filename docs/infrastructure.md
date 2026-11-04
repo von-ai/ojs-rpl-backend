@@ -59,7 +59,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                           │                               ▼ (Port 443 / HTTPS)
    ┌──────────────────────▼──────┐       ┌───────────────────────────────────────┐
    │  AZURE BLOB STORAGE ACCOUNT │       │     AZURE CONTAINER APPS (ACA)        │
-   │ • Container: `sirida-files` │       │ • Managed Ingress (Envoy Proxy)       │
+   │ • `sirida-manuscripts`      │       │ • Managed Ingress (Envoy Proxy)       │
    │ • SAS Token Direct Upload   │       │ • Virtual Network Environment         │
    │ • Defender Malware Scanning │       │                                       │
    │ • Blob Versioning (30 Hr)   │       │ ┌───────────────────────────────────┐ │
@@ -79,7 +79,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                          │ • Azure Log Analytics (stdout/stderr) │
                                          └───────┬──────────────┬───────┬────────┘
                                                  │              │       │
-                                  TLS Port 3306  │ TLS Port 6380│       │ TLS Port 587
+                                  TLS Port 4000  │ TLS Port 6380│       │ TLS Port 587
                                   MySQL Protocol │ Redis Native │       │ SMTP Protocol
                                                  ▼              ▼       ▼
                           ┌──────────────────────────────┐ ┌─────────┐ ┌─────────┐
@@ -136,7 +136,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 ## 6. Strategi Keamanan & Kepatuhan (*Security & Compliance*)
 
 1. **Enkripsi Data**:
-   * **In-Transit**: Seluruh komunikasi eksternal wajib melalui HTTPS dengan TLS 1.3. Koneksi database ke TiDB Serverless wajib menggunakan enkripsi TLS/SSL (Port 3306).
+   * **In-Transit**: Seluruh komunikasi eksternal wajib melalui HTTPS dengan TLS 1.3. Koneksi database ke TiDB Serverless wajib menggunakan enkripsi TLS/SSL (Port 4000 standar TiDB Serverless / Port 3306 pada MySQL lokal).
    * **At-Rest**: Berkas naskah di Azure Blob Storage dienkripsi otomatis menggunakan algoritma **AES-256** (Azure Storage Service Encryption). Data di TiDB dienkripsi di tingkat storage volume.
 2. **Isolasi Rahasia (*Secret Management*)**:
    * Nilai sensitif (`APP_KEY`, password database, kredensial SMTP, token API Crossref/ORCID) disimpan di dalam fitur *Secrets* terkelola milik Azure Container Apps.
@@ -157,7 +157,7 @@ Sesuai spesifikasi kebutuhan non-fungsional proposal (**NF-08: Backup setiap 24 
    * *Lifecycle Management Rules* dikonfigurasi untuk memindahkan atau membersihkan versi lama (*previous versions*) setelah 30 hari.
 2. **Pencadangan Basis Data (RDBMS)**:
    * TiDB Cloud Serverless mengelola snapshot cluster dan *Continuous Point-in-Time Recovery (PITR)* secara internal.
-   * Untuk redundansi jangka panjang, disiapkan skrip otomatis yang mengekspor dump SQL terkompresi (`mysqldump`) terjadwal setiap malam ke dalam container `/backups/database/` di Azure Blob Storage.
+   * Untuk redundansi jangka panjang, disiapkan skrip otomatis yang mengekspor dump SQL terkompresi (`mysqldump`) terjadwal setiap malam ke dalam container `sirida-backups` di Azure Blob Storage.
 
 ---
 
