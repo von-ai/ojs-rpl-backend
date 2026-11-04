@@ -204,20 +204,6 @@ class AuthorSubmissionService
             $downloadFileName = "Catatan_Telaah_Reviewer_{$letter}.{$ext}";
         }
 
-        if ($fileEntry->virus_scan_status !== 'clean' && app()->environment('testing')) {
-            $fileEntry->update(['virus_scan_status' => 'clean']);
-        }
-
-        if (app()->environment('testing') && $fileEntry->checksum_sha256) {
-            $disk = Storage::disk($fileEntry->storage_disk ?: 'local');
-            if ($disk->exists($fileEntry->storage_path)) {
-                $actualHash = hash('sha256', (string) $disk->get($fileEntry->storage_path));
-                if ($actualHash !== strtolower($fileEntry->checksum_sha256)) {
-                    $fileEntry->update(['checksum_sha256' => $actualHash]);
-                }
-            }
-        }
-
         return app(PrivateFileService::class)->stream($fileEntry, $downloadFileName);
     }
 }

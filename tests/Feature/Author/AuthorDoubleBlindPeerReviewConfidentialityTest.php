@@ -120,7 +120,8 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
             'original_name' => 'Budi_Santoso_Catatan_Revisi_Unhas.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'byte_size' => 1024,
-            'checksum_sha256' => hash('sha256', 'dummy content'),
+            'checksum_sha256' => hash('sha256', 'Catatan telaah reviewer 1'),
+            'virus_scan_status' => 'clean',
             'created_by' => $this->reviewer1->id,
         ]);
         Storage::disk('local')->put($this->annotationFile->storage_path, 'Catatan telaah reviewer 1');
