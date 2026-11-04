@@ -118,7 +118,7 @@ class EditorInChiefController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
-        $viewModel = new EicSubmissionDetailViewModel($submission);
+        $viewModel = new EicSubmissionDetailViewModel($submission, $this->eicService);
 
         return view('eic.submissions.show', compact('submission', 'viewModel'));
     }
@@ -210,50 +210,20 @@ class EditorInChiefController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
-        $query = trim((string) $request->input('q', ''));
-        $page = max(1, (int) $request->input('page', 1));
-        $perPage = min(50, max(1, (int) $request->input('per_page', 15)));
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:200'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+        $query = trim($filters['q'] ?? '');
+        $page = $filters['page'] ?? 1;
+        $perPage = $filters['per_page'] ?? 15;
 
-        $authorIds = array_filter(array_merge(
-            [$submission->author_id],
-            $submission->contributors()->pluck('user_id')->all()
-        ));
-        $authorEmails = array_filter(array_merge(
-            [$submission->author?->email],
-            $submission->contributors()->pluck('email')->all()
-        ));
-
-        $builder = User::query()
-            ->select(['id', 'full_name', 'email', 'status'])
-            ->whereNotIn('id', $authorIds)
-            ->whereNotIn('email', $authorEmails)
-            ->where('status', 'active')
-            ->whereHas('userRoles', function ($q) use ($submission): void {
-                $q->whereIn('role_code', ['section_editor', 'editor_in_chief'])
-                    ->where(function ($qj) use ($submission): void {
-                        $qj->where('journal_id', $submission->journal_id)
-                            ->orWhereNull('journal_id');
-                    });
-            })
+        $builder = $this->eicService->eligibleSectionEditors($submission)
+            ->select(['id', 'full_name', 'email'])
             ->withCount([
-                'editorAssignments as active_assignments_count' => function ($q): void {
-                    $q->whereNull('revoked_at');
-                },
+                'editorAssignments as active_assignments_count' => fn ($q) => $q->whereNull('revoked_at'),
             ]);
-
-        // Fallback jika belum ada user berkode role section_editor/eic
-        if (! (clone $builder)->exists()) {
-            $builder = User::query()
-                ->select(['id', 'full_name', 'email', 'status'])
-                ->whereNotIn('id', $authorIds)
-                ->whereNotIn('email', $authorEmails)
-                ->where('status', 'active')
-                ->withCount([
-                    'editorAssignments as active_assignments_count' => function ($q): void {
-                        $q->whereNull('revoked_at');
-                    },
-                ]);
-        }
 
         if ($query !== '') {
             $builder->where(function ($q) use ($query): void {
@@ -264,7 +234,8 @@ class EditorInChiefController extends Controller
         }
 
         $paginator = $builder
-            ->orderBy('full_name', 'asc')
+            ->orderBy('full_name')
+            ->orderBy('id')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $items = collect($paginator->items())->map(function (User $user) {
@@ -442,7 +413,7 @@ class EditorInChiefController extends Controller
         $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).');
         $verifier = $request->user();
 
-        $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
+        $this->articlePaymentService->verifyPayment($payment, $verifier, 'editor_in_chief', $notes);
 
         return back()
             ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.")
@@ -474,7 +445,7 @@ class EditorInChiefController extends Controller
         $reason = (string) $request->input('reason');
         $verifier = $request->user() ?? User::firstOrFail();
 
-        $this->articlePaymentService->rejectPayment($payment, $verifier, $reason);
+        $this->articlePaymentService->rejectPayment($payment, $verifier, 'editor_in_chief', $reason);
 
         return back()
             ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
@@ -510,7 +481,7 @@ class EditorInChiefController extends Controller
         $reason = (string) $request->input('waiver_reason');
         $verifier = $request->user() ?? User::firstOrFail();
 
-        $this->articlePaymentService->waivePayment($payment, $verifier, $reason);
+        $this->articlePaymentService->waivePayment($payment, $verifier, 'editor_in_chief', $reason);
 
         return back()
             ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")

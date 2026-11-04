@@ -28,10 +28,10 @@
             tabindex="-1"
             aria-hidden="true"
         >
-            <option value="" disabled {{ old('section_id') ? '' : 'selected' }}>-- Pilih Seksi / Bidang Jurnal --</option>
             @php
-                $selectedSectionId = old('section_id', $draft?->section?->slug ?? ($draft?->section_id ?? 'sec-riset-orisinil'));
+                $selectedSectionId = old('section_id', $draft?->section_id);
             @endphp
+            <option value="" disabled @selected(!$selectedSectionId)>-- Pilih Seksi / Bidang Jurnal --</option>
             @foreach($viewModel->wizardJournalSections() as $section)
                 <option 
                     value="{{ $section['id'] }}"
@@ -114,7 +114,7 @@
                             data-name="{{ $section['name'] }}"
                             data-description="{{ $section['description'] }}"
                             data-policy="{{ $section['policy'] }}"
-                            class="section-combobox-option group flex items-start justify-between gap-3 p-3 rounded-lg text-left transition cursor-pointer hover:bg-gray-50 {{ old('section_id', 'sec-riset-orisinil') === $section['id'] ? 'bg-red-50/70 text-brand-maroon is-selected font-semibold' : 'text-gray-700' }}"
+                            class="section-combobox-option group flex items-start justify-between gap-3 p-3 rounded-lg text-left transition cursor-pointer hover:bg-gray-50 {{ $selectedSectionId === $section['id'] ? 'bg-red-50/70 text-brand-maroon is-selected font-semibold' : 'text-gray-700' }}"
                         >
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
@@ -124,7 +124,7 @@
                                     {{ $section['description'] }}
                                 </p>
                             </div>
-                            <svg class="option-check w-4 h-4 text-brand-maroon shrink-0 self-center {{ old('section_id', 'sec-riset-orisinil') === $section['id'] ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="option-check w-4 h-4 text-brand-maroon shrink-0 self-center {{ $selectedSectionId === $section['id'] ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>

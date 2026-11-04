@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Author;
 
-use App\Models\SubmissionFile;
+use App\Models\Submission;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -76,12 +76,13 @@ class StoreSubmissionRequest extends FormRequest
     {
         $isSubmit = $this->input('action') === 'submit';
 
-        $hasExistingManuscript = false;
-        if ($this->filled('draft_id')) {
-            $hasExistingManuscript = SubmissionFile::where('submission_id', $this->input('draft_id'))
-                ->where('genre', 'manuscript')
+        $draftId = $this->input('draft_id');
+        $hasExistingManuscript = $isSubmit && is_string($draftId) && $draftId !== ''
+            && Submission::whereKey($draftId)
+                ->where('author_id', $this->user()->id)
+                ->where('status', 'draft')
+                ->whereHas('files', fn ($query) => $query->where('genre', 'manuscript'))
                 ->exists();
-        }
 
         $rules = [
             'action' => ['required', 'string', 'in:draft,submit'],

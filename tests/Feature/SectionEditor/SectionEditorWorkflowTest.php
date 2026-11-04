@@ -648,4 +648,26 @@ class SectionEditorWorkflowTest extends TestCase
         $showResponse->assertSee('Pengingat terakhir dikirim:');
         $showResponse->assertSee('Kirim Pengingat Ulang');
     }
+
+    public function test_cannot_invite_global_reviewer_who_cannot_access_the_submission(): void
+    {
+        Storage::fake('local');
+        $file = $this->cleanTestFile('anonymous.pdf');
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'review_type' => 'double_blind',
+            'status' => 'active',
+            'anonymized_file_id' => $file->id,
+            'anonymized_checksum' => $file->checksum_sha256,
+        ]);
+        $reviewer = User::factory()->create();
+        UserRole::create(['user_id' => $reviewer->id, 'role_code' => 'reviewer']);
+        $this->actingAs($this->sectionEditor)->post(route('section-editor.reviewers.assign', $round->id), [
+            'reviewer_id' => $reviewer->id,
+            'response_due_at' => now()->addDays(3)->toDateString(),
+            'review_due_at' => now()->addDays(5)->toDateString(),
+        ])->assertRedirect();
+        $this->assertDatabaseMissing('review_assignments', ['reviewer_id' => $reviewer->id, 'review_round_id' => $round->id]);
+    }
 }

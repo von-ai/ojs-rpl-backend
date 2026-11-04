@@ -15,7 +15,6 @@ use App\Services\PrivateFileService;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -165,45 +164,10 @@ class AuthorSubmissionService
     {
         abort_unless($submission->author_id === $actor->id || $submission->contributors()->where('user_id', $actor->id)->exists(), 404);
 
-        $fileEntry = FileEntry::find($fileId);
-        if (! $fileEntry) {
-            abort(404, 'Berkas naskah tidak ditemukan.');
-        }
+        $file = $submission->files()->where('file_id', $fileId)->firstOrFail()->file;
+        // Reviewer documents can disclose identities in metadata, comments, and tracked changes.
+        abort_if(ReviewAnnotation::where('file_id', $fileId)->exists(), 404);
 
-        // Cek apakah berkas ini merupakan berkas anotasi reviewer pada naskah ini
-        $reviewAnnotation = null;
-        if (class_exists(ReviewAnnotation::class) && Schema::hasTable('review_annotations')) {
-            $reviewAnnotation = ReviewAnnotation::where('file_id', $fileEntry->id)
-                ->whereHas('review.assignment.reviewRound', function ($q) use ($submission) {
-                    $q->where('submission_id', $submission->id);
-                })
-                ->first();
-        }
-
-        // Validasi bahwa berkas ini terhubung secara sah dengan naskah pemohon
-        $isSubmissionFile = $submission->files()->where('file_id', $fileEntry->id)->exists();
-        if (! $isSubmissionFile && ! $reviewAnnotation) {
-            abort(404, 'Anda tidak memiliki hak akses untuk mengunduh berkas pada naskah ini.');
-        }
-
-        // Sanitasi nama berkas unduhan jika berasal dari telaah reviewer agar identitas reviewer tidak bocor lewat nama file
-        $downloadFileName = $fileEntry->original_name;
-        if ($reviewAnnotation) {
-            $round = $reviewAnnotation->review?->assignment?->reviewRound;
-            $letter = 'A';
-            if ($round) {
-                $completedAssignments = $round->assignments()->where('status', 'completed')->orderBy('created_at')->get();
-                foreach ($completedAssignments as $idx => $asgn) {
-                    if ($asgn->id === $reviewAnnotation->review?->assignment_id) {
-                        $letter = chr(65 + $idx);
-                        break;
-                    }
-                }
-            }
-            $ext = pathinfo($fileEntry->original_name, PATHINFO_EXTENSION) ?: 'pdf';
-            $downloadFileName = "Catatan_Telaah_Reviewer_{$letter}.{$ext}";
-        }
-
-        return app(PrivateFileService::class)->stream($fileEntry, $downloadFileName);
+        return app(PrivateFileService::class)->stream($file);
     }
 }

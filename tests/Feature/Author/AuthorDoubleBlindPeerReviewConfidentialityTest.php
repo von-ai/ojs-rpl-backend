@@ -214,8 +214,8 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
         $response->assertSee('Kajian metodologi perlu dilengkapi dengan perbandingan algoritma lain.');
         $response->assertSee('Perlu menambahkan rujukan jurnal bereputasi dari 5 tahun terakhir.');
 
-        // 3. Author DAPAT melihat nama file lampiran yang telah dianominasi
-        $response->assertSee('Catatan_Telaah_Reviewer_A.docx');
+        // Lampiran asli tidak dibagikan ke penulis.
+        $response->assertDontSee($this->annotationFile->id);
 
         // 4. TIDAK BOLEH ADA identitas nama asli reviewer
         $response->assertDontSee('Prof. Dr. Ir. Budi Santoso, M.Eng.');
@@ -268,22 +268,27 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
         $this->assertStringNotContainsString('Budi_Santoso_Catatan_Revisi_Unhas.docx', $jsonContent);
     }
 
-    /**
-     * Uji Pengunduhan Berkas Anotasi Reviewer: Nama File Di-anominasi Saat Diunduh.
-     */
-    public function test_unduhan_berkas_anotasi_reviewer_menggunakan_nama_anonim(): void
+    public function test_author_cannot_download_original_review_annotation_even_after_decision(): void
     {
-        $response = $this->get(route('author.submissions.files.download', [
+        $this->get(route('author.submissions.files.download', [
             'id' => $this->submission->id,
             'fileId' => $this->annotationFile->id,
-        ]));
+        ]))->assertNotFound();
+    }
 
-        $response->assertStatus(200);
+    public function test_author_cannot_access_unreleased_review_comments_or_annotation(): void
+    {
+        $this->submission->update(['status' => 'under_review']);
+        EditorialDecision::where('submission_id', $this->submission->id)->update(['status' => 'draft', 'sent_at' => null]);
 
-        // Header Content-Disposition wajib menyajikan nama file anonim
-        $disposition = (string) $response->headers->get('Content-Disposition');
-        $this->assertStringContainsString('Catatan_Telaah_Reviewer_A.docx', $disposition);
-        $this->assertStringNotContainsString('Budi_Santoso', $disposition);
+        $this->getJson(route('author.submissions.show', $this->submission->id))
+            ->assertOk()
+            ->assertDontSee('Kajian metodologi perlu dilengkapi');
+
+        $this->get(route('author.submissions.files.download', [
+            'id' => $this->submission->id,
+            'fileId' => $this->annotationFile->id,
+        ]))->assertNotFound();
     }
 
     /**
