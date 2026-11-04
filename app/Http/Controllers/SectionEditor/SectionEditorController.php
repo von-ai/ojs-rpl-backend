@@ -465,7 +465,7 @@ class SectionEditorController extends Controller
         }
 
         $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Editor Bagian.');
-        $this->articlePaymentService->verifyPayment($payment, $editor, $notes);
+        $this->articlePaymentService->verifyPayment($payment, $editor, 'section_editor', $notes);
 
         return back()
             ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Editor Bagian.")
@@ -499,7 +499,7 @@ class SectionEditorController extends Controller
         }
 
         $reason = (string) $request->input('reason');
-        $this->articlePaymentService->rejectPayment($payment, $editor, $reason);
+        $this->articlePaymentService->rejectPayment($payment, $editor, 'section_editor', $reason);
 
         return back()
             ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
@@ -537,7 +537,7 @@ class SectionEditorController extends Controller
         }
 
         $reason = (string) $request->input('waiver_reason');
-        $this->articlePaymentService->waivePayment($payment, $editor, $reason);
+        $this->articlePaymentService->waivePayment($payment, $editor, 'section_editor', $reason);
 
         return back()
             ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")

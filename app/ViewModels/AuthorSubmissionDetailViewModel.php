@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\EditorialDecision;
 use App\Models\Journal;
 use App\Models\Submission;
 use App\Models\User;
@@ -34,7 +35,7 @@ class AuthorSubmissionDetailViewModel
                     'latestPayment.fileEntry',
                     'deskReviews.assessor',
                     'editorAssignments.editor',
-                    'reviewRounds.assignments.review.annotations.file',
+                    'reviewRounds.assignments.review',
                     'editorialDecisions.decider',
                     'revisions',
                     'galleys',
@@ -228,7 +229,10 @@ class AuthorSubmissionDetailViewModel
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
             'payment_info' => $this->buildPaymentInfo($sub),
-            'peer_reviews' => $this->buildAnonymousPeerReviews($sub),
+            'peer_reviews' => $this->buildAnonymousPeerReviews(
+                $sub,
+                $sub->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->sortByDesc('sent_at')->first()
+            ),
         ];
     }
 
@@ -596,7 +600,7 @@ class AuthorSubmissionDetailViewModel
             'days_remaining' => $daysRemaining,
             'is_urgent' => $daysRemaining !== null && $daysRemaining <= 3,
             'comments' => $comments,
-            'peer_reviews' => $this->buildAnonymousPeerReviews($sub),
+            'peer_reviews' => $this->buildAnonymousPeerReviews($sub, $decision),
         ];
     }
 
@@ -742,7 +746,7 @@ class AuthorSubmissionDetailViewModel
             'reason' => $reason,
             'appeal_window' => '14 Hari Kerja',
             'guidance' => 'Penulis dipersilakan melakukan revisi substansial berdasarkan catatan di atas sebelum mempertimbangkan pengajuan ke jurnal berkala ilmiah lain.',
-            'peer_reviews' => $this->buildAnonymousPeerReviews($sub),
+            'peer_reviews' => $this->buildAnonymousPeerReviews($sub, $decision),
         ];
     }
 
@@ -754,49 +758,36 @@ class AuthorSubmissionDetailViewModel
      * @return array<int, array{
      *     reviewer_label: string,
      *     comments_for_author: string,
-     *     files: array<int, array{id: string, name: string, download_url: string}>,
      *     submitted_at: ?string
      * }>
      */
-    protected function buildAnonymousPeerReviews(Submission $sub): array
+    protected function buildAnonymousPeerReviews(Submission $sub, ?EditorialDecision $decision): array
     {
-        $peerReviews = [];
-        $latestRound = $sub->reviewRounds->sortByDesc('round')->first();
+        if (! $decision?->sent_at) {
+            return [];
+        }
 
-        if ($latestRound && $latestRound->relationLoaded('assignments')) {
+        $round = $decision->review_round_id
+            ? $sub->reviewRounds->firstWhere('id', $decision->review_round_id)
+            : ($sub->reviewRounds->count() === 1 ? $sub->reviewRounds->first() : null);
+        $peerReviews = [];
+
+        if ($round?->relationLoaded('assignments')) {
             $letter = 'A';
-            $completedAssignments = $latestRound->assignments
+            $completedAssignments = $round->assignments
                 ->where('status', 'completed')
                 ->sortBy('created_at');
 
             foreach ($completedAssignments as $assignment) {
                 $review = $assignment->review;
-                if (! $review || empty($review->comments_for_author)) {
+                if (! $review || $review->status !== 'submitted' || ! $review->submitted_at
+                    || $review->submitted_at->isAfter($decision->sent_at) || empty($review->comments_for_author)) {
                     continue;
-                }
-
-                $annotationFiles = [];
-                if ($review->relationLoaded('annotations')) {
-                    foreach ($review->annotations as $annotation) {
-                        $f = $annotation->file;
-                        if ($f) {
-                            $ext = pathinfo($f->original_name, PATHINFO_EXTENSION) ?: 'pdf';
-                            $annotationFiles[] = [
-                                'id' => $f->id,
-                                'name' => "Catatan_Telaah_Reviewer_{$letter}.{$ext}",
-                                'download_url' => route('author.submissions.files.download', [
-                                    'id' => $sub->id,
-                                    'fileId' => $f->id,
-                                ]),
-                            ];
-                        }
-                    }
                 }
 
                 $peerReviews[] = [
                     'reviewer_label' => "Reviewer {$letter}",
                     'comments_for_author' => (string) $review->comments_for_author,
-                    'files' => $annotationFiles,
                     'submitted_at' => $review->submitted_at ? $review->submitted_at->format('d M Y') : null,
                 ];
 

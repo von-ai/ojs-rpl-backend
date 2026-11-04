@@ -19,6 +19,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -730,5 +731,26 @@ class EditorInChiefWorkflowTest extends TestCase
         ]));
 
         $response->assertForbidden();
+    }
+
+    public function test_eic_search_excludes_eic_without_section_editor_role(): void
+    {
+        $this->actingAs($this->eic)->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+            'q' => $this->eic->email,
+        ]))->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_eic_with_second_section_editor_role_can_waive_a_payment_as_eic(): void
+    {
+        $this->journal->update(['apc_enabled' => true, 'apc_amount' => 250000]);
+        $this->submission->update(['status' => 'accepted']);
+        $this->grantRole($this->eic, 'section_editor', $this->journal->id);
+        $payment = app(ArticlePaymentService::class)->resolveOrCreatePayment($this->submission);
+        $this->actingAs($this->eic)->from(route('eic.submissions.show', $this->submission->id))
+            ->post(route('eic.submissions.payment.waive', $this->submission->id), [
+                'waiver_reason' => 'Approved reduction by the editorial office.',
+            ])->assertRedirect();
+        $this->assertSame('waived', $payment->fresh()->status);
     }
 }

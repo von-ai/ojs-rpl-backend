@@ -84,32 +84,45 @@ class AuthorSubmissionController extends Controller
     {
         $validated = $request->validated();
         $isDraft = ($validated['action'] ?? 'submit') === 'draft';
-        $author = $request->user() ?? User::first();
-        $authorId = $author?->id;
-        $draftId = $request->input('draft_id') ?? ($validated['draft_id'] ?? null);
+        $author = $request->user();
+        $draftId = $validated['draft_id'] ?? null;
 
-        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $draftId): Submission {
-            $section = null;
-            if (! empty($validated['section_id'])) {
-                $sectionQuery = Section::with('journal')->where(function ($q) use ($validated) {
-                    $q->where('id', $validated['section_id'])->orWhere('slug', $validated['section_id']);
-                })->where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
-                $section = $sectionQuery->count() === 1 ? $sectionQuery->first() : null;
-            }
+        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $draftId, $author): Submission {
+            $authorId = $author->id;
+            $existingDraft = null;
+            if ($draftId !== null) {
+                $existingDraft = Submission::whereKey($draftId)
+                    ->where('author_id', $authorId)
+                    ->where('status', 'draft')
+                    ->lockForUpdate()
+                    ->first();
 
-            if (! $section) {
-                if ($isDraft) {
-                    $section = Section::where('accepting_submissions', true)
-                        ->whereHas('journal', fn ($q) => $q->where('status', 'active'))
-                        ->first() ?? Section::first();
-                } else {
-                    throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
+                if (! $existingDraft) {
+                    throw ValidationException::withMessages(['draft_id' => 'Draf tidak tersedia untuk diedit.']);
                 }
             }
 
+            if (! $isDraft && ! $request->hasFile('manuscript_file')
+                && (! $existingDraft || $request->boolean('remove_manuscript') || ! $existingDraft->files()->where('genre', 'manuscript')->exists())) {
+                throw ValidationException::withMessages(['manuscript_file' => 'Berkas manuskrip wajib diunggah.']);
+            }
+
+            $sectionId = $validated['section_id'] ?? $existingDraft?->section_id;
+            $sectionQuery = Section::with('journal')
+                ->where('accepting_submissions', true)
+                ->whereHas('journal', fn ($query) => $query->where('status', 'active'));
+            if ($sectionId !== null) {
+                $sectionQuery->where(fn ($query) => $query->where('id', $sectionId)->orWhere('slug', $sectionId));
+                $matchingSections = $sectionQuery->limit(2)->get();
+                $section = $matchingSections->count() === 1 ? $matchingSections->first() : null;
+            } else {
+                $section = $sectionQuery->orderBy('position')->orderBy('id')->first();
+            }
+
+            if (! $section) {
+                throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
+            }
             $journal = $section->journal;
-            $author = $request->user();
-            $authorId = $author->id;
 
             // 3. Checklist & Guidelines Acceptance
             $checklistItems = $request->input('checklist_items', []);
@@ -130,15 +143,6 @@ class AuthorSubmissionController extends Controller
 
             $abstractInput = trim((string) ($validated['abstract'] ?? ''));
             $abstract = $abstractInput !== '' ? $abstractInput : ($isDraft ? 'Draf naskah belum dilengkapi abstrak.' : null);
-
-            // 5. Cek apakah ini pembaruan draf yang sudah ada di database
-            $existingDraft = null;
-            if ($draftId && $authorId) {
-                $existingDraft = Submission::where('author_id', $authorId)
-                    ->where('status', 'draft')
-                    ->where('id', $draftId)
-                    ->first();
-            }
 
             if ($existingDraft) {
                 $existingDraft->update([

@@ -17,6 +17,7 @@ use App\Services\PortalAccess;
 use App\Services\Reviewer\ReviewerService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -157,7 +158,7 @@ class SectionEditorService
                 throw new InvalidArgumentException('Penulis naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
             }
 
-            if (! $this->getAvailableReviewers($round->submission)->contains('id', $reviewer->id)) {
+            if (! $this->eligibleReviewers($round->submission)->whereKey($reviewer->id)->exists()) {
                 throw new InvalidArgumentException('Reviewer harus aktif, terverifikasi, dan terdaftar pada jurnal ini.');
             }
 
@@ -362,31 +363,29 @@ class SectionEditorService
         });
     }
 
-    /**
-     * Mengambil daftar calon reviewer yang memenuhi syarat untuk naskah ini
-     * sesuai standar OJS & COPE:
-     * 1. Pengguna aktif dengan peran 'reviewer' terdaftar pada jurnal naskah (atau peran global).
-     * 2. Pencegahan konflik kepentingan (COI): Penulis utama dan seluruh kontributor/ko-penulis dikecualikan.
-     * 3. Pemetaan & relevansi ke Section / Kategori Naskah, Bidang Kepakaran, dan Kata Kunci.
-     *
-     * @return Collection<int, User>
-     */
-    public function getAvailableReviewers(Submission $submission)
+    /** @return Collection<int, User> */
+    public function getAvailableReviewers(Submission $submission): Collection
     {
-        return User::query()
-            ->where('id', '!=', $submission->author_id)
-            ->where('status', 'active')
-            ->whereNotNull('email_verified_at')
-            ->whereNotIn('id', DB::table('submission_contributors')->select('user_id')->where('submission_id', $submission->id)->whereNotNull('user_id'))
-            ->whereNotIn('email', DB::table('submission_contributors')->select('email')->where('submission_id', $submission->id)->whereNotNull('email'))
-            ->whereHas('userRoles', fn ($q) => $q->where('role_code', 'reviewer')->where(function ($qj) use ($submission): void {
-                $qj->where('journal_id', $submission->journal_id)->orWhereNull('journal_id');
-            }))
+        return $this->eligibleReviewers($submission)
             ->withCount([
                 'reviewAssignments as active_reviews_count' => fn ($q) => $q->whereIn('status', ['invited', 'accepted', 'overdue']),
                 'reviewAssignments as completed_reviews_count' => fn ($q) => $q->where('status', 'completed'),
             ])
             ->orderBy('full_name')
             ->get();
+    }
+
+    /** @return Builder<User> */
+    private function eligibleReviewers(Submission $submission): Builder
+    {
+        return User::query()
+            ->when($submission->author_id, fn ($query) => $query->where('id', '!=', $submission->author_id))
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->whereNotIn('id', $submission->contributors()->select('user_id')->whereNotNull('user_id'))
+            ->whereNotIn('email', $submission->contributors()->select('email')->whereNotNull('email'))
+            ->whereHas('userRoles', fn ($query) => $query
+                ->where('role_code', 'reviewer')
+                ->where('journal_id', $submission->journal_id));
     }
 }

@@ -56,19 +56,6 @@
                             <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line wrap-break-word">
                                 {{ $peerReview['comments_for_author'] }}
                             </div>
-                            @if(!empty($peerReview['files']))
-                                <div class="pt-1 space-y-1 border-t border-sky-100">
-                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">Berkas Lampiran Anotasi:</span>
-                                    @foreach($peerReview['files'] as $annFile)
-                                        <a href="{{ $annFile['download_url'] }}" class="inline-flex items-center gap-1.5 text-xs text-sky-700 hover:text-sky-900 font-semibold hover:underline">
-                                            <svg class="w-3.5 h-3.5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            <span>{{ $annFile['name'] }}</span>
-                                        </a>
-                                    @endforeach
-                                </div>
-                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -636,19 +623,6 @@
                             <div class="text-gray-700 text-xs leading-relaxed whitespace-pre-line wrap-break-word">
                                 {{ $peerReview['comments_for_author'] }}
                             </div>
-                            @if(!empty($peerReview['files']))
-                                <div class="pt-1 space-y-1 border-t border-rose-100">
-                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">Berkas Lampiran Anotasi:</span>
-                                    @foreach($peerReview['files'] as $annFile)
-                                        <a href="{{ $annFile['download_url'] }}" class="inline-flex items-center gap-1.5 text-xs text-rose-700 hover:text-rose-900 font-semibold hover:underline">
-                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            <span>{{ $annFile['name'] }}</span>
-                                        </a>
-                                    @endforeach
-                                </div>
-                            @endif
                         </div>
                     @endforeach
                 </div>

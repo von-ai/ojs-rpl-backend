@@ -272,6 +272,10 @@ class AuthorNewSubmissionTest extends TestCase
         $createResponse->assertSee('chk-orisinil');
         $createResponse->assertSee('checked', false);
         $createResponse->assertSee('Catatan tahap pertama.');
+        $this->assertMatchesRegularExpression(
+            '/<option\s+value="'.preg_quote($submission->section_id, '/').'"[^>]*\sselected\s*>/',
+            $createResponse->getContent()
+        );
 
         // 3. Simpan draf kembali (update draf yang sama) tanpa judul/abstrak
         $updateResponse = $this->post(route('author.submissions.store'), [
@@ -744,5 +748,34 @@ class AuthorNewSubmissionTest extends TestCase
             'position' => 2,
             'is_corresponding' => true,
         ]);
+    }
+
+    public function test_foreign_draft_cannot_replace_required_manuscript(): void
+    {
+        $this->actingAs($this->user)->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'section_id' => 'sec-riset-orisinil',
+            'title' => 'Draft owner',
+            'manuscript_file' => UploadedFile::fake()->create('manuscript.pdf', 10, 'application/pdf'),
+        ])->assertRedirect();
+        $draft = Submission::where('status', 'draft')->firstOrFail();
+        $this->assertDatabaseHas('submission_files', ['submission_id' => $draft->id, 'genre' => 'manuscript']);
+        $other = User::factory()->create();
+        $this->actingAs($other)->post(route('author.submissions.store'), [
+            'action' => 'submit',
+            'draft_id' => $draft->id,
+            'section_id' => 'sec-riset-orisinil',
+            'title' => 'Submission without manuscript',
+            'abstract' => 'This is a valid abstract.',
+            'keywords' => ['research'],
+            'author_guidelines_accepted' => '1',
+            'contributors' => [[
+                'given_name' => 'Audit',
+                'email' => $other->email,
+                'affiliation' => 'Audit Lab',
+                'corresponding' => true,
+            ]],
+        ])->assertRedirect()->assertSessionHasErrors('manuscript_file');
+        $this->assertDatabaseMissing('submissions', ['author_id' => $other->id, 'status' => 'submitted']);
     }
 }
