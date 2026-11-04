@@ -89,13 +89,22 @@ class AuthorSubmissionController extends Controller
         $draftId = $request->input('draft_id') ?? ($validated['draft_id'] ?? null);
 
         $submission = DB::transaction(function () use ($request, $validated, $isDraft, $draftId): Submission {
-            $sectionQuery = Section::with('journal')->where(function ($q) use ($validated) {
-                $q->where('id', $validated['section_id'])->orWhere('slug', $validated['section_id']);
-            })->where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
-            $section = $sectionQuery->count() === 1 ? $sectionQuery->first() : null;
+            $section = null;
+            if (! empty($validated['section_id'])) {
+                $sectionQuery = Section::with('journal')->where(function ($q) use ($validated) {
+                    $q->where('id', $validated['section_id'])->orWhere('slug', $validated['section_id']);
+                })->where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+                $section = $sectionQuery->count() === 1 ? $sectionQuery->first() : null;
+            }
 
             if (! $section) {
-                throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
+                if ($isDraft) {
+                    $section = Section::where('accepting_submissions', true)
+                        ->whereHas('journal', fn ($q) => $q->where('status', 'active'))
+                        ->first() ?? Section::first();
+                } else {
+                    throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
+                }
             }
 
             $journal = $section->journal;

@@ -46,9 +46,10 @@ class LayoutEditorSubmissionController extends Controller
     public function show(string $id, Request $request): View
     {
         $submissionModel = $this->findSubmission($id);
-        if ($submissionModel) {
-            $this->authorizeLayoutEditorForSubmission($submissionModel);
+        if (! $submissionModel) {
+            abort(404, "Naskah penugasan tata letak '{$id}' tidak ditemukan.");
         }
+        $this->authorizeLayoutEditorForSubmission($submissionModel);
 
         $viewModel = new LayoutEditorDetailViewModel($id);
         $submission = $viewModel->submission();
@@ -73,6 +74,10 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function uploadGalley(Request $request): RedirectResponse
     {
+        $submissionId = (string) ($request->input('submission_id') ?? '');
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeLayoutEditorForSubmission($submission);
+
         $data = $request->validate([
             'submission_id' => ['required', 'string'],
             'file' => ['required', 'file', 'mimes:pdf,html', 'max:20480'],
@@ -80,8 +85,6 @@ class LayoutEditorSubmissionController extends Controller
             'format' => ['required', 'in:pdf,html'],
             'change_summary' => ['nullable', 'string', 'max:4000'],
         ]);
-        $submission = $this->findSubmission($data['submission_id']);
-        $this->authorizeLayoutEditorForSubmission($submission);
         try {
             $this->layoutEditorService->uploadGalley($submission, $request->file('file'), $data['galley_label'], $data['format'], Auth::user(), $data['change_summary'] ?? null);
         } catch (DomainException $e) {
@@ -213,8 +216,11 @@ class LayoutEditorSubmissionController extends Controller
     {
         try {
             if (class_exists(Submission::class) && Schema::hasTable('submissions')) {
-                return Submission::where('submission_number', $identifier)
-                    ->orWhere('id', $identifier)
+                return Submission::withoutGlobalScope('portal_access')
+                    ->where(function ($q) use ($identifier) {
+                        $q->where('submission_number', $identifier)
+                            ->orWhere('id', $identifier);
+                    })
                     ->first();
             }
         } catch (\Throwable) {

@@ -48,9 +48,10 @@ class ProofreaderSubmissionController extends Controller
     public function show(string $id, Request $request): View
     {
         $submissionModel = $this->findSubmission($id);
-        if ($submissionModel) {
-            $this->authorizeProofreaderForSubmission($submissionModel);
+        if (! $submissionModel) {
+            abort(404, "Naskah penugasan pemeriksaan bukti baca '{$id}' tidak ditemukan.");
         }
+        $this->authorizeProofreaderForSubmission($submissionModel);
 
         $viewModel = new ProofreaderDetailViewModel($id);
         $submission = $viewModel->submission();
@@ -75,15 +76,21 @@ class ProofreaderSubmissionController extends Controller
      */
     public function addNote(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
-        $request->validate(['category' => ['required', 'in:typo,layout,metadata,reference'], 'severity' => ['required', 'in:minor,major,critical'], 'page' => ['nullable', 'integer', 'min:1'], 'description' => ['required', 'string', 'max:8000']]);
+        $submissionId = (string) ($request->input('submission_id') ?? '');
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
+        $request->validate([
+            'submission_id' => ['required', 'string'],
+            'category' => ['required', 'in:typo,layout,metadata,reference'],
+            'severity' => ['nullable', 'in:minor,major,critical'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'description' => ['required', 'string', 'max:8000'],
+        ]);
         $category = (string) $request->input('category', 'typo');
         $page = $request->input('page');
         $severity = (string) $request->input('severity', 'minor');
         $description = (string) $request->input('description', 'Catatan koreksi galai');
-
-        $submission = $this->findSubmission($submissionId);
-        $this->authorizeProofreaderForSubmission($submission);
 
         $actor = $this->resolveActor();
         if ($submission && $actor) {
@@ -227,8 +234,11 @@ class ProofreaderSubmissionController extends Controller
             return null;
         }
 
-        return Submission::where('id', $identifier)
-            ->orWhere('submission_number', $identifier)
+        return Submission::withoutGlobalScope('portal_access')
+            ->where(function ($q) use ($identifier) {
+                $q->where('id', $identifier)
+                    ->orWhere('submission_number', $identifier);
+            })
             ->first();
     }
 
