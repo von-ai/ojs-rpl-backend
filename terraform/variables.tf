@@ -190,7 +190,7 @@ variable "storage_retention_days" {
 variable "filesystem_disk" {
   description = "Driver penyimpanan default Laravel (local atau azure)"
   type        = string
-  default     = "local"
+  default     = "azure"
 }
 
 variable "enable_storage_defender" {

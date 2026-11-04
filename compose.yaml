@@ -19,6 +19,11 @@ services:
       - REDIS_PORT=6379
       - MAIL_HOST=mailpit
       - MAIL_PORT=1025
+      - FILESYSTEM_DISK=azure
+      - AZURE_STORAGE_NAME=devstoreaccount1
+      - AZURE_STORAGE_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
+      - AZURE_STORAGE_CONTAINER=sirida-manuscripts
+      - AZURE_STORAGE_URL=http://azurite:10000/devstoreaccount1
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
@@ -27,6 +32,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      azurite:
+        condition: service_started
 
 
   mysql:
