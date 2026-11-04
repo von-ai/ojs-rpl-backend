@@ -93,6 +93,8 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
     Route::get('/submissions/{id}/payment/proof', [EditorInChiefController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
     Route::post('/submissions/{id}/payment/verify', [EditorInChiefController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [EditorInChiefController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [EditorInChiefController::class, 'waivePayment'])->name('submissions.payment.waive');
 });
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
@@ -108,6 +110,10 @@ Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-edito
     Route::post('/assignments/{assignmentId}/reminder', [SectionEditorController::class, 'sendReminder'])->name('assignments.reminder');
     Route::post('/extensions/{extensionId}/decide', [SectionEditorController::class, 'decideExtension'])->name('extensions.decide');
     Route::post('/rounds/{roundId}/recommendation', [SectionEditorController::class, 'submitRecommendation'])->name('rounds.recommendation');
+    Route::get('/submissions/{id}/payment/proof', [SectionEditorController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::post('/submissions/{id}/payment/verify', [SectionEditorController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [SectionEditorController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [SectionEditorController::class, 'waivePayment'])->name('submissions.payment.waive');
 });
 
 // Portal Mitra Bestari (Peer Reviewer - UC-08 Undangan & UC-09 Evaluasi Telaah)

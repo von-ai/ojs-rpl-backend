@@ -475,10 +475,376 @@
         @endif
     </section>
 
+    <!-- Kartu 3: Status Pembiayaan & Verifikasi APC -->
+    @php
+        $paymentInfo = $viewModel->paymentInfo();
+    @endphp
+    <section class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-4 shadow-2xs">
+        <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <div 
+                class="flex items-center gap-2.5 min-w-0 flex-1 cursor-help"
+                data-tooltip="Status Pembiayaan & APC"
+                data-tooltip-desc="Status tagihan biaya pemrosesan artikel (APC) dan verifikasi bukti transfer pembayaran"
+            >
+                <div class="w-7 h-7 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-tight truncate" title="Status Pembiayaan & APC">
+                        Status Pembiayaan & APC
+                    </h3>
+                    <span class="text-[11px] text-gray-400 font-medium block truncate" title="Biaya Pengelolaan Publikasi">
+                        Biaya Pengelolaan Publikasi
+                    </span>
+                </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 text-center leading-tight whitespace-nowrap {{ $paymentInfo['status_badge'] }}">
+                {{ $paymentInfo['status_label'] }}
+            </span>
+        </div>
+
+        @if($paymentInfo['is_free'])
+            <div class="p-3 bg-emerald-50/70 rounded-lg border border-emerald-100 text-xs text-emerald-900 leading-relaxed">
+                <span class="font-bold block mb-0.5">Diamond Open Access:</span>
+                Jurnal ini tidak memungut biaya publikasi kepada penulis. Naskah bebas biaya pemrosesan (APC: Rp 0).
+            </div>
+        @else
+            <div class="text-xs text-gray-700 space-y-3">
+                <!-- Ringkasan Tarif & Nomor Tagihan -->
+                <div class="bg-gray-50/80 rounded-lg p-3 border border-gray-100 grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">No. Tagihan</span>
+                        <span class="font-mono text-xs font-bold text-gray-800 block truncate" title="{{ $paymentInfo['invoice_number'] }}">
+                            {{ $paymentInfo['invoice_number'] }}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">Total Tarif (APC)</span>
+                        <span class="text-xs sm:text-sm font-extrabold text-gray-900 block">
+                            {{ $paymentInfo['amount_formatted'] }}
+                        </span>
+                    </div>
+                </div>
+
+                @if($paymentInfo['has_proof'])
+                    <!-- Panel Rincian Bukti Transfer yang Diunggah Penulis -->
+                    <div class="p-3.5 bg-sky-50/60 rounded-xl border border-sky-200/70 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-900 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Rincian Bukti Transfer
+                            </span>
+                            <span class="text-[10px] text-sky-700 font-medium">Unggahan Penulis</span>
+                        </div>
+
+                        <div class="space-y-1.5 text-xs pt-1 border-t border-sky-100">
+                            <div class="flex items-baseline justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Bank Pengirim</span>
+                                <span class="font-semibold text-gray-900 text-right truncate">{{ $paymentInfo['sender_bank_name'] ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-start justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Nama Pengirim</span>
+                                <span class="font-semibold text-gray-900 text-right leading-tight max-w-[65%]">{{ $paymentInfo['sender_account_name'] ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-2 text-[11px]">
+                                <span class="text-gray-500 shrink-0">Tanggal Transfer</span>
+                                <span class="font-semibold text-gray-900 text-right tabular-nums">{{ $paymentInfo['transfer_date'] ?? '-' }}</span>
+                            </div>
+                            @if(!empty($paymentInfo['author_notes']))
+                                <div class="pt-1.5 border-t border-sky-100 text-[11px]">
+                                    <span class="text-gray-500 block mb-1">Catatan Penulis:</span>
+                                    <p class="text-gray-700 italic bg-white/80 p-2 rounded-md border border-sky-100 text-[11px] leading-relaxed">
+                                        "{{ $paymentInfo['author_notes'] }}"
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="pt-1">
+                            <a 
+                                href="{{ $paymentInfo['proof_url'] }}" 
+                                target="_blank"
+                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-sky-800 bg-white hover:bg-sky-50 border border-sky-200 rounded-lg shadow-2xs transition group"
+                            >
+                                <svg class="w-3.5 h-3.5 text-sky-600 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Lihat Berkas Bukti Transfer</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Aksi Verifikasi & Tolak Bukti Transfer -->
+                    @if($paymentInfo['can_verify'])
+                        <div class="space-y-2 pt-0.5">
+                            <form action="{{ route('section-editor.submissions.payment.verify', $submission->id) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="notes" value="Pembayaran diverifikasi sah oleh Editor Bagian.">
+                                <button 
+                                    type="submit" 
+                                    class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs hover:shadow transition duration-150 cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Verifikasi Pembayaran (Sah)</span>
+                                </button>
+                            </form>
+
+                            <button 
+                                type="button" 
+                                onclick="openSeRejectPaymentModal()"
+                                class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition duration-150 cursor-pointer"
+                            >
+                                <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                <span>Tolak Bukti Transfer</span>
+                            </button>
+                        </div>
+                    @endif
+
+                    <!-- Status Bukti Ditolak -->
+                    @if($paymentInfo['status'] === 'rejected')
+                        <div class="p-3.5 bg-rose-50/80 rounded-xl border border-rose-200 text-xs text-rose-900 space-y-1.5">
+                            <div class="flex items-center gap-1.5 font-bold text-rose-800">
+                                <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>Bukti Transfer Ditolak</span>
+                            </div>
+                            @if(!empty($paymentInfo['verified_at']))
+                                <span class="text-[11px] text-rose-700 block">Ditolak pada: {{ $paymentInfo['verified_at'] }}</span>
+                            @endif
+                            @if(!empty($paymentInfo['verification_notes']))
+                                <div class="pt-1 text-[11px] text-rose-800">
+                                    <span class="font-semibold block text-gray-700">Alasan Penolakan:</span>
+                                    <p class="italic bg-white/70 p-2 rounded border border-rose-100 mt-0.5 leading-relaxed">
+                                        "{{ $paymentInfo['verification_notes'] }}"
+                                    </p>
+                                </div>
+                            @endif
+                            <p class="text-[11px] text-rose-600 pt-1">
+                                Menunggu penulis mengunggah ulang berkas bukti transfer yang valid.
+                            </p>
+                        </div>
+                    @endif
+
+                    <!-- Status Pembayaran Lunas -->
+                    @if($paymentInfo['status'] === 'verified')
+                        <div class="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1.5">
+                            <div class="flex items-center gap-1.5 font-bold text-emerald-800">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Pembayaran Lunas & Terverifikasi</span>
+                            </div>
+                            @if(!empty($paymentInfo['verified_at']))
+                                <span class="text-[11px] text-emerald-700 block">Diverifikasi pada: {{ $paymentInfo['verified_at'] }}</span>
+                            @endif
+                            @if(!empty($paymentInfo['verification_notes']))
+                                <div class="pt-1 text-[11px] text-emerald-800">
+                                    <span class="font-semibold block text-gray-700">Catatan Verifikasi:</span>
+                                    <p class="italic bg-white/70 p-2 rounded border border-emerald-100 mt-0.5 leading-relaxed">
+                                        "{{ $paymentInfo['verification_notes'] }}"
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Opsi Batalkan Verifikasi / Tolak jika ada kekeliruan -->
+                        <details class="text-xs group border-t border-gray-100 pt-2">
+                            <summary class="text-rose-700 font-semibold cursor-pointer hover:underline flex items-center justify-between">
+                                <span>Batalkan Verifikasi & Tolak Bukti</span>
+                                <span class="text-[10px] text-rose-500 font-normal">Koreksi Redaksi</span>
+                            </summary>
+                            <div class="pt-2">
+                                <button 
+                                    type="button" 
+                                    onclick="openSeRejectPaymentModal()"
+                                    class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <span>Tolak Bukti Transfer Ini</span>
+                                </button>
+                            </div>
+                        </details>
+                    @endif
+
+                    <!-- Status Pembebasan Biaya (Waiver) -->
+                    @if($paymentInfo['status'] === 'waived')
+                        <div class="p-3.5 bg-purple-50/80 rounded-xl border border-purple-200 text-xs text-purple-900 space-y-1.5">
+                            <div class="flex items-center gap-1.5 font-bold text-purple-800">
+                                <svg class="w-4 h-4 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Bebas Biaya Publikasi (Waiver)</span>
+                            </div>
+                            @if(!empty($paymentInfo['verified_at']))
+                                <span class="text-[11px] text-purple-700 block">Diberikan pada: {{ $paymentInfo['verified_at'] }}</span>
+                            @endif
+                            @if(!empty($paymentInfo['verification_notes']))
+                                <div class="pt-1 text-[11px] text-purple-800">
+                                    <span class="font-semibold block text-gray-700">Alasan Keringanan:</span>
+                                    <p class="italic bg-white/70 p-2 rounded border border-purple-100 mt-0.5 leading-relaxed">
+                                        "{{ $paymentInfo['verification_notes'] }}"
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                @else
+                    @if($paymentInfo['status'] === 'verified')
+                        <div class="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                            <span class="font-bold flex items-center gap-1 text-emerald-800">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Pembayaran Lunas
+                            </span>
+                            <p class="text-[11px] text-emerald-700">Pembayaran telah terverifikasi sah.</p>
+                        </div>
+                    @elseif($paymentInfo['status'] === 'waived')
+                        <div class="p-3.5 bg-purple-50/80 rounded-xl border border-purple-200 text-xs text-purple-900 space-y-1">
+                            <span class="font-bold flex items-center gap-1 text-purple-800">
+                                <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Pembebasan Biaya (Waiver)
+                            </span>
+                            <p class="text-[11px] text-purple-700">Biaya APC naskah ini telah dibebaskan penuh.</p>
+                        </div>
+                    @else
+                        <div class="p-3 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-[11px] text-gray-500 text-center leading-relaxed">
+                            Penulis belum mengunggah bukti transfer pembayaran.
+                        </div>
+                    @endif
+                @endif
+
+                <!-- Opsi Pembebasan Biaya (Grant Waiver) oleh Editor Bagian -->
+                @if($paymentInfo['can_waive'])
+                    <details class="text-xs group border-t border-gray-100 pt-2">
+                        <summary class="text-purple-700 font-semibold cursor-pointer hover:underline flex items-center justify-between">
+                            <span>Berikan Pembebasan Biaya (Grant Waiver)</span>
+                            <span class="text-[10px] text-purple-500 font-normal">Keringanan Redaksi</span>
+                        </summary>
+                        <form action="{{ route('section-editor.submissions.payment.waive', $submission->id) }}" method="POST" class="pt-2 space-y-2">
+                            @csrf
+                            <input 
+                                type="text" 
+                                name="waiver_reason" 
+                                required 
+                                placeholder="Alasan pembebasan biaya (misal: afirmasi riset, naskah undangan)..." 
+                                class="w-full px-3 py-1.5 text-xs border border-purple-300 rounded-lg focus:ring-1 focus:ring-purple-400 focus:outline-hidden"
+                            >
+                            <button 
+                                type="submit" 
+                                class="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-lg transition cursor-pointer"
+                            >
+                                Bebaskan Biaya APC (Waiver)
+                            </button>
+                        </form>
+                    </details>
+                @endif
+            </div>
+        @endif
+    </section>
+
+    <!-- Modal Tolak Bukti Transfer Pembayaran (Section Editor) -->
+    <div 
+        id="modal-se-reject-payment" 
+        class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs transition-opacity duration-200"
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="modal-se-reject-payment-title"
+    >
+        <div class="relative w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-rose-50/50">
+                <div class="flex items-center gap-2.5 text-rose-900">
+                    <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="modal-se-reject-payment-title" class="text-sm font-bold text-gray-900 leading-snug">Tolak Bukti Transfer</h3>
+                        <p class="text-[11px] text-gray-500">{{ $submission->submission_number ?? "SUB-{$submission->id}" }}</p>
+                    </div>
+                </div>
+                <button 
+                    type="button" 
+                    onclick="closeSeRejectPaymentModal()"
+                    class="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                    aria-label="Tutup dialog"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form action="{{ route('section-editor.submissions.payment.reject', $submission->id) }}" method="POST" class="p-5 space-y-4">
+                @csrf
+                <div class="space-y-1.5">
+                    <label for="se-reject-payment-reason" class="block font-semibold text-gray-800">
+                        Alasan Penolakan Bukti Transfer <span class="text-rose-600">*</span>
+                    </label>
+                    <textarea 
+                        id="se-reject-payment-reason" 
+                        name="reason" 
+                        rows="3" 
+                        required 
+                        placeholder="Jelaskan alasan penolakan berkas bukti transfer (misal: berkas buram/terpotong, nominal transfer tidak sesuai tagihan, mutasi bank tidak cocok, dsb)..."
+                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-1 focus:ring-rose-500 focus:outline-hidden leading-relaxed"
+                    ></textarea>
+                    <p class="text-[11px] text-gray-500 leading-normal">
+                        Catatan alasan penolakan ini akan langsung ditampilkan kepada penulis agar segera mengunggah berkas bukti transfer yang valid.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                    <button 
+                        type="button" 
+                        onclick="closeSeRejectPaymentModal()"
+                        class="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg shadow-xs transition cursor-pointer"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Konfirmasi Tolak Bukti</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </aside>
 
 @pushOnce('scripts')
 <script>
+    function openSeRejectPaymentModal() {
+        const modal = document.getElementById('modal-se-reject-payment');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const textarea = document.getElementById('se-reject-payment-reason');
+            if (textarea) textarea.focus();
+        }
+    }
+
+    function closeSeRejectPaymentModal() {
+        const modal = document.getElementById('modal-se-reject-payment');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         // --- 1. Reviewer Searchable Combobox (OJS Standard) ---
         function initReviewerCombobox() {

@@ -10,21 +10,25 @@ use App\Models\ReviewExtension;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\Payment\ArticlePaymentService;
 use App\Services\SectionEditor\SectionEditorService;
 use App\ViewModels\SectionEditorSubmissionsViewModel;
 use App\ViewModels\SectionEditorWorkspaceViewModel;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SectionEditorController extends Controller
 {
     public function __construct(
-        protected readonly SectionEditorService $sectionEditorService
+        protected readonly SectionEditorService $sectionEditorService,
+        protected readonly ArticlePaymentService $articlePaymentService
     ) {}
 
     /**
@@ -422,5 +426,138 @@ class SectionEditorController extends Controller
         if (! $isAssigned) {
             abort(403, 'Anda tidak ditugaskan sebagai Editor Bagian untuk naskah ini.');
         }
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC untuk ditinjau Editor Bagian.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        $fileEntry = $payment->fileEntry;
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk($fileEntry->storage_disk);
+
+        if (! $disk->exists($fileEntry->storage_path)) {
+            abort(404, 'Berkas fisik bukti transfer tidak ditemukan di penyimpanan server.');
+        }
+
+        return $disk->download(
+            $fileEntry->storage_path,
+            $fileEntry->original_name,
+            ['Content-Type' => $fileEntry->mime_type]
+        );
+    }
+
+    /**
+     * Memverifikasi pembayaran oleh Editor Bagian.
+     */
+    public function verifyPayment(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Editor Bagian.');
+        $this->articlePaymentService->verifyPayment($payment, $editor, $notes);
+
+        return back()
+            ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Editor Bagian.")
+            ->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Editor Bagian.");
+    }
+
+    /**
+     * Menolak bukti pembayaran naskah oleh Editor Bagian.
+     */
+    public function rejectPayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+            'reason.max' => 'Alasan penolakan tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $reason = (string) $request->input('reason');
+        $this->articlePaymentService->rejectPayment($payment, $editor, $reason);
+
+        return back()
+            ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
+            ->with('success', "Bukti transfer naskah '{$submission->title}' berhasil ditolak.");
+    }
+
+    /**
+     * Memberikan pembebasan biaya publikasi (Waiver) oleh Editor Bagian.
+     */
+    public function waivePayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'waiver_reason.required' => 'Alasan pembebasan biaya wajib diisi.',
+            'waiver_reason.max' => 'Alasan pembebasan biaya tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            $payment = $this->articlePaymentService->resolveOrCreatePayment($submission, $editor);
+        }
+
+        if (! $payment) {
+            return back()->with('error', 'Gagal menginisialisasi catatan pembayaran naskah.');
+        }
+
+        $reason = (string) $request->input('waiver_reason');
+        $this->articlePaymentService->waivePayment($payment, $editor, $reason);
+
+        return back()
+            ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")
+            ->with('success', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
     }
 }

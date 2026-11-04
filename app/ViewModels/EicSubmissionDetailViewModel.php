@@ -492,6 +492,8 @@ class EicSubmissionDetailViewModel
             'has_proof' => $hasProof,
             'proof_url' => $hasProof ? route('eic.submissions.payment.proof', $sub->id) : null,
             'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
+            'can_reject' => (bool) ($payment && in_array($payment->status, ['pending_verification', 'verified'], true)),
+            'can_waive' => (bool) (! $payment || (! $payment->isVerified() && ! $payment->isWaived())),
         ];
     }
 }

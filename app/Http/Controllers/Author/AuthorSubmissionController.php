@@ -18,6 +18,7 @@ use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
 use DomainException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -644,6 +645,7 @@ class AuthorSubmissionController extends Controller
         }
 
         $fileEntry = $payment->fileEntry;
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk($fileEntry->storage_disk);
 
         if (! $disk->exists($fileEntry->storage_path)) {

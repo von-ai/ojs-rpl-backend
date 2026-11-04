@@ -14,6 +14,7 @@ use App\Services\Payment\ArticlePaymentService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -452,6 +453,7 @@ class EditorInChiefController extends Controller
         }
 
         $fileEntry = $payment->fileEntry;
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk($fileEntry->storage_disk);
 
         if (! $disk->exists($fileEntry->storage_path)) {
@@ -485,6 +487,76 @@ class EditorInChiefController extends Controller
 
         $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
 
-        return back()->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
+        return back()
+            ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.")
+            ->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
+    }
+
+    /**
+     * Menolak bukti pembayaran naskah oleh Pemimpin Redaksi (EIC).
+     */
+    public function rejectPayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+            'reason.max' => 'Alasan penolakan tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $reason = (string) $request->input('reason');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->rejectPayment($payment, $verifier, $reason);
+
+        return back()
+            ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
+            ->with('success', "Bukti transfer naskah '{$submission->title}' berhasil ditolak.");
+    }
+
+    /**
+     * Memberikan pembebasan biaya publikasi (Waiver) oleh Pemimpin Redaksi (EIC).
+     */
+    public function waivePayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'waiver_reason.required' => 'Alasan pembebasan biaya wajib diisi.',
+            'waiver_reason.max' => 'Alasan pembebasan biaya tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            $payment = $this->articlePaymentService->resolveOrCreatePayment($submission, $request->user());
+        }
+
+        if (! $payment) {
+            return back()->with('error', 'Gagal menginisialisasi catatan pembayaran naskah.');
+        }
+
+        $reason = (string) $request->input('waiver_reason');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->waivePayment($payment, $verifier, $reason);
+
+        return back()
+            ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")
+            ->with('success', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
     }
 }

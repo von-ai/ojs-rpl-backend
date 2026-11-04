@@ -18,6 +18,7 @@ use App\ViewModels\JournalManagerSectionsViewModel;
 use App\ViewModels\JournalManagerSettingsViewModel;
 use App\ViewModels\JournalManagerUsersViewModel;
 use DomainException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -409,6 +410,7 @@ class JournalManagerController extends Controller
         }
 
         $fileEntry = $payment->fileEntry;
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk($fileEntry->storage_disk);
 
         if (! $disk->exists($fileEntry->storage_path)) {
