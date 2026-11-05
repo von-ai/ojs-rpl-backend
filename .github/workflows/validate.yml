@@ -87,6 +87,20 @@ jobs:
           composer test -- --log-junit build/test-results/sqlite.xml --coverage-clover build/coverage/clover.xml --coverage-text --only-summary-for-coverage-text
         env:
           PAO_DISABLE: '1'
+      - name: Enforce minimum application line coverage
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          metrics = ET.parse('build/coverage/clover.xml').find('project/metrics')
+          total = int(metrics.attrib['statements'])
+          covered = int(metrics.attrib['coveredstatements'])
+          if total <= 0:
+              raise SystemExit('Coverage report has no executable application lines.')
+          coverage = covered / total * 100
+          print(f'Application line coverage: {coverage:.2f}% (minimum 70%)')
+          if coverage < 70:
+              raise SystemExit('Application line coverage is below 70%.')
+          PY
       - name: Test MySQL, real ClamAV and Azurite
         run: vendor/bin/phpunit --no-progress --log-junit build/test-results/mysql.xml
         env:

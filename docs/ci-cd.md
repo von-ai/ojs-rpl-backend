@@ -9,7 +9,7 @@ Sumber kebutuhan dibaca dari bagian UC-01–18 dan NF-01–10 pada dokumen RPL. 
 - Pull request menjalankan `validate.yml`. Workflow yang sama dapat dipanggil ulang melalui `workflow_call`.
 - Push ke `main`, tag `v*.*.*`, dan pemicu manual penerbitan menjalankan `docker-publish.yml`. Job publikasi memiliki `needs: validate`, sehingga seluruh validasi harus berhasil sebelum image dikirim ke GHCR.
 - Validasi mencakup Composer, Pint, build Vite, audit dependensi, suite SQLite, suite MySQL 8.4, ClamAV asli, dan Azurite privat.
-- JUnit dan laporan coverage Clover disimpan sebagai artifact `test-results` selama tujuh hari, termasuk ketika tes gagal. Coverage mencakup direktori `app` sebagaimana dikonfigurasi dalam `phpunit.xml`.
+- JUnit dan laporan coverage Clover disimpan sebagai artifact `test-results` selama tujuh hari, termasuk ketika tes gagal. Coverage mencakup direktori `app` sebagaimana dikonfigurasi dalam `phpunit.xml`. CI menolak laporan tanpa baris eksekusi atau coverage baris di bawah 70%.
 - Job `container` membangun Dockerfile produksi, memeriksa kebutuhan ekstensi PHP, dan mencoba boot Laravel pada image yang dihasilkan.
 - Hak token default hanya membaca isi repo. Hak menulis packages hanya diberikan pada job penerbitan. Actions dikunci ke commit SHA dan kredensial checkout tidak dipertahankan.
 - Tag `latest` hanya diperbarui dari branch default. Build manual dari branch lain memakai tag branch/SHA. Dependency host, data storage, konfigurasi Terraform, dan laporan pengujian dikecualikan dari konteks image. Direktori storage kosong dibuat ketika image dibangun.
@@ -17,6 +17,10 @@ Sumber kebutuhan dibaca dari bagian UC-01–18 dan NF-01–10 pada dokumen RPL. 
 Pemanggilan workflow yang sama menghindari perbedaan rangkaian tes antara PR dan rilis. Pengaturan izin per job mengikuti panduan keamanan GitHub. [Reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows), [Secure use](https://docs.github.com/en/actions/reference/security/secure-use).
 
 Pipeline ini menghasilkan image. Penerapan ke Azure, eksekusi migrasi produksi, pemeriksaan kesiapan layanan, dan rollback masih merupakan langkah operator dalam [panduan upgrade](security-upgrade.md).
+
+### Kebijakan merge repository
+
+Pada pemeriksaan 5 November 2026, API GitHub melaporkan `main.protected=false`, tanpa status check wajib atau ruleset branch yang berlaku. Workflow dapat memberikan hasil gagal, tetapi pengaturan ini belum mewajibkan pemeriksaan tersebut sebelum merge. Perlindungan branch perlu mewajibkan `laravel` dan `container` melalui kebijakan repository yang disepakati tim.
 
 ## Pemetaan kebutuhan ke pengujian
 
@@ -32,7 +36,7 @@ Pipeline ini menghasilkan image. Penerapan ke Azure, eksekusi migrasi produksi, 
 | NF-02, keamanan | Tes otorisasi objek, sesi, lockout, CSRF, file anonim, karantina, checksum, serta audit dependensi | TLS deployment dan penetration test lingkungan publik perlu pemeriksaan tersendiri |
 | NF-04 dan NF-06, usability dan kompatibilitas | Tes respons halaman serta verifikasi browser lokal | Belum ada matriks browser otomatis, audit WCAG AA, atau hasil SUS |
 | NF-05, availability | Konfigurasi health dan monitoring infrastruktur | CI tidak membuktikan uptime bulanan atau waktu failover |
-| NF-07, maintainability | Pint, suite aplikasi, laporan coverage CI | Target coverage 70% perlu dinilai dari laporan, bukan jumlah tes |
+| NF-07, maintainability | Pint, suite aplikasi, laporan coverage CI dan ambang minimum 70% baris aplikasi | Metrik metode dan kelas dilaporkan terpisah |
 | NF-08, backup dan recovery | DatabaseBackupTest, retensi, restore SQLite, dan uji adapter backup Azure | Drill restore MySQL dan storage produksi masih perlu dijadwalkan |
 | NF-09, interoperabilitas | Metadata DOI/ORCID tersedia pada model dan formulir | Belum ditemukan integrasi provider Crossref/ORCID maupun endpoint OAI-PMH yang teruji |
 | NF-10, audit | PortalSecurityTest dan SysAdminEndToEndIntegrationTest menguji audit append-only | Bukti kepatuhan operasional perlu pemeriksaan deployment dan proses organisasi |
@@ -59,6 +63,16 @@ Database MySQL hasil migrasi pada branch perbaikan memiliki **55 tabel dan 92 co
 Nama tabel rancangan yang belum ada pada migrasi adalah `journal_memberships`, `journal_role_grants`, `system_role_grants`, `refresh_tokens`, `orcid_connections`, `oauth_states`, `journal_settings`, `journal_pages`, `email_templates`, `ethics_cases`, `ethics_evidence`, `similarity_checks`, `submission_events`, `doi_registrations`, `crossref_deposits`, `file_scopes`, `upload_sessions`, `upload_parts`, `scan_attempts`, `operations`, `notifications`, `outbox_events`, `idempotency_records`, `system_settings_versions`, `integration_profiles`, `integration_candidates`, `integration_configurations`, dan `integration_tests`.
 
 Sebagian perbedaan merupakan penggantian representasi atau penghapusan rancangan API lama. Sebagian lagi menunjukkan modul yang belum diimplementasikan. Skema produksi harus mengikuti migrasi yang ditinjau dan diuji. Penyelarasan fisik ke seluruh tabel rancangan memerlukan keputusan desain serta rencana migrasi data.
+
+Pemeriksaan kolom juga menemukan perbedaan dari konvensi `DATETIME(6)` pada ERD. Sebagai contoh, `users`, `user_profiles`, dan `audit_logs` memakai `TIMESTAMP` tanpa presisi mikrodetik, sedangkan `files`, `submissions`, dan `galleys` memakai `TIMESTAMP(6)`. Karena itu, kesesuaian fisik skema belum lengkap walaupun tes alur utama berhasil.
+
+## Hasil CI terukur
+
+Run `41993507666` pada commit `2e63a05` lulus untuk job `laravel` dan `container`. SQLite menjalankan 397 tes dengan 2.988 asersi dan dua tes layanan dilewati. MySQL dengan ClamAV dan Azurite menjalankan 397 tes dengan 2.992 asersi dan satu tes khusus SQLite dilewati.
+
+Coverage direktori `app` pada run tersebut adalah **83,25% baris** (9.562 dari 11.486), **54,25% metode**, dan **21,92% kelas**. Ambang 70% di CI menggunakan metrik baris eksekusi. Hasil ini menjadi dasar penetapan ambang tersebut. [Hasil CI](https://github.com/von-ai/ojs-rpl-backend/actions/runs/41993507666).
+
+Gerbang coverage diuji terhadap hasil aktual, nilai tepat 70%, nilai di bawah 70%, nilai pecahan di bawah ambang, laporan tanpa baris eksekusi, dan laporan yang tidak tersedia. Kondisi di bawah ambang atau laporan tidak valid menggagalkan langkah CI.
 
 ## Reproduksi pengujian
 
