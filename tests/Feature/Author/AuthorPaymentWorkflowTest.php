@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Jobs\SendReviewNotice;
 use App\Models\ArticlePayment;
 use App\Models\EditorAssignment;
 use App\Models\FileEntry;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -292,6 +294,9 @@ class AuthorPaymentWorkflowTest extends TestCase
             'amount_paid' => 750000,
         ]);
 
+        $receiptUrl = route('author.submissions.payment.receipt', $submission->id);
+        $this->get($receiptUrl)->assertNotFound();
+
         // Manajer Jurnal memverifikasi pembayaran
         $this->scanTestUploads();
         $verifyResponse = $this->actingAs($this->manager)
@@ -307,6 +312,11 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertEquals($this->manager->id, $payment->verified_by);
         $this->assertNotNull($payment->verified_at);
 
+        $this->post(route('journalmanager.submissions.payment.waive', $submission->id), [
+            'waiver_reason' => 'Pembayaran yang sudah disahkan tidak boleh ditimpa.',
+        ])->assertSessionHasErrors('payment');
+        $this->assertSame('verified', $payment->fresh()->status);
+
         // Naskah kini dianggap payment cleared
         $this->assertTrue($submission->fresh()->isPaymentCleared());
 
@@ -321,6 +331,9 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertCount(1, Storage::disk('local')->allFiles("payments/{$submission->id}"));
         $this->get(route('author.submissions.show', $submission->id))
             ->assertOk()->assertDontSee('id="modal-upload-pembayaran"', false);
+        $this->get($receiptUrl)->assertOk()->assertSee('Kuitansi Pembayaran APC')
+            ->assertSee($payment->invoice_number)->assertSee('Rp 750.000,00');
+        $this->actingAs(User::factory()->create())->get($receiptUrl)->assertNotFound();
     }
 
     /**
@@ -328,6 +341,7 @@ class AuthorPaymentWorkflowTest extends TestCase
      */
     public function test_manajer_dapat_menolak_bukti_dan_penulis_dapat_unggah_ulang(): void
     {
+        Queue::fake([SendReviewNotice::class]);
         $submission = Submission::create([
             'journal_id' => $this->paidJournal->id,
             'section_id' => $this->section->id,
@@ -354,6 +368,8 @@ class AuthorPaymentWorkflowTest extends TestCase
         $rejectResponse->assertRedirect();
         $payment = ArticlePayment::where('submission_id', $submission->id)->first();
         $this->assertEquals('rejected', $payment->status);
+        Queue::assertPushed(SendReviewNotice::class, fn (SendReviewNotice $job) => $job->email === $this->author->email
+            && $job->subject === 'Bukti pembayaran APC perlu diperbaiki');
         $this->assertStringContainsString('Foto struk terpotong', $payment->verification_notes);
 
         // Penulis melihat catatan penolakan dan mengunggah ulang bukti baru

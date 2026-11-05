@@ -69,7 +69,7 @@ class AuthorSubmissionDetailViewModel
                 $sub = $query->first();
 
                 if ($sub) {
-                    return $this->formatDatabaseSubmission($sub);
+                    return $this->formatDatabaseSubmission($sub, $authUser);
                 }
             }
         } catch (\Throwable $e) {
@@ -87,7 +87,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function formatDatabaseSubmission(Submission $sub): array
+    protected function formatDatabaseSubmission(Submission $sub, ?User $user): array
     {
         $isDraft = $sub->status === 'draft';
         $sectionName = $sub->section?->name ?? 'Artikel Riset Orisinil';
@@ -228,7 +228,7 @@ class AuthorSubmissionDetailViewModel
             'can_withdraw' => $this->canWithdrawSubmission($sub, $stageNumber),
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
-            'payment_info' => $this->buildPaymentInfo($sub),
+            'payment_info' => $this->buildPaymentInfo($sub, $user),
             'peer_reviews' => $this->buildAnonymousPeerReviews(
                 $sub,
                 $sub->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->sortByDesc('sent_at')->first()
@@ -967,7 +967,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    public function buildPaymentInfo(Submission $sub): array
+    public function buildPaymentInfo(Submission $sub, ?User $user = null): array
     {
         $journal = $sub->journal ?? Journal::first();
         $isPaid = $journal ? $journal->isPaidApc() : false;
@@ -1017,6 +1017,9 @@ class AuthorSubmissionDetailViewModel
             'verified_at_formatted' => $payment?->verified_at ? $payment->verified_at->format('d M Y, H:i').' WITA' : null,
             'can_upload' => $canUpload,
             'has_proof' => (bool) ($payment && $payment->file_entry_id),
+            'receipt_url' => $payment?->isVerified() && $payment->verified_at && $payment->user_id === $user?->id
+                ? route('author.submissions.payment.receipt', $sub->id)
+                : null,
             'proof_download_url' => ($payment && $payment->file_entry_id) ? route('author.submissions.payment.proof', $sub->id) : null,
         ];
     }

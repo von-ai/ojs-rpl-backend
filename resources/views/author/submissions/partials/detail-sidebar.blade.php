@@ -553,6 +553,11 @@
                         <p class="text-[11px] text-emerald-700">Diverifikasi pada {{ $pay['verified_at_formatted'] }}. Naskah memenuhi syarat pembiayaan untuk dipublikasikan.</p>
                     </div>
 
+                    @if($pay['receipt_url'] ?? null)
+                        <a href="{{ $pay['receipt_url'] }}" class="inline-flex justify-center w-full px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold">
+                            Lihat Kuitansi APC
+                        </a>
+                    @endif
                     @if($pay['has_proof'] && $pay['proof_download_url'])
                         <a 
                             href="{{ $pay['proof_download_url'] }}" 

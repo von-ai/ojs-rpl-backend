@@ -86,6 +86,7 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
     Route::post('/submissions/{id}/payment', [AuthorSubmissionController::class, 'uploadPayment'])->name('submissions.payment.store');
     Route::get('/submissions/{id}/payment/proof', [AuthorSubmissionController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::get('/submissions/{id}/payment/receipt', [AuthorSubmissionController::class, 'showPaymentReceipt'])->name('submissions.payment.receipt');
     Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
 });
 

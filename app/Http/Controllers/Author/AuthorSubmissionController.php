@@ -23,6 +23,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -583,7 +584,7 @@ class AuthorSubmissionController extends Controller
             'sender_bank_name' => ['nullable', 'string', 'max:100'],
             'sender_account_name' => ['nullable', 'string', 'max:191'],
             'transfer_date' => ['nullable', 'date'],
-            'amount_paid' => ['nullable', 'numeric', 'min:0'],
+            'amount_paid' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'author_notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'payment_proof.required' => 'Berkas bukti pembayaran wajib diunggah.',
@@ -635,6 +636,16 @@ class AuthorSubmissionController extends Controller
                     });
             })
             ->first();
+    }
+
+    public function showPaymentReceipt(Request $request, string $id): Response
+    {
+        $submission = $this->findAuthorSubmission($id, $request->user());
+        $payment = $submission?->latestPayment;
+        abort_unless($payment?->isVerified() && $payment->verified_at && $payment->user_id === $request->user()->id, 404);
+
+        return response()->view('author.submissions.payment-receipt', compact('submission', 'payment'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     /**
