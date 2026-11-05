@@ -1511,6 +1511,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     type: 'warning'
                 });
                 return false;
+            }
         } else if (step === 2) {
             if (isUploadingToAzure) {
                 await window.showAlertModal({
