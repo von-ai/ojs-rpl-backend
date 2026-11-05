@@ -28,7 +28,7 @@ Pada pemeriksaan 5 November 2026, API GitHub melaporkan `main.protected=false`, 
 | --- | --- | --- |
 | UC-01–02, autentikasi dan peran | RegistrationTest, Auth, PortalSecurityTest | Provider email memakai pengganti lokal pada suite |
 | UC-03–04, artikel publik dan pencarian | PublicJournalPortalTest, PublicPagesTest | Beban pengguna serentak belum diukur |
-| UC-05–07, pengajuan dan revisi | Author, DirectBlobUploadTest | Suite upload memakai fake storage untuk variasi kasus, adapter Azure juga diuji terhadap Azurite |
+| UC-05–07, pengajuan dan revisi | Author, DirectBlobUploadTest, dan pemeriksaan sintaks JavaScript inline halaman pengajuan | Suite upload memakai fake storage untuk variasi kasus, adapter Azure juga diuji terhadap Azurite |
 | UC-08–12, review dan keputusan | ReviewerWorkflowTest, SectionEditorWorkflowTest, EditorInChiefWorkflowTest | Integrasi editorial memakai fixture terisolasi |
 | UC-13–14 dan UC-18, produksi | Copyeditor, LayoutEditor, Proofreader, EditorialPipelineTest | Pengeditan dokumen tetap dikerjakan di luar aplikasi |
 | UC-15–17, publikasi dan administrasi | JournalManager, SysAdmin, EditorialPipelineTest | Integrasi provider eksternal belum dibuktikan oleh tes ini |
@@ -87,4 +87,6 @@ npm audit
 
 Mode MySQL memakai skema tetap `sirida_latest_test` pada server pengujian terpisah. Aktifkan dengan `RPL_TEST_MYSQL=1` serta port/password uji yang sesuai. `RPL_TEST_CLAMD_HOST` dan `RPL_TEST_AZURITE_URL` mengaktifkan pengujian layanan asli. Konfigurasi dan persiapan container CI tersedia di `validate.yml`.
 
-Regresi paginasi pengguna direproduksi dengan timestamp yang sama dan ID yang urutan insert-nya berbeda. Tes baru gagal sebelum penambahan pengurutan ID, lalu lulus setelah perbaikan. Suite lokal menjalankan 397 tes pada SQLite dan MySQL. Jumlah tes yang dilewati bergantung pada layanan integrasi yang diaktifkan.
+Regresi paginasi pengguna direproduksi dengan timestamp yang sama dan ID yang urutan insert-nya berbeda. Tes baru gagal sebelum penambahan pengurutan ID, lalu lulus setelah perbaikan. Suite lokal saat perbaikan paginasi menjalankan 397 tes pada SQLite dan MySQL. Jumlah tes yang dilewati bergantung pada layanan integrasi yang diaktifkan.
+
+`AuthorNewSubmissionTest` juga memeriksa sintaks setiap script inline hasil render halaman pengajuan melalui `node --check`. Pemeriksaan ini menangkap kesalahan kurung pada Blade yang tidak diproses oleh build Vite. Node.js tersedia pada CI sebelum suite dijalankan. Lingkungan PHP tanpa Node melewati tes sintaks ini.

@@ -10,6 +10,8 @@ use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class AuthorNewSubmissionTest extends TestCase
@@ -105,6 +107,25 @@ class AuthorNewSubmissionTest extends TestCase
         // Identitas pemilik akun tetap tampil tanpa menyisipkan kontributor contoh.
         $response->assertSee('Ilyas');
         $response->assertSee('andi.ilyas@unhas.ac.id');
+    }
+
+    public function test_javascript_inline_formulir_pengajuan_valid(): void
+    {
+        $node = (new ExecutableFinder)->find('node');
+        if ($node === null) {
+            $this->markTestSkipped('Node.js diperlukan untuk memeriksa JavaScript formulir.');
+        }
+
+        $response = $this->get(route('author.submissions.create'))->assertOk();
+        preg_match_all('/<script\b[^>]*>(.*?)<\/script>/is', $response->getContent(), $scripts);
+        $this->assertNotEmpty($scripts[1]);
+
+        foreach ($scripts[1] as $index => $script) {
+            $process = new Process([$node, '--check']);
+            $process->setInput($script);
+            $process->run();
+            $this->assertTrue($process->isSuccessful(), 'JavaScript inline #'.$index.' tidak valid. '.$process->getErrorOutput());
+        }
     }
 
     public function test_kontributor_bawaan_memakai_profil_penulis_yang_login(): void
