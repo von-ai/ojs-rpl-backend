@@ -36,8 +36,7 @@ class EnsurePortalRoleAccess
 
             return redirect()
                 ->route($user->defaultPortalRoute())
-                ->with('error', $message)
-                ->with('status', $message);
+                ->with('error', $message);
         }
 
         $request->attributes->set('portal.role', $roleCode);

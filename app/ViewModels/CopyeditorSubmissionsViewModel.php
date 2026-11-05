@@ -272,18 +272,14 @@ class CopyeditorSubmissionsViewModel
     {
         try {
             if (class_exists(Copyedit::class) && Schema::hasTable('copyedits') && Copyedit::query()->exists()) {
-                $query = Copyedit::query();
                 if (Auth::check()) {
-                    $userCount = (clone $query)->where('copy_editor_id', Auth::id())->count();
-                    if ($userCount > 0) {
-                        return $userCount;
-                    }
+                    return Copyedit::where('copy_editor_id', Auth::id())->count();
                 }
 
-                return $query->count();
+                return 0;
             }
 
-            return (new self)->assignedCount();
+            return 0;
         } catch (\Throwable) {
             return 0;
         }
@@ -386,6 +382,8 @@ class CopyeditorSubmissionsViewModel
      */
     private function loadDatabaseCopyedits()
     {
+        $userId = Auth::id();
+
         return Copyedit::with([
             'submission.section',
             'submission.journal',
@@ -394,7 +392,9 @@ class CopyeditorSubmissionsViewModel
             'outputs.file',
             'approvals',
             'escalations',
-        ])->get();
+        ])
+            ->where('copy_editor_id', $userId)
+            ->get();
     }
 
     /**

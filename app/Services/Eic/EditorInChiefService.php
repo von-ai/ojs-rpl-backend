@@ -21,6 +21,7 @@ use App\Services\PortalAccess;
 use App\Services\PrivateFileService;
 use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -99,6 +100,20 @@ class EditorInChiefService
         });
     }
 
+    /** @return Builder<User> */
+    public function eligibleSectionEditors(Submission $submission): Builder
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->when($submission->author_id, fn ($query) => $query->where('id', '!=', $submission->author_id))
+            ->whereNotIn('id', $submission->contributors()->select('user_id')->whereNotNull('user_id'))
+            ->whereNotIn('email', $submission->contributors()->select('email')->whereNotNull('email'))
+            ->whereHas('userRoles', fn ($query) => $query
+                ->where('role_code', 'section_editor')
+                ->where('journal_id', $submission->journal_id));
+    }
+
     /**
      * Menugaskan Section Editor untuk memimpin penelaahan naskah (UC-11).
      */
@@ -110,8 +125,7 @@ class EditorInChiefService
     ): EditorAssignment {
         return DB::transaction(function () use ($submission, $eic, $sectionEditor, $note) {
             $submission = PortalAccess::lockSubmission($submission, $eic, 'editor_in_chief');
-            $sectionEditor->refresh();
-            if ($sectionEditor->id === $submission->author_id || $sectionEditor->status !== 'active' || ! $sectionEditor->email_verified_at || ! $sectionEditor->userRoles()->where('journal_id', $submission->journal_id)->where('role_code', 'section_editor')->exists()) {
+            if (! $this->eligibleSectionEditors($submission)->whereKey($sectionEditor->id)->exists()) {
                 throw new DomainException('Editor Bagian harus aktif, terverifikasi, bebas konflik, dan memiliki peran pada jurnal ini.');
             }
 
@@ -373,7 +387,7 @@ class EditorInChiefService
             });
         }
 
-        return $query->orderBy('created_at', 'desc')
+        return $query->latest('updated_at')
             ->paginate($perPage)
             ->withQueryString();
     }

@@ -75,6 +75,43 @@ class ReviewerWorkspaceViewModel
         return $this->assignment->status === 'completed';
     }
 
+    public function isDeclined(): bool
+    {
+        return $this->assignment->status === 'declined';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->assignment->status === 'cancelled';
+    }
+
+    public function isSubmissionFinalized(): bool
+    {
+        $submission = $this->assignment->reviewRound?->submission;
+
+        return $submission && in_array($submission->status, ['declined', 'published', 'accepted', 'in_production', 'ready_for_issue', 'archived', 'withdrawn'], true);
+    }
+
+    public function finalizedSubmissionMessage(): ?string
+    {
+        $submission = $this->assignment->reviewRound?->submission;
+        if (! $submission) {
+            return null;
+        }
+
+        return match ($submission->status) {
+            'declined' => 'Naskah ini telah diputuskan ditolak oleh Pemimpin Redaksi (EIC), sehingga proses penelaahan telaah telah dihentikan.',
+            'published' => 'Naskah ini telah selesai diproses dan diterbitkan secara resmi, sehingga proses penelaahan telah ditutup.',
+            'accepted', 'in_production', 'ready_for_issue' => 'Naskah ini telah diterima oleh Pemimpin Redaksi dan memasuki tahap produksi.',
+            default => 'Proses penelaahan untuk naskah ini telah ditutup oleh Dewan Redaksi.',
+        };
+    }
+
+    public function isNoResponse(): bool
+    {
+        return $this->assignment->effective_status === 'no_response';
+    }
+
     public function canSubmit(): bool
     {
         return $this->assignment->effective_status === 'accepted' && $this->assignment->reviewRound->status === 'active';
@@ -88,6 +125,60 @@ class ReviewerWorkspaceViewModel
     public function existingReview()
     {
         return $this->assignment->review;
+    }
+
+    /**
+     * Skor rata-rata dari rubrik yang dinilai.
+     */
+    public function averageScore(): ?float
+    {
+        $scores = $this->existingReview()?->scores;
+        if (! is_array($scores) || empty($scores)) {
+            return null;
+        }
+
+        $numericScores = array_values(array_filter(array_map('floatval', $scores)));
+        if (empty($numericScores)) {
+            return null;
+        }
+
+        return round(array_sum($numericScores) / count($numericScores), 1);
+    }
+
+    /**
+     * Label rekomendasi ilmiah dalam bahasa Indonesia baku dan komunikatif.
+     */
+    public function recommendationLabel(): ?string
+    {
+        $recommendation = $this->existingReview()?->recommendation;
+
+        if (! $recommendation) {
+            return null;
+        }
+
+        return match ($recommendation) {
+            'accept' => 'Diterima',
+            'revisions_required' => 'Perlu Revisi',
+            'resubmit' => 'Kirim Ulang untuk Telaah',
+            'decline' => 'Ditolak',
+            default => ucfirst(str_replace('_', ' ', $recommendation)),
+        };
+    }
+
+    /**
+     * Kelas styling badge rekomendasi yang elegan dan harmonis.
+     */
+    public function recommendationBadgeClass(): string
+    {
+        $recommendation = $this->existingReview()?->recommendation;
+
+        return match ($recommendation) {
+            'accept' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+            'revisions_required' => 'bg-amber-100 text-amber-800 border-amber-300',
+            'resubmit' => 'bg-orange-100 text-orange-800 border-orange-300',
+            'decline' => 'bg-rose-100 text-rose-800 border-rose-300',
+            default => 'bg-gray-100 text-gray-800 border-gray-200',
+        };
     }
 
     public function pendingExtension()

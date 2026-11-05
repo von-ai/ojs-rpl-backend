@@ -33,6 +33,7 @@ services:
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
+      - /var/www/html/bootstrap/cache
     depends_on:
       mysql:
         condition: service_healthy

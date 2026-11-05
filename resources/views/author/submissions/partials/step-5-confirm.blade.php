@@ -1,3 +1,6 @@
+@php
+    $existingManuscript = ($draft && $draft->files) ? $draft->files->where('genre', 'manuscript')->last()?->file : null;
+@endphp
 <!-- ========================================== -->
 <!-- LANGKAH 5: KONFIRMASI & KIRIM NASKAH -->
 <!-- ========================================== -->
@@ -63,7 +66,7 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <span class="text-gray-400 text-[10px] font-medium uppercase tracking-wider">Berkas Naskah Terpilih</span>
-                        <p id="review-file-name" class="font-bold text-gray-900 text-xs sm:text-sm truncate mt-0.5">-</p>
+                        <p id="review-file-name" class="font-bold text-gray-900 text-xs sm:text-sm truncate mt-0.5">{{ $existingManuscript?->original_name ?? '-' }}</p>
                     </div>
                 </div>
             </div>
@@ -121,8 +124,8 @@
         </div>
 
         <!-- Pernyataan Integritas Final -->
-        <label class="flex items-start gap-3 p-4 sm:p-5 rounded-xl bg-red-50/50 border border-red-200 cursor-pointer hover:bg-red-50/70 transition shadow-2xs">
-            <input type="checkbox" id="confirm-declaration" required class="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0 cursor-pointer">
+        <label id="declaration-container" class="flex items-start gap-3 p-4 sm:p-5 rounded-xl bg-red-50/50 border border-red-200 cursor-pointer hover:bg-red-50/70 transition-all duration-200 shadow-2xs">
+            <input type="checkbox" id="confirm-declaration" name="confirm_declaration" value="1" oninvalid="this.setCustomValidity('Harap setujui Pernyataan Integritas Ilmiah sebelum mengirimkan naskah.')" oninput="this.setCustomValidity('')" onchange="this.setCustomValidity('')" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0 cursor-pointer">
             <div class="text-xs leading-relaxed text-gray-700">
                 <span class="font-bold text-gray-900 block mb-0.5">Pernyataan Integritas Ilmiah</span>
                 Saya menyatakan bahwa naskah yang diajukan adalah karya orisinil, bebas dari fabrikasi data dan plagiarisme, serta seluruh penulis yang dicantumkan telah menyetujui versi naskah ini untuk diproses di Jurnal BRIDA Kota Makassar.

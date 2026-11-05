@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Pemberitahuan">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- 1. Header Metadata Edisi & Tombol Navigasi -->
     <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -70,7 +63,7 @@
                         </span>
                         <div>
                             <h2 class="text-sm sm:text-base font-bold text-gray-900">
-                                Daftar Isi Edisi (Table of Contents)
+                                Daftar Isi Edisi
                             </h2>
                             <p class="text-xs text-gray-500 mt-0.5">
                                 Susunan urutan naskah resmi dan rentang penomoran halaman artikel.
@@ -281,7 +274,13 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('journalmanager.issues.publish', $issue['id']) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mempublikasikan edisi terbitan ini ke publik?');">
+                        <form action="{{ route('journalmanager.issues.publish', $issue['id']) }}" 
+                              method="POST"
+                              data-confirm="Apakah Anda yakin ingin mempublikasikan edisi terbitan ini ke publik?"
+                              data-confirm-title="Publikasikan Edisi Terbitan?"
+                              data-confirm-btn="Publikasikan Sekarang"
+                              data-confirm-cancel="Batal"
+                              data-confirm-type="primary">
                             @csrf
                             <button
                                 type="submit"

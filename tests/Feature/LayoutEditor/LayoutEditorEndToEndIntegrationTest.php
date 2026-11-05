@@ -48,9 +48,8 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00110');
         $indexResponse->assertSee('SUB-2026-00111');
 
-        // Pastikan sidebar badge menampilkan jumlah penugasan secara dinamis (8)
-        $indexResponse->assertSee('sidebar-badge-full', false);
-        $indexResponse->assertSee('8');
+        // Pastikan sidebar navigasi bersih tanpa angka badge sesuai pedoman UI
+        $indexResponse->assertDontSee('sidebar-badge-full', false);
 
         // Akses naskah 107 (dalam putaran proofreading)
         $detailResponse = $this->get('/layouteditor/submissions/SUB-2026-00107');

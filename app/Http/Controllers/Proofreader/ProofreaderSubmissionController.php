@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Proofreader;
 use App\Http\Controllers\Controller;
 use App\Models\FileEntry;
 use App\Models\Galley;
+use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
 use App\Models\User;
@@ -46,6 +47,12 @@ class ProofreaderSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $submissionModel = $this->findSubmission($id);
+        if (! $submissionModel) {
+            abort(404, "Naskah penugasan pemeriksaan bukti baca '{$id}' tidak ditemukan.");
+        }
+        $this->authorizeProofreaderForSubmission($submissionModel);
+
         $viewModel = new ProofreaderDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -69,17 +76,23 @@ class ProofreaderSubmissionController extends Controller
      */
     public function addNote(Request $request): RedirectResponse
     {
-        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
-        $request->validate(['category' => ['required', 'in:typo,layout,metadata,reference'], 'severity' => ['required', 'in:minor,major,critical'], 'page' => ['nullable', 'integer', 'min:1'], 'description' => ['required', 'string', 'max:8000']]);
+        $submissionId = (string) ($request->input('submission_id') ?? '');
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
+        $request->validate([
+            'submission_id' => ['required', 'string'],
+            'category' => ['required', 'in:typo,layout,metadata,reference'],
+            'severity' => ['nullable', 'in:minor,major,critical'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'description' => ['required', 'string', 'max:8000'],
+        ]);
         $category = (string) $request->input('category', 'typo');
         $page = $request->input('page');
         $severity = (string) $request->input('severity', 'minor');
         $description = (string) $request->input('description', 'Catatan koreksi galai');
 
         $actor = $this->resolveActor();
-
-        $submission = $this->findSubmission($submissionId);
-        abort_unless($submission, 404);
         if ($submission && $actor) {
             try {
                 $this->proofreaderService->addCorrectionNote(
@@ -110,6 +123,9 @@ class ProofreaderSubmissionController extends Controller
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $noteId = (string) $request->input('note_id', '');
 
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($noteId !== '' && $actor) {
@@ -139,7 +155,8 @@ class ProofreaderSubmissionController extends Controller
     {
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $submission = $this->findSubmission($submissionId);
-        abort_unless($submission, 404);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($submission && $actor) {
@@ -164,7 +181,8 @@ class ProofreaderSubmissionController extends Controller
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $reason = (string) $request->input('reason', 'Ketidaksesuaian naskah dengan hasil copyediting.');
         $submission = $this->findSubmission($submissionId);
-        abort_unless($submission, 404);
+        $this->authorizeProofreaderForSubmission($submission);
+
         $actor = $this->resolveActor();
 
         if ($submission && $actor) {
@@ -216,8 +234,11 @@ class ProofreaderSubmissionController extends Controller
             return null;
         }
 
-        return Submission::where('id', $identifier)
-            ->orWhere('submission_number', $identifier)
+        return Submission::withoutGlobalScope('portal_access')
+            ->where(function ($q) use ($identifier) {
+                $q->where('id', $identifier)
+                    ->orWhere('submission_number', $identifier);
+            })
             ->first();
     }
 
@@ -227,5 +248,30 @@ class ProofreaderSubmissionController extends Controller
     protected function resolveActor(): User
     {
         return Auth::user();
+    }
+
+    /**
+     * Otorisasi ketat hak akses ruang kerja penugasan proofreading.
+     */
+    private function authorizeProofreaderForSubmission(?Submission $submission): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
+        }
+
+        if (! $submission) {
+            abort(404, 'Naskah tidak ditemukan.');
+        }
+
+        $isAssigned = ProofAssignment::where('proofreader_id', $userId)
+            ->whereHas('galley', function ($q) use ($submission) {
+                $q->where('submission_id', $submission->id);
+            })
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Proofreader pada naskah ini.');
+        }
     }
 }

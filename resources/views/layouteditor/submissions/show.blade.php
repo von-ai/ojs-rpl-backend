@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Pemberitahuan">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- 1. Header Naskah & Berkas Final Copyedit -->
     @include('layouteditor.submissions.partials.header-card')
 

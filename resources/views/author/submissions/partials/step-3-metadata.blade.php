@@ -24,10 +24,9 @@
             name="title" 
             id="title" 
             rows="2" 
-            required
             placeholder="Contoh: Analisis Efektivitas Layanan Transportasi Publik Berkelanjutan di Kota Makassar..."
             class="w-full p-3 sm:p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition font-medium"
-        >{{ old('title') }}</textarea>
+        >{{ old('title', ($draft && $draft->title !== 'Draf Naskah Belum Diberi Judul' && $draft->title !== 'Draf Naskah Tanpa Judul') ? $draft->title : '') }}</textarea>
     </div>
 
     <!-- Abstrak Naskah -->
@@ -44,10 +43,9 @@
             name="abstract" 
             id="abstract" 
             rows="6" 
-            required
             placeholder="Tuliskan latar belakang singkat, tujuan riset, metode, temuan utama, dan kontribusi kebijakan..."
             class="w-full p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition leading-relaxed font-sans"
-        >{{ old('abstract') }}</textarea>
+        >{{ old('abstract', ($draft && $draft->abstract !== 'Draf naskah belum dilengkapi abstrak.') ? $draft->abstract : '') }}</textarea>
     </div>
 
     <!-- Kata Kunci (Interactive Tags Input) -->
@@ -85,7 +83,7 @@
             type="text" 
             name="subject_area" 
             id="subject_area" 
-            value="{{ old('subject_area') }}"
+            value="{{ old('subject_area', $draft->subject_area ?? '') }}"
             placeholder="Contoh: Tata Kelola Pemerintahan & Inovasi Layanan Publik"
             class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition"
         >
@@ -102,6 +100,6 @@
             rows="4" 
             placeholder="Tempelkan daftar rujukan utama (disarankan format APA 7th)..."
             class="w-full p-3 sm:p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition leading-relaxed"
-        >{{ old('references') }}</textarea>
+        >{{ old('references', $draft->references ?? '') }}</textarea>
     </div>
 </div>

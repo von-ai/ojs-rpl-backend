@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\DeskReview;
 use App\Models\Journal;
+use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
 use App\Models\User;
 use Database\Seeders\SubmissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
@@ -256,7 +259,7 @@ class AuthorSubmissionDetailTest extends TestCase
         $respDec = $this->get(route('author.submissions.show', 'SUB-2026-00108'));
         $respDec->assertStatus(200);
         $respDec->assertSee('SUB-2026-00108');
-        $respDec->assertSee('Naskah Ditolak (Declined)');
+        $respDec->assertSee('Naskah Ditolak');
         $respDec->assertSee('Alur Terhenti (Ditolak)');
         $respDec->assertSee('Keputusan Editorial: Naskah Tidak Diterima');
 
@@ -264,9 +267,8 @@ class AuthorSubmissionDetailTest extends TestCase
         $respArchived = $this->get(route('author.submissions.show', 'SUB-2026-00109'));
         $respArchived->assertStatus(200);
         $respArchived->assertSee('SUB-2026-00109');
-        $respArchived->assertSee('Naskah Diarsipkan (Archived)');
         $respArchived->assertSee('Naskah Diarsipkan');
-        $respArchived->assertSee('Naskah Telah Diarsipkan Resmi (Archived)');
+        $respArchived->assertSee('Naskah Telah Diarsipkan Resmi');
     }
 
     /**
@@ -364,5 +366,227 @@ class AuthorSubmissionDetailTest extends TestCase
         $response->assertRedirect(route('author.submissions.show', $submission->id));
         $response->assertSessionHas('error');
         $this->assertEquals('in_review', $submission->fresh()->status);
+    }
+
+    /**
+     * Penulis dapat mengakses halaman detail naskah baru berstatus submitted via submission_number.
+     */
+    public function test_penulis_dapat_mengakses_detail_naskah_baru_status_submitted(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-test-new-sub'],
+            ['name' => 'Jurnal Uji Naskah Baru', 'status' => 'active', 'version' => 1]
+        );
+
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-new-test'],
+            ['name' => 'Seksi Naskah Baru', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00099',
+            'title' => 'Naskah Baru Mandiri Penulis',
+            'abstract' => 'Abstrak naskah baru mandiri penulis.',
+            'comments_for_editor' => 'Catatan khusus pengantar untuk dewan redaksi jurnal.',
+            'status' => 'submitted',
+            'submitted_at' => now(),
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00099'));
+
+        $response->assertStatus(200);
+        $response->assertSee('SUB-2026-00099');
+        $response->assertSee('Naskah Baru Mandiri Penulis');
+        $response->assertSee('Pemeriksaan Awal');
+        $response->assertSee('Catatan Pengantar untuk Dewan Redaksi');
+        $response->assertSee('Catatan khusus pengantar untuk dewan redaksi jurnal.');
+    }
+
+    /**
+     * Penulis lain tidak dapat mengakses halaman detail naskah milik penulis lain (404 Not Found / Unauthorized).
+     */
+    public function test_penulis_lain_tidak_dapat_mengakses_detail_naskah_bukan_miliknya(): void
+    {
+        $otherAuthor = User::factory()->create([
+            'email' => 'penulis.lain@example.com',
+            'full_name' => 'Penulis Asing',
+        ]);
+
+        $response = $this->actingAs($otherAuthor)->get(route('author.submissions.show', 'SUB-2026-00104'));
+
+        $response->assertStatus(404);
+    }
+
+    /**
+     * Saat EIC meminta perbaikan format pada skrining awal, catatan desk review muncul dan batas waktu revisi tidak ditampilkan.
+     */
+    public function test_catatan_perbaikan_format_skrining_awal_ditampilkan_tanpa_batas_waktu(): void
+    {
+        $journal = Journal::firstOrCreate(
+            ['slug' => 'sirida-makassar'],
+            ['name' => 'Jurnal SIRIDA', 'status' => 'active', 'version' => 1]
+        );
+        $section = Section::firstOrCreate(
+            ['journal_id' => $journal->id, 'slug' => 'sec-format-test'],
+            ['name' => 'Seksi Format Test', 'accepting_submissions' => true, 'version' => 1]
+        );
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00888',
+            'title' => 'Naskah Evaluasi Perbaikan Format Skrining Awal',
+            'abstract' => 'Abstrak naskah dengan perbaikan format.',
+            'status' => 'revisions_requested',
+            'submitted_at' => now()->subDays(2),
+            'version' => 2,
+        ]);
+
+        // EIC melakukan desk review dengan permintaan perbaikan format dan catatan khusus
+        DeskReview::create([
+            'submission_id' => $submission->id,
+            'assessed_by' => $this->author->id,
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 12.5,
+            'notes' => 'Format daftar pustaka belum mengikuti gaya APA 7th dan abstrak belum memuat kata kunci bahasa Inggris.',
+            'status' => 'revision_required',
+            'version' => 1,
+        ]);
+
+        // Buka halaman detail naskah author
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00888'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Perbaikan Format Berkas');
+        $response->assertSee('Perbaikan Format Naskah (Pemeriksaan Awal)');
+        // Memastikan catatan yang diinput EIC tampil persis
+        $response->assertSee('Format daftar pustaka belum mengikuti gaya APA 7th dan abstrak belum memuat kata kunci bahasa Inggris.');
+        // Memastikan tidak muncul kalimat default mitra bestari
+        $response->assertDontSee('Dewan redaksi meminta perbaikan naskah sesuai catatan telaah mitra bestari.');
+        // Memastikan baris Batas Waktu Revisi tidak muncul (karena di ERD desk_reviews tidak ada kolom batas waktu)
+        $response->assertDontSee('Batas Waktu Revisi:');
+
+        // Buka halaman katalog naskah author
+        $indexResponse = $this->get(route('author.submissions.index', ['tab' => 'perlu-revisi']));
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertSee('SUB-2026-00888');
+        $indexResponse->assertSee('Perbaikan Format Berkas');
+        $indexResponse->assertDontSee('15 Nov 2026');
+    }
+
+    /**
+     * Memastikan pengiriman revisi format skrining awal mengembalikan status naskah ke submitted (Pemeriksaan Awal).
+     */
+    public function test_pengunggahan_revisi_format_skrining_awal_mengembalikan_status_ke_submitted(): void
+    {
+        $journal = Journal::first() ?? Journal::create([
+            'name' => 'Jurnal Inovasi Daerah',
+            'slug' => 'sirida',
+            'is_active' => true,
+        ]);
+
+        $section = Section::first() ?? Section::create([
+            'journal_id' => $journal->id,
+            'name' => 'Artikel Riset',
+            'slug' => 'artikel-riset',
+            'is_active' => true,
+        ]);
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00999',
+            'title' => 'Pengujian Alur Revisi Format Skrining Awal',
+            'abstract' => 'Abstrak pengujian.',
+            'status' => 'revisions_requested',
+            'submitted_at' => now()->subDays(1),
+            'version' => 1,
+        ]);
+
+        DeskReview::create([
+            'submission_id' => $submission->id,
+            'assessed_by' => $this->author->id,
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 15.0,
+            'notes' => 'Tolong sesuaikan format margin dan referensi sesuai template.',
+            'status' => 'revision_required',
+            'version' => 1,
+        ]);
+
+        $fakeManuscript = UploadedFile::fake()->create('manuskrip_perbaikan_format.docx', 500, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $response = $this->post(route('author.submissions.revisions.store', $submission->id), [
+            'manuscript_file' => $fakeManuscript,
+            'note' => 'Format sudah diperbaiki sesuai panduan.',
+        ]);
+
+        $response->assertRedirect(route('author.submissions.show', $submission->id));
+
+        // Status naskah harus kembali ke submitted (Pemeriksaan Awal), BUKAN langsung in_review
+        $submission->refresh();
+        $this->assertSame('submitted', $submission->status);
+
+        // Tampilan detail naskah harus menunjukkan pemeriksaan awal dan bukan proses telaah putaran 1
+        $detailResponse = $this->get(route('author.submissions.show', 'SUB-2026-00999'));
+        $detailResponse->assertStatus(200);
+        $detailResponse->assertSee('Tahap 2 dari 6');
+        $detailResponse->assertSee('Verifikasi Perbaikan Format Sedang Berlangsung');
+        $detailResponse->assertDontSee('Proses Telaah Putaran 1');
+        $detailResponse->assertDontSee('Mitra Bestari Ditugaskan');
+    }
+
+    /**
+     * Memastikan naskah dalam tahap telaah tanpa reviewer yang ditugaskan tidak memalsukan jumlah reviewer.
+     */
+    public function test_penelaahan_in_review_tanpa_mitra_bestari_menampilkan_sedang_dialokasikan(): void
+    {
+        $journal = Journal::first() ?? Journal::create([
+            'name' => 'Jurnal Inovasi Daerah',
+            'slug' => 'sirida',
+            'is_active' => true,
+        ]);
+
+        $section = Section::first() ?? Section::create([
+            'journal_id' => $journal->id,
+            'name' => 'Artikel Riset',
+            'slug' => 'artikel-riset',
+            'is_active' => true,
+        ]);
+
+        $submission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-00777',
+            'title' => 'Pengujian Telaah Tanpa Penugasan Reviewer',
+            'abstract' => 'Abstrak pengujian telaah.',
+            'status' => 'in_review',
+            'submitted_at' => now()->subDays(5),
+            'version' => 1,
+        ]);
+
+        ReviewRound::create([
+            'submission_id' => $submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'version' => 1,
+        ]);
+
+        $response = $this->get(route('author.submissions.show', 'SUB-2026-00777'));
+        $response->assertStatus(200);
+        $response->assertSee('Proses Telaah');
+        $response->assertSee('Sedang Dialokasikan');
+        $response->assertDontSee('2 Penilai Independen');
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Author;
 
+use App\Models\Submission;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -75,21 +76,36 @@ class StoreSubmissionRequest extends FormRequest
     {
         $isSubmit = $this->input('action') === 'submit';
 
+        $draftId = $this->input('draft_id');
+        $hasExistingManuscript = $isSubmit && is_string($draftId) && $draftId !== ''
+            && Submission::whereKey($draftId)
+                ->where('author_id', $this->user()->id)
+                ->where('status', 'draft')
+                ->whereHas('files', fn ($query) => $query->where('genre', 'manuscript'))
+                ->exists();
+
         $rules = [
             'action' => ['required', 'string', 'in:draft,submit'],
-            'section_id' => ['required', 'string', 'max:50'],
-            'title' => ['required', 'string', 'min:1', 'max:500'],
-            'abstract' => ['required', 'string', 'min:1', 'max:10000'],
-            'keywords' => ['required', 'array', 'min:1', 'max:20'],
-            'keywords.*' => ['required', 'string', 'max:100'],
+            'draft_id' => ['nullable', 'string', 'max:50'],
+            'existing_manuscript_id' => ['nullable', 'string', 'max:50'],
+            'remove_manuscript' => ['nullable'],
+            'section_id' => $isSubmit ? ['required', 'string', 'max:50'] : ['nullable', 'string', 'max:50'],
+            'title' => $isSubmit ? ['required', 'string', 'min:1', 'max:500'] : ['nullable', 'string', 'max:500'],
+            'abstract' => $isSubmit ? ['required', 'string', 'min:1', 'max:10000'] : ['nullable', 'string', 'max:10000'],
+            'keywords' => $isSubmit ? ['required', 'array', 'min:1', 'max:20'] : ['nullable', 'array', 'max:20'],
+            'keywords.*' => ['nullable', 'string', 'max:100'],
             'subject_area' => ['nullable', 'string', 'max:255'],
             'references' => ['nullable', 'string', 'max:100000'],
             'comments_for_editor' => ['nullable', 'string', 'max:2000'],
+            'checklist_items' => ['nullable', 'array'],
+            'checklist_items.*' => ['nullable', 'string'],
         ];
 
         if ($isSubmit) {
             $rules['author_guidelines_accepted'] = ['accepted'];
-            $rules['manuscript_file'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
+            $rules['manuscript_file'] = ($this->filled('blob_path') || ($hasExistingManuscript && ! $this->boolean('remove_manuscript')))
+                ? ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480']
+                : ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
             $rules['blob_path'] = ['nullable', 'string', 'max:500'];
             $rules['blob_name'] = ['nullable', 'string', 'max:255'];
             $rules['blob_size'] = ['nullable', 'integer', 'min:1', 'max:20971520'];
@@ -104,8 +120,8 @@ class StoreSubmissionRequest extends FormRequest
             $rules['contributors.*.sequence'] = ['nullable', 'integer', 'min:1'];
             $rules['contributors.*.corresponding'] = ['required'];
         } else {
-            // Mode Draf: aturan lebih fleksibel untuk mendukung penyimpanan parsial
-            $rules['author_guidelines_accepted'] = ['nullable', 'boolean'];
+            // Mode Draf: aturan fleksibel untuk mendukung penyimpanan progresif kapan saja
+            $rules['author_guidelines_accepted'] = ['nullable'];
             $rules['manuscript_file'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
             $rules['contributors'] = ['nullable', 'array', 'max:100'];
             $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];
@@ -147,12 +163,6 @@ class StoreSubmissionRequest extends FormRequest
             }
 
             if ($this->input('action') === 'submit') {
-                if (! $this->hasFile('manuscript_file') && ! $this->filled('blob_path')) {
-                    $validator->errors()->add(
-                        'manuscript_file',
-                        'Berkas manuskrip utama wajib diunggah sebelum mengirim naskah.'
-                    );
-                }
 
                 $contributors = $this->input('contributors', []);
 

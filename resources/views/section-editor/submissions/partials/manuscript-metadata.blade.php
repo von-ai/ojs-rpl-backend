@@ -127,7 +127,7 @@
     </div>
 
     <div class="divide-y divide-gray-100">
-        @forelse($submission->files as $subFile)
+        @forelse($submission->files as $index => $subFile)
             @php
                 $f = $subFile->file;
                 $sizeKb = $f?->byte_size ? number_format($f->byte_size / 1024, 1) . ' KB' : '-';
@@ -150,8 +150,9 @@
                     'response_letter' => 'Surat Tanggapan',
                     default => 'Dokumen Naskah',
                 };
+                $isExtra = ($index >= 3);
             @endphp
-            <div class="py-3.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="py-3.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs {{ $isExtra ? 'extra-submission-file hidden' : '' }}">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <div class="w-9 h-9 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,39 +192,122 @@
         @empty
             <p class="text-xs text-gray-400 py-2">Belum ada berkas manuskrip yang diunggah.</p>
         @endforelse
+
+        @if($submission->files->count() > 3)
+            <div class="pt-3 border-t border-gray-100 text-center">
+                <button 
+                    type="button" 
+                    onclick="toggleExtraFiles(this)" 
+                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-brand-maroon hover:bg-brand-maroon/5 rounded-lg border border-brand-maroon/20 transition cursor-pointer"
+                    data-expanded="false"
+                    data-count="{{ $submission->files->count() - 3 }}"
+                >
+                    <svg class="w-3.5 h-3.5 transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span class="btn-text">Lihat Detail Berkas ({{ $submission->files->count() - 3 }} Lainnya)</span>
+                </button>
+            </div>
+        @endif
     </div>
 
     <!-- Riwayat Revisi Penulis jika ada -->
     @if($submission->revisions && $submission->revisions->isNotEmpty())
         <div class="pt-4 border-t border-gray-100 space-y-2.5">
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Riwayat Pengumpulan Revisi Penulis</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Riwayat Pengumpulan Revisi Penulis</h3>
+                <span class="text-xs text-gray-400 tabular-nums">{{ $submission->revisions->count() }} Revisi Tercatat</span>
+            </div>
             <div class="space-y-2">
-                @foreach($submission->revisions as $rev)
+                @foreach($submission->revisions as $revIndex => $rev)
                     @php
                         $revStatusLabel = match($rev->status) {
                             'submitted' => 'Telah Diunggah',
                             'pending' => 'Menunggu Unggahan',
                             default => 'Dalam Proses',
                         };
+                        $submittedFormatted = $rev->submitted_at ? $rev->submitted_at->timezone('Asia/Makassar')->format('d M Y, H:i') : null;
+                        $isExtraRev = ($revIndex >= 2);
                     @endphp
-                    <div class="p-3.5 rounded-lg border border-orange-200 bg-orange-50/50 text-xs space-y-1.5">
+                    <div class="p-3.5 rounded-lg border border-orange-200 bg-orange-50/50 text-xs space-y-1.5 {{ $isExtraRev ? 'extra-revision-item hidden' : '' }}">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="font-bold text-orange-950">Revisi Putaran #{{ $rev->round }}</span>
+                            <span class="font-bold text-orange-950">{{ $rev->decision_id ? 'Revisi Putaran #'.$rev->round : 'Perbaikan Format Berkas #'.$rev->round }}</span>
                             <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-orange-100 text-orange-900 tabular-nums">
-                                {{ $revStatusLabel }} — {{ $rev->submitted_at ? $rev->submitted_at->format('d M Y, H:i') : 'Menunggu Unggahan' }}
+                                {{ $revStatusLabel }} {{ $submittedFormatted ?? 'Menunggu Unggahan' }}
                             </span>
                         </div>
                         @if($rev->note)
                             <p class="text-gray-700 text-left">Surat Tanggapan Penulis: "{{ $rev->note }}"</p>
                         @endif
-                        @if($rev->due_at)
+                        @if($rev->due_at && $rev->decision_id)
                             <div class="text-[11px] text-orange-800 font-medium tabular-nums">
                                 Tenggat Waktu Revisi: {{ $rev->due_at->format('d F Y') }}
                             </div>
                         @endif
                     </div>
                 @endforeach
+
+                @if($submission->revisions->count() > 2)
+                    <div class="pt-2 text-center">
+                        <button 
+                            type="button" 
+                            onclick="toggleExtraRevisions(this)" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-orange-800 hover:bg-orange-100/60 rounded-lg border border-orange-200 transition cursor-pointer"
+                            data-expanded="false"
+                            data-count="{{ $submission->revisions->count() - 2 }}"
+                        >
+                            <svg class="w-3.5 h-3.5 transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <span class="btn-text">Lihat Detail Revisi Lainnya ({{ $submission->revisions->count() - 2 }})</span>
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
     @endif
 </section>
+
+@pushOnce('scripts')
+<script>
+    function toggleExtraFiles(btn) {
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        const count = btn.getAttribute('data-count');
+        const extraFiles = document.querySelectorAll('.extra-submission-file');
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (isExpanded) {
+            extraFiles.forEach(el => el.classList.add('hidden'));
+            btn.setAttribute('data-expanded', 'false');
+            textSpan.textContent = `Lihat Detail Berkas (${count} Lainnya)`;
+            icon.classList.remove('rotate-180');
+        } else {
+            extraFiles.forEach(el => el.classList.remove('hidden'));
+            btn.setAttribute('data-expanded', 'true');
+            textSpan.textContent = 'Tutup Berkas Tambahan';
+            icon.classList.add('rotate-180');
+        }
+    }
+
+    function toggleExtraRevisions(btn) {
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        const count = btn.getAttribute('data-count');
+        const extraRevs = document.querySelectorAll('.extra-revision-item');
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (isExpanded) {
+            extraRevs.forEach(el => el.classList.add('hidden'));
+            btn.setAttribute('data-expanded', 'false');
+            textSpan.textContent = `Lihat Detail Revisi Lainnya (${count})`;
+            icon.classList.remove('rotate-180');
+        } else {
+            extraRevs.forEach(el => el.classList.remove('hidden'));
+            btn.setAttribute('data-expanded', 'true');
+            textSpan.textContent = 'Tutup Riwayat Revisi Tambahan';
+            icon.classList.add('rotate-180');
+        }
+    }
+</script>
+@endpushOnce

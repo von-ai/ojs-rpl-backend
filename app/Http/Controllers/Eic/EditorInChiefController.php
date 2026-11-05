@@ -15,6 +15,7 @@ use App\Services\PrivateFileService;
 use App\ViewModels\EicSubmissionDetailViewModel;
 use App\ViewModels\EicSubmissionsViewModel;
 use DomainException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -48,7 +49,6 @@ class EditorInChiefController extends Controller
             'reviewRounds.assignments',
         ])
             ->whereIn('status', ['submitted', 'in_review', 'revisions_requested'])
-            ->orderByRaw("CASE WHEN status = 'submitted' THEN 1 WHEN status = 'in_review' THEN 2 ELSE 3 END")
             ->latest('updated_at')
             ->limit(5)
             ->get();
@@ -118,7 +118,7 @@ class EditorInChiefController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
-        $viewModel = new EicSubmissionDetailViewModel($submission);
+        $viewModel = new EicSubmissionDetailViewModel($submission, $this->eicService);
 
         return view('eic.submissions.show', compact('submission', 'viewModel'));
     }
@@ -198,6 +198,65 @@ class EditorInChiefController extends Controller
                 ->route('eic.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Pencarian asynchronous daftar calon Section Editor untuk penugasan naskah.
+     * Mengembalikan response JSON yang teroptimasi untuk combobox remote search dan infinite scroll.
+     */
+    public function searchEditors(Request $request, string $id): JsonResponse
+    {
+        $submission = Submission::where('id', $id)
+            ->orWhere('submission_number', $id)
+            ->firstOrFail();
+
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:200'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+        $query = trim($filters['q'] ?? '');
+        $page = $filters['page'] ?? 1;
+        $perPage = $filters['per_page'] ?? 15;
+
+        $builder = $this->eicService->eligibleSectionEditors($submission)
+            ->select(['id', 'full_name', 'email'])
+            ->withCount([
+                'editorAssignments as active_assignments_count' => fn ($q) => $q->whereNull('revoked_at'),
+            ]);
+
+        if ($query !== '') {
+            $builder->where(function ($q) use ($query): void {
+                $q->where('full_name', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%")
+                    ->orWhere('username', 'like', "%{$query}%");
+            });
+        }
+
+        $paginator = $builder
+            ->orderBy('full_name')
+            ->orderBy('id')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $items = collect($paginator->items())->map(function (User $user) {
+            return [
+                'id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'active_assignments' => (int) ($user->active_assignments_count ?? 0),
+                'role_label' => 'Editor Bagian',
+            ];
+        });
+
+        return response()->json([
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'has_more' => $paginator->hasMorePages(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+            ],
+        ]);
     }
 
     /**
@@ -354,8 +413,78 @@ class EditorInChiefController extends Controller
         $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).');
         $verifier = $request->user();
 
-        $this->articlePaymentService->verifyPayment($payment, $verifier, $notes);
+        $this->articlePaymentService->verifyPayment($payment, $verifier, 'editor_in_chief', $notes);
 
-        return back()->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
+        return back()
+            ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.")
+            ->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Pemimpin Redaksi.");
+    }
+
+    /**
+     * Menolak bukti pembayaran naskah oleh Pemimpin Redaksi (EIC).
+     */
+    public function rejectPayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+            'reason.max' => 'Alasan penolakan tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $reason = (string) $request->input('reason');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->rejectPayment($payment, $verifier, 'editor_in_chief', $reason);
+
+        return back()
+            ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
+            ->with('success', "Bukti transfer naskah '{$submission->title}' berhasil ditolak.");
+    }
+
+    /**
+     * Memberikan pembebasan biaya publikasi (Waiver) oleh Pemimpin Redaksi (EIC).
+     */
+    public function waivePayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'waiver_reason.required' => 'Alasan pembebasan biaya wajib diisi.',
+            'waiver_reason.max' => 'Alasan pembebasan biaya tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            $payment = $this->articlePaymentService->resolveOrCreatePayment($submission, $request->user());
+        }
+
+        if (! $payment) {
+            return back()->with('error', 'Gagal menginisialisasi catatan pembayaran naskah.');
+        }
+
+        $reason = (string) $request->input('waiver_reason');
+        $verifier = $request->user() ?? User::firstOrFail();
+
+        $this->articlePaymentService->waivePayment($payment, $verifier, 'editor_in_chief', $reason);
+
+        return back()
+            ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")
+            ->with('success', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
     }
 }

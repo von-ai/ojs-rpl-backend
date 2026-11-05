@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Eic;
 
+use App\Models\DeskReview;
+use App\Models\EditorialDecision;
 use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\GalleyApproval;
 use App\Models\Journal;
 use App\Models\ProofAssignment;
 use App\Models\ProofreadingNote;
+use App\Models\Review;
+use App\Models\ReviewAssignment;
 use App\Models\ReviewRound;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -337,6 +342,130 @@ class EditorInChiefWorkflowTest extends TestCase
     }
 
     /**
+     * Ringkasan telaah sejawat dan rekomendasi editor mendukung toggle lihat detail.
+     */
+    public function test_ringkasan_telaah_eic_mendukung_lihat_detail_dan_toggle_review(): void
+    {
+        $this->actingAs($this->eic);
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'minimum_completed_reviews' => 2,
+            'status' => 'active',
+            'review_type' => 'double_blind',
+            'se_recommendation' => 'accept',
+            'se_recommendation_note' => 'Catatan rekomendasi editor yang cukup panjang untuk menguji fitur lihat detail pada antarmuka pengguna SIRIDA Kota Makassar.',
+            'se_recommended_at' => now(),
+            'version' => 1,
+        ]);
+
+        $reviewer = User::factory()->create([
+            'name' => 'Prof. Dr. Ir. Reviewer Handal',
+            'email' => 'reviewer@unhas.ac.id',
+        ]);
+
+        $assignment = ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $reviewer->id,
+            'status' => 'completed',
+            'response_due_at' => now()->addDays(7),
+            'review_due_at' => now()->addDays(14),
+            'responded_at' => now(),
+            'completed_at' => now(),
+            'deadline_version' => 1,
+            'version' => 1,
+        ]);
+
+        Review::create([
+            'assignment_id' => $assignment->id,
+            'scores' => [
+                'originality' => 85,
+                'methodology' => 90,
+            ],
+            'comments_for_author' => 'Metodologi dan temuan empiris sudah sangat baik.',
+            'confidential_comments_for_editor' => 'Rekomendasi kuat untuk diterbitkan segera.',
+            'recommendation' => 'accept',
+            'certify_no_conflict' => true,
+            'status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('Ringkasan Telaah Sejawat & Rekomendasi Editor Bagian', false);
+        $response->assertSee('Laporan Evaluasi Substantif');
+        $response->assertSee('Lihat Detail');
+        $response->assertSee('eic-rev-detail-'.$assignment->id);
+    }
+
+    /**
+     * Jejak audit skrining awal dan keputusan editorial mendukung lihat detail catatan dan riwayat sebelumnya.
+     */
+    public function test_jejak_audit_skrining_dan_keputusan_editorial_mendukung_lihat_detail(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Buat 2 rekaman skrining awal (skrining awal sebelumnya dan terbaru)
+        DeskReview::create([
+            'submission_id' => $this->submission->id,
+            'assessed_by' => $this->eic->id,
+            'status' => 'revision_required',
+            'notes' => 'Catatan revisi format awal pertama sebelum penulis mengirim ulang perbaikan naskah.',
+            'scope_fit' => true,
+            'files_complete' => false,
+            'guidelines_compliant' => false,
+            'similarity_score' => 15.0,
+            'created_at' => now()->subDays(5),
+        ]);
+
+        DeskReview::create([
+            'submission_id' => $this->submission->id,
+            'assessed_by' => $this->eic->id,
+            'status' => 'passed',
+            'notes' => 'Catatan skrining awal kedua yang sangat panjang dan komprehensif untuk memastikan seluruh aspek format, kepatuhan selingkung, dan relevansi fokus telah memenuhi standar baku penerbitan SIRIDA Kota Makassar.',
+            'scope_fit' => true,
+            'files_complete' => true,
+            'guidelines_compliant' => true,
+            'similarity_score' => 12.5,
+            'created_at' => now()->subDays(2),
+        ]);
+
+        // Buat 2 rekaman keputusan editorial resmi
+        EditorialDecision::create([
+            'submission_id' => $this->submission->id,
+            'decided_by' => $this->eic->id,
+            'review_round_id' => null,
+            'decision' => 'revisions_required',
+            'note_for_author' => 'Surat keputusan revisi pertama yang panjang dan mendalam, menginstruksikan penulis untuk memperkaya metodologi penelitian, menambahkan referensi jurnal bereputasi terbaru, dan memperbaiki tata tulis ilmiah secara tuntas.',
+            'internal_note' => 'Catatan internal rahasia dewan redaksi untuk memantau perbaikan.',
+            'revision_due_at' => now()->addDays(14),
+            'sent_at' => now()->subDay(),
+        ]);
+
+        EditorialDecision::create([
+            'submission_id' => $this->submission->id,
+            'decided_by' => $this->eic->id,
+            'review_round_id' => null,
+            'decision' => 'accept',
+            'note_for_author' => 'Selamat, naskah Anda dinyatakan diterima resmi untuk penerbitan.',
+            'internal_note' => null,
+            'sent_at' => now(),
+        ]);
+
+        $response = $this->get(route('eic.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('Jejak Audit Skrining Awal & Keputusan Editorial', false);
+        $response->assertSee('Riwayat Skrining Awal');
+        $response->assertSee('Lihat Detail Catatan');
+        $response->assertSee('Lihat Riwayat Skrining Sebelumnya');
+        $response->assertSee('Lihat Detail Surat Keputusan');
+        $response->assertSee('Lihat Keputusan Editorial Sebelumnya');
+    }
+
+    /**
      * EIC dapat mengakses halaman Dashboard Pemimpin Redaksi.
      */
     public function test_eic_dapat_mengakses_halaman_dashboard(): void
@@ -537,5 +666,91 @@ class EditorInChiefWorkflowTest extends TestCase
             'galley_id' => $galley->id,
             'stage' => 'editor_final',
         ]);
+    }
+
+    /**
+     * EIC dapat melakukan pencarian asynchronous calon Editor Bagian untuk combobox.
+     */
+    public function test_eic_can_search_editors_asynchronously_for_combobox(): void
+    {
+        $this->actingAs($this->eic);
+
+        // Buat satu editor tambahan dengan assignment aktif
+        $anotherEditor = User::factory()->create([
+            'name' => 'Dr. Hasan Basri, S.Kom., M.T.',
+            'email' => 'hasan.basri@makassar.go.id',
+        ]);
+        UserRole::create([
+            'user_id' => $anotherEditor->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'section_editor',
+        ]);
+
+        $response = $this->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+            'q' => 'Ridwan',
+        ]));
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'email',
+                        'active_assignments',
+                        'role_label',
+                    ],
+                ],
+                'pagination' => [
+                    'current_page',
+                    'has_more',
+                    'total',
+                    'per_page',
+                ],
+            ]);
+
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        $this->assertSame($this->sectionEditor->id, $data[0]['id']);
+
+        // Pastikan penulis naskah tidak muncul dalam hasil pencarian untuk mencegah conflict of interest
+        $allIds = collect($data)->pluck('id');
+        $this->assertFalse($allIds->contains($this->author->id));
+    }
+
+    /**
+     * Pengguna tanpa role EIC tidak dapat mengakses endpoint pencarian editor.
+     */
+    public function test_unauthorized_user_cannot_access_editor_search(): void
+    {
+        $this->actingAs($this->author);
+
+        $response = $this->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+        ]));
+
+        $response->assertForbidden();
+    }
+
+    public function test_eic_search_excludes_eic_without_section_editor_role(): void
+    {
+        $this->actingAs($this->eic)->getJson(route('eic.submissions.editors.search', [
+            'id' => $this->submission->id,
+            'q' => $this->eic->email,
+        ]))->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_eic_with_second_section_editor_role_can_waive_a_payment_as_eic(): void
+    {
+        $this->journal->update(['apc_enabled' => true, 'apc_amount' => 250000]);
+        $this->submission->update(['status' => 'accepted']);
+        $this->grantRole($this->eic, 'section_editor', $this->journal->id);
+        $payment = app(ArticlePaymentService::class)->resolveOrCreatePayment($this->submission);
+        $this->actingAs($this->eic)->from(route('eic.submissions.show', $this->submission->id))
+            ->post(route('eic.submissions.payment.waive', $this->submission->id), [
+                'waiver_reason' => 'Approved reduction by the editorial office.',
+            ])->assertRedirect();
+        $this->assertSame('waived', $payment->fresh()->status);
     }
 }

@@ -12,12 +12,14 @@ use App\Models\Journal;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\Eic\EditorInChiefService;
 use Illuminate\Database\Eloquent\Collection;
 
 class EicSubmissionDetailViewModel
 {
     public function __construct(
-        public readonly Submission $submission
+        public readonly Submission $submission,
+        private readonly EditorInChiefService $eicService
     ) {}
 
     /**
@@ -126,7 +128,7 @@ class EicSubmissionDetailViewModel
             return false;
         }
 
-        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+        return in_array($this->submission->status, ['in_review', 'under_review', 'revisions_requested'], true)
             || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
     }
 
@@ -139,7 +141,7 @@ class EicSubmissionDetailViewModel
             return false;
         }
 
-        return in_array($this->submission->status, ['in_review', 'revisions_requested'], true)
+        return in_array($this->submission->status, ['in_review', 'under_review', 'revisions_requested'], true)
             || ($this->submission->status === 'submitted' && $this->submission->reviewRounds->isNotEmpty());
     }
 
@@ -148,32 +150,56 @@ class EicSubmissionDetailViewModel
      */
     public function latestEditorialDecision(): ?EditorialDecision
     {
-        return $this->submission->editorialDecisions->sortByDesc('sent_at')->first();
+        return $this->submission->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->whereNotNull('sent_at')
+            ->sortByDesc('sent_at')
+            ->first();
     }
 
     /**
-     * Mengambil daftar calon Section Editor yang dapat ditugaskan.
-     * Memprioritaskan pemegang role section_editor dengan fallback daftar pengguna non-penulis.
+     * Alasan dispensasi kuorum jika diajukan oleh Section Editor.
+     */
+    public function minimumReviewOverrideReason(): ?string
+    {
+        $round = $this->latestReviewRound();
+        if (! $round) {
+            return null;
+        }
+
+        return $this->submission->editorialDecisions
+            ->where('review_round_id', $round->id)
+            ->first()
+            ?->minimum_review_override_reason;
+    }
+
+    /**
+     * Mengambil daftar calon Section Editor yang dapat ditugaskan untuk inisialisasi awal.
+     * Dibatasi agar rendering SSR tetap ringan meski database memiliki ribuan editor.
+     * Pencarian interaktif selanjutnya dilayani via asynchronous combobox.
      *
      * @return Collection<int, User>
      */
-    public function availableSectionEditors(): Collection
+    public function availableSectionEditors(?int $limit = 20): Collection
     {
-        $roleEditors = User::where('id', '!=', $this->submission->author_id)
-            ->whereHas('userRoles', function ($q): void {
-                $q->whereIn('role_code', ['section_editor', 'editor_in_chief']);
-            })
-            ->orderBy('full_name', 'asc')
-            ->get();
+        $query = $this->eicService->eligibleSectionEditors($this->submission)
+            ->orderBy('full_name')
+            ->orderBy('id');
 
-        if ($roleEditors->isNotEmpty()) {
-            return $roleEditors;
+        if ($limit === null) {
+            return $query->get();
         }
 
-        return User::where('id', '!=', $this->submission->author_id)
-            ->orderBy('full_name', 'asc')
-            ->limit(20)
-            ->get();
+        $editors = (clone $query)->limit($limit)->get();
+        $assignedId = $this->submission->activeEditorAssignment?->editor_id;
+        if ($assignedId && ! $editors->contains('id', $assignedId)) {
+            $assigned = $query->whereKey($assignedId)->first();
+            if ($assigned) {
+                $editors->prepend($assigned);
+            }
+        }
+
+        return $editors;
     }
 
     /**
@@ -325,11 +351,14 @@ class EicSubmissionDetailViewModel
     public function workflowSteps(): array
     {
         $status = $this->submission->status;
+        $isDeskRevisionRequested = ($status === 'revisions_requested' && $this->submission->reviewRounds->isEmpty());
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
-            || in_array($status, ['in_review', 'revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
+            || in_array($status, ['in_review', 'under_review', 'accepted', 'in_production', 'ready_for_issue', 'published'], true)
+            || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
         $hasSe = $this->submission->activeEditorAssignment !== null
-            || in_array($status, ['revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'published'], true);
-        $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
+            || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true)
+            || ($status === 'revisions_requested' && ! $isDeskRevisionRequested);
+        $hasDecision = $this->submission->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->isNotEmpty()
             || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published', 'declined'], true);
         $inProdOrPub = in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'published'], true);
 
@@ -347,8 +376,8 @@ class EicSubmissionDetailViewModel
             [
                 'step' => 1,
                 'title' => 'Skrining Awal',
-                'subtitle' => 'Pemeriksaan Kelayakan',
-                'state' => $hasDeskPassed ? 'completed' : ($status === 'submitted' ? 'current' : 'upcoming'),
+                'subtitle' => $isDeskRevisionRequested ? 'Menunggu Revisi Format Penulis' : 'Pemeriksaan Kelayakan',
+                'state' => $hasDeskPassed ? 'completed' : (in_array($status, ['submitted', 'revisions_requested'], true) ? 'current' : 'upcoming'),
             ],
             [
                 'step' => 2,
@@ -359,8 +388,8 @@ class EicSubmissionDetailViewModel
             [
                 'step' => 3,
                 'title' => 'Telaah & Revisi',
-                'subtitle' => $status === 'revisions_requested' ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
-                'state' => $inProdOrPub ? 'completed' : (in_array($status, ['in_review', 'revisions_requested'], true) ? 'current' : 'upcoming'),
+                'subtitle' => ($status === 'revisions_requested' && ! $isDeskRevisionRequested) ? 'Menunggu Revisi Penulis' : 'Evaluasi Mitra Bestari',
+                'state' => $inProdOrPub ? 'completed' : ((in_array($status, ['in_review', 'under_review'], true) || ($status === 'revisions_requested' && ! $isDeskRevisionRequested)) ? 'current' : 'upcoming'),
             ],
             [
                 'step' => 4,
@@ -406,7 +435,7 @@ class EicSubmissionDetailViewModel
         return [
             'is_free' => false,
             'status' => $payment ? $payment->status : 'pending_payment',
-            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran',
             'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
             'invoice_number' => $payment?->invoice_number ?? '-',
             'amount_formatted' => $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : 'Rp '.number_format((float) ($journal?->apc_amount ?? 500000), 0, ',', '.')),
@@ -420,6 +449,8 @@ class EicSubmissionDetailViewModel
             'has_proof' => $hasProof,
             'proof_url' => $hasProof ? route('eic.submissions.payment.proof', $sub->id) : null,
             'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
+            'can_reject' => (bool) ($payment && in_array($payment->status, ['pending_verification', 'verified'], true)),
+            'can_waive' => (bool) (! $payment || (! $payment->isVerified() && ! $payment->isWaived())),
         ];
     }
 }

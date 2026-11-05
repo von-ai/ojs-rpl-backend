@@ -17,10 +17,20 @@
 
     <!-- 1. Riwayat Penilaian Skrining Awal EIC -->
     <div class="space-y-3">
-        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hasil Skrining Awal (Pemimpin Redaksi)</h3>
+        @php
+            $deskReviews = $submission->deskReviews->sortByDesc('created_at')->values();
+        @endphp
 
-        @forelse($submission->deskReviews->sortByDesc('created_at') as $desk)
+        <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hasil Skrining Awal (Pemimpin Redaksi)</h3>
+            @if($deskReviews->isNotEmpty())
+                <span class="text-[11px] text-gray-400 tabular-nums">{{ $deskReviews->count() }} rekaman skrining</span>
+            @endif
+        </div>
+
+        @forelse($deskReviews as $idx => $desk)
             @php
+                $isExtraDesk = ($idx >= 1);
                 $deskBadge = match($desk->status) {
                     'passed' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
                     'rejected' => 'bg-rose-50 text-rose-800 border-rose-200',
@@ -33,8 +43,9 @@
                     'revision_required' => 'Diminta Perbaikan Format',
                     default => 'Dalam Pemeriksaan',
                 };
+                $isDeskNoteLong = $desk->notes && (mb_strlen($desk->notes) > 160 || str_contains($desk->notes, "\n"));
             @endphp
-            <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/60 space-y-2.5">
+            <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/60 space-y-2.5 {{ $isExtraDesk ? 'extra-se-desk-reviews hidden' : '' }}">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
                         <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $deskBadge }}">
@@ -67,23 +78,64 @@
                 </div>
 
                 @if($desk->notes)
-                    <p class="text-gray-700 leading-relaxed text-left bg-white p-3 rounded-lg border border-gray-200/80">
-                        "{{ $desk->notes }}"
-                    </p>
+                    <div class="bg-white p-3 rounded-lg border border-gray-200/80 text-gray-700 leading-relaxed text-left">
+                        @if($isDeskNoteLong)
+                            <p id="se-desk-note-preview-{{ $desk->id }}" class="line-clamp-2">"{{ Str::limit($desk->notes, 150) }}"</p>
+                            <p id="se-desk-note-full-{{ $desk->id }}" class="hidden whitespace-pre-line">"{{ $desk->notes }}"</p>
+                            <button 
+                                type="button" 
+                                onclick="toggleAuditSnippet('se-desk-note', '{{ $desk->id }}', this)" 
+                                class="mt-1.5 text-[11px] font-bold text-brand-maroon hover:text-brand-maroon-hover inline-flex items-center gap-1 cursor-pointer"
+                                aria-expanded="false"
+                            >
+                                <span class="btn-text">Lihat Detail Catatan</span>
+                                <svg class="w-3 h-3 transform transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        @else
+                            <p>"{{ $desk->notes }}"</p>
+                        @endif
+                    </div>
                 @endif
             </div>
         @empty
             <p class="text-gray-400">Belum ada rekaman penilaian skrining awal pada naskah ini.</p>
         @endforelse
+
+        @if($deskReviews->count() > 1)
+            <div class="pt-1 text-center">
+                <button 
+                    type="button" 
+                    onclick="toggleExtraSeDeskReviews(this)" 
+                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-brand-maroon hover:bg-brand-maroon/5 rounded-lg border border-brand-maroon/20 transition cursor-pointer"
+                    data-expanded="false"
+                    data-count="{{ $deskReviews->count() - 1 }}"
+                >
+                    <svg class="w-3.5 h-3.5 transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span class="btn-text">Lihat Riwayat Skrining Sebelumnya ({{ $deskReviews->count() - 1 }} Lainnya)</span>
+                </button>
+            </div>
+        @endif
     </div>
 
     <!-- 2. Riwayat Keputusan Editorial Resmi (Jika ada) -->
     @if($submission->editorialDecisions->isNotEmpty())
         <div class="space-y-3 pt-4 border-t border-gray-100">
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Keputusan Editorial Resmi (Pemimpin Redaksi)</h3>
+            @php
+                $decisions = $submission->editorialDecisions->sortByDesc('sent_at')->values();
+            @endphp
 
-            @foreach($submission->editorialDecisions->sortByDesc('sent_at') as $decision)
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Keputusan Editorial Resmi (Pemimpin Redaksi)</h3>
+                <span class="text-[11px] text-gray-400 tabular-nums">{{ $decisions->count() }} surat keputusan</span>
+            </div>
+
+            @foreach($decisions as $idx => $decision)
                 @php
+                    $isExtraDec = ($idx >= 1);
                     $decBadge = match($decision->decision) {
                         'accept' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
                         'revisions_required' => 'bg-amber-50 text-amber-800 border-amber-200',
@@ -98,8 +150,9 @@
                         'decline' => 'Naskah Ditolak',
                         default => 'Keputusan Redaksi',
                     };
+                    $isAuthorNoteLong = $decision->note_for_author && (mb_strlen($decision->note_for_author) > 180 || str_contains($decision->note_for_author, "\n"));
                 @endphp
-                <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/70 space-y-2.5">
+                <div class="p-4 rounded-lg border border-gray-200 bg-gray-50/70 space-y-2.5 {{ $isExtraDec ? 'extra-se-editorial-decisions hidden' : '' }}">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $decBadge }}">
                             Keputusan: {{ $decTitle }}
@@ -113,7 +166,23 @@
 
                     <div class="p-3 rounded-lg bg-white border border-gray-200/80 space-y-1">
                         <span class="text-[11px] font-bold text-gray-500 uppercase block">Surat Keputusan untuk Penulis</span>
-                        <p class="text-gray-700 leading-relaxed text-left whitespace-pre-line break-words">"{{ $decision->note_for_author }}"</p>
+                        @if($isAuthorNoteLong)
+                            <p id="se-dec-author-preview-{{ $decision->id }}" class="text-gray-700 leading-relaxed text-left line-clamp-2">"{{ Str::limit($decision->note_for_author, 160) }}"</p>
+                            <p id="se-dec-author-full-{{ $decision->id }}" class="text-gray-700 leading-relaxed text-left whitespace-pre-line break-words hidden">"{{ $decision->note_for_author }}"</p>
+                            <button 
+                                type="button" 
+                                onclick="toggleAuditSnippet('se-dec-author', '{{ $decision->id }}', this)" 
+                                class="mt-1 text-[11px] font-bold text-brand-maroon hover:text-brand-maroon-hover inline-flex items-center gap-1 cursor-pointer"
+                                aria-expanded="false"
+                            >
+                                <span class="btn-text">Lihat Detail Surat Keputusan</span>
+                                <svg class="w-3 h-3 transform transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        @else
+                            <p class="text-gray-700 leading-relaxed text-left whitespace-pre-line break-words">"{{ $decision->note_for_author }}"</p>
+                        @endif
                     </div>
 
                     @if($decision->revision_due_at)
@@ -126,6 +195,91 @@
                     @endif
                 </div>
             @endforeach
+
+            @if($decisions->count() > 1)
+                <div class="pt-1 text-center">
+                    <button 
+                        type="button" 
+                        onclick="toggleExtraSeDecisions(this)" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-brand-maroon hover:bg-brand-maroon/5 rounded-lg border border-brand-maroon/20 transition cursor-pointer"
+                        data-expanded="false"
+                        data-count="{{ $decisions->count() - 1 }}"
+                    >
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span class="btn-text">Lihat Keputusan Editorial Sebelumnya ({{ $decisions->count() - 1 }} Lainnya)</span>
+                    </button>
+                </div>
+            @endif
         </div>
     @endif
 </section>
+
+@pushOnce('scripts')
+<script>
+    function toggleAuditSnippet(prefix, id, btn) {
+        const previewEl = document.getElementById(prefix + '-preview-' + id);
+        const fullEl = document.getElementById(prefix + '-full-' + id);
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (!previewEl || !fullEl) return;
+
+        const isFullHidden = fullEl.classList.contains('hidden');
+        if (isFullHidden) {
+            fullEl.classList.remove('hidden');
+            previewEl.classList.add('hidden');
+            btn.setAttribute('aria-expanded', 'true');
+            if (textSpan) textSpan.textContent = textSpan.textContent.replace('Lihat Detail', 'Tutup');
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            fullEl.classList.add('hidden');
+            previewEl.classList.remove('hidden');
+            btn.setAttribute('aria-expanded', 'false');
+            if (textSpan) textSpan.textContent = textSpan.textContent.replace('Tutup', 'Lihat Detail');
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
+
+    function toggleExtraSeDeskReviews(btn) {
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        const count = btn.getAttribute('data-count');
+        const extraCards = document.querySelectorAll('.extra-se-desk-reviews');
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (isExpanded) {
+            extraCards.forEach(el => el.classList.add('hidden'));
+            btn.setAttribute('data-expanded', 'false');
+            if (textSpan) textSpan.textContent = `Lihat Riwayat Skrining Sebelumnya (${count} Lainnya)`;
+            if (icon) icon.classList.remove('rotate-180');
+        } else {
+            extraCards.forEach(el => el.classList.remove('hidden'));
+            btn.setAttribute('data-expanded', 'true');
+            if (textSpan) textSpan.textContent = 'Tutup Riwayat Skrining Sebelumnya';
+            if (icon) icon.classList.add('rotate-180');
+        }
+    }
+
+    function toggleExtraSeDecisions(btn) {
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        const count = btn.getAttribute('data-count');
+        const extraCards = document.querySelectorAll('.extra-se-editorial-decisions');
+        const textSpan = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.chevron-icon');
+
+        if (isExpanded) {
+            extraCards.forEach(el => el.classList.add('hidden'));
+            btn.setAttribute('data-expanded', 'false');
+            if (textSpan) textSpan.textContent = `Lihat Keputusan Editorial Sebelumnya (${count} Lainnya)`;
+            if (icon) icon.classList.remove('rotate-180');
+        } else {
+            extraCards.forEach(el => el.classList.remove('hidden'));
+            btn.setAttribute('data-expanded', 'true');
+            if (textSpan) textSpan.textContent = 'Tutup Keputusan Editorial Sebelumnya';
+            if (icon) icon.classList.add('rotate-180');
+        }
+    }
+</script>
+@endpushOnce

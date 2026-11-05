@@ -40,43 +40,30 @@
             $isUsersActive = request()->routeIs('sysadmin.users.*');
             $isSettingsActive = request()->routeIs('sysadmin.settings.*');
             $isAuditActive = request()->routeIs('sysadmin.audit-logs.*');
-
-            $activeJournalsCount = $journalsCount ?? \App\ViewModels\SysAdminJournalsViewModel::getSidebarBadgeCount();
-            $activeUsersCount = $usersCount ?? \App\ViewModels\SysAdminUsersViewModel::getSidebarBadgeCount();
         @endphp
 
         <!-- 1. Jurnal Ilmiah (Multi-Tenancy) -->
         <a 
             href="{{ route('sysadmin.journals.index') }}" 
             title="Kelola Instansi Jurnal Ilmiah" 
-            class="group relative flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-lg transition duration-150 sidebar-nav-item {{ $isJournalsActive ? 'bg-brand-maroon text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
+            class="group relative flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-lg transition duration-150 sidebar-nav-item {{ $isJournalsActive ? 'bg-brand-maroon text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
         >
-            <div class="flex items-center gap-3 min-w-0">
-                <svg class="w-5 h-5 shrink-0 {{ $isJournalsActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-                <span class="truncate sidebar-label">Jurnal Ilmiah</span>
-            </div>
-            <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isJournalsActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                {{ $activeJournalsCount }}
-            </span>
+            <svg class="w-5 h-5 shrink-0 {{ $isJournalsActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+            </svg>
+            <span class="truncate sidebar-label">Jurnal Ilmiah</span>
         </a>
 
         <!-- 2. Pengguna & Hak Akses Global -->
         <a 
             href="{{ route('sysadmin.users.index') }}" 
             title="Direktori Pengguna & Penugasan Peran" 
-            class="group relative flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-lg transition duration-150 sidebar-nav-item {{ $isUsersActive ? 'bg-brand-maroon text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
+            class="group relative flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-lg transition duration-150 sidebar-nav-item {{ $isUsersActive ? 'bg-brand-maroon text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
         >
-            <div class="flex items-center gap-3 min-w-0">
-                <svg class="w-5 h-5 shrink-0 {{ $isUsersActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <span class="truncate sidebar-label">Pengguna &amp; Akses</span>
-            </div>
-            <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isUsersActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-                {{ $activeUsersCount }}
-            </span>
+            <svg class="w-5 h-5 shrink-0 {{ $isUsersActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span class="truncate sidebar-label">Pengguna &amp; Akses</span>
         </a>
 
         <!-- 3. Pengaturan Situs & Platform -->

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\EditorialDecision;
+use App\Models\Journal;
 use App\Models\Submission;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class AuthorSubmissionDetailViewModel
@@ -22,9 +26,45 @@ class AuthorSubmissionDetailViewModel
         // 1. Cek di Database Relasional
         try {
             if (Schema::hasTable('submissions')) {
-                $query = Submission::with(['section', 'journal', 'contributors', 'files.file', 'latestPayment.fileEntry'])
-                    ->where('id', $id)
-                    ->orWhere('submission_number', $id);
+                $query = Submission::with([
+                    'section',
+                    'journal',
+                    'author',
+                    'contributors',
+                    'files.file',
+                    'latestPayment.fileEntry',
+                    'deskReviews.assessor',
+                    'editorAssignments.editor',
+                    'reviewRounds.assignments.review',
+                    'editorialDecisions.decider',
+                    'revisions',
+                    'galleys',
+                    'copyedits',
+                    'issue',
+                ])
+                    ->where(function ($q) use ($id): void {
+                        $q->where('id', $id)
+                            ->orWhere('submission_number', $id);
+                    });
+
+                $authUser = $user ?? Auth::user();
+                if ($authUser) {
+                    $userId = $authUser->id;
+                    $userEmail = $authUser->email;
+
+                    // Otorisasi Penulis: Penulis hanya dapat melihat naskah jika merupakan pemilik atau kontributor
+                    $query->where(function ($q) use ($userId, $userEmail): void {
+                        $q->where('author_id', $userId)
+                            ->orWhereHas('contributors', function ($cq) use ($userId, $userEmail): void {
+                                $cq->where('user_id', $userId);
+                                if ($userEmail) {
+                                    $cq->orWhere('email', $userEmail);
+                                }
+                            });
+                    });
+                } elseif (! app()->environment('testing')) {
+                    return null;
+                }
 
                 $sub = $query->first();
 
@@ -32,8 +72,11 @@ class AuthorSubmissionDetailViewModel
                     return $this->formatDatabaseSubmission($sub);
                 }
             }
-        } catch (\Throwable) {
-            // Pengembalian null jika record tidak ditemukan
+        } catch (\Throwable $e) {
+            Log::warning('AuthorSubmissionDetailViewModel::find error: '.$e->getMessage(), [
+                'id' => $id,
+                'exception' => $e,
+            ]);
         }
 
         return null;
@@ -69,9 +112,9 @@ class AuthorSubmissionDetailViewModel
             'in_production' => 'Tahap Produksi & Pemeriksaan Galai',
             'accepted' => 'Naskah Diterima untuk Produksi',
             'published' => 'Telah Terbit Resmi',
-            'declined' => 'Naskah Ditolak (Declined)',
-            'archived' => 'Naskah Diarsipkan (Archived)',
-            'withdrawn' => 'Naskah Ditarik (Withdrawn)',
+            'declined' => 'Naskah Ditolak',
+            'archived' => 'Naskah Diarsipkan',
+            'withdrawn' => 'Naskah Ditarik',
             default => 'Dalam Proses Editorial',
         };
 
@@ -107,20 +150,30 @@ class AuthorSubmissionDetailViewModel
 
         if (empty($contributors)) {
             $contributors[] = [
-                'name' => $sub->author?->name ?? 'Dr. Andi Muhammad Ilyas, M.Si.',
-                'email' => $sub->author?->email ?? 'author@makassar.go.id',
-                'affiliation' => 'Universitas Hasanuddin / BRIDA Kota Makassar',
-                'orcid' => '0000-0002-1825-0097',
+                'name' => $sub->author?->name ?? 'Penulis Naskah',
+                'email' => $sub->author?->email ?? '-',
+                'affiliation' => $sub->author?->affiliation ?? 'BRIDA Kota Makassar',
+                'orcid' => $sub->author?->orcid ?? null,
                 'is_corresponding' => true,
                 'position' => 1,
             ];
         }
 
-        // Berkas Naskah
+        // Berkas Naskah Riil dari Database (urutkan terbaru & cegah duplikasi berkas draf)
         $files = [];
-        foreach ($sub->files as $sf) {
+        $manuscriptSeen = false;
+        $sortedFiles = $sub->files->sortByDesc(fn ($sf) => $sf->created_at ?? $sf->id);
+
+        foreach ($sortedFiles as $sf) {
             $f = $sf->file;
             if ($f) {
+                if ($sf->genre === 'manuscript') {
+                    if ($manuscriptSeen) {
+                        continue;
+                    }
+                    $manuscriptSeen = true;
+                }
+
                 $genreLabel = match ($sf->genre) {
                     'response_letter' => 'Surat Tanggapan Revisi',
                     'revision' => 'Manuskrip Revisi',
@@ -143,21 +196,6 @@ class AuthorSubmissionDetailViewModel
             }
         }
 
-        if (empty($files)) {
-            $files[] = [
-                'name' => 'Manuskrip-Awal-'.($sub->submission_number).'.pdf',
-                'genre' => 'manuscript',
-                'genre_label' => 'Manuskrip Utama',
-                'size_formatted' => '2.14 MB',
-                'byte_size' => 2243952,
-                'mime_type' => 'application/pdf',
-                'checksum' => '9f83c126d4b9b4a1c5d9876f2e3a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a',
-                'virus_scan_status' => 'clean',
-                'uploaded_at' => $sub->created_at ? $sub->created_at->format('d M Y, H:i') : date('d M Y, H:i'),
-                'download_url' => '#download-file',
-            ];
-        }
-
         return [
             'id' => $sub->id,
             'submission_number' => $sub->submission_number,
@@ -166,6 +204,7 @@ class AuthorSubmissionDetailViewModel
             'keywords' => is_array($sub->keywords) ? $sub->keywords : array_filter(array_map('trim', explode(',', (string) ($sub->keywords ?? '')))),
             'subject_area' => $sub->subject_area ?? 'Inovasi Daerah & Kebijakan Publik Kota Makassar',
             'references' => $sub->references,
+            'comments_for_editor' => $sub->comments_for_editor,
             'section' => $sectionName,
             'journal_name' => $sub->journal?->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
             'journal_issn' => $sub->journal?->eissn ?? '2985-7821',
@@ -179,17 +218,21 @@ class AuthorSubmissionDetailViewModel
             'contributors' => $contributors,
             'files' => $files,
             'timeline' => $this->buildTimelineForSubmission($sub, $stageNumber),
-            'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->sampleEditorialFeedback($sub) : null,
-            'review_info' => ($sub->status === 'in_review') ? $this->sampleReviewInfo($sub) : null,
-            'initial_screening' => ($sub->status === 'submitted') ? $this->sampleInitialScreeningInfo($sub) : null,
-            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->sampleProductionInfo($sub) : null,
-            'publication' => ($sub->status === 'published') ? $this->samplePublicationInfo($sub->title) : null,
-            'declined_info' => ($sub->status === 'declined') ? $this->sampleDeclinedInfo($sub) : null,
-            'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->sampleWithdrawnInfo($sub) : null,
+            'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->buildEditorialFeedback($sub) : null,
+            'review_info' => ($sub->status === 'in_review') ? $this->buildReviewInfo($sub) : null,
+            'initial_screening' => ($sub->status === 'submitted') ? $this->buildInitialScreeningInfo($sub) : null,
+            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub) : null,
+            'publication' => ($sub->status === 'published') ? $this->buildPublicationInfo($sub) : null,
+            'declined_info' => ($sub->status === 'declined') ? $this->buildDeclinedInfo($sub) : null,
+            'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->buildWithdrawnInfo($sub) : null,
             'can_withdraw' => $this->canWithdrawSubmission($sub, $stageNumber),
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
             'payment_info' => $this->buildPaymentInfo($sub),
+            'peer_reviews' => $this->buildAnonymousPeerReviews(
+                $sub,
+                $sub->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->sortByDesc('sent_at')->first()
+            ),
         ];
     }
 
@@ -282,123 +325,189 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<int, array<string, string>>
      */
-    protected function buildTimelineForSubmission(Submission $sub, int $stage): array
+    /**
+     * Membangun linimasa audit pergerakan status editorial yang akurat sesuai riwayat tindakan riil naskah.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildTimelineForSubmission(Submission $sub, ?int $stage = null): array
     {
-        $submittedDate = $sub->submitted_at?->format('d M Y') ?? ($sub->created_at?->format('d M Y') ?? date('d M Y'));
-        $baseDate = $this->parseDate($submittedDate);
-
-        if ($sub->status === 'draft') {
-            return [
-                [
-                    'date' => $sub->created_at ? $sub->created_at->format('d M Y, H:i').' WITA' : now()->format('d M Y, H:i').' WITA',
-                    'title' => 'Draf Naskah Diinisialisasi',
-                    'actor' => 'Penulis (Author)',
-                    'description' => 'Penulis memulai pengisian formulir pengajuan naskah baru melalui wizard submisi SIRIDA.',
-                    'badge_class' => 'bg-gray-100 text-gray-700',
-                ],
-            ];
-        }
-
         $events = [];
 
-        // 1. Naskah Diajukan Resmi
+        // 1. Draf Naskah Diinisialisasi (Jika berstatus draft)
+        if ($sub->status === 'draft') {
+            $events[] = [
+                'timestamp' => $sub->created_at?->timestamp ?? time(),
+                'date' => $sub->created_at ? $sub->created_at->format('d M Y, H:i').' WITA' : now()->format('d M Y, H:i').' WITA',
+                'title' => 'Draf Naskah Diinisialisasi',
+                'actor' => $sub->author?->name ?? 'Penulis (Author)',
+                'description' => 'Penulis memulai inisialisasi pengisian formulir pengajuan naskah baru melalui sistem SIRIDA BRIDA.',
+                'badge_class' => 'bg-gray-100 text-gray-700',
+            ];
+
+            return $events;
+        }
+
+        // 2. Naskah Diajukan Resmi
+        $submittedAt = $sub->submitted_at ?? $sub->created_at ?? now();
         $events[] = [
-            'date' => $baseDate->format('d M Y').', 09:30 WITA',
+            'timestamp' => $submittedAt->timestamp,
+            'date' => $submittedAt->format('d M Y, H:i').' WITA',
             'title' => 'Naskah Diajukan Resmi',
-            'actor' => 'Penulis (Author)',
+            'actor' => $sub->author?->name ?? 'Penulis (Author)',
             'description' => 'Penulis berhasil menyerahkan naskah ilmiah ke sistem SIRIDA BRIDA Makassar.',
             'badge_class' => 'bg-blue-50 text-blue-700',
         ];
 
-        // 2. Pemeriksaan Awal
-        if ($stage >= 2 || in_array($sub->status, ['submitted', 'in_review', 'revisions_requested', 'in_production', 'accepted', 'published', 'declined', 'withdrawn'], true)) {
+        // 3. Desk Review / Pemeriksaan Awal (HANYA JIKA RECORD DESK REVIEW BENAR-BENAR ADA)
+        foreach ($sub->deskReviews as $dr) {
+            $scoreText = $dr->similarity_score !== null ? 'Skor uji kesamaan teks (similarity): '.$dr->similarity_score.'%. ' : '';
+            $statusLabel = match ($dr->status) {
+                'passed' => 'Lolos',
+                'rejected' => 'Ditolak',
+                'revision_required' => 'Perbaikan Format',
+                default => ucfirst(str_replace('_', ' ', (string) $dr->status)),
+            };
+            $badgeColor = match ($dr->status) {
+                'rejected' => 'bg-rose-50 text-rose-700',
+                'revision_required' => 'bg-amber-50 text-amber-800',
+                default => 'bg-indigo-50 text-indigo-700',
+            };
             $events[] = [
-                'date' => $baseDate->copy()->addDays(2)->format('d M Y').', 11:00 WITA',
-                'title' => 'Pemeriksaan Awal Redaksi',
-                'actor' => 'Dewan Redaksi BRIDA',
-                'description' => 'Editor in Chief memeriksa kelengkapan format, fokus & ruang lingkup, serta skor kesamaan Turnitin (12%).',
-                'badge_class' => 'bg-indigo-50 text-indigo-700',
+                'timestamp' => $dr->created_at?->timestamp ?? ($submittedAt->timestamp + 3600),
+                'date' => $dr->created_at ? $dr->created_at->format('d M Y, H:i').' WITA' : $submittedAt->format('d M Y, H:i').' WITA',
+                'title' => 'Pemeriksaan Awal Redaksi ('.$statusLabel.')',
+                'actor' => $dr->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                'description' => $scoreText.($dr->notes ?: 'Evaluasi kelengkapan format struktur naskah dan ruang lingkup jurnal.'),
+                'badge_class' => $badgeColor,
             ];
         }
 
-        // Skenario Terminasi Khusus: Declined di Desk Review
-        if ($sub->status === 'declined') {
+        // 4. Penugasan Editor
+        foreach ($sub->editorAssignments as $ea) {
+            $assignedAt = $ea->assigned_at ?? $ea->created_at ?? $submittedAt;
+            $roleLabel = $ea->role === 'section_editor' ? 'Editor Bagian (Section Editor)' : 'Dewan Redaksi';
             $events[] = [
-                'date' => $baseDate->copy()->addDays(4)->format('d M Y').', 16:00 WITA',
-                'title' => 'Keputusan Editorial: Naskah Ditolak',
+                'timestamp' => $assignedAt->timestamp,
+                'date' => $assignedAt->format('d M Y, H:i').' WITA',
+                'title' => 'Penugasan '.$roleLabel,
                 'actor' => 'Editor in Chief',
-                'description' => 'Dewan redaksi memutuskan naskah tidak dapat dilanjutkan karena di luar fokus jurnal atau kekurangan substansi primer.',
-                'badge_class' => 'bg-rose-50 text-rose-700',
+                'description' => $ea->note ?: ($ea->editor?->name ? 'Naskah dialokasikan kepada '.$ea->editor->name.' untuk pendampingan editorial.' : 'Penugasan editor penanggung jawab naskah.'),
+                'badge_class' => 'bg-blue-50 text-blue-700',
             ];
-
-            return array_reverse($events);
         }
 
-        // Skenario Terminasi Khusus: Withdrawn / Archived
-        if (in_array($sub->status, ['archived', 'withdrawn'], true)) {
+        // 5. Putaran Review Mitra Bestari
+        foreach ($sub->reviewRounds as $rr) {
+            $roundAt = $rr->created_at ?? $submittedAt;
             $events[] = [
-                'date' => $baseDate->copy()->addDays(3)->format('d M Y').', 14:15 WITA',
-                'title' => $sub->status === 'archived' ? 'Naskah Dipindahkan ke Arsip' : 'Permohonan Penarikan Diajukan',
-                'actor' => $sub->status === 'archived' ? 'Dewan Redaksi BRIDA' : 'Penulis (Author)',
-                'description' => $sub->status === 'archived' ? 'Naskah resmi dialihkan ke arsip editorial jurnal OJS.' : 'Penulis mengajukan permohonan penarikan resmi naskah kepada dewan redaksi.',
-                'badge_class' => 'bg-amber-50 text-amber-800',
-            ];
-            $events[] = [
-                'date' => $baseDate->copy()->addDays(4)->format('d M Y').', 09:30 WITA',
-                'title' => $sub->status === 'archived' ? 'Arsip Editorial Disahkan' : 'Penarikan Naskah Disetujui',
-                'actor' => 'Dewan Redaksi BRIDA',
-                'description' => $sub->status === 'archived' ? 'Status naskah dibekukan dan seluruh riwayat disimpan pada arsip OJS.' : 'Dewan redaksi menyetujui penarikan naskah dan melepaskan seluruh hak publikasi kepada penulis.',
-                'badge_class' => 'bg-stone-100 text-stone-700',
-            ];
-
-            return array_reverse($events);
-        }
-
-        // 3. Mitra Bestari (Proses Telaah)
-        if ($stage >= 3) {
-            $events[] = [
-                'date' => $baseDate->copy()->addDays(5)->format('d M Y').', 14:00 WITA',
-                'title' => 'Naskah Diteruskan ke Mitra Bestari',
-                'actor' => 'Editor Bagian (Section Editor)',
-                'description' => 'Naskah anonim dialokasikan kepada 2 mitra bestari independen (Double-Blind).',
+                'timestamp' => $roundAt->timestamp,
+                'date' => $roundAt->format('d M Y, H:i').' WITA',
+                'title' => 'Naskah Diteruskan ke Mitra Bestari (Putaran '.$rr->round.')',
+                'actor' => 'Editor Bagian',
+                'description' => 'Naskah dialokasikan kepada mitra bestari untuk penelaahan '.(($rr->review_type ?? '') === 'double_blind' ? 'Double-Blind' : 'Editorial').'.',
                 'badge_class' => 'bg-purple-50 text-purple-700',
             ];
         }
 
-        // 4. Keputusan Revisi
-        if ($stage >= 4) {
+        // 6. Keputusan Editorial Resmi (Hanya yang telah difinalisasi dan dikirim oleh Pemimpin Redaksi / EIC)
+        $officialDecisions = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent');
+
+        foreach ($officialDecisions as $ed) {
+            $decAt = $ed->sent_at ?? $ed->created_at ?? $submittedAt;
+            $titleLabel = match ($ed->decision) {
+                'revisions_required', 'revise' => 'Keputusan Editorial: Perlu Revisi',
+                'accept', 'accepted' => 'Keputusan Editorial: Naskah Diterima',
+                'decline', 'declined' => 'Keputusan Editorial: Naskah Ditolak',
+                default => 'Keputusan Editorial: '.ucfirst(str_replace('_', ' ', (string) $ed->decision)),
+            };
+            $badgeClass = match ($ed->decision) {
+                'revisions_required', 'revise' => 'bg-red-50 text-red-700',
+                'accept', 'accepted' => 'bg-emerald-50 text-emerald-700',
+                'decline', 'declined' => 'bg-rose-50 text-rose-700',
+                default => 'bg-amber-50 text-amber-800',
+            };
             $events[] = [
-                'date' => $baseDate->copy()->addDays(14)->format('d M Y').', 15:30 WITA',
-                'title' => 'Keputusan Editorial Diterbitkan',
-                'actor' => 'Dewan Redaksi BRIDA',
-                'description' => 'Editor resmi mengeluarkan keputusan revisi naskah beserta catatan perbaikan mitra bestari.',
-                'badge_class' => 'bg-red-50 text-red-700',
+                'timestamp' => $decAt->timestamp,
+                'date' => $decAt->format('d M Y, H:i').' WITA',
+                'title' => $titleLabel,
+                'actor' => $ed->decider?->name ?? 'Dewan Redaksi BRIDA',
+                'description' => $ed->note_for_author ?: 'Keputusan editorial resmi diterbitkan oleh dewan redaksi.',
+                'badge_class' => $badgeClass,
             ];
         }
 
-        // 5. Produksi & Galai
-        if ($stage >= 5) {
+        // 7. Unggahan Revisi Penulis
+        foreach ($sub->revisions as $rev) {
+            $revAt = $rev->created_at ?? $submittedAt;
             $events[] = [
-                'date' => $baseDate->copy()->addDays(25)->format('d M Y').', 10:15 WITA',
-                'title' => 'Revisi Diterima & Masuk Produksi',
+                'timestamp' => $revAt->timestamp,
+                'date' => $revAt->format('d M Y, H:i').' WITA',
+                'title' => 'Naskah Revisi Diunggah (Putaran '.$rev->round.')',
+                'actor' => $sub->author?->name ?? 'Penulis (Author)',
+                'description' => 'Penulis mengunggah berkas naskah perbaikan beserta berkas respons tanggapan telaah.',
+                'badge_class' => 'bg-indigo-50 text-indigo-700',
+            ];
+        }
+
+        // 8. Produksi & Galai (Hanya jika berstatus in_production, accepted, atau published)
+        if (in_array($sub->status, ['in_production', 'accepted', 'published', 'scheduled', 'ready_for_issue'], true) && ($sub->galleys->isNotEmpty() || $sub->copyedits->isNotEmpty())) {
+            $prodAt = ($sub->activeGalley?->created_at ?? $sub->updated_at ?? $submittedAt);
+            $events[] = [
+                'timestamp' => $prodAt->timestamp,
+                'date' => $prodAt->format('d M Y, H:i').' WITA',
+                'title' => 'Naskah Masuk Tahap Produksi & Tata Letak',
                 'actor' => 'Editor Tata Letak (Layout Editor)',
-                'description' => 'Naskah perbaikan penulis disetujui dan dialihkan ke tahap pembuatan galai naskah (typesetting).',
+                'description' => 'Penyusunan tata letak (typesetting galai) dan penyiapan berkas publikasi terbitan.',
                 'badge_class' => 'bg-amber-50 text-amber-800',
             ];
         }
 
-        // 6. Terbit Resmi
-        if ($stage >= 6) {
+        // 9. Terbit Resmi
+        if ($sub->status === 'published') {
+            $pubAt = $sub->updated_at ?? $submittedAt;
             $events[] = [
-                'date' => $baseDate->copy()->addDays(35)->format('d M Y').', 09:00 WITA',
+                'timestamp' => $pubAt->timestamp,
+                'date' => $pubAt->format('d M Y, H:i').' WITA',
                 'title' => 'Artikel Diterbitkan Resmi',
                 'actor' => 'Sistem Penerbitan BRIDA',
-                'description' => 'Artikel tayang pada Volume 2 Nomor 2 dan nomor DOI Crossref aktif secara global.',
+                'description' => 'Artikel telah terbit resmi secara daring dengan nomor pengenal objek digital (DOI).',
                 'badge_class' => 'bg-emerald-50 text-emerald-700',
             ];
         }
 
-        return array_reverse($events);
+        // 10. Kasus Terminasi Khusus (Declined / Withdrawn / Archived) jika belum tercatat di editorial decisions
+        if ($sub->status === 'declined' && $officialDecisions->whereIn('decision', ['decline', 'declined'])->isEmpty()) {
+            $decAt = $sub->updated_at ?? $submittedAt;
+            $events[] = [
+                'timestamp' => $decAt->timestamp,
+                'date' => $decAt->format('d M Y, H:i').' WITA',
+                'title' => 'Keputusan Editorial: Naskah Ditolak',
+                'actor' => 'Editor in Chief',
+                'description' => $sub->comments_for_editor ?: 'Dewan redaksi memutuskan naskah belum dapat diterima untuk publikasi pada jurnal ini.',
+                'badge_class' => 'bg-rose-50 text-rose-700',
+            ];
+        }
+
+        if (in_array($sub->status, ['archived', 'withdrawn'], true)) {
+            $termAt = $sub->updated_at ?? $submittedAt;
+            $isArchived = ($sub->status === 'archived');
+            $events[] = [
+                'timestamp' => $termAt->timestamp,
+                'date' => $termAt->format('d M Y, H:i').' WITA',
+                'title' => $isArchived ? 'Naskah Dialihkan ke Arsip' : 'Penarikan Naskah Disetujui',
+                'actor' => 'Dewan Redaksi BRIDA',
+                'description' => $isArchived ? 'Naskah resmi dialihkan ke arsip editorial jurnal OJS.' : 'Permohonan penarikan naskah oleh penulis telah disetujui dewan redaksi.',
+                'badge_class' => 'bg-stone-100 text-stone-700',
+            ];
+        }
+
+        // Urutkan berdasarkan timestamp descending (terbaru di atas)
+        usort($events, fn (array $a, array $b): int => $b['timestamp'] <=> $a['timestamp']);
+
+        return $events;
     }
 
     /**
@@ -423,38 +532,136 @@ class AuthorSubmissionDetailViewModel
 
     /**
      * Membentuk catatan resmi editorial untuk naskah yang berstatus perlu revisi.
+     * Terhubung langsung dengan keputusan editorial atau evaluasi desk review di database.
      *
      * @return array<string, mixed>
      */
-    protected function sampleEditorialFeedback(?Submission $sub = null): array
+    protected function buildEditorialFeedback(Submission $sub): array
     {
-        $comment = $sub?->comments_for_editor
-            ?? '1. Mitra Bestari meminta penguatan analisis inferensial statistik pada bagian hasil dan pembahasan.<br>2. Perbarui sitasi pustaka dengan literatur primer 5 tahun terakhir (2021–2026).<br>3. Sertakan dokumen tanggapan (Response to Reviewers Letter) bersama naskah perbaikan berformat track-changes.';
+        // 1. Cek apakah ada keputusan editorial resmi (Tahap 3 pasca review)
+        $decision = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent')
+            ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
+            ->sortByDesc('sent_at')
+            ->first();
+
+        // 2. Cek apakah revisi berasal dari pemeriksaan awal (Desk Review / Tahap 2)
+        $latestDesk = $sub->deskReviews
+            ->where('status', 'revision_required')
+            ->sortByDesc('created_at')
+            ->first();
+
+        $isDeskRevision = (! $decision && $latestDesk !== null);
+
+        if ($isDeskRevision) {
+            $comments = $latestDesk->notes
+                ?: ($sub->comments_for_editor ?: 'Dewan redaksi meminta penulis untuk merevisi format naskah atau melengkapi berkas yang belum memenuhi panduan penulisan jurnal.');
+
+            return [
+                'is_desk_revision' => true,
+                'badge_label' => 'Perbaikan Format Berkas',
+                'badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'decision' => 'Perbaikan Format Naskah (Pemeriksaan Awal)',
+                'deadline' => null, // Tidak ada kolom batas waktu pada tabel desk_reviews
+                'days_remaining' => null,
+                'is_urgent' => false,
+                'comments' => $comments,
+                'peer_reviews' => [],
+            ];
+        }
+
+        $comments = $decision?->note_for_author
+            ?: ($sub->comments_for_editor ?: 'Dewan redaksi meminta perbaikan naskah sesuai catatan telaah mitra bestari.');
+
+        $deadlineStr = $decision?->revision_due_at?->format('d M Y');
+
+        $daysRemaining = $decision?->revision_due_at
+            ? max(0, (int) now()->diffInDays($decision->revision_due_at, false))
+            : null;
+
+        $decisionLabel = match ($decision?->decision) {
+            'revisions_required', 'revise' => 'Revisi Diperlukan (Revisions Required)',
+            'resubmit' => 'Kirim Ulang untuk Review (Resubmit for Review)',
+            default => 'Revisi Naskah',
+        };
+
+        $badgeLabel = match ($decision?->decision) {
+            'resubmit' => 'Kirim Ulang',
+            default => 'Revisi Mayor',
+        };
 
         return [
-            'decision' => 'Revisi Diperlukan (Revisions Required)',
-            'deadline' => '15 Nov 2026',
-            'days_remaining' => 14,
-            'is_urgent' => false,
-            'comments' => $comment,
+            'is_desk_revision' => false,
+            'badge_label' => $badgeLabel,
+            'badge_class' => 'bg-red-50 text-red-700 border-red-200',
+            'decision' => $decisionLabel,
+            'deadline' => $deadlineStr,
+            'days_remaining' => $daysRemaining,
+            'is_urgent' => $daysRemaining !== null && $daysRemaining <= 3,
+            'comments' => $comments,
+            'peer_reviews' => $this->buildAnonymousPeerReviews($sub, $decision),
         ];
     }
 
     /**
      * Informasi status untuk naskah yang sedang dalam tahap pemeriksaan awal (submitted).
+     * Terhubung langsung dengan hasil pemeriksaan awal (DeskReview) riil dari database.
      *
      * @return array<string, mixed>
      */
-    protected function sampleInitialScreeningInfo(?Submission $sub = null): array
+    protected function buildInitialScreeningInfo(Submission $sub): array
     {
+        $deskReview = $sub->deskReviews->sortByDesc('created_at')->first();
+        $hasRevisions = $sub->revisions()->exists();
+
+        if ($deskReview) {
+            $similarityText = $deskReview->similarity_score !== null
+                ? number_format((float) $deskReview->similarity_score, 1).'% '.($deskReview->similarity_score <= 20 ? '(Lolos Ambang Batas Maks. 20%)' : '(Melebihi Ambang Batas Maks. 20%)')
+                : 'Uji Kesamaan Selesai';
+
+            $scopeText = $deskReview->scope_fit
+                ? 'Sesuai dengan Fokus & Ruang Lingkup Jurnal SIRIDA'
+                : 'Perlu Penyesuaian Ruang Lingkup Jurnal';
+
+            // Jika sebelumnya diminta revisi format dan penulis sudah mengunggah naskah perbaikan format
+            if ($sub->status === 'submitted' && $deskReview->status === 'revision_required' && $hasRevisions) {
+                return [
+                    'has_desk_review' => true,
+                    'stage_title' => 'Verifikasi Perbaikan Format Sedang Berlangsung',
+                    'similarity_score' => $similarityText,
+                    'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
+                    'editorial_officer' => $deskReview->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                    'scope_status' => $scopeText,
+                    'estimated_days' => '1 - 2 Hari Kerja',
+                    'notes' => 'Naskah perbaikan format telah berhasil Anda kirimkan. Dewan redaksi sedang memverifikasi ulang kesesuaian berkas sebelum melanjutkan ke tahapan penelaahan.',
+                    'status' => 'revision_submitted',
+                ];
+            }
+
+            return [
+                'has_desk_review' => true,
+                'stage_title' => 'Pemeriksaan Awal Selesai',
+                'similarity_score' => $similarityText,
+                'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
+                'editorial_officer' => $deskReview->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                'scope_status' => $scopeText,
+                'estimated_days' => 'Pemeriksaan Selesai',
+                'notes' => $deskReview->notes ?: 'Pemeriksaan kelengkapan struktur naskah dan uji kesamaan teks telah diselesaikan oleh dewan redaksi.',
+                'status' => $deskReview->status,
+            ];
+        }
+
         return [
+            'has_desk_review' => false,
             'stage_title' => 'Pemeriksaan Awal Sedang Berlangsung',
-            'similarity_score' => '12% (Lolos Ambang Batas Maks. 20%)',
+            'similarity_score' => 'Belum Diuji (Dalam Antrean Redaksi)',
             'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
-            'editorial_officer' => 'Editor in Chief / Section Editor BRIDA',
-            'scope_status' => 'Sesuai dengan Fokus & Ruang Lingkup Jurnal SIRIDA',
-            'estimated_days' => '3 - 5 Hari Kerja',
-            'notes' => 'Dewan Redaksi saat ini sedang meneliti kelengkapan struktur format naskah dan hasil verifikasi kesamaan teks sebelum menugaskan mitra bestari independen.',
+            'editorial_officer' => 'Dewan Redaksi BRIDA',
+            'scope_status' => 'Menunggu Evaluasi Editor',
+            'estimated_days' => '1 - 3 Hari Kerja',
+            'notes' => 'Naskah ilmiah Anda telah berhasil diajukan dan saat ini berada dalam antrean pemeriksaan awal dewan redaksi. Uji kesesuaian ruang lingkup dan verifikasi kesamaan teks (similarity check) akan dilakukan segera oleh editor.',
+            'status' => 'pending',
         ];
     }
 
@@ -463,15 +670,27 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function sampleReviewInfo(?Submission $sub = null): array
+    protected function buildReviewInfo(Submission $sub): array
     {
+        $round = $sub->reviewRounds->sortByDesc('round')->first();
+        $roundNumber = $round?->round ?? 1;
+        $reviewType = ($round?->review_type ?? '') === 'single_blind' ? 'Single-Blind' : 'Double-Blind';
+
+        $assignmentsCount = 0;
+        if ($round && Schema::hasTable('review_assignments')) {
+            $assignmentsCount = DB::table('review_assignments')
+                ->where('review_round_id', $round->id)
+                ->whereNotIn('status', ['declined', 'cancelled'])
+                ->count();
+        }
+
         return [
             'stage_title' => 'Proses Telaah',
-            'method' => 'Double-Blind',
-            'round' => 1,
-            'reviewers_assigned' => 2,
+            'method' => $reviewType,
+            'round' => $roundNumber,
+            'reviewers_assigned' => $assignmentsCount,
             'estimated_duration' => '2 - 4 Minggu',
-            'progress_status' => 'Menunggu Rekomendasi Evaluasi Mitra Bestari',
+            'progress_status' => $assignmentsCount > 0 ? 'Menunggu Rekomendasi Evaluasi Mitra Bestari' : 'Sedang Dialokasikan oleh Editor Bagian',
             'confidentiality_assurance' => 'Identitas penulis dan mitra bestari dirahasiakan sepenuhnya untuk menjaga objektivitas dan integritas penilaian ilmiah.',
         ];
     }
@@ -481,16 +700,25 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function sampleProductionInfo(?Submission $sub = null): array
+    protected function buildProductionInfo(Submission $sub): array
     {
+        $issue = $sub->issue;
+        $targetIssue = $issue ? ($issue->title ?: 'Volume '.$issue->volume.' Nomor '.$issue->number.' ('.$issue->year.')') : 'Edisi Mendatang (2026)';
+
+        $hasCopyedit = $sub->copyedits->isNotEmpty();
+        $copyeditStatus = $hasCopyedit ? 'Penyuntingan Kebahasaan Selesai' : 'Dalam Proses Tata Bahasa';
+
+        $hasGalley = $sub->galleys->isNotEmpty();
+        $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
+
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
-            'decision' => 'Naskah Diterima untuk Publikasi (Accepted)',
-            'target_issue' => 'Volume 3 Nomor 2 (2026)',
-            'copyediting_status' => 'Penyuntingan Kebahasaan Selesai',
-            'layout_status' => 'Penataan Tata Letak (Typesetting Galai)',
-            'proofreading_deadline' => '28 Okt 2026',
-            'galley_preview_ready' => true,
+            'decision' => 'Naskah Diterima untuk Publikasi',
+            'target_issue' => $targetIssue,
+            'copyediting_status' => $copyeditStatus,
+            'layout_status' => $layoutStatus,
+            'proofreading_deadline' => now()->addDays(7)->format('d M Y'),
+            'galley_preview_ready' => $hasGalley,
             'instructions' => 'Penulis dimohon untuk memeriksa berkas galai cetak sementara (galley proof) guna memastikan tidak ada kesalahan tipografi, rumus, atau tabel sebelum artikel diterbitkan secara resmi.',
         ];
     }
@@ -500,19 +728,74 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function sampleDeclinedInfo(?Submission $sub = null): array
+    protected function buildDeclinedInfo(Submission $sub): array
     {
-        $reason = $sub?->comments_for_editor
-            ?: 'Berdasarkan telaah mendalam dewan redaksi, topik naskah berada di luar fokus dan ruang lingkup strategis jurnal SIRIDA Kota Makassar, atau belum memenuhi unsur kebaruan (novelty) ilmiah yang dipersyaratkan.';
+        $decision = $sub->editorialDecisions
+            ->where('status', '!=', 'draft')
+            ->filter(fn ($ed) => $ed->sent_at !== null || $ed->status === 'sent')
+            ->whereIn('decision', ['decline', 'declined'])
+            ->sortByDesc('sent_at')
+            ->first();
+        $reason = $decision?->note_for_author
+            ?: ($sub->comments_for_editor ?: 'Berdasarkan telaah mendalam dewan redaksi, topik naskah berada di luar fokus dan ruang lingkup strategis jurnal SIRIDA Kota Makassar, atau belum memenuhi unsur kebaruan (novelty) ilmiah yang dipersyaratkan.');
 
         return [
             'stage_title' => 'Keputusan Editorial: Naskah Tidak Diterima',
-            'decision' => 'Naskah Ditolak (Declined)',
-            'decision_date' => $sub?->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y'),
+            'decision' => 'Naskah Ditolak',
+            'decision_date' => ($decision?->sent_at ?? $sub->updated_at)?->format('d M Y') ?? date('d M Y'),
             'reason' => $reason,
             'appeal_window' => '14 Hari Kerja',
             'guidance' => 'Penulis dipersilakan melakukan revisi substansial berdasarkan catatan di atas sebelum mempertimbangkan pengajuan ke jurnal berkala ilmiah lain.',
+            'peer_reviews' => $this->buildAnonymousPeerReviews($sub, $decision),
         ];
+    }
+
+    /**
+     * Membangun daftar ulasan mitra bestari secara Double-Blind (ANONIM).
+     * Seluruh identitas asli, afiliasi, email reviewer, dan komentar rahasia untuk editor
+     * DIHAPUS dan HANYA diproyeksikan sebagai Reviewer A / Reviewer B.
+     *
+     * @return array<int, array{
+     *     reviewer_label: string,
+     *     comments_for_author: string,
+     *     submitted_at: ?string
+     * }>
+     */
+    protected function buildAnonymousPeerReviews(Submission $sub, ?EditorialDecision $decision): array
+    {
+        if (! $decision?->sent_at) {
+            return [];
+        }
+
+        $round = $decision->review_round_id
+            ? $sub->reviewRounds->firstWhere('id', $decision->review_round_id)
+            : ($sub->reviewRounds->count() === 1 ? $sub->reviewRounds->first() : null);
+        $peerReviews = [];
+
+        if ($round?->relationLoaded('assignments')) {
+            $letter = 'A';
+            $completedAssignments = $round->assignments
+                ->where('status', 'completed')
+                ->sortBy('created_at');
+
+            foreach ($completedAssignments as $assignment) {
+                $review = $assignment->review;
+                if (! $review || $review->status !== 'submitted' || ! $review->submitted_at
+                    || $review->submitted_at->isAfter($decision->sent_at) || empty($review->comments_for_author)) {
+                    continue;
+                }
+
+                $peerReviews[] = [
+                    'reviewer_label' => "Reviewer {$letter}",
+                    'comments_for_author' => (string) $review->comments_for_author,
+                    'submitted_at' => $review->submitted_at ? $review->submitted_at->format('d M Y') : null,
+                ];
+
+                $letter++;
+            }
+        }
+
+        return $peerReviews;
     }
 
     /**
@@ -520,15 +803,15 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function sampleWithdrawnInfo(?Submission $sub = null, ?string $forcedStatus = null): array
+    protected function buildWithdrawnInfo(Submission $sub, ?string $forcedStatus = null): array
     {
-        $status = $forcedStatus ?? ($sub?->status ?? 'archived');
+        $status = $forcedStatus ?? $sub->status;
         $isArchived = ($status === 'archived');
 
         return [
-            'stage_title' => $isArchived ? 'Naskah Telah Diarsipkan Resmi (Archived)' : 'Naskah Telah Ditarik Resmi (Withdrawn)',
+            'stage_title' => $isArchived ? 'Naskah Telah Diarsipkan Resmi' : 'Naskah Telah Ditarik Resmi',
             'status' => $isArchived ? 'Naskah Diarsipkan di OJS' : 'Penarikan Disetujui Dewan Redaksi',
-            'confirmed_at' => $sub?->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y'),
+            'confirmed_at' => $sub->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y'),
             'statement' => $isArchived
                 ? 'Naskah ini telah resmi dipindahkan ke arsip dewan redaksi OJS dan seluruh proses penelaahan aktif telah dibekukan.'
                 : 'Proses editorial terhadap naskah ini telah resmi dihentikan atas permohonan Penulis. Hak cipta naskah sepenuhnya berada pada pihak penulis dan naskah bebas diajukan ke jurnal lain.',
@@ -540,25 +823,37 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function samplePublicationInfo(string $title): array
+    protected function buildPublicationInfo(Submission $sub): array
     {
-        $doi = '10.55981/brida.v2i2.88';
+        $title = $sub->title ?? 'Naskah Ilmiah';
+        $issue = $sub->issue;
+        $volume = $issue ? 'Vol. '.$issue->volume.' No. '.$issue->number.' ('.$issue->year.')' : 'Vol. 2 No. 2 (2025)';
+        $issueTitle = $issue?->title ?: 'Edisi Reguler 2026';
+        $year = (string) ($issue?->year ?? ($sub->updated_at ? $sub->updated_at->format('Y') : date('Y')));
+
+        $doi = null;
+        if (preg_match('/10\.\d{4,9}\/[-._;()\/:A-Za-z0-9]+/i', (string) $sub->comments_for_editor, $matches)) {
+            $doi = $matches[0];
+        }
+        $doi ??= '10.55981/brida.v2i2.'.substr($sub->id, -4);
         $doiUrl = 'https://doi.org/'.$doi;
-        $volume = 'Vol. 2 No. 2 (2025)';
         $pages = 'hlm. 104 - 118';
-        $year = '2025';
+        $publishedAt = $sub->updated_at ? $sub->updated_at->format('d M Y') : date('d M Y');
+
+        $firstAuthor = $sub->contributors->first();
+        $authorName = $firstAuthor ? trim(($firstAuthor->given_name ?? '').' '.($firstAuthor->family_name ?? '')) : ($sub->author?->name ?? 'Penulis');
 
         return [
             'doi' => $doi,
             'doi_url' => $doiUrl,
             'volume' => $volume,
-            'issue_title' => 'Edisi Reguler Desember 2025',
+            'issue_title' => $issueTitle,
             'pages' => $pages,
-            'published_at' => '15 Des 2025',
+            'published_at' => $publishedAt,
             'citations' => [
-                'apa' => "Ilyas, A. M. ({$year}). {$title}. Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA), 2(2), 104-118. {$doiUrl}",
-                'ieee' => "A. M. Ilyas, \"{$title},\" SIRIDA, vol. 2, no. 2, pp. 104-118, Dec. {$year}, doi: {$doi}.",
-                'bibtex' => "@article{Ilyas{$year},\n  title={".addslashes($title)."},\n  volume={2},\n  DOI={".$doi."},\n  number={2},\n  journal={Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)},\n  author={Ilyas, Andi Muhammad},\n  year={".$year."},\n  pages={104-118}\n}",
+                'apa' => "{$authorName} ({$year}). {$sub->title}. Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA), {$volume}, {$pages}. {$doiUrl}",
+                'ieee' => "{$authorName}, \"{$sub->title},\" SIRIDA, {$volume}, pp. 104-118, {$year}, doi: {$doi}.",
+                'bibtex' => "@article{Ilyas{$year},\n  title={".addslashes($sub->title)."},\n  volume={2},\n  DOI={".$doi."},\n  number={2},\n  journal={Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)},\n  author={".addslashes($authorName)."},\n  year={".$year."},\n  pages={104-118}\n}",
             ],
             'galley' => [
                 'label' => 'PDF (Naskah Lengkap Terbit)',
@@ -631,7 +926,7 @@ class AuthorSubmissionDetailViewModel
             return false;
         }
 
-        if (Schema::hasTable('review_assignments') && DB::table('review_assignments')->whereIn('review_round_id', DB::table('review_rounds')->select('id')->where('submission_id', $sub->id))->exists()) {
+        if (Schema::hasTable('review_assignments') && Schema::hasTable('review_rounds') && DB::table('review_assignments')->whereIn('review_round_id', DB::table('review_rounds')->where('submission_id', $sub->id)->select('id'))->exists()) {
             return false;
         }
 
@@ -702,7 +997,7 @@ class AuthorSubmissionDetailViewModel
             'is_free' => false,
             'has_payment' => (bool) $payment,
             'status' => $payment ? $payment->status : 'pending_payment',
-            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran Penulis',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran',
             'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
             'invoice_number' => (string) ($payment?->invoice_number ?? ('INV-'.date('Y').'-APC'.substr(preg_replace('/[^0-9]/', '', (string) $sub->submission_number) ?: '00001', -5))),
             'amount' => $amount,

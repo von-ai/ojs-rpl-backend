@@ -27,18 +27,16 @@ class LayoutEditorSubmissionsViewModel
     {
         try {
             if (class_exists(LayoutAssignment::class) && Schema::hasTable('layout_assignments') && LayoutAssignment::query()->exists()) {
-                $query = LayoutAssignment::query()->whereNull('revoked_at');
                 if (Auth::check()) {
-                    $userCount = (clone $query)->where('layout_editor_id', Auth::id())->count();
-                    if ($userCount > 0) {
-                        return $userCount;
-                    }
+                    return LayoutAssignment::whereNull('revoked_at')
+                        ->where('layout_editor_id', Auth::id())
+                        ->count();
                 }
 
-                return $query->count();
+                return 0;
             }
 
-            return 8;
+            return 0;
         } catch (\Throwable) {
             return 0;
         }
@@ -243,6 +241,8 @@ class LayoutEditorSubmissionsViewModel
     {
         try {
             if (class_exists(LayoutAssignment::class) && Schema::hasTable('layout_assignments') && LayoutAssignment::query()->exists()) {
+                $userId = Auth::id();
+
                 $query = LayoutAssignment::with([
                     'submission.contributors',
                     'submission.section',
@@ -251,9 +251,11 @@ class LayoutEditorSubmissionsViewModel
                     'submission.galleys.file',
                     'submission.galleys.approvals',
                     'submission.escalations',
-                ])->whereNull('revoked_at');
+                ])
+                    ->whereNull('revoked_at')
+                    ->where('layout_editor_id', $userId);
 
-                $assignments = $query->orderBy('due_at', 'asc')->get();
+                $assignments = $query->latest('updated_at')->get();
 
                 if ($assignments->isNotEmpty()) {
                     return $assignments->map(fn ($assignment) => $this->formatAssignmentItem($assignment))->all();
