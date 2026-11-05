@@ -601,7 +601,7 @@ class AuthorSubmissionsViewModel
     /**
      * Profil kontributor utama bawaan dari sesi pengguna aktif (Penulis Pertama).
      *
-     * @return array{
+     * @return list<array{
      *     given_name: string,
      *     family_name: string,
      *     email: string,
@@ -609,18 +609,25 @@ class AuthorSubmissionsViewModel
      *     orcid_id: string,
      *     sequence: int,
      *     corresponding: bool
-     * }
+     * }>
      */
-    public function defaultContributor(): array
+    public function defaultContributors(): array
     {
-        return [
-            'given_name' => 'Andi Muhammad',
-            'family_name' => 'Ilyas',
-            'email' => 'andi.ilyas@unhas.ac.id',
-            'affiliation' => 'Universitas Hasanuddin, Makassar',
-            'orcid_id' => '0000-0002-1825-0097',
+        $name = trim($this->user?->name ?? '');
+        $affiliation = trim($this->user?->profile?->affiliation ?? '');
+
+        if ($name === '' || $affiliation === '') {
+            return [];
+        }
+
+        return [[
+            'given_name' => $name,
+            'family_name' => '',
+            'email' => $this->user->email,
+            'affiliation' => $affiliation,
+            'orcid_id' => '',
             'sequence' => 1,
             'corresponding' => true,
-        ];
+        ]];
     }
 }

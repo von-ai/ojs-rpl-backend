@@ -102,9 +102,37 @@ class AuthorNewSubmissionTest extends TestCase
         $response->assertDontSee('(*Corresponding Author*)');
         $response->assertDontSee('(*Co-Author*)');
 
-        // Memastikan Kontributor Default Terisi
+        // Identitas pemilik akun tetap tampil tanpa menyisipkan kontributor contoh.
         $response->assertSee('Ilyas');
         $response->assertSee('andi.ilyas@unhas.ac.id');
+    }
+
+    public function test_kontributor_bawaan_memakai_profil_penulis_yang_login(): void
+    {
+        $author = User::factory()->create([
+            'name' => 'Sari',
+            'email' => 'sari@example.test',
+        ]);
+
+        $this->actingAs($author);
+        $emptyResponse = $this->get(route('author.submissions.create'))->assertOk();
+        $emptyResponse->assertDontSee('andi.ilyas@unhas.ac.id');
+        $this->assertSame([], $emptyResponse->viewData('viewModel')->defaultContributors());
+
+        $author->profile()->create(['affiliation' => 'Institusi Penelitian']);
+        $author->unsetRelation('profile');
+
+        $response = $this->get(route('author.submissions.create'))->assertOk();
+        $response->assertDontSee('andi.ilyas@unhas.ac.id');
+        $this->assertSame([[
+            'given_name' => 'Sari',
+            'family_name' => '',
+            'email' => 'sari@example.test',
+            'affiliation' => 'Institusi Penelitian',
+            'orcid_id' => '',
+            'sequence' => 1,
+            'corresponding' => true,
+        ]], $response->viewData('viewModel')->defaultContributors());
     }
 
     /**

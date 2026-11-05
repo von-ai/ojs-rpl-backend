@@ -430,17 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {
         contributors = [];
     }
-    if (!contributors.length) {
-        contributors = [{
-            given_name: 'Andi Muhammad',
-            family_name: 'Ilyas',
-            email: 'andi.ilyas@unhas.ac.id',
-            affiliation: 'Universitas Hasanuddin, Makassar',
-            orcid_id: '0000-0002-1825-0097',
-            sequence: 1,
-            corresponding: true
-        }];
-    }
+    const initialContributors = JSON.stringify(contributors);
     const contributorsHiddenInput = document.getElementById('contributors-hidden-input');
     const contributorsContainer = document.getElementById('contributors-list-container');
     const btnOpenAddAuthor = document.getElementById('btn-open-add-author');
@@ -1033,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', function () {
             card.setAttribute('draggable', 'true');
             card.setAttribute('data-index', index);
 
-            const fullName = (author.given_name ? author.given_name + ' ' : '') + author.family_name;
+            const fullName = [author.given_name, author.family_name].filter(Boolean).join(' ');
             const isFirst = index === 0;
             const canDelete = contributors.length > 1;
 
@@ -1290,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const email = document.getElementById('input-author-email').value.trim();
             const affiliation = document.getElementById('input-author-affiliation').value.trim();
             const orcid = document.getElementById('input-author-orcid').value.trim();
-            const isCorresponding = document.getElementById('input-author-corresponding').checked;
+            const isCorresponding = contributors.length === 0 || document.getElementById('input-author-corresponding').checked;
             const isFirstChoice = document.getElementById('input-author-first')?.checked || false;
             const errorDiv = document.getElementById('modal-author-error');
 
@@ -1320,8 +1310,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const newAuthor = {
-                given_name: givenName,
-                family_name: familyName,
+                given_name: givenName || familyName,
+                family_name: givenName ? familyName : '',
                 email: email,
                 affiliation: affiliation,
                 orcid_id: orcid,
@@ -1784,10 +1774,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasKeywords = Array.isArray(data.keywords) && data.keywords.length > 0;
         const hasSubject = Boolean(data.subject_area && data.subject_area.trim());
         const hasReferences = Boolean(data.references && data.references.trim());
-        const hasExtraContributors = Array.isArray(data.contributors) && data.contributors.length > 1;
+        const hasChangedContributors = Array.isArray(data.contributors) && JSON.stringify(data.contributors) !== initialContributors;
         const hasFile = Boolean(data.has_file);
 
-        return hasSection || hasChecklist || hasComments || hasTitle || hasAbstract || hasKeywords || hasSubject || hasReferences || hasExtraContributors || hasFile;
+        return hasSection || hasChecklist || hasComments || hasTitle || hasAbstract || hasKeywords || hasSubject || hasReferences || hasChangedContributors || hasFile;
     }
 
     function saveDraftToStorage() {
@@ -2001,15 +1991,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderKeywordChips();
 
             // Reset Kontributor
-            contributors = [{
-                given_name: 'Andi Muhammad',
-                family_name: 'Ilyas',
-                email: 'andi.ilyas@unhas.ac.id',
-                affiliation: 'Universitas Hasanuddin, Makassar',
-                orcid_id: '0000-0002-1825-0097',
-                sequence: 1,
-                corresponding: true
-            }];
+            contributors = JSON.parse(initialContributors);
             renderContributors();
 
             // Kembalikan ke Langkah 1
