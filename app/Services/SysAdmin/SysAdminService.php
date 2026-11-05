@@ -431,11 +431,12 @@ class SysAdminService
         if ($content === false || strlen($content) > 512000) {
             throw new DomainException('Berkas impor maksimal 500 KB.');
         }
+        $disk = (string) config('filesecurity.disk', 'azure');
         $path = 'user-imports/'.Str::ulid().'.csv';
-        Storage::disk('local')->put($path, $content);
+        Storage::disk($disk)->put($path, $content);
 
-        return DB::transaction(function () use ($name, $path, $content, $journalId, $sendInvitation, $actor) {
-            $entry = FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => $name, 'mime_type' => 'text/csv', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => 'pending', 'created_by' => $actor->id]);
+        return DB::transaction(function () use ($name, $path, $content, $journalId, $sendInvitation, $actor, $disk) {
+            $entry = FileEntry::create(['storage_disk' => $disk, 'storage_path' => $path, 'original_name' => $name, 'mime_type' => 'text/csv', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => 'pending', 'created_by' => $actor->id]);
             $import = UserImport::create(['journal_id' => $journalId, 'file_name' => $name, 'file_id' => $entry->id, 'send_invitation_email' => $sendInvitation, 'total_rows' => 0, 'processed_rows' => 0, 'failed_rows' => 0, 'status' => 'queued', 'imported_by' => $actor->id]);
             ProcessUserImport::dispatch($import->id);
 

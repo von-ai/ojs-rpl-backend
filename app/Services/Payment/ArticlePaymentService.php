@@ -92,16 +92,17 @@ class ArticlePaymentService
                 throw new DomainException('Bukti hanya dapat diunggah untuk tagihan yang menunggu pembayaran atau bukti yang ditolak.');
             }
 
-            // Simpan berkas fisik ke disk penyimpanan lokal
-            $path = $file->store("payments/{$submission->id}", 'local');
+            // Simpan berkas fisik ke object storage Azure
+            $storageDisk = (string) config('filesecurity.disk', 'azure');
+            $path = $file->store("payments/{$submission->id}", $storageDisk);
             $sha256 = hash_file('sha256', $file->getRealPath());
 
             $fileEntry = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => $storageDisk,
                 'storage_path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
-                'byte_size' => (int) Storage::disk('local')->size($path),
+                'byte_size' => (int) Storage::disk($storageDisk)->size($path),
                 'checksum_sha256' => $sha256,
                 'virus_scan_status' => 'pending',
                 'created_by' => $author->id,

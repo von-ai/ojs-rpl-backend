@@ -244,7 +244,7 @@ class EicSeeder extends Seeder
             $revFile = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB-2026-00104_Manuskrip_Revisi_Putaran1.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'manuscripts/sub104_revisi_r1.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 1984512,
@@ -257,7 +257,7 @@ class EicSeeder extends Seeder
             $respLetterFile = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB-2026-00104_Response_to_Reviewers.pdf'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'manuscripts/sub104_response_letter.pdf',
                     'mime_type' => 'application/pdf',
                     'byte_size' => 452100,

@@ -21,7 +21,7 @@ class DatabaseBackupTest extends TestCase
     {
         parent::setUp();
         Storage::fake('azure-backups');
-        Storage::fake('local');
+        Storage::fake('azure');
     }
 
     public function test_backup_service_generates_compressed_sql_and_stores_in_storage(): void

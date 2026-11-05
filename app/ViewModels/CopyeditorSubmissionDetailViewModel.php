@@ -135,7 +135,7 @@ class CopyeditorSubmissionDetailViewModel
             $byteSize = (int) ($file->byte_size ?? 0);
             if ($byteSize <= 0 && $file->storage_path) {
                 try {
-                    $disk = Storage::disk($file->storage_disk ?: 'local');
+                    $disk = Storage::disk($file->storage_disk ?: 'azure');
                     if ($disk->exists($file->storage_path)) {
                         $byteSize = (int) $disk->size($file->storage_path);
                     }
@@ -225,7 +225,7 @@ class CopyeditorSubmissionDetailViewModel
         $sourceByteSize = (int) ($copyedit->sourceFile?->byte_size ?? 0);
         if ($sourceByteSize <= 0 && $copyedit->sourceFile?->storage_path) {
             try {
-                $disk = Storage::disk($copyedit->sourceFile->storage_disk ?: 'local');
+                $disk = Storage::disk($copyedit->sourceFile->storage_disk ?: 'azure');
                 if ($disk->exists($copyedit->sourceFile->storage_path)) {
                     $sourceByteSize = (int) $disk->size($copyedit->sourceFile->storage_path);
                 }

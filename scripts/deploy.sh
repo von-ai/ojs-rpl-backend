@@ -2,6 +2,7 @@
 # =============================================================================
 # SIRIDA - Deployment Script via Terraform (Azure & Cloudflare)
 # Proyek: SIRIDA - BRIDA Kota Makassar
+# Mendukung Pemisahan Siklus Hidup Stateful (Blob Storage) vs Stateless (App)
 # =============================================================================
 
 set -e
@@ -62,9 +63,10 @@ fi
 AUTO_APPROVE=""
 RUN_MIGRATION=false
 PLAN_ONLY=false
+SCOPE="all" # all | storage-only | app-only
 
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --auto-approve|-y)
             AUTO_APPROVE="-auto-approve"
             shift
@@ -77,10 +79,63 @@ for arg in "$@"; do
             PLAN_ONLY=true
             shift
             ;;
+        --storage-only)
+            SCOPE="storage-only"
+            shift
+            ;;
+        --app-only)
+            SCOPE="app-only"
+            shift
+            ;;
+        --help|-h)
+            echo -e "Penggunaan: $0 [OPSI]"
+            echo -e "Opsi:"
+            echo -e "  --storage-only      Hanya inisiasi/deploy Azure Blob Storage & Defender (Stateful)"
+            echo -e "  --app-only          Hanya inisiasi/deploy Stateless App (ACA, Redis, Cloudflare, Monitor)"
+            echo -e "  --migrate           Jalankan migrasi database otomatis setelah deploy"
+            echo -e "  --plan-only         Hanya lakukan kalkulasi rencana perubahan tanpa menerapkan"
+            echo -e "  --auto-approve, -y  Menyetujui eksekusi perubahan secara otomatis"
+            exit 0
+            ;;
         *)
+            shift
             ;;
     esac
 done
+
+TARGET_ARGS=()
+if [ "$SCOPE" == "storage-only" ]; then
+    echo -e "\n${YELLOW}[MODE] Inisiasi Khusus Azure Blob Storage (Stateful Infrastructure)${NC}"
+    TARGET_ARGS=(
+        "-target=azurerm_resource_group.storage_rg"
+        "-target=random_string.storage_suffix"
+        "-target=azurerm_storage_account.storage"
+        "-target=azurerm_storage_container.manuscripts"
+        "-target=azurerm_storage_container.backups"
+        "-target=azurerm_storage_management_policy.lifecycle"
+        "-target=azurerm_security_center_storage_defender.defender"
+        "-target=azurerm_management_lock.storage_lock"
+    )
+elif [ "$SCOPE" == "app-only" ]; then
+    echo -e "\n${YELLOW}[MODE] Inisiasi Khusus Stateless Application (ACA, Redis, Cloudflare)${NC}"
+    TARGET_ARGS=(
+        "-target=azurerm_resource_group.rg"
+        "-target=random_string.suffix"
+        "-target=azurerm_log_analytics_workspace.logs"
+        "-target=azurerm_application_insights.appinsights"
+        "-target=azurerm_container_app_environment.env"
+        "-target=azurerm_managed_redis.redis"
+        "-target=azurerm_container_app.web"
+        "-target=azurerm_container_app.worker"
+        "-target=azurerm_container_app.scheduler"
+        "-target=azurerm_monitor_action_group.action_group"
+        "-target=azurerm_monitor_metric_alert.sla_alert"
+        "-target=azurerm_application_insights_standard_web_test.availability"
+        "-target=cloudflare_record.cname_web"
+        "-target=cloudflare_workers_script.proxy"
+        "-target=cloudflare_workers_domain.custom_domain"
+    )
+fi
 
 # 4. Inisialisasi Terraform
 echo -e "\n${BLUE}--> [Step 1/3] Menjalankan ${TF_BIN} init -upgrade...${NC}"
@@ -93,14 +148,13 @@ ${TF_BIN} validate
 # 6. Plan atau Apply
 if [ "$PLAN_ONLY" = true ]; then
     echo -e "\n${BLUE}--> [Step 3/3] Menghasilkan execution plan (--plan-only)...${NC}"
-    ${TF_BIN} plan
+    ${TF_BIN} plan "${TARGET_ARGS[@]}"
     echo -e "\n${GREEN}[SUCCESS] Execution plan selesai dihasilkan.${NC}"
     exit 0
 fi
 
 echo -e "\n${BLUE}--> [Step 3/3] Menerapkan konfigurasi infrastruktur (${TF_BIN} apply)...${NC}"
-${TF_BIN} apply ${AUTO_APPROVE}
-
+${TF_BIN} apply ${AUTO_APPROVE} "${TARGET_ARGS[@]}"
 
 echo -e "\n${GREEN}===================================================================${NC}"
 echo -e "${GREEN}             DEPLOYMENT INFRASTRUKTUR BERHASIL!                    ${NC}"
@@ -109,13 +163,15 @@ echo -e "${GREEN}===============================================================
 # Mengambil output penting
 WEB_URL=$(${TF_BIN} output -raw public_app_url 2>/dev/null || echo "N/A")
 RG_NAME=$(${TF_BIN} output -raw resource_group_name 2>/dev/null || echo "N/A")
+STORAGE_RG=$(${TF_BIN} output -raw storage_resource_group_name 2>/dev/null || echo "N/A")
 WEB_NAME=$(${TF_BIN} output -raw web_app_name 2>/dev/null || echo "N/A")
 BLOB_EP=$(${TF_BIN} output -raw storage_primary_blob_endpoint 2>/dev/null || echo "N/A")
 
-echo -e "Web App URL      : ${CYAN}${WEB_URL}${NC}"
-echo -e "Resource Group   : ${CYAN}${RG_NAME}${NC}"
-echo -e "Container App    : ${CYAN}${WEB_NAME}${NC}"
-echo -e "Storage Endpoint : ${CYAN}${BLOB_EP}${NC}"
+echo -e "Web App URL        : ${CYAN}${WEB_URL}${NC}"
+echo -e "App Resource Group : ${CYAN}${RG_NAME}${NC}"
+echo -e "Storage RG         : ${CYAN}${STORAGE_RG}${NC}"
+echo -e "Container App      : ${CYAN}${WEB_NAME}${NC}"
+echo -e "Storage Endpoint   : ${CYAN}${BLOB_EP}${NC}"
 
 # Opsional: Menjalankan migrasi database
 if [ "$RUN_MIGRATION" = true ]; then
@@ -132,5 +188,7 @@ echo -e "1. Stream logs Web Container:"
 echo -e "   ${CYAN}az containerapp logs show --name ${WEB_NAME} --resource-group ${RG_NAME} --type console --follow${NC}"
 echo -e "2. Buka terminal interaktif:"
 echo -e "   ${CYAN}az containerapp exec --name ${WEB_NAME} --resource-group ${RG_NAME} --container web${NC}"
-echo -e "3. Hancurkan infrastruktur setelah pengujian (Ephemeral Teardown):"
-echo -e "   ${CYAN}${SCRIPT_DIR}/destroy.sh${NC}"
+echo -e "3. Hancurkan hanya Stateless App (Blob Storage aman):"
+echo -e "   ${CYAN}${SCRIPT_DIR}/destroy.sh --app-only${NC}"
+echo -e "4. Hancurkan hanya Storage Account:"
+echo -e "   ${CYAN}${SCRIPT_DIR}/destroy.sh --storage-only${NC}"

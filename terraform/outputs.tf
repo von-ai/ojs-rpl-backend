@@ -32,24 +32,29 @@ output "scheduler_app_name" {
   value       = azurerm_container_app.scheduler.name
 }
 
+output "storage_resource_group_name" {
+  description = "Nama Azure Resource Group Storage (Stateful - Terpisah dari RG Aplikasi)"
+  value       = local.storage_rg_name
+}
+
 output "storage_account_name" {
   description = "Nama Azure Storage Account"
-  value       = azurerm_storage_account.storage.name
+  value       = local.storage_account_name
 }
 
 output "storage_primary_blob_endpoint" {
   description = "Endpoint utama Azure Blob Storage"
-  value       = azurerm_storage_account.storage.primary_blob_endpoint
+  value       = local.storage_primary_blob_endpoint
 }
 
 output "storage_container_manuscripts" {
   description = "Nama container blob manuskrip naskah"
-  value       = azurerm_storage_container.manuscripts.name
+  value       = local.storage_container_manuscripts
 }
 
 output "storage_container_backups" {
   description = "Nama container blob pencadangan database"
-  value       = azurerm_storage_container.backups.name
+  value       = local.storage_container_backups
 }
 
 

@@ -58,7 +58,7 @@ class DatabaseBackupService
             throw new RuntimeException('Gagal mengompresi arsip cadangan SQL.');
         }
 
-        // 3. Simpan ke Storage (Azure Blob / Local)
+        // 3. Simpan ke Storage (Azure Blob)
         $storage = Storage::disk($targetDisk);
         $saved = $storage->put($relativePath, $compressedData);
         if (! $saved) {
@@ -353,7 +353,7 @@ class DatabaseBackupService
             return 'azure';
         }
 
-        return config('filesystems.default', 'local');
+        return config('filesystems.default', 'azure');
     }
 
     /**

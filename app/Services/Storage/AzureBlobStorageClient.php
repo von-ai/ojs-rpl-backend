@@ -369,6 +369,84 @@ class AzureBlobStorageClient
     }
 
     /**
+     * Mengambil Blob Index Tags (misal: 'Malware Scanning scan result' dari Microsoft Defender).
+     *
+     * @return array<string, string>
+     */
+    public function getBlobTags(string $path): array
+    {
+        $url = $this->getBlobUrl($path).'?comp=tags';
+        try {
+            $signedHeaders = $this->signRequest('GET', $url);
+            $response = $this->http->request('GET', $url, [
+                'headers' => $signedHeaders,
+            ]);
+
+            $body = (string) $response->getBody();
+            if (empty($body)) {
+                return [];
+            }
+
+            $tags = [];
+            $xml = @simplexml_load_string($body);
+            if ($xml && isset($xml->TagSet->Tag)) {
+                foreach ($xml->TagSet->Tag as $tag) {
+                    $key = (string) $tag->Key;
+                    $value = (string) $tag->Value;
+                    if ($key !== '') {
+                        $tags[$key] = $value;
+                    }
+                }
+            }
+
+            return $tags;
+        } catch (ClientException $e) {
+            if ($e->getResponse()?->getStatusCode() === 404) {
+                return [];
+            }
+            throw $e;
+        } catch (GuzzleException $e) {
+            Log::warning("AzureBlobStorage: Gagal membaca index tags pada '{$path}': ".$e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Menyimpan atau memperbarui Blob Index Tags.
+     *
+     * @param  array<string, string>  $tags
+     */
+    public function setBlobTags(string $path, array $tags): bool
+    {
+        $url = $this->getBlobUrl($path).'?comp=tags';
+        $tagXml = '<?xml version="1.0" encoding="utf-8"?><Tags><TagSet>';
+        foreach ($tags as $k => $v) {
+            $tagXml .= '<Tag><Key>'.htmlspecialchars((string) $k, ENT_XML1).'</Key><Value>'.htmlspecialchars((string) $v, ENT_XML1).'</Value></Tag>';
+        }
+        $tagXml .= '</TagSet></Tags>';
+
+        $headers = [
+            'Content-Type' => 'application/xml',
+            'Content-Length' => (string) strlen($tagXml),
+        ];
+
+        try {
+            $signedHeaders = $this->signRequest('PUT', $url, $headers);
+            $response = $this->http->request('PUT', $url, [
+                'headers' => $signedHeaders,
+                'body' => $tagXml,
+            ]);
+
+            return in_array($response->getStatusCode(), [200, 204], true);
+        } catch (GuzzleException $e) {
+            Log::error("AzureBlobStorage: Gagal menyimpan index tags pada '{$path}': ".$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Membubuhkan signature otentikasi SharedKey pada request headers.
      *
      * @param  array<string, string>  $customHeaders

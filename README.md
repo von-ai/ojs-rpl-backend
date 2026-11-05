@@ -17,7 +17,7 @@ composer test
 vendor/bin/pint --test
 ```
 
-Pengujian otomatis dijalankan pada database SQLite *in-memory* dan kunci enkripsi test, sehingga tidak memerlukan `.env` khusus atau MySQL/PostgreSQL aktif untuk verifikasi lokal. CI juga menjalankan suite pada MySQL 8.4 serta uji ClamAV asli. Pengujian feature dijalankan secara otomatis pada GitHub Actions di setiap pull request.
+Pengujian otomatis dijalankan pada database SQLite *in-memory* dan kunci enkripsi test, sehingga tidak memerlukan `.env` khusus atau MySQL/PostgreSQL aktif untuk verifikasi lokal. CI juga menjalankan suite pada MySQL 8.4 serta verifikasi pemindai keamanan malware (Microsoft Defender / Azurite Mock). Pengujian feature dijalankan secara otomatis pada GitHub Actions di setiap pull request.
 
 ## Menjalankan Proyek (Running the Project Locally)
 

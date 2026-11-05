@@ -539,7 +539,7 @@ class SubmissionSeeder extends Seeder
 
                 foreach ($item['files'] as $f) {
                     $fileEntry = FileEntry::create([
-                        'storage_disk' => 'local',
+                        'storage_disk' => 'azure',
                         'storage_path' => 'manuscripts/'.md5($f['name']).'.dat',
                         'original_name' => $f['name'],
                         'mime_type' => $f['mime_type'],

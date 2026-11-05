@@ -26,7 +26,7 @@ resource "cloudflare_workers_script" "proxy" {
   count      = var.enable_cloudflare && var.enable_cloudflare_worker && var.cloudflare_account_id != "" ? 1 : 0
   account_id = var.cloudflare_account_id
   name       = "sirida-proxy"
-  content    = templatefile("${path.module}/cloudflare-worker.js.tpl", {
+  content = templatefile("${path.module}/cloudflare-worker.js.tpl", {
     origin_fqdn = azurerm_container_app.web.ingress[0].fqdn
   })
 }

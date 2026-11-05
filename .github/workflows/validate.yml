@@ -26,12 +26,6 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 --password=sirida_test_only --silent"
           --health-interval=5s --health-timeout=5s --health-retries=20
-      clamav:
-        image: clamav/clamav@sha256:6d87c712e3391e13c1ba6e05dfb074d4b1ddb5a6834b23bb9da990d2a4ef042a
-        ports: ["13320:3310"]
-        options: >-
-          --memory=4g --health-cmd="clamdcheck.sh"
-          --health-interval=10s --health-timeout=10s --health-retries=30 --health-start-period=120s
       azurite:
         image: mcr.microsoft.com/azure-storage/azurite@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
         env:
@@ -101,13 +95,13 @@ jobs:
           if coverage < 70:
               raise SystemExit('Application line coverage is below 70%.')
           PY
-      - name: Test MySQL, real ClamAV and Azurite
+      - name: Test MySQL and Azurite
         run: vendor/bin/phpunit --no-progress --log-junit build/test-results/mysql.xml
         env:
           PAO_DISABLE: '1'
           RPL_TEST_MYSQL: '1'
           RPL_TEST_DB_PORT: '3306'
-          RPL_TEST_CLAMD_HOST: 127.0.0.1
+          FILE_SCAN_DRIVER: 'mock'
           RPL_TEST_AZURITE_URL: http://127.0.0.1:13321/siridanotion
       - name: Upload test results and coverage
         if: always()

@@ -44,7 +44,7 @@ class CopyeditingDatabaseModelTest extends TestCase
         ]);
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/test_source.docx',
             'original_name' => 'test_source.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -83,7 +83,7 @@ class CopyeditingDatabaseModelTest extends TestCase
 
         // 2. Test Output Set creation
         $outputFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'copyedits/test_output.docx',
             'original_name' => 'test_output.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

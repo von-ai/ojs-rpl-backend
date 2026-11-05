@@ -20,6 +20,7 @@ class AzureBlobStorageAdapterTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::forgetDisk('azure');
 
         $this->client = new AzureBlobStorageClient(
             accountName: 'devstoreaccount1',

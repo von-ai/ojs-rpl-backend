@@ -21,6 +21,7 @@ class DirectBlobUploadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::forgetDisk('azure');
 
         $this->withoutVite();
 

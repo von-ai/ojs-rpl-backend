@@ -35,7 +35,7 @@ class AuthorRevisionAndDownloadTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
-        Storage::fake('local');
+        Storage::fake('azure');
 
         $this->author = User::factory()->create([
             'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
@@ -202,10 +202,10 @@ class AuthorRevisionAndDownloadTest extends TestCase
         $this->actingAs($this->author);
 
         $path = 'submissions/'.$this->submission->id.'/test_manuscript.pdf';
-        Storage::disk('local')->put($path, 'Konten manuskrip asli PDF pengujian');
+        Storage::disk('azure')->put($path, 'Konten manuskrip asli PDF pengujian');
 
         $fileEntry = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $path,
             'original_name' => 'test_manuscript.pdf',
             'mime_type' => 'application/pdf',
@@ -239,10 +239,10 @@ class AuthorRevisionAndDownloadTest extends TestCase
         $this->actingAs($this->otherUser);
 
         $path = 'submissions/'.$this->submission->id.'/private_manuscript.pdf';
-        Storage::disk('local')->put($path, 'Konten rahasia naskah penulis');
+        Storage::disk('azure')->put($path, 'Konten rahasia naskah penulis');
 
         $fileEntry = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $path,
             'original_name' => 'private_manuscript.pdf',
             'mime_type' => 'application/pdf',

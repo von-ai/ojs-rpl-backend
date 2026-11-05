@@ -49,7 +49,7 @@ Setiap tahapan alur penerbitan naskah ilmiah memiliki kode warna semantik tersta
 
 | Status Pemindaian | Utility Badge Tailwind | Representasi |
 | :--- | :--- | :--- |
-| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian ClamAV yang dikonfigurasi dan aman diunduh. |
+| `clean` | `bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200` | Berkas lolos uji pemindaian keamanan malware dan aman diunduh. |
 | `pending` | `bg-amber-50 text-amber-700 ring-1 ring-amber-200` | Berkas baru diunggah dan berada dalam antrean pemindaian otomatis. |
 | `infected` | `bg-red-50 text-red-700 ring-1 ring-red-200` | Berkas terdeteksi malware/virus, dikarantina otomatis oleh sistem. |
 
@@ -243,7 +243,7 @@ Agar seluruh portal peran (Penulis, Pemimpin Redaksi, Editor Bagian, dan Mitra B
 3. **Larangan Istilah Bahasa Asing di Dalam Kurung:**
    * Seluruh teks antarmuka wajib menggunakan Bahasa Indonesia yang bersih tanpa tambahan istilah bahasa Inggris di dalam kurung (contoh yang **dilarang**: `Skrining Awal (Desk Review)`, `Pemimpin Redaksi (Editor-in-Chief)`, `Diterima (Accept Submission)`, `Batas Waktu (Due Date)`).
 4. **Larangan Menampilkan Kode `UC-*` & Jargon Internal:**
-   * Kode spesifikasi kebutuhan seperti `UC-10`, `UC-11`, `UC-12`, `UC-07`, serta atribut teknis internal seperti `ETag v1` atau `ClamAV Clean` dilarang ditampilkan pada layar pengguna. Gunakan istilah fungsional yang ramah pengguna seperti `Terverifikasi Aman`.
+   * Kode spesifikasi kebutuhan seperti `UC-10`, `UC-11`, `UC-12`, `UC-07`, serta atribut teknis internal seperti `ETag v1` atau `Defender Clean` dilarang ditampilkan pada layar pengguna. Gunakan istilah fungsional yang ramah pengguna seperti `Terverifikasi Aman`.
 5. **Keringkasan Tabel Antrean Editorial:**
    * Kolom **Status Naskah** hanya menampilkan satu badge status utama tanpa tambahan teks keterangan tahap di bawahnya.
    * Kolom **Section Editor & Review** hanya menampilkan nama editor bagian dan progres jumlah telaah selesai tanpa menampilkan tag rekomendasi tambahan.

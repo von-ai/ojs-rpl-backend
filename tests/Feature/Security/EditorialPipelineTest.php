@@ -25,7 +25,7 @@ class EditorialPipelineTest extends TestCase
 
     public function test_existing_role_forms_publish_a_real_article_with_the_approved_file(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         Mail::fake();
         Notification::fake();
         $journal = Journal::create(['name' => 'Jurnal Uji Integrasi', 'slug' => 'sirida-makassar', 'status' => 'active', 'apc_enabled' => false, 'apc_fee' => 'Gratis']);

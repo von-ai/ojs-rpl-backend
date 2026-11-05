@@ -12,6 +12,13 @@ storage_location = "southeastasia"    # Singapore (Azure Blob Storage + Defender
 redis_sku_name   = "Balanced_B0"
 filesystem_disk  = "azure"
 
+# Pemisahan Siklus Hidup Stateful vs Stateless (Azure Blob Storage)
+create_storage_account          = true  # Set false jika ingin menghubungkan ACA ke Storage Account yang sudah ada
+separate_storage_resource_group = true  # true: Tempatkan storage di Resource Group terpisah (rg-sirida-storage-poc)
+enable_storage_delete_lock      = false # Set true di staging/prod untuk mencegah accidental destroy pada storage
+# existing_storage_account_name        = "" # Diisi jika create_storage_account = false
+# existing_storage_resource_group_name = "" # Diisi jika create_storage_account = false
+
 # Container Image (GitHub Container Registry)
 container_image             = "ghcr.io/von-ai/ojs-rpl-backend:latest"
 container_registry_server   = "ghcr.io"

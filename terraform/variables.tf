@@ -173,8 +173,44 @@ variable "db_ssl_mode" {
 }
 
 # -----------------------------------------------------------------------------
-# Storage & Defender
+# Storage & Defender (Pemisahan Siklus Hidup Stateful vs Stateless)
 # -----------------------------------------------------------------------------
+variable "create_storage_account" {
+  description = "Tentukan apakah Terraform mengelola inisiasi/penghancuran Storage Account baru (true) atau menggunakan yang sudah ada (false)"
+  type        = bool
+  default     = true
+}
+
+variable "separate_storage_resource_group" {
+  description = "Tempatkan Azure Blob Storage dalam Resource Group terpisah (Stateful RG) agar terisolasi dari siklus hidup aplikasi (Stateless RG)"
+  type        = bool
+  default     = true
+}
+
+variable "storage_resource_group_name" {
+  description = "Nama Resource Group khusus untuk Storage (kosongkan untuk menggunakan penamaan default 'rg-{project_name}-storage-{environment}')"
+  type        = string
+  default     = ""
+}
+
+variable "existing_storage_account_name" {
+  description = "Nama Storage Account yang sudah ada jika create_storage_account = false"
+  type        = string
+  default     = ""
+}
+
+variable "existing_storage_resource_group_name" {
+  description = "Nama Resource Group tempat existing_storage_account_name berada jika create_storage_account = false"
+  type        = string
+  default     = ""
+}
+
+variable "enable_storage_delete_lock" {
+  description = "Aktifkan Azure Resource Management Lock (CanNotDelete) untuk mencegah penghapusan data blob yang tidak sengaja"
+  type        = bool
+  default     = false
+}
+
 variable "storage_container_name" {
   description = "Nama blob container untuk berkas naskah manuskrip"
   type        = string
@@ -188,7 +224,7 @@ variable "storage_retention_days" {
 }
 
 variable "filesystem_disk" {
-  description = "Driver penyimpanan default Laravel (local atau azure)"
+  description = "Driver penyimpanan default Laravel (azure)"
   type        = string
   default     = "azure"
 }
@@ -197,6 +233,12 @@ variable "enable_storage_defender" {
   description = "Aktifkan Microsoft Defender for Storage (Malware Scanning)"
   type        = bool
   default     = true
+}
+
+variable "file_scan_driver" {
+  description = "Driver pemindai malware (defender untuk Microsoft Defender for Storage di cloud)"
+  type        = string
+  default     = "defender"
 }
 
 # -----------------------------------------------------------------------------

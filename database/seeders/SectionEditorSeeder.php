@@ -490,7 +490,7 @@ class SectionEditorSeeder extends Seeder
         $revFile = FileEntry::firstOrCreate(
             ['original_name' => 'SUB2026-SE-004_Revisi_Putaran1.docx'],
             [
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => 'revisions/SUB2026-SE-004_Revisi_Putaran1.docx',
                 'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'byte_size' => 184500,
@@ -726,7 +726,7 @@ class SectionEditorSeeder extends Seeder
         $fileEntry = FileEntry::firstOrCreate(
             ['original_name' => "{$number}_Manuskrip_Utama.pdf"],
             [
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => "submissions/{$number}_Manuskrip_Utama.pdf",
                 'mime_type' => 'application/pdf',
                 'byte_size' => 245000,

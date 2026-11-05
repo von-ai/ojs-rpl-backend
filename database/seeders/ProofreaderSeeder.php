@@ -632,7 +632,7 @@ class ProofreaderSeeder extends Seeder
         int $targetBytes = 1024,
         string $type = 'pdf'
     ): FileEntry {
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('azure');
 
         $content = $type === 'pdf'
             ? $this->generateValidPdfBinary($originalName, $targetBytes)
@@ -643,7 +643,7 @@ class ProofreaderSeeder extends Seeder
         $checksum = hash('sha256', (string) $disk->get($storagePath));
 
         $entry = FileEntry::updateOrCreate(
-            ['storage_disk' => 'local', 'storage_path' => $storagePath],
+            ['storage_disk' => 'azure', 'storage_path' => $storagePath],
             [
                 'original_name' => $originalName,
                 'mime_type' => $mimeType,

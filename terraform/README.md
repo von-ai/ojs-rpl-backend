@@ -133,15 +133,65 @@ Jika tidak menggunakan Terraform untuk mengelola Cloudflare:
 
 ---
 
-## 6. Penghancuran Infrastruktur (*Ephemeral Teardown*)
+## 6. Pemisahan Siklus Hidup Stateful (Storage) vs Stateless (App)
 
-Setelah sesi presentasi, pengujian, atau evaluasi expo selesai, jalankan script teardown untuk menghapus seluruh komponen cloud secara tuntas:
+Arsitektur cloud SIRIDA memisahkan komponen **Stateful** (Azure Blob Storage berisi naskah manuskrip dan bukti bayar) dari komponen **Stateless** (ACA, Redis, Cloudflare, Logs):
+
+1. **Resource Group Terpisah**:
+   - `rg-sirida-poc`: Resource Group Stateless di Jakarta (`indonesiacentral`) untuk ACA Web/Worker, Redis, dan Logs.
+   - `rg-sirida-storage-poc`: Resource Group Stateful di Singapura (`southeastasia`) khusus untuk Storage Account dan Microsoft Defender.
+2. **Perlindungan Terhadap Dangling Metadata**:
+   - Menghapus komponen aplikasi tidak akan menghapus data berkas di Azure Blob Storage, sehingga metadata naskah di database TiDB tetap konsisten dan utuh.
+3. **Kunci Proteksi (Azure Management Lock)**:
+   - Variabel `enable_storage_delete_lock = true` dapat diaktifkan di staging/production untuk mencegah penghapusan Storage Account secara tidak sengaja melalui Terraform maupun Azure Portal.
+
+---
+
+## 7. Opsi Inisiasi & Deployment Terpisah
+
+Anda dapat menginisiasi seluruh stack atau memilih layer tertentu:
+
+1. **Deploy Seluruh Stack (Default)**:
+   ```bash
+   ./scripts/deploy.sh
+   ```
+2. **Inisiasi Azure Blob Storage Saja (Stateful)**:
+   ```bash
+   ./scripts/deploy.sh --storage-only
+   ```
+   Hanya membuat Resource Group Storage, Storage Account, Containers, Lifecycle Policy, Defender, dan Lock.
+3. **Inisiasi Stateless App Saja (Menghubungkan ke Storage yang Ada)**:
+   ```bash
+   ./scripts/deploy.sh --app-only
+   ```
+   Hanya membuat ACA, Redis, Log Analytics, dan Cloudflare.
+
+---
+
+## 8. Opsi Penghancuran (*Teardown*) Terpisah
+
+Saat sesi evaluasi/pengujian selesai, Anda dapat memilih cakupan penghancuran agar biaya sewa berhenti tanpa mengorbankan integritas data:
 
 ```bash
 ./scripts/destroy.sh
 ```
-Atau tanpa prompt interaktif (untuk otomasi CI/CD):
+Skrip akan menampilkan menu interaktif:
+- **Pilihan 1 [Rekomendasi]: Hancurkan Stateless App Saja** (`--app-only`)
+  - Menghapus ACA, Redis, Log Analytics, dan Cloudflare.
+  - Azure Blob Storage & berkas naskah **tetap aman**. Biaya komputasi berhenti dan metadata TiDB tidak menjadi dangling.
+- **Pilihan 2: Hancurkan Azure Blob Storage Saja** (`--storage-only`)
+  - Hanya menghapus Storage Account dan seluruh berkas naskah di dalamnya.
+- **Pilihan 3: Hancurkan SEMUA (Full Teardown)** (`--all`)
+  - Menghapus seluruh resource Azure dan Cloudflare tanpa terkecuali.
+
+**Perintah Non-Interaktif (Otomasi CI/CD):**
 ```bash
-./scripts/destroy.sh --auto-approve
+# Hancurkan hanya aplikasi (Storage aman):
+./scripts/destroy.sh --app-only --auto-approve
+
+# Hancurkan hanya storage:
+./scripts/destroy.sh --storage-only --auto-approve
+
+# Hancurkan seluruh infrastruktur:
+./scripts/destroy.sh --all --auto-approve
 ```
-Semua tagihan sewa infrastruktur cloud akan langsung berhenti.
