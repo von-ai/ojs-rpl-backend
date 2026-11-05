@@ -309,15 +309,15 @@ variable "mail_from_name" {
 # ACA Sizing & Scaling Policy
 # -----------------------------------------------------------------------------
 variable "aca_web_cpu" {
-  description = "Alokasi vCPU untuk Web Container (default 0.5 vCPU)"
+  description = "Alokasi vCPU untuk Web Container (default 2.0 vCPU)"
   type        = number
-  default     = 0.5
+  default     = 2.0
 }
 
 variable "aca_web_memory" {
-  description = "Alokasi RAM untuk Web Container (default 1.0Gi)"
+  description = "Alokasi RAM untuk Web Container (default 4.0Gi)"
   type        = string
-  default     = "1.0Gi"
+  default     = "4.0Gi"
 }
 
 variable "aca_web_min_replicas" {
@@ -333,15 +333,15 @@ variable "aca_web_max_replicas" {
 }
 
 variable "aca_worker_cpu" {
-  description = "Alokasi vCPU untuk Queue Worker Container (default 0.5 vCPU)"
+  description = "Alokasi vCPU untuk Queue Worker Container (default 1.0 vCPU)"
   type        = number
-  default     = 0.5
+  default     = 1.0
 }
 
 variable "aca_worker_memory" {
-  description = "Alokasi RAM untuk Queue Worker Container (default 1.0Gi, rasio 1:2 vCPU:RAM di ACA Consumption Plan)"
+  description = "Alokasi RAM untuk Queue Worker Container (default 2.0Gi, rasio 1:2 vCPU:RAM di ACA Consumption Plan)"
   type        = string
-  default     = "1.0Gi"
+  default     = "2.0Gi"
 }
 
 variable "aca_worker_min_replicas" {

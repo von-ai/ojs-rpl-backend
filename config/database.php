@@ -61,6 +61,8 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => filter_var(env('DB_PERSISTENT', true), FILTER_VALIDATE_BOOLEAN) ?: null,
+                PDO::ATTR_TIMEOUT => (int) env('DB_TIMEOUT', 5),
             ]) : [],
         ],
 
@@ -148,7 +150,7 @@ return [
         'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
-            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'cluster' => env('REDIS_CLUSTER', false),
             'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],

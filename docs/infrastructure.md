@@ -132,8 +132,8 @@ Untuk mengoptimalkan latensi pengguna lokal sekaligus memanfaatkan ketersediaan 
 
 | Komponen | Spesifikasi vCPU | Alokasi Memori (RAM) | Kebijakan Penskalaan (*Scaling Policy*) | Catatan Operasional |
 | :--- | :---: | :---: | :--- | :--- |
-| **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
-| **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
+| **ACA Web Container** | 2.0 vCPU | 4.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
+| **ACA Queue Worker** | 1.0 vCPU | 2.0 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
 | **ACA Scheduler Daemon** | 0.25 vCPU | 0.5 GiB | Dedicated Daemon (min 1, max 1 replika) | Menjalankan `php artisan schedule:work` secara kontinu di memori tanpa penalti cold-start 1-menit. |
 | **Azure Managed Redis (AMR)** | Balanced_B0 (~500 MB) | Dedicated In-Memory | Redis Enterprise Engine terkelola | TLS Port 10000, latensi sub-1ms, dedicated cache, session store, dan atomic locks naskah. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
