@@ -18,6 +18,7 @@ use App\Models\ProofreadingNote;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\PortalAccess;
+use App\Services\PrivateFileService;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -408,21 +409,31 @@ class LayoutEditorService
         ?string $note = null
     ): GalleyApproval {
         return DB::transaction(function () use ($galley, $author, $note) {
-            PortalAccess::lockSubmission($galley->submission, $author, 'author');
+            $submission = PortalAccess::lockSubmission($galley->submission, $author, 'author');
             $galley = Galley::query()->lockForUpdate()->findOrFail($galley->id);
+            abort_unless($submission->author_id === $author->id, 404);
+            if (! in_array($submission->status, ['accepted', 'in_production'], true)
+                || $submission->activeGalley?->id !== $galley->id || ! $galley->readyForAuthorSignoff()) {
+                throw new DomainException('Galai ini belum siap disetujui atau sudah diganti.');
+            }
 
-            return DB::transaction(function () use ($galley, $author, $note): GalleyApproval {
-                return GalleyApproval::create([
-                    'galley_id' => $galley->id,
-                    'approved_by' => $author->id,
-                    'stage' => 'author_signoff',
-                    'checksum_sha256' => $galley->checksum_sha256,
-                    'approved_at' => now(),
-                    'invalidated_at' => null,
-                    'file_id' => $galley->file_id,
-                    'note' => $note,
-                ]);
-            });
+            $existing = $galley->approvals()->where('stage', 'author_signoff')
+                ->where('approved_by', $author->id)->whereNull('invalidated_at')
+                ->where('file_id', $galley->file_id)->where('checksum_sha256', $galley->checksum_sha256)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            app(PrivateFileService::class)->stream($galley->file);
+
+            return $galley->approvals()->create([
+                'approved_by' => $author->id,
+                'stage' => 'author_signoff',
+                'checksum_sha256' => $galley->checksum_sha256,
+                'approved_at' => now(),
+                'file_id' => $galley->file_id,
+                'note' => $note,
+            ]);
         });
     }
 

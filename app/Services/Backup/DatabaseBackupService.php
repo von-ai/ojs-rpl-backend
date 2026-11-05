@@ -30,7 +30,7 @@ class DatabaseBackupService
      *     duration_seconds: float
      * }
      */
-    public function backup(?string $targetFilename = null, ?string $diskName = null): array
+    public function backup(?string $targetFilename = null, ?string $diskName = null, int $retentionDays = 30): array
     {
         $startTime = microtime(true);
         $targetDisk = $diskName ?: $this->resolveDefaultBackupDisk();
@@ -39,6 +39,10 @@ class DatabaseBackupService
         $filename = $targetFilename ?: "sirida_backup_{$timestamp}.sql.gz";
         if (! str_ends_with($filename, '.sql.gz')) {
             $filename .= '.sql.gz';
+        }
+
+        if (basename($filename) !== $filename || ! preg_match('/\A[A-Za-z0-9][A-Za-z0-9._-]*\z/', $filename)) {
+            throw new RuntimeException('Nama berkas cadangan tidak valid.');
         }
 
         $relativePath = "database/{$filename}";
@@ -67,7 +71,7 @@ class DatabaseBackupService
         // 4. Terapkan retensi 30 hari (NF-08: hapus arsip yang lebih lama dari 30 hari)
         $prunedCount = 0;
         try {
-            $prunedCount = $this->pruneOldBackups(30, $targetDisk);
+            $prunedCount = $this->pruneOldBackups($retentionDays, $targetDisk);
         } catch (Exception $e) {
             Log::warning("Pembersihan retensi backup gagal dijalankan: {$e->getMessage()}");
         }
@@ -110,7 +114,9 @@ class DatabaseBackupService
             try {
                 $lastModified = $storage->lastModified($file);
                 if ($lastModified < $cutoffTimestamp) {
-                    $storage->delete($file);
+                    if (! $storage->delete($file)) {
+                        throw new RuntimeException('Penyimpanan menolak penghapusan cadangan.');
+                    }
                     $prunedCount++;
                     Log::info("Menghapus cadangan lama (retensi {$retentionDays} hari): {$file}");
                 }
@@ -169,16 +175,33 @@ class DatabaseBackupService
             "--host={$host}",
             "--port={$port}",
             "--user={$username}",
-            "--password={$password}",
             '--single-transaction',
             '--quick',
             '--skip-lock-tables',
+            '--no-tablespaces',
+            '--hex-blob',
             '--routines',
             '--triggers',
             $database,
         ];
 
-        $process = Process::run($command);
+        $defaults = tmpfile();
+        if (! is_resource($defaults)) {
+            throw new RuntimeException('Tidak dapat membuat konfigurasi mysqldump sementara.');
+        }
+
+        try {
+            $escapedPassword = addcslashes($password, "\\\"\r\n\t");
+            $options = "[client]\npassword=\"{$escapedPassword}\"\n";
+            if (fwrite($defaults, $options) !== strlen($options) || ! fflush($defaults)) {
+                throw new RuntimeException('Tidak dapat menyimpan konfigurasi mysqldump sementara.');
+            }
+            $defaultsPath = stream_get_meta_data($defaults)['uri'];
+            array_splice($command, 1, 0, ["--defaults-extra-file={$defaultsPath}"]);
+            $process = Process::timeout(480)->run($command);
+        } finally {
+            fclose($defaults);
+        }
 
         if (! $process->successful()) {
             throw new RuntimeException('Perintah mysqldump gagal dieksekusi: '.$process->errorOutput());
@@ -193,76 +216,93 @@ class DatabaseBackupService
     protected function dumpViaNativePdo(): string
     {
         $pdo = DB::connection()->getPdo();
-        $databaseName = DB::connection()->getDatabaseName();
-
-        $output = [];
-        $output[] = '-- -------------------------------------------------------------';
-        $output[] = '-- SIRIDA DATABASE BACKUP (Cloud-Native Ephemeral Dump)';
-        $output[] = '-- Generated At: '.Carbon::now('UTC')->toIso8601String().' (UTC)';
-        $output[] = "-- Target Database: {$databaseName}";
-        $output[] = '-- -------------------------------------------------------------';
-        $output[] = 'SET FOREIGN_KEY_CHECKS = 0;';
-        $output[] = "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';";
-        $output[] = "SET time_zone = '+00:00';\n";
-
-        // Ambil daftar seluruh tabel
-        $tables = [];
-        $stmt = $pdo->query('SHOW TABLES');
-        if ($stmt) {
-            while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
-                $tables[] = $row[0];
-            }
+        $ownsTransaction = ! $pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+            $pdo->beginTransaction();
         }
 
-        foreach ($tables as $table) {
-            $output[] = "-- Table structure for `{$table}`";
-            $output[] = "DROP TABLE IF EXISTS `{$table}`;";
+        try {
+            $output = [
+                'SET FOREIGN_KEY_CHECKS = 0;',
+                "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';",
+                "SET time_zone = '+00:00';",
+            ];
+            $tables = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($tables as $table) {
+                $name = $this->quoteIdentifier($table);
+                $definition = $pdo->query("SHOW CREATE TABLE {$name}")->fetch(PDO::FETCH_NUM);
+                $output[] = "DROP TABLE IF EXISTS {$name};";
+                $output[] = $definition[1].';';
 
-            $createStmt = $pdo->query("SHOW CREATE TABLE `{$table}`");
-            if ($createStmt) {
-                $createRow = $createStmt->fetch(PDO::FETCH_ASSOC);
-                $createSql = $createRow['Create Table'] ?? ($createRow['create table'] ?? null);
-                if ($createSql) {
-                    $output[] = $createSql.";\n";
+                $columns = [];
+                foreach ($pdo->query("SHOW FULL COLUMNS FROM {$name}") as $column) {
+                    if (! preg_match('/(?:VIRTUAL|STORED) GENERATED/i', $column['Extra'])) {
+                        $columns[] = $this->quoteIdentifier($column['Field']);
+                    }
                 }
+                $this->appendRows($output, $pdo, $name, $columns);
             }
 
-            // Data rows
-            $dataStmt = $pdo->query("SELECT * FROM `{$table}`");
-            if ($dataStmt) {
-                $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
-                if (! empty($rows)) {
-                    $output[] = "-- Dumping data for table `{$table}`";
-                    $columns = array_map(fn ($col) => "`{$col}`", array_keys($rows[0]));
-                    $colList = implode(', ', $columns);
-
-                    $insertStatements = [];
-                    foreach ($rows as $row) {
-                        $escapedValues = array_map(function ($val) use ($pdo) {
-                            if ($val === null) {
-                                return 'NULL';
-                            }
-
-                            return $pdo->quote((string) $val);
-                        }, array_values($row));
-
-                        $insertStatements[] = '('.implode(', ', $escapedValues).')';
-                    }
-
-                    // Pecah batch 200 baris per query
-                    $chunks = array_chunk($insertStatements, 200);
-                    foreach ($chunks as $chunk) {
-                        $output[] = "INSERT INTO `{$table}` ({$colList}) VALUES\n".implode(",\n", $chunk).';';
-                    }
-                    $output[] = '';
+            foreach ($pdo->query('SHOW TRIGGERS')->fetchAll(PDO::FETCH_ASSOC) as $trigger) {
+                $name = $this->quoteIdentifier($trigger['Trigger']);
+                $table = $this->quoteIdentifier($trigger['Table']);
+                $timing = $trigger['Timing'];
+                $event = $trigger['Event'];
+                $statement = $trigger['Statement'];
+                $output[] = "DROP TRIGGER IF EXISTS {$name};";
+                // A trigger body can contain semicolons, so use a dedicated client delimiter.
+                $delimiter = '$$';
+                while (str_contains($statement, $delimiter)) {
+                    $delimiter .= '$';
                 }
+                $output[] = "DELIMITER {$delimiter}";
+                $output[] = "CREATE TRIGGER {$name} {$timing} {$event} ON {$table} FOR EACH ROW {$statement}{$delimiter}";
+                $output[] = 'DELIMITER ;';
+            }
+
+            $output[] = 'SET FOREIGN_KEY_CHECKS = 1;';
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+
+            return implode("\n", $output)."\n";
+        } catch (\Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * @param  list<string>  $output
+     * @param  list<string>  $columns
+     */
+    private function appendRows(array &$output, PDO $pdo, string $table, array $columns): void
+    {
+        $columnList = implode(', ', $columns);
+        $statement = $pdo->query("SELECT {$columnList} FROM {$table}");
+        $batch = [];
+        while (($row = $statement->fetch(PDO::FETCH_NUM)) !== false) {
+            $values = array_map(
+                fn ($value) => $value === null ? 'NULL' : $pdo->quote((string) $value),
+                $row
+            );
+            $batch[] = '('.implode(', ', $values).')';
+            if (count($batch) === 200) {
+                $output[] = "INSERT INTO {$table} ({$columnList}) VALUES\n".implode(",\n", $batch).';';
+                $batch = [];
             }
         }
+        if ($batch !== []) {
+            $output[] = "INSERT INTO {$table} ({$columnList}) VALUES\n".implode(",\n", $batch).';';
+        }
+    }
 
-        $output[] = 'SET FOREIGN_KEY_CHECKS = 1;';
-        $output[] = '-- Backup dump completed successfully.';
-
-        return implode("\n", $output);
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '`'.str_replace('`', '``', $identifier).'`';
     }
 
     /**
@@ -275,16 +315,27 @@ class DatabaseBackupService
         $output[] = '-- SIRIDA SQLite Backup';
         $output[] = '-- Generated At: '.Carbon::now('UTC')->toIso8601String();
 
-        $stmt = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        if ($stmt) {
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                if (! empty($row['sql'])) {
-                    $output[] = $row['sql'].';';
+        $output[] = 'PRAGMA foreign_keys = OFF;';
+        $output[] = 'BEGIN;';
+        $tables = $pdo->query("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($tables as $table) {
+            $output[] = $table['sql'].';';
+            $name = $this->quoteIdentifier($table['name']);
+            $columns = [];
+            foreach ($pdo->query("PRAGMA table_xinfo({$name})") as $column) {
+                if ((int) $column['hidden'] === 0) {
+                    $columns[] = $this->quoteIdentifier($column['name']);
                 }
             }
+            $this->appendRows($output, $pdo, $name, $columns);
         }
+        foreach ($pdo->query("SELECT sql FROM sqlite_master WHERE type IN ('index', 'trigger', 'view') AND sql IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $sql) {
+            $output[] = $sql.';';
+        }
+        $output[] = 'COMMIT;';
+        $output[] = 'PRAGMA foreign_keys = ON;';
 
-        return implode("\n", $output);
+        return implode("\n", $output)."\n";
     }
 
     /**

@@ -17,6 +17,17 @@ class AuditLog extends Model
 
     protected $table = 'audit_logs';
 
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \RuntimeException('Audit log is append-only');
+        });
+
+        static::deleting(function () {
+            throw new \RuntimeException('Audit log is append-only');
+        });
+    }
+
     protected $fillable = [
         'id',
         'journal_id',

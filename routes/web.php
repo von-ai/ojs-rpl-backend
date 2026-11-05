@@ -78,7 +78,7 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::get('/submissions', [AuthorSubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/create', [AuthorSubmissionController::class, 'create'])->name('submissions.create');
     Route::get('/submissions/sections', [AuthorSubmissionController::class, 'sectionsApi'])->name('submissions.sections');
-    Route::post('/submissions/upload-session', [AuthorSubmissionController::class, 'createUploadSession'])->name('submissions.upload-session');
+    Route::post('/submissions/upload-session', [AuthorSubmissionController::class, 'createUploadSession'])->middleware('throttle:10,1')->name('submissions.upload-session');
     Route::post('/submissions', [AuthorSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
@@ -86,6 +86,9 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
     Route::post('/submissions/{id}/payment', [AuthorSubmissionController::class, 'uploadPayment'])->name('submissions.payment.store');
     Route::get('/submissions/{id}/payment/proof', [AuthorSubmissionController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::get('/submissions/{id}/payment/receipt', [AuthorSubmissionController::class, 'showPaymentReceipt'])->name('submissions.payment.receipt');
+    Route::get('/submissions/{id}/galleys/{galleyId}/download', [AuthorSubmissionController::class, 'downloadProofreadGalley'])->name('submissions.galleys.download');
+    Route::post('/submissions/{id}/galleys/{galleyId}/approve', [AuthorSubmissionController::class, 'approveProofreadGalley'])->name('submissions.galleys.approve');
     Route::get('/submissions/{id}/files/{fileId}/download', [AuthorSubmissionController::class, 'downloadFile'])->name('submissions.files.download');
 });
 

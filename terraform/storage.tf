@@ -133,6 +133,20 @@ resource "azurerm_storage_management_policy" "lifecycle" {
     }
   }
 
+  rule {
+    name    = "cleanup-staged-manuscripts"
+    enabled = true
+    filters {
+      prefix_match = ["${var.storage_container_name}/staging/manuscripts/"]
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        delete_after_days_since_modification_greater_than = 2
+      }
+    }
+  }
+
   depends_on = [azurerm_storage_account.storage]
 }
 

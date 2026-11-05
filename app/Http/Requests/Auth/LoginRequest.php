@@ -6,9 +6,12 @@ use App\Services\Auth\AuthenticationService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
@@ -83,8 +86,6 @@ class LoginRequest extends FormRequest
 
     /**
      * Ensure the login request is not rate limited.
-     *
-     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {
@@ -101,10 +102,15 @@ class LoginRequest extends FormRequest
             'minutes' => ceil($seconds / 60),
         ]);
 
-        throw ValidationException::withMessages([
-            'login' => $message,
-            'email' => $message,
-        ]);
+        $headers = ['Retry-After' => (string) $seconds];
+        $errors = ['login' => [$message], 'email' => [$message]];
+        if ($this->expectsJson()) {
+            throw new HttpResponseException(response()->json(['message' => $message, 'errors' => $errors], 429, $headers));
+        }
+
+        $this->flashOnly(['login', 'email']);
+        $viewErrors = (new ViewErrorBag)->put('default', new MessageBag($errors));
+        throw new HttpResponseException(response()->view('auth.login', ['errors' => $viewErrors], 429, $headers));
     }
 
     /**

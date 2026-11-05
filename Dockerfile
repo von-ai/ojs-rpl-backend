@@ -71,7 +71,10 @@ COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
 # Atur kepemilikan dan hak akses berkas
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p storage/app/private storage/app/public \
+        storage/framework/cache/data storage/framework/sessions \
+        storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Port HTTP standar ACA / Nginx

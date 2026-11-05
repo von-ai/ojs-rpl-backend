@@ -29,7 +29,7 @@ class ScanFile implements ShouldQueue
     public function handle(MalwareScannerInterface $scanner): void
     {
         $file = FileEntry::findOrFail($this->fileId);
-        if ($file->virus_scan_status === 'clean' || $file->virus_scan_status === 'infected') {
+        if (! in_array($file->virus_scan_status, ['pending', 'error'], true)) {
             return;
         }
 
@@ -49,7 +49,7 @@ class ScanFile implements ShouldQueue
                 hash_update_stream($hash, $stream);
                 $calculated = hash_final($hash);
                 if (! hash_equals(strtolower((string) $file->checksum_sha256), strtolower($calculated))) {
-                    $file->update(['virus_scan_status' => 'error']);
+                    FileEntry::whereKey($file->id)->whereIn('virus_scan_status', ['pending', 'error'])->update(['virus_scan_status' => 'error']);
                     throw new RuntimeException('Integritas objek unggahan tidak sesuai.');
                 }
             } finally {
@@ -70,13 +70,18 @@ class ScanFile implements ShouldQueue
             throw new RuntimeException('Hasil pemindaian tidak sah.');
         }
 
-        FileEntry::whereKey($file->id)->where('checksum_sha256', $file->checksum_sha256)->update([
-            'virus_scan_status' => $status,
-        ]);
+        FileEntry::whereKey($file->id)
+            ->where('checksum_sha256', $file->checksum_sha256)
+            ->whereIn('virus_scan_status', ['pending', 'error'])
+            ->update([
+                'virus_scan_status' => $status,
+            ]);
     }
 
     public function failed(?\Throwable $exception): void
     {
-        FileEntry::whereKey($this->fileId)->whereNotIn('virus_scan_status', ['clean', 'infected'])->update(['virus_scan_status' => 'error']);
+        FileEntry::whereKey($this->fileId)
+            ->whereIn('virus_scan_status', ['pending', 'error'])
+            ->update(['virus_scan_status' => 'error']);
     }
 }

@@ -136,7 +136,12 @@ class LoginPageTest extends TestCase
             'password' => 'password-salah',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertTooManyRequests();
+        $this->assertGreaterThan(0, (int) $response->headers->get('Retry-After'));
+        $this->assertGuest();
+
+        $this->postJson('/login', ['email' => $user->email, 'password' => 'password-salah'])
+            ->assertTooManyRequests()->assertJsonValidationErrors('email');
     }
 
     /**

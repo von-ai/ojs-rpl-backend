@@ -103,6 +103,23 @@ class EditorialPipelineTest extends TestCase
         $this->actingAs($people['proofreader']);
         $this->post('/proofreader/complete', ['submission_id' => $number])->assertSessionHasNoErrors();
         $this->assertDatabaseHas('galleys', ['id' => $galley->id, 'stage' => 'proofread']);
+        $download = route('author.submissions.galleys.download', [$id, $galley->id]);
+        $approve = route('author.submissions.galleys.approve', [$id, $galley->id]);
+        $this->actingAs(User::factory()->create());
+        $this->get($download)->assertNotFound();
+        $this->post($approve)->assertNotFound();
+
+        $this->actingAs($author);
+        $this->get(route('author.submissions.show', $id))->assertOk()->assertSee('Setujui galai');
+        $this->get($download)->assertOk()->assertHeader('X-Checksum-SHA256', $galley->checksum_sha256);
+        $this->post($approve)->assertSessionHas('success');
+        $this->post($approve)->assertSessionHas('success');
+        $this->assertDatabaseCount('galley_approvals', 1);
+        $this->assertDatabaseHas('galley_approvals', [
+            'galley_id' => $galley->id, 'approved_by' => $author->id, 'stage' => 'author_signoff',
+            'file_id' => $galley->file_id, 'checksum_sha256' => $galley->checksum_sha256,
+        ]);
+
         $this->actingAs($people['layout_editor']);
         $this->post('/layouteditor/request-final-approval', ['submission_id' => $number])->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('galley_approvals', ['galley_id' => $galley->id, 'stage' => 'editor_final']);

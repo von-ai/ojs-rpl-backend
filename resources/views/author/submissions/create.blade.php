@@ -15,7 +15,7 @@
         <input type="hidden" name="draft_id" id="draft_id" value="{{ old('draft_id', $draft->id ?? '') }}">
         <input type="hidden" name="current_step" id="current_step" value="1">
         <input type="hidden" name="keywords" id="keywords-hidden-input" value="{{ old('keywords', json_encode($draft->keywords ?? [])) }}">
-        <input type="hidden" name="contributors" id="contributors-hidden-input" value="{{ old('contributors', json_encode(($draft && $draft->contributors && count($draft->contributors) > 0) ? $draft->contributors->map(fn($c) => ['given_name' => $c->given_name, 'family_name' => $c->family_name, 'email' => $c->email, 'affiliation' => $c->affiliation, 'orcid_id' => $c->orcid, 'corresponding' => $c->is_corresponding, 'sequence' => $c->position]) : [$viewModel->defaultContributor()])) }}">
+        <input type="hidden" name="contributors" id="contributors-hidden-input" value="{{ old('contributors', json_encode(($draft && $draft->contributors && count($draft->contributors) > 0) ? $draft->contributors->map(fn($c) => ['given_name' => $c->given_name, 'family_name' => $c->family_name, 'email' => $c->email, 'affiliation' => $c->affiliation, 'orcid_id' => $c->orcid, 'corresponding' => $c->is_corresponding, 'sequence' => $c->position]) : $viewModel->defaultContributors())) }}">
 
         <!-- Langkah 1: Panduan, Ketentuan, & Pemilihan Seksi Jurnal -->
         @include('author.submissions.partials.step-1-section')

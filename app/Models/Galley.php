@@ -95,6 +95,15 @@ class Galley extends Model
         return $this->hasMany(ProductionEscalation::class, 'galley_id');
     }
 
+    public function readyForAuthorSignoff(): bool
+    {
+        return $this->isActive() && $this->stage === 'proofread'
+            && $this->file?->virus_scan_status === 'clean'
+            && $this->checksum_sha256 && hash_equals($this->checksum_sha256, (string) $this->file->checksum_sha256)
+            && $this->proofAssignments()->where('status', 'completed')
+                ->where('file_id', $this->file_id)->where('checksum_sha256', $this->checksum_sha256)->exists();
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';

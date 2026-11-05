@@ -8,26 +8,27 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Author\StoreSubmissionRequest;
 use App\Models\CopyeditApproval;
 use App\Models\FileEntry;
+use App\Models\Galley;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
 use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Services\Author\AuthorSubmissionService;
+use App\Services\Author\DirectManuscriptUpload;
+use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\Payment\ArticlePaymentService;
 use App\Services\PrivateFileService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
 use DomainException;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -37,7 +38,8 @@ class AuthorSubmissionController extends Controller
 {
     public function __construct(
         protected AuthorSubmissionService $authorSubmissionService,
-        protected ArticlePaymentService $articlePaymentService
+        protected ArticlePaymentService $articlePaymentService,
+        protected DirectManuscriptUpload $directManuscriptUpload,
     ) {}
 
     /**
@@ -96,34 +98,16 @@ class AuthorSubmissionController extends Controller
             'byte_size.max' => 'Ukuran berkas melebihi batas maksimum 20 MB.',
         ]);
 
-        $diskName = 'azure';
-        $uuid = (string) Str::uuid();
-        $safeName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', (string) $validated['filename']);
-        $blobPath = "manuscripts/{$uuid}/{$safeName}";
-        $expiresAt = now()->addMinutes(15);
-
         try {
-            /** @var FilesystemAdapter $disk */
-            $disk = Storage::disk($diskName);
-            $uploadData = $disk->temporaryUploadUrl($blobPath, $expiresAt);
-
-            return response()->json([
-                'success' => true,
-                'upload_url' => $uploadData['url'],
-                'headers' => $uploadData['headers'] ?? ['x-ms-blob-type' => 'BlockBlob'],
-                'blob_path' => $blobPath,
-                'file_name' => $validated['filename'],
-                'byte_size' => (int) $validated['byte_size'],
-                'mime_type' => $validated['mime_type'] ?: 'application/octet-stream',
-                'expires_at' => $expiresAt->toIso8601String(),
-            ]);
+            return response()->json($this->directManuscriptUpload->issue($request->user(), $validated))
+                ->header('Cache-Control', 'no-store');
         } catch (\Throwable $e) {
-            Log::error('Direct SAS Upload Session failed: '.$e->getMessage());
+            report($e);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membuat sesi unggah langsung ke Azure Blob Storage: '.$e->getMessage(),
-            ], 500);
+                'message' => 'Gagal membuat sesi unggah langsung ke penyimpanan.',
+            ], 503);
         }
     }
 
@@ -137,7 +121,8 @@ class AuthorSubmissionController extends Controller
         $author = $request->user();
         $draftId = $validated['draft_id'] ?? null;
 
-        $submission = DB::transaction(function () use ($request, $validated, $isDraft, $draftId, $author): Submission {
+        $directFile = null;
+        $persist = function () use ($request, $validated, $isDraft, $draftId, $author, &$directFile): Submission {
             $authorId = $author->id;
             $existingDraft = null;
             if ($draftId !== null) {
@@ -265,37 +250,14 @@ class AuthorSubmissionController extends Controller
 
             // 7. Simpan Berkas Manuskrip utama jika diunggah (Direct Azure SAS Upload atau Relayed Upload)
             if ($request->filled('blob_path')) {
-                $storageDisk = 'azure';
-                $path = (string) $request->input('blob_path');
-                $originalName = (string) $request->input('blob_name', basename($path));
-                $byteSize = (int) $request->input('blob_size', 0);
-                $mimeType = (string) $request->input('blob_mime', 'application/octet-stream');
-                $sha256 = (string) $request->input('blob_checksum', '');
-
-                $disk = Storage::disk($storageDisk);
-                if ($byteSize === 0 && $disk->exists($path)) {
-                    $byteSize = (int) $disk->size($path);
+                $directFile = $this->directManuscriptUpload->claim($author, $validated['blob_path']);
+                if ($existingDraft) {
+                    $submission->files()->where('genre', 'manuscript')->delete();
                 }
-                if (empty($sha256)) {
-                    $sha256 = $disk->exists($path)
-                        ? hash('sha256', (string) $disk->get($path))
-                        : hash('sha256', $path);
-                }
-
-                $fileEntry = FileEntry::create([
-                    'storage_disk' => $storageDisk,
-                    'storage_path' => $path,
-                    'original_name' => $originalName,
-                    'mime_type' => $mimeType,
-                    'byte_size' => $byteSize,
-                    'checksum_sha256' => $sha256,
-                    'virus_scan_status' => 'clean',
-                    'created_by' => $authorId,
-                ]);
 
                 SubmissionFile::create([
                     'submission_id' => $submission->id,
-                    'file_id' => $fileEntry->id,
+                    'file_id' => $directFile->id,
                     'genre' => 'manuscript',
                     'version' => 1,
                 ]);
@@ -336,7 +298,16 @@ class AuthorSubmissionController extends Controller
             }
 
             return $submission;
-        });
+        };
+
+        try {
+            $submission = DB::transaction($persist);
+        } catch (\Throwable $e) {
+            if ($directFile !== null) {
+                $this->directManuscriptUpload->discard($directFile->storage_path);
+            }
+            throw $e;
+        }
 
         if ($isDraft) {
             return redirect()
@@ -605,6 +576,40 @@ class AuthorSubmissionController extends Controller
         }
     }
 
+    public function downloadProofreadGalley(Request $request, string $id, string $galleyId): StreamedResponse
+    {
+        $galley = $this->findGalleyForSignoff($request, $id, $galleyId);
+
+        return app(PrivateFileService::class)->stream($galley->file);
+    }
+
+    public function approveProofreadGalley(Request $request, string $id, string $galleyId, LayoutEditorService $layout): RedirectResponse
+    {
+        $validated = $request->validate(['note' => ['nullable', 'string', 'max:2000']]);
+        $galley = $this->findGalleyForSignoff($request, $id, $galleyId);
+
+        try {
+            $layout->authorSignoff($galley, $request->user(), $validated['note'] ?? null);
+
+            return redirect()->route('author.submissions.show', $galley->submission_id)
+                ->with('success', 'Persetujuan galai Anda telah dicatat.');
+        } catch (DomainException $e) {
+            return redirect()->route('author.submissions.show', $galley->submission_id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    private function findGalleyForSignoff(Request $request, string $id, string $galleyId): Galley
+    {
+        $submission = $this->findAuthorSubmission($id, $request->user());
+        abort_unless($submission && $submission->author_id === $request->user()->id
+            && in_array($submission->status, ['accepted', 'in_production'], true), 404);
+        $galley = $submission->activeGalley;
+        abort_unless($galley && $galley->id === $galleyId && $galley->readyForAuthorSignoff(), 404);
+
+        return $galley;
+    }
+
     /**
      * Mengunggah berkas bukti transfer pembayaran biaya publikasi artikel (APC).
      */
@@ -615,7 +620,7 @@ class AuthorSubmissionController extends Controller
             'sender_bank_name' => ['nullable', 'string', 'max:100'],
             'sender_account_name' => ['nullable', 'string', 'max:191'],
             'transfer_date' => ['nullable', 'date'],
-            'amount_paid' => ['nullable', 'numeric', 'min:0'],
+            'amount_paid' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'author_notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'payment_proof.required' => 'Berkas bukti pembayaran wajib diunggah.',
@@ -667,6 +672,16 @@ class AuthorSubmissionController extends Controller
                     });
             })
             ->first();
+    }
+
+    public function showPaymentReceipt(Request $request, string $id): Response
+    {
+        $submission = $this->findAuthorSubmission($id, $request->user());
+        $payment = $submission?->latestPayment;
+        abort_unless($payment?->isVerified() && $payment->verified_at && $payment->user_id === $request->user()->id, 404);
+
+        return response()->view('author.submissions.payment-receipt', compact('submission', 'payment'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     /**

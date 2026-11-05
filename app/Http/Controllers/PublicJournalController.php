@@ -9,6 +9,7 @@ use App\ViewModels\PublicJournalViewModel;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,23 +25,17 @@ class PublicJournalController extends Controller
      */
     public function index(Request $request): View
     {
+        $filters = $this->searchFilters($request);
         $journal = $this->publicArticleService->getJournal();
-        $searchQuery = $request->input('q');
-        $selectedCategory = $request->input('category');
-        $year = $request->filled('year') ? (int) $request->input('year') : null;
 
         // Ambil data database nyata melalui Service
         $currentIssue = $this->publicArticleService->getCurrentIssue();
-        $articles = $this->publicArticleService->searchArticles([
-            'q' => $searchQuery,
-            'category' => $selectedCategory,
-            'year' => $year,
-        ], 12);
+        $articles = $this->publicArticleService->searchArticles($filters, 12);
         $archives = $this->publicArticleService->getIssueArchives();
 
         $viewModel = new PublicJournalViewModel(
-            searchQuery: $searchQuery,
-            selectedCategory: $selectedCategory,
+            searchQuery: $filters['q'] ?? null,
+            selectedCategory: $filters['category'] ?? null,
             dbCurrentIssue: $currentIssue,
             dbArticles: $articles,
             dbArchives: $archives,
@@ -55,16 +50,12 @@ class PublicJournalController extends Controller
      */
     public function search(Request $request): View
     {
+        $filters = $this->searchFilters($request);
+        $query = $filters['q'] ?? null;
+        $category = $filters['category'] ?? null;
         $journal = $this->publicArticleService->getJournal();
-        $query = $request->input('q');
-        $category = $request->input('category');
-        $year = $request->filled('year') ? (int) $request->input('year') : null;
 
-        $results = $this->publicArticleService->searchArticles([
-            'q' => $query,
-            'category' => $category,
-            'year' => $year,
-        ], 10);
+        $results = $this->publicArticleService->searchArticles($filters, 10);
 
         $viewModel = new PublicJournalViewModel(
             searchQuery: $query,
@@ -302,5 +293,18 @@ class PublicJournalController extends Controller
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.announcements.show', compact('announcement', 'viewModel', 'journal'));
+    }
+
+    /** @return array{q?: ?string, category?: ?string, year?: int|string|null} */
+    private function searchFilters(Request $request): array
+    {
+        $validator = Validator::make($request->query(), [
+            'q' => ['nullable', 'string'],
+            'category' => ['nullable', 'string'],
+            'year' => ['nullable', 'integer'],
+        ]);
+        abort_if($validator->fails(), 400, 'Parameter pencarian tidak valid.');
+
+        return $validator->validated();
     }
 }
