@@ -446,6 +446,11 @@ class SectionEditorWorkflowTest extends TestCase
         $this->assertEquals('approved', $extension->fresh()->status);
         $this->assertEquals(2, $assignment->fresh()->deadline_version);
         $this->assertEquals($newDueAt->format('Y-m-d H:i'), $assignment->fresh()->review_due_at->format('Y-m-d H:i'));
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'review.extension.approved',
+            'resource_id' => $extension->id,
+            'actor_id' => $this->sectionEditor->id,
+        ]);
     }
 
     public function test_section_editor_tidak_dapat_mengirim_rekomendasi_jika_kuorum_telaah_belum_terpenuhi(): void
@@ -505,6 +510,10 @@ class SectionEditorWorkflowTest extends TestCase
 
     public function test_section_editor_dapat_mengirimkan_rekomendasi_editorial_ke_eic(): void
     {
+        Queue::fake([SendReviewNotice::class]);
+        $editor = User::factory()->create();
+        $this->grantRole($editor, 'editor_in_chief', $this->submission->journal_id);
+
         $round = ReviewRound::create([
             'submission_id' => $this->submission->id,
             'round' => 1,
@@ -533,6 +542,8 @@ class SectionEditorWorkflowTest extends TestCase
             'decision' => 'revisions_required',
             'status' => 'draft',
         ]);
+        Queue::assertPushed(SendReviewNotice::class, fn (SendReviewNotice $job) => $job->email === $editor->email
+            && $job->subject === 'Rekomendasi telaah SIRIDA');
     }
 
     public function test_section_editor_dapat_mengakses_halaman_dashboard(): void
