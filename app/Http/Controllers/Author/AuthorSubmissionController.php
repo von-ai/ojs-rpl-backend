@@ -152,7 +152,7 @@ class AuthorSubmissionController extends Controller
                 }
             }
 
-            if (! $isDraft && ! $request->hasFile('manuscript_file')
+            if (! $isDraft && ! $request->hasFile('manuscript_file') && ! $request->filled('blob_path')
                 && (! $existingDraft || $request->boolean('remove_manuscript') || ! $existingDraft->files()->where('genre', 'manuscript')->exists())) {
                 throw ValidationException::withMessages(['manuscript_file' => 'Berkas manuskrip wajib diunggah.']);
             }
