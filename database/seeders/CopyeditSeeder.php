@@ -493,7 +493,14 @@ class CopyeditSeeder extends Seeder
             ->merge(CopyeditOutput::whereIn('copyedit_id', Copyedit::whereIn('submission_id', $submissions->pluck('id'))->select('id'))->pluck('file_id'))->filter()->unique();
         foreach (FileEntry::whereIn('id', $fileIds)->get() as $entry) {
             $disk = Storage::disk($entry->storage_disk);
-            if (! $disk->exists($entry->storage_path)) {
+            $exists = false;
+            try {
+                $exists = $disk->fileExists($entry->storage_path);
+            } catch (\Throwable) {
+                $exists = false;
+            }
+
+            if (! $exists) {
                 $temporary = tempnam(sys_get_temp_dir(), 'sirida-demo-');
                 $zip = new \ZipArchive;
                 $zip->open($temporary, \ZipArchive::OVERWRITE);
@@ -514,7 +521,25 @@ class CopyeditSeeder extends Seeder
         $disk = Storage::disk($file->storage_disk ?: 'azure');
         $targetBytes = (int) ($file->byte_size ?: 1024);
 
-        if (! $disk->exists($file->storage_path) || (int) $disk->size($file->storage_path) !== $targetBytes) {
+        $exists = false;
+        try {
+            $exists = $disk->fileExists($file->storage_path);
+        } catch (\Throwable) {
+            $exists = false;
+        }
+
+        $needsUpload = ! $exists;
+        if ($exists) {
+            try {
+                if ((int) $disk->size($file->storage_path) !== $targetBytes) {
+                    $needsUpload = true;
+                }
+            } catch (\Throwable) {
+                $needsUpload = true;
+            }
+        }
+
+        if ($needsUpload) {
             $content = $this->generateSampleDocx($file->original_name, $targetBytes);
             $disk->put($file->storage_path, $content);
         }

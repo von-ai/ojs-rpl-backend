@@ -75,6 +75,37 @@ class AzureBlobStorageAdapterTest extends TestCase
         $this->assertStringContainsString('sirida-manuscripts', $disk->url('test.pdf'));
     }
 
+    public function test_adapter_directory_exists_checks_root_correctly(): void
+    {
+        $this->assertTrue($this->adapter->directoryExists(''));
+        $this->assertTrue($this->adapter->directoryExists('.'));
+        $this->assertTrue($this->adapter->directoryExists('/'));
+    }
+
+    public function test_adapter_directory_exists_delegates_to_client(): void
+    {
+        $mockClient = $this->createMock(AzureBlobStorageClient::class);
+        $mockClient->expects($this->once())
+            ->method('directoryExists')
+            ->with('submissions')
+            ->willReturn(true);
+
+        $adapter = new AzureBlobStorageAdapter($mockClient);
+        $this->assertTrue($adapter->directoryExists('submissions'));
+    }
+
+    public function test_adapter_file_exists_delegates_to_client(): void
+    {
+        $mockClient = $this->createMock(AzureBlobStorageClient::class);
+        $mockClient->expects($this->once())
+            ->method('blobExists')
+            ->with('submissions/test.docx')
+            ->willReturn(false);
+
+        $adapter = new AzureBlobStorageAdapter($mockClient);
+        $this->assertFalse($adapter->fileExists('submissions/test.docx'));
+    }
+
     public function test_shared_key_requests_work_against_path_style_azurite(): void
     {
         if (! getenv('RPL_TEST_AZURITE_URL')) {

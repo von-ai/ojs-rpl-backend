@@ -205,6 +205,46 @@ class AzureBlobStorageClient
     }
 
     /**
+     * Memeriksa apakah direktori virtual ada (memiliki minimal 1 blob dengan prefix direktori tersebut).
+     */
+    public function directoryExists(string $path): bool
+    {
+        $normalized = trim($path, '/');
+        if ($normalized === '' || $normalized === '.') {
+            return true;
+        }
+
+        $prefix = $this->resolvePath($normalized.'/');
+        $query = http_build_query([
+            'comp' => 'list',
+            'maxresults' => '1',
+            'prefix' => $prefix,
+            'restype' => 'container',
+        ]);
+        $url = "{$this->baseUrl}/{$this->container}?{$query}";
+
+        try {
+            $signedHeaders = $this->signRequest('GET', $url);
+            $response = $this->http->request('GET', $url, [
+                'headers' => $signedHeaders,
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                return false;
+            }
+
+            $listing = simplexml_load_string((string) $response->getBody(), options: LIBXML_NONET);
+            if ($listing === false) {
+                return false;
+            }
+
+            return isset($listing->Blobs->Blob) && count($listing->Blobs->Blob) > 0;
+        } catch (GuzzleException) {
+            return false;
+        }
+    }
+
+    /**
      * Mengambil metadata / properti blob (HEAD Blob).
      *
      * @return array{size: int, mime: string, last_modified: int}

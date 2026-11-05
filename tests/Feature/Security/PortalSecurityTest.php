@@ -234,6 +234,25 @@ class PortalSecurityTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    public function test_trusted_proxy_forwarded_host_and_aca_domain_are_accepted(): void
+    {
+        config(['app.url' => 'https://sirida.web.id']);
+
+        // 1. Forwarded host from Cloudflare edge proxy
+        $this->withServerVariables([
+            'HTTP_HOST' => 'ca-sirida-web-production.gentlegrass.eastus.azurecontainerapps.io',
+            'HTTP_X_FORWARDED_HOST' => 'sirida.web.id',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'REMOTE_ADDR' => '127.0.0.1',
+        ])->get('/up')->assertOk();
+
+        // 2. Direct ACA FQDN (for internal ingress probes)
+        $this->withServerVariables([
+            'HTTP_HOST' => 'ca-sirida-web-production.gentlegrass.eastus.azurecontainerapps.io',
+            'REMOTE_ADDR' => '127.0.0.1',
+        ])->get('/up')->assertOk();
+    }
+
     public function test_granting_a_reviewer_role_preserves_own_author_access(): void
     {
         $author = User::factory()->create();

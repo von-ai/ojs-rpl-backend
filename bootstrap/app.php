@@ -26,11 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 $hosts = array_merge($hosts, ['localhost', '127.0.0.1', '[::1]']);
             }
 
-            return array_map(fn ($host) => '^'.preg_quote($host).'$', array_filter($hosts));
-        }, subdomains: false);
+            $patterns = array_map(fn ($host) => '^(.+\.)?'.preg_quote($host).'$', array_filter($hosts));
+            $patterns[] = '^.+\.azurecontainerapps\.io$';
+
+            return array_values(array_unique($patterns));
+        }, subdomains: true);
         $middleware->replace(TrustHosts::class, TrustedHosts::class);
-        if ($proxies = env('TRUSTED_PROXIES')) {
-            $middleware->trustProxies(at: array_filter(array_map('trim', explode(',', $proxies))));
+        $proxies = env('TRUSTED_PROXIES', '*');
+        if ($proxies) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_filter(array_map('trim', explode(',', $proxies))));
         }
         $middleware->append(SecurityHeaders::class);
         $middleware->web(prepend: [LoadPlatformSettings::class], append: [EnsureActiveAccount::class, EnforcePlatformPolicy::class]);

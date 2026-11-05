@@ -38,8 +38,11 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function directoryExists(string $path): bool
     {
-        // Dalam Azure Blob (flat namespace), folder bersifat virtual prefix
-        return true;
+        try {
+            return $this->client->directoryExists($path);
+        } catch (Throwable $e) {
+            throw UnableToCheckExistence::forLocation($path, $e);
+        }
     }
 
     public function write(string $path, string $contents, Config $config): void

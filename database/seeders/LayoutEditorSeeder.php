@@ -580,7 +580,14 @@ class LayoutEditorSeeder extends Seeder
     ): FileEntry {
         $disk = Storage::disk('azure');
 
-        if (! $disk->exists($storagePath)) {
+        $exists = false;
+        try {
+            $exists = $disk->fileExists($storagePath);
+        } catch (\Throwable) {
+            $exists = false;
+        }
+
+        if (! $exists) {
             $content = $type === 'pdf'
                 ? $this->generateSamplePdf($originalName, $targetBytes)
                 : $this->generateSampleDocx($originalName, $targetBytes);
