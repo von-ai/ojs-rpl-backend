@@ -384,6 +384,20 @@
             <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed wrap-anywhere">
                 {{ $submission['production_info']['instructions'] }}
             </div>
+            @if($submission['production_info']['galley_download_url'] ?? null)
+                <a href="{{ $submission['production_info']['galley_download_url'] }}" class="block text-xs font-semibold text-brand-maroon hover:underline">
+                    Unduh galai hasil proofreading
+                </a>
+                @if($submission['production_info']['galley_approval_url'])
+                    <form method="POST" action="{{ $submission['production_info']['galley_approval_url'] }}"
+                          data-confirm="Setujui versi galai yang sudah Anda periksa?" data-confirm-title="Setujui galai" data-confirm-type="info">
+                        @csrf
+                        <x-button>Setujui galai</x-button>
+                    </form>
+                @elseif($submission['production_info']['galley_author_approved'])
+                    <p class="text-xs font-semibold text-emerald-700">Galai telah Anda setujui.</p>
+                @endif
+            @endif
         </div>
     @endif
 

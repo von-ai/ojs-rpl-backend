@@ -39,6 +39,8 @@ class AuthorSubmissionDetailViewModel
                     'editorialDecisions.decider',
                     'revisions',
                     'galleys',
+                    'activeGalley.file',
+                    'activeGalley.approvals',
                     'copyedits',
                     'issue',
                 ])
@@ -221,7 +223,7 @@ class AuthorSubmissionDetailViewModel
             'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->buildEditorialFeedback($sub) : null,
             'review_info' => ($sub->status === 'in_review') ? $this->buildReviewInfo($sub) : null,
             'initial_screening' => ($sub->status === 'submitted') ? $this->buildInitialScreeningInfo($sub) : null,
-            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub) : null,
+            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub, $user) : null,
             'publication' => ($sub->status === 'published') ? $this->buildPublicationInfo($sub) : null,
             'declined_info' => ($sub->status === 'declined') ? $this->buildDeclinedInfo($sub) : null,
             'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->buildWithdrawnInfo($sub) : null,
@@ -700,7 +702,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function buildProductionInfo(Submission $sub): array
+    protected function buildProductionInfo(Submission $sub, ?User $user): array
     {
         $issue = $sub->issue;
         $targetIssue = $issue ? ($issue->title ?: 'Volume '.$issue->volume.' Nomor '.$issue->number.' ('.$issue->year.')') : 'Edisi Mendatang (2026)';
@@ -711,6 +713,12 @@ class AuthorSubmissionDetailViewModel
         $hasGalley = $sub->galleys->isNotEmpty();
         $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
 
+        $galley = $sub->activeGalley;
+        $canReviewGalley = $user?->id === $sub->author_id && $galley?->readyForAuthorSignoff();
+        $authorApproved = $canReviewGalley && $galley->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
+            && $approval->invalidated_at === null && $approval->approved_by === $sub->author_id
+            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256);
+
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
             'decision' => 'Naskah Diterima untuk Publikasi',
@@ -718,7 +726,10 @@ class AuthorSubmissionDetailViewModel
             'copyediting_status' => $copyeditStatus,
             'layout_status' => $layoutStatus,
             'proofreading_deadline' => now()->addDays(7)->format('d M Y'),
-            'galley_preview_ready' => $hasGalley,
+            'galley_preview_ready' => $canReviewGalley,
+            'galley_download_url' => $canReviewGalley ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null,
+            'galley_approval_url' => $canReviewGalley && ! $authorApproved ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null,
+            'galley_author_approved' => $authorApproved,
             'instructions' => 'Penulis dimohon untuk memeriksa berkas galai cetak sementara (galley proof) guna memastikan tidak ada kesalahan tipografi, rumus, atau tabel sebelum artikel diterbitkan secara resmi.',
         ];
     }

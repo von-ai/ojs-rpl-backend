@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Author\StoreSubmissionRequest;
 use App\Models\CopyeditApproval;
 use App\Models\FileEntry;
+use App\Models\Galley;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\SubmissionContributor;
@@ -15,6 +16,7 @@ use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Services\Author\AuthorSubmissionService;
 use App\Services\Author\DirectManuscriptUpload;
+use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\Payment\ArticlePaymentService;
 use App\Services\PrivateFileService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
@@ -572,6 +574,40 @@ class AuthorSubmissionController extends Controller
                 ->route('author.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    public function downloadProofreadGalley(Request $request, string $id, string $galleyId): StreamedResponse
+    {
+        $galley = $this->findGalleyForSignoff($request, $id, $galleyId);
+
+        return app(PrivateFileService::class)->stream($galley->file);
+    }
+
+    public function approveProofreadGalley(Request $request, string $id, string $galleyId, LayoutEditorService $layout): RedirectResponse
+    {
+        $validated = $request->validate(['note' => ['nullable', 'string', 'max:2000']]);
+        $galley = $this->findGalleyForSignoff($request, $id, $galleyId);
+
+        try {
+            $layout->authorSignoff($galley, $request->user(), $validated['note'] ?? null);
+
+            return redirect()->route('author.submissions.show', $galley->submission_id)
+                ->with('success', 'Persetujuan galai Anda telah dicatat.');
+        } catch (DomainException $e) {
+            return redirect()->route('author.submissions.show', $galley->submission_id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    private function findGalleyForSignoff(Request $request, string $id, string $galleyId): Galley
+    {
+        $submission = $this->findAuthorSubmission($id, $request->user());
+        abort_unless($submission && $submission->author_id === $request->user()->id
+            && in_array($submission->status, ['accepted', 'in_production'], true), 404);
+        $galley = $submission->activeGalley;
+        abort_unless($galley && $galley->id === $galleyId && $galley->readyForAuthorSignoff(), 404);
+
+        return $galley;
     }
 
     /**
