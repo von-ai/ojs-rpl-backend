@@ -1,5 +1,7 @@
 # SIRIDA — Dokumentasi Skema Basis Data & ERD (Entity Relationship Diagram)
 
+Dokumen ini memuat rancangan skema. Hasil pembandingan 5 November 2026 menemukan perbedaan dengan bagian aktif FigJam dan skema hasil migrasi aplikasi. Daftar perbedaan serta pemetaan pengujian tersedia dalam [pemeriksaan CI/CD dan kebutuhan](ci-cd.md#perbandingan-skema-dengan-erd).
+
 **Baseline Arsitektur:** MySQL 8.0 / TiDB Cloud Serverless (InnoDB wire protocol) + Redis in-memory • Framework Laravel 13 (PHP 8.4)  
 **Revisi Desain:** 22 Oktober 2026 • **Arsitektur:** Modular Monolith Laravel 13 (Blade + ViewModel Pattern OOP)  
 **Metrik Desain:** 58 Tabel MySQL • 8 Modul Domain • 94 Relasi Foreign Key • Redis Key-Value Ledger

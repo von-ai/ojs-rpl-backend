@@ -1,13 +1,16 @@
 name: Validate Laravel Backend
 
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   laravel:
@@ -29,13 +32,20 @@ jobs:
         options: >-
           --memory=4g --health-cmd="clamdcheck.sh"
           --health-interval=10s --health-timeout=10s --health-retries=30 --health-start-period=120s
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
+        env:
+          AZURITE_ACCOUNTS: siridanotion:c2lyaWRhLXRlc3Qtb25seS1henVyaXRlLWtleQ==
+        ports: ["13321:10000"]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: '8.4'
           extensions: mbstring, pdo_sqlite, pdo_mysql, pdo_pgsql, zip
-          coverage: none
+          coverage: pcov
           tools: composer:v2
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist --no-progress
@@ -48,13 +58,74 @@ jobs:
       - run: npm run build
       - run: composer audit
       - run: npm audit
-      - run: composer test
+      - name: Prepare private Azurite container
+        run: |
+          python3 - <<'PY'
+          import base64, email.utils, hashlib, hmac, urllib.request
+          account = 'siridanotion'
+          path = f'/{account}/sirida-manuscripts'
+          date = email.utils.formatdate(usegmt=True)
+          version = '2021-08-06'
+          canonical = f'x-ms-date:{date}\nx-ms-version:{version}\n/{account}{path}\nrestype:container'
+          signature = base64.b64encode(hmac.new(
+              b'sirida-test-only-azurite-key',
+              ('PUT\n' + '\n' * 11 + canonical).encode(),
+              hashlib.sha256,
+          ).digest()).decode()
+          request = urllib.request.Request(
+              'http://127.0.0.1:13321' + path + '?restype=container',
+              method='PUT',
+              headers={'x-ms-date': date, 'x-ms-version': version,
+                       'Authorization': f'SharedKey {account}:{signature}', 'Content-Length': '0'},
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              assert response.status == 201
+          PY
+      - name: Test SQLite and collect coverage
+        run: |
+          mkdir -p build/test-results build/coverage
+          composer test -- --log-junit build/test-results/sqlite.xml --coverage-clover build/coverage/clover.xml --coverage-text --only-summary-for-coverage-text
         env:
           PAO_DISABLE: '1'
-      - name: Test MySQL and real ClamAV
-        run: vendor/bin/phpunit --no-progress
+      - name: Test MySQL, real ClamAV and Azurite
+        run: vendor/bin/phpunit --no-progress --log-junit build/test-results/mysql.xml
         env:
           PAO_DISABLE: '1'
           RPL_TEST_MYSQL: '1'
           RPL_TEST_DB_PORT: '3306'
           RPL_TEST_CLAMD_HOST: 127.0.0.1
+          RPL_TEST_AZURITE_URL: http://127.0.0.1:13321/siridanotion
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-results
+          path: |
+            build/test-results
+            build/coverage
+          retention-days: 7
+
+  container:
+    needs: laravel
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build production image
+        run: docker build --tag sirida-ci:validation .
+      - name: Check production image contents
+        run: |
+          docker run --rm --entrypoint sh sirida-ci:validation -c '
+            test ! -e .env &&
+            test ! -d terraform &&
+            test ! -d node_modules &&
+            test ! -d vendor/phpunit &&
+            test -d storage/app/private &&
+            test -z "$(find storage -type f ! -name .gitignore -print -quit)"
+          '
+      - name: Check production PHP dependencies
+        run: docker run --rm --entrypoint composer sirida-ci:validation check-platform-reqs --no-dev
+      - name: Check production application boot
+        run: docker run --rm --env APP_ENV=production --env APP_DEBUG=false sirida-ci:validation php artisan --version
