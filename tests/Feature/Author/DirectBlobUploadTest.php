@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\FileEntry;
 use App\Models\User;
 use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DirectBlobUploadTest extends TestCase
@@ -59,10 +61,10 @@ class DirectBlobUploadTest extends TestCase
 
         $data = $response->json();
         $this->assertTrue($data['success']);
-        $this->assertStringStartsWith('manuscripts/', $data['blob_path']);
+        $this->assertStringStartsWith('staging/manuscripts/', $data['blob_path']);
         $this->assertStringContainsString('naskah-riset-inovasi-daerah.docx', $data['blob_path']);
         $this->assertSame('BlockBlob', $data['headers']['x-ms-blob-type']);
-        $this->assertStringContainsString('sp=rcw', $data['upload_url']);
+        $this->assertStringContainsString('sp=c&', $data['upload_url']);
         $this->assertStringContainsString('sig=', $data['upload_url']);
     }
 
@@ -110,6 +112,12 @@ class DirectBlobUploadTest extends TestCase
      */
     public function test_pengajuan_naskah_berhasil_menggunakan_blob_path_direct_sas(): void
     {
+        $bytes = "%PDF-1.4\n% Manuskrip uji\n%%EOF";
+        $path = $this->postJson(route('author.submissions.upload-session'), [
+            'filename' => 'naskah-riset.pdf', 'byte_size' => strlen($bytes),
+        ])->assertOk()->json('blob_path');
+        Storage::fake('azure');
+
         $payload = [
             'action' => 'submit',
             'section_id' => 'sec-riset-orisinil',
@@ -118,7 +126,7 @@ class DirectBlobUploadTest extends TestCase
             'abstract' => 'Penelitian ini mendesain arsitektur sensor pintar untuk tempat pembuangan akhir di Makassar guna efisiensi logistik armada kebersihan daerah.',
             'keywords' => ['Smart City', 'Pengelolaan Sampah', 'IoT', 'Makassar'],
             'subject_area' => 'Teknologi Lingkungan Perkotaan',
-            'blob_path' => 'manuscripts/test-uuid-1234/naskah-riset.pdf',
+            'blob_path' => $path,
             'blob_name' => 'naskah-riset.pdf',
             'blob_size' => 3145728,
             'blob_mime' => 'application/pdf',
@@ -134,24 +142,32 @@ class DirectBlobUploadTest extends TestCase
             ],
         ];
 
-        $response = $this->post(route('author.submissions.store'), $payload);
+        $this->postJson(route('author.submissions.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('manuscript_file');
+        $this->assertDatabaseCount('submissions', 0);
 
-        $response->assertRedirect(route('author.submissions.index'));
-        $response->assertSessionHas('success');
+        Storage::disk('azure')->put($path, $bytes);
+        $owner = $this->user;
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('author.submissions.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('manuscript_file');
 
-        $this->assertDatabaseHas('files', [
-            'storage_disk' => 'azure',
-            'storage_path' => 'manuscripts/test-uuid-1234/naskah-riset.pdf',
-            'original_name' => 'naskah-riset.pdf',
-            'byte_size' => 3145728,
-            'mime_type' => 'application/pdf',
-            'checksum_sha256' => 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        ]);
+        $this->actingAs($owner)->post(route('author.submissions.store'), $payload)
+            ->assertRedirect(route('author.submissions.index'))->assertSessionHas('success');
 
-        $this->assertDatabaseHas('submissions', [
-            'title' => 'Optimalisasi Pengelolaan Sampah Terpadu Berbasis IoT di Kota Makassar',
-            'status' => 'submitted',
-        ]);
+        $file = FileEntry::sole();
+        $this->assertSame('pending', $file->virus_scan_status);
+        $this->assertSame('naskah-riset.pdf', $file->original_name);
+        $this->assertSame(strlen($bytes), $file->byte_size);
+        $this->assertSame(hash('sha256', $bytes), $file->checksum_sha256);
+        $this->assertStringStartsWith('manuscripts/sealed/', $file->storage_path);
+        Storage::disk('azure')->put($path, 'attempted replacement');
+        $this->assertSame($bytes, Storage::disk('azure')->get($file->storage_path));
+        $this->assertDatabaseHas('jobs', ['queue' => 'file-security']);
+
+        $this->postJson(route('author.submissions.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('manuscript_file');
+        $this->assertDatabaseCount('submissions', 1);
     }
 
     /**

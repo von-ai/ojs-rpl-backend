@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Eic;
 
+use App\Jobs\SendReviewNotice;
 use App\Models\DeskReview;
 use App\Models\EditorialDecision;
 use App\Models\FileEntry;
@@ -22,6 +23,7 @@ use App\Models\UserRole;
 use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class EditorInChiefWorkflowTest extends TestCase
@@ -195,6 +197,7 @@ class EditorInChiefWorkflowTest extends TestCase
      */
     public function test_eic_dapat_menugaskan_section_editor(): void
     {
+        Queue::fake([SendReviewNotice::class]);
         $this->actingAs($this->eic);
 
         $response = $this->post(route('eic.submissions.assign-editor', $this->submission->id), [
@@ -214,6 +217,8 @@ class EditorInChiefWorkflowTest extends TestCase
 
         $this->submission->refresh();
         $this->assertSame('in_review', $this->submission->status);
+        Queue::assertPushed(SendReviewNotice::class, fn (SendReviewNotice $job) => $job->email === $this->sectionEditor->email
+            && $job->subject === 'Penugasan Editor Bagian SIRIDA');
     }
 
     /**
@@ -221,6 +226,7 @@ class EditorInChiefWorkflowTest extends TestCase
      */
     public function test_keputusan_revisi_wajib_sertakan_due_date(): void
     {
+        Queue::fake([SendReviewNotice::class]);
         $this->actingAs($this->eic);
 
         // Tanpa due date -> ditolak validasi
@@ -251,6 +257,8 @@ class EditorInChiefWorkflowTest extends TestCase
             'decision' => 'revisions_required',
             'status' => 'sent',
         ]);
+        Queue::assertPushed(SendReviewNotice::class, fn (SendReviewNotice $job) => $job->email === $this->author->email
+            && $job->subject === 'Keputusan editorial SIRIDA');
     }
 
     /**

@@ -1,6 +1,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const STORAGE_KEY = 'sirida_submission_draft_v1';
+    const draftOwner = @js(auth()->id());
+    const STORAGE_KEY = `sirida_submission_draft_v2:${draftOwner}`;
     let currentStep = 1;
     const totalSteps = 5;
 
@@ -429,17 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {
         contributors = [];
     }
-    if (!contributors.length) {
-        contributors = [{
-            given_name: 'Andi Muhammad',
-            family_name: 'Ilyas',
-            email: 'andi.ilyas@unhas.ac.id',
-            affiliation: 'Universitas Hasanuddin, Makassar',
-            orcid_id: '0000-0002-1825-0097',
-            sequence: 1,
-            corresponding: true
-        }];
-    }
+    const initialContributors = JSON.stringify(contributors);
     const contributorsHiddenInput = document.getElementById('contributors-hidden-input');
     const contributorsContainer = document.getElementById('contributors-list-container');
     const btnOpenAddAuthor = document.getElementById('btn-open-add-author');
@@ -502,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     const DB_NAME = 'brida_ojs_draft_store';
     const DB_VERSION = 1;
-    const DB_FILE_KEY = 'manuscript_file';
+    const DB_FILE_KEY = `manuscript_file:${draftOwner}`;
 
     function formatFileSize(bytes) {
         if (!bytes || isNaN(bytes) || bytes <= 0) return '0 KB';
@@ -617,21 +608,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function handleUploadFailure(message) {
+    async function handleUploadFailure() {
         isUploadingToAzure = false;
         currentUploadXhr = null;
         if (dropzoneUploading) dropzoneUploading.classList.add('hidden');
-        updateDropzoneUI(false);
-        if (fileErrorMsg) {
-            fileErrorMsg.textContent = message;
-            fileErrorMsg.classList.remove('hidden');
-        }
         if (blobPathInput) blobPathInput.value = '';
         if (blobNameInput) blobNameInput.value = '';
         if (blobSizeInput) blobSizeInput.value = '';
         if (blobMimeInput) blobMimeInput.value = '';
         if (blobChecksumInput) blobChecksumInput.value = '';
-        if (manuscriptInput) manuscriptInput.value = '';
+
+        const file = manuscriptInput?.files?.[0];
+        updateDropzoneUI(!!file, file?.name, file?.size);
+        if (file) {
+            await saveFileToDraftDB(file);
+            saveDraftToStorage();
+        }
+        if (fileErrorMsg) {
+            fileErrorMsg.textContent = 'Unggahan langsung gagal. Berkas yang dipilih akan dikirim bersama formulir.';
+            fileErrorMsg.classList.remove('hidden');
+        }
     }
 
     async function uploadFileDirectToAzure(file) {
@@ -705,16 +701,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (blobSizeInput) blobSizeInput.value = sessionData.byte_size;
                     if (blobMimeInput) blobMimeInput.value = sessionData.mime_type;
 
-                    try {
-                        const buffer = await file.arrayBuffer();
-                        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-                        const hashArray = Array.from(new Uint8Array(hashBuffer));
-                        const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                        if (blobChecksumInput) blobChecksumInput.value = hex;
-                    } catch (e) {
-                        console.warn('Browser SHA256 calc error:', e);
-                    }
-
                     updateDropzoneUI(true, file.name, file.size);
                     await saveFileToDraftDB(file);
                     saveDraftToStorage();
@@ -723,12 +709,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         window.toast.success('Berkas naskah berhasil diunggah langsung ke Azure Blob Storage.', 'Unggah Sukses');
                     }
                 } else {
-                    handleUploadFailure('Gagal mengunggah berkas ke Azure Blob Storage (HTTP ' + xhr.status + ').');
+                    await handleUploadFailure();
                 }
             };
 
-            xhr.onerror = function () {
-                handleUploadFailure('Terjadi gangguan koneksi saat mengunggah langsung ke Azure Blob Storage.');
+            xhr.onerror = async function () {
+                await handleUploadFailure();
             };
 
             xhr.onabort = function () {
@@ -739,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             xhr.send(file);
         } catch (err) {
-            handleUploadFailure(err.message || 'Gagal memulai sesi unggah ke Azure Blob Storage.');
+            await handleUploadFailure();
         }
     }
 
@@ -1037,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', function () {
             card.setAttribute('draggable', 'true');
             card.setAttribute('data-index', index);
 
-            const fullName = (author.given_name ? author.given_name + ' ' : '') + author.family_name;
+            const fullName = [author.given_name, author.family_name].filter(Boolean).join(' ');
             const isFirst = index === 0;
             const canDelete = contributors.length > 1;
 
@@ -1294,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const email = document.getElementById('input-author-email').value.trim();
             const affiliation = document.getElementById('input-author-affiliation').value.trim();
             const orcid = document.getElementById('input-author-orcid').value.trim();
-            const isCorresponding = document.getElementById('input-author-corresponding').checked;
+            const isCorresponding = contributors.length === 0 || document.getElementById('input-author-corresponding').checked;
             const isFirstChoice = document.getElementById('input-author-first')?.checked || false;
             const errorDiv = document.getElementById('modal-author-error');
 
@@ -1324,8 +1310,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const newAuthor = {
-                given_name: givenName,
-                family_name: familyName,
+                given_name: givenName || familyName,
+                family_name: givenName ? familyName : '',
                 email: email,
                 affiliation: affiliation,
                 orcid_id: orcid,
@@ -1516,6 +1502,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     type: 'warning'
                 });
                 return false;
+            }
         } else if (step === 2) {
             if (isUploadingToAzure) {
                 await window.showAlertModal({
@@ -1633,7 +1620,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function clearDraftStorage() {
         try {
             sessionStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(STORAGE_KEY);
             clearFileFromDraftDB();
         } catch (e) {}
     }
@@ -1788,10 +1774,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasKeywords = Array.isArray(data.keywords) && data.keywords.length > 0;
         const hasSubject = Boolean(data.subject_area && data.subject_area.trim());
         const hasReferences = Boolean(data.references && data.references.trim());
-        const hasExtraContributors = Array.isArray(data.contributors) && data.contributors.length > 1;
+        const hasChangedContributors = Array.isArray(data.contributors) && JSON.stringify(data.contributors) !== initialContributors;
         const hasFile = Boolean(data.has_file);
 
-        return hasSection || hasChecklist || hasComments || hasTitle || hasAbstract || hasKeywords || hasSubject || hasReferences || hasExtraContributors || hasFile;
+        return hasSection || hasChecklist || hasComments || hasTitle || hasAbstract || hasKeywords || hasSubject || hasReferences || hasChangedContributors || hasFile;
     }
 
     function saveDraftToStorage() {
@@ -1860,7 +1846,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         try {
-            const saved = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
+            const saved = sessionStorage.getItem(STORAGE_KEY);
             if (!saved) return;
             const draftData = JSON.parse(saved);
             if (!draftData || !hasMeaningfulDraft(draftData)) {
@@ -1916,29 +1902,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderContributors();
             }
 
-            // Restore Azure Blob metadata if present
-            if (draftData.blob_path) {
-                if (blobPathInput) blobPathInput.value = draftData.blob_path;
-                if (blobNameInput) blobNameInput.value = draftData.blob_name || draftData.file_name || '';
-                if (blobSizeInput) blobSizeInput.value = draftData.blob_size || draftData.file_size || '';
-                if (blobMimeInput) blobMimeInput.value = draftData.blob_mime || '';
-                if (blobChecksumInput) blobChecksumInput.value = draftData.blob_checksum || '';
-                updateDropzoneUI(true, draftData.blob_name || draftData.file_name || 'naskah.pdf', draftData.blob_size || draftData.file_size || 0);
-            } else {
-                // Restore manuscript file from IndexedDB
-                const storedFile = await getFileFromDraftDB();
-                if (storedFile && manuscriptInput) {
-                    try {
-                        const dt = new DataTransfer();
-                        dt.items.add(storedFile);
-                        manuscriptInput.files = dt.files;
-                    } catch (dtError) {
-                        console.warn('DataTransfer tidak didukung oleh browser:', dtError);
-                    }
+            // Restore the file itself. A cached upload session can have expired.
+            const storedFile = await getFileFromDraftDB();
+            if (storedFile && manuscriptInput) {
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(storedFile);
+                    manuscriptInput.files = dt.files;
                     updateDropzoneUI(true, storedFile.name, storedFile.size);
                     if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
-                } else if (draftData.file_name && manuscriptInput) {
-                    updateDropzoneUI(true, draftData.file_name, draftData.file_size || 0);
+                } catch (dtError) {
+                    console.warn('DataTransfer tidak didukung oleh browser:', dtError);
                 }
             }
 
@@ -2017,15 +1991,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderKeywordChips();
 
             // Reset Kontributor
-            contributors = [{
-                given_name: 'Andi Muhammad',
-                family_name: 'Ilyas',
-                email: 'andi.ilyas@unhas.ac.id',
-                affiliation: 'Universitas Hasanuddin, Makassar',
-                orcid_id: '0000-0002-1825-0097',
-                sequence: 1,
-                corresponding: true
-            }];
+            contributors = JSON.parse(initialContributors);
             renderContributors();
 
             // Kembalikan ke Langkah 1

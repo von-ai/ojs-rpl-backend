@@ -39,6 +39,8 @@ class AuthorSubmissionDetailViewModel
                     'editorialDecisions.decider',
                     'revisions',
                     'galleys',
+                    'activeGalley.file',
+                    'activeGalley.approvals',
                     'copyedits',
                     'issue',
                 ])
@@ -69,7 +71,7 @@ class AuthorSubmissionDetailViewModel
                 $sub = $query->first();
 
                 if ($sub) {
-                    return $this->formatDatabaseSubmission($sub);
+                    return $this->formatDatabaseSubmission($sub, $authUser);
                 }
             }
         } catch (\Throwable $e) {
@@ -87,7 +89,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function formatDatabaseSubmission(Submission $sub): array
+    protected function formatDatabaseSubmission(Submission $sub, ?User $user): array
     {
         $isDraft = $sub->status === 'draft';
         $sectionName = $sub->section?->name ?? 'Artikel Riset Orisinil';
@@ -221,14 +223,14 @@ class AuthorSubmissionDetailViewModel
             'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->buildEditorialFeedback($sub) : null,
             'review_info' => ($sub->status === 'in_review') ? $this->buildReviewInfo($sub) : null,
             'initial_screening' => ($sub->status === 'submitted') ? $this->buildInitialScreeningInfo($sub) : null,
-            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub) : null,
+            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub, $user) : null,
             'publication' => ($sub->status === 'published') ? $this->buildPublicationInfo($sub) : null,
             'declined_info' => ($sub->status === 'declined') ? $this->buildDeclinedInfo($sub) : null,
             'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->buildWithdrawnInfo($sub) : null,
             'can_withdraw' => $this->canWithdrawSubmission($sub, $stageNumber),
             'cannot_withdraw_reason' => $this->cannotWithdrawReason($sub, $stageNumber),
             'is_draft' => $isDraft,
-            'payment_info' => $this->buildPaymentInfo($sub),
+            'payment_info' => $this->buildPaymentInfo($sub, $user),
             'peer_reviews' => $this->buildAnonymousPeerReviews(
                 $sub,
                 $sub->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->sortByDesc('sent_at')->first()
@@ -700,7 +702,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    protected function buildProductionInfo(Submission $sub): array
+    protected function buildProductionInfo(Submission $sub, ?User $user): array
     {
         $issue = $sub->issue;
         $targetIssue = $issue ? ($issue->title ?: 'Volume '.$issue->volume.' Nomor '.$issue->number.' ('.$issue->year.')') : 'Edisi Mendatang (2026)';
@@ -711,6 +713,12 @@ class AuthorSubmissionDetailViewModel
         $hasGalley = $sub->galleys->isNotEmpty();
         $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
 
+        $galley = $sub->activeGalley;
+        $canReviewGalley = $user?->id === $sub->author_id && $galley?->readyForAuthorSignoff();
+        $authorApproved = $canReviewGalley && $galley->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
+            && $approval->invalidated_at === null && $approval->approved_by === $sub->author_id
+            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256);
+
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
             'decision' => 'Naskah Diterima untuk Publikasi',
@@ -718,7 +726,10 @@ class AuthorSubmissionDetailViewModel
             'copyediting_status' => $copyeditStatus,
             'layout_status' => $layoutStatus,
             'proofreading_deadline' => now()->addDays(7)->format('d M Y'),
-            'galley_preview_ready' => $hasGalley,
+            'galley_preview_ready' => $canReviewGalley,
+            'galley_download_url' => $canReviewGalley ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null,
+            'galley_approval_url' => $canReviewGalley && ! $authorApproved ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null,
+            'galley_author_approved' => $authorApproved,
             'instructions' => 'Penulis dimohon untuk memeriksa berkas galai cetak sementara (galley proof) guna memastikan tidak ada kesalahan tipografi, rumus, atau tabel sebelum artikel diterbitkan secara resmi.',
         ];
     }
@@ -967,7 +978,7 @@ class AuthorSubmissionDetailViewModel
      *
      * @return array<string, mixed>
      */
-    public function buildPaymentInfo(Submission $sub): array
+    public function buildPaymentInfo(Submission $sub, ?User $user = null): array
     {
         $journal = $sub->journal ?? Journal::first();
         $isPaid = $journal ? $journal->isPaidApc() : false;
@@ -1017,6 +1028,9 @@ class AuthorSubmissionDetailViewModel
             'verified_at_formatted' => $payment?->verified_at ? $payment->verified_at->format('d M Y, H:i').' WITA' : null,
             'can_upload' => $canUpload,
             'has_proof' => (bool) ($payment && $payment->file_entry_id),
+            'receipt_url' => $payment?->isVerified() && $payment->verified_at && $payment->user_id === $user?->id
+                ? route('author.submissions.payment.receipt', $sub->id)
+                : null,
             'proof_download_url' => ($payment && $payment->file_entry_id) ? route('author.submissions.payment.proof', $sub->id) : null,
         ];
     }

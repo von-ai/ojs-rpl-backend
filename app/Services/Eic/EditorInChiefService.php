@@ -95,6 +95,14 @@ class EditorInChiefService
                 $submission->version = (int) $submission->version + 1;
                 $submission->save();
 
+                if ($data['status'] !== 'passed' && $submission->author) {
+                    SendReviewNotice::dispatch(
+                        $submission->author->email,
+                        'Hasil skrining awal SIRIDA',
+                        'Hasil pemeriksaan awal tersedia di portal penulis. '.route('author.submissions.show', $submission->id)
+                    );
+                }
+
                 return $deskReview;
             });
         });
@@ -154,6 +162,12 @@ class EditorInChiefService
                     $submission->version = (int) $submission->version + 1;
                     $submission->save();
                 }
+
+                SendReviewNotice::dispatch(
+                    $sectionEditor->email,
+                    'Penugasan Editor Bagian SIRIDA',
+                    'Anda ditugaskan menangani naskah. '.route('section-editor.submissions.show', $submission->id)
+                );
 
                 return $assignment;
             });
@@ -250,6 +264,15 @@ class EditorInChiefService
                 $roundIds = $submission->reviewRounds()->where('status', 'active')->pluck('id');
                 ReviewAssignment::whereIn('review_round_id', $roundIds)->whereIn('status', ['invited', 'accepted', 'overdue'])->update(['status' => 'cancelled', 'version' => DB::raw('version + 1')]);
                 $submission->reviewRounds()->whereIn('id', $roundIds)->update(['status' => 'closed', 'closed_at' => now(), 'version' => DB::raw('version + 1')]);
+
+                if ($submission->author) {
+                    $deadline = $dueAt ? ' Batas revisi: '.$dueAt->copy()->setTimezone('Asia/Makassar')->format('d M Y, H:i').' WITA.' : '';
+                    SendReviewNotice::dispatch(
+                        $submission->author->email,
+                        'Keputusan editorial SIRIDA',
+                        'Keputusan resmi tersedia di portal penulis.'.$deadline.' '.route('author.submissions.show', $submission->id)
+                    );
+                }
 
                 return $decision;
             });

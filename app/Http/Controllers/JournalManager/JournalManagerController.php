@@ -296,7 +296,11 @@ class JournalManagerController extends Controller
         $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Manajer Jurnal.');
         $verifier = Auth::user() ?? User::firstOrFail();
 
-        $this->articlePaymentService->verifyPayment($payment, $verifier, 'manager', $notes);
+        try {
+            $this->articlePaymentService->verifyPayment($payment, $verifier, 'manager', $notes);
+        } catch (DomainException $e) {
+            return back()->withErrors(['payment' => $e->getMessage()]);
+        }
 
         return back()->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi (Status: Lunas).");
     }
@@ -325,7 +329,11 @@ class JournalManagerController extends Controller
         $reason = (string) $request->input('reason');
         $verifier = Auth::user() ?? User::firstOrFail();
 
-        $this->articlePaymentService->rejectPayment($payment, $verifier, 'manager', $reason);
+        try {
+            $this->articlePaymentService->rejectPayment($payment, $verifier, 'manager', $reason);
+        } catch (DomainException $e) {
+            return back()->withErrors(['payment' => $e->getMessage()]);
+        }
 
         return back()->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.");
     }
@@ -358,7 +366,11 @@ class JournalManagerController extends Controller
         $reason = (string) $request->input('waiver_reason');
         $verifier = Auth::user() ?? User::firstOrFail();
 
-        $this->articlePaymentService->waivePayment($payment, $verifier, 'manager', $reason);
+        try {
+            $this->articlePaymentService->waivePayment($payment, $verifier, 'manager', $reason);
+        } catch (DomainException $e) {
+            return back()->withErrors(['payment' => $e->getMessage()]);
+        }
 
         return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
     }

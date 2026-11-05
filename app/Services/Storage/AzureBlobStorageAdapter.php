@@ -6,6 +6,7 @@ namespace App\Services\Storage;
 
 use DateTimeInterface;
 use League\Flysystem\Config;
+use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\UnableToCheckExistence;
@@ -143,7 +144,22 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function listContents(string $path, bool $deep): iterable
     {
-        return [];
+        $prefix = $path === '' ? '' : rtrim($path, '/').'/';
+        $directories = [];
+        foreach ($this->client->listBlobs($path) as $blob) {
+            $relativePath = substr($blob['path'], strlen($prefix));
+            if (! $deep && str_contains($relativePath, '/')) {
+                $directory = $prefix.strstr($relativePath, '/', true);
+                if (! isset($directories[$directory])) {
+                    yield new DirectoryAttributes($directory);
+                    $directories[$directory] = true;
+                }
+
+                continue;
+            }
+
+            yield new FileAttributes($blob['path'], $blob['size'], lastModified: $blob['modified']);
+        }
     }
 
     public function move(string $source, string $destination, Config $config): void
@@ -188,7 +204,7 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
      */
     public function temporaryUploadUrl(string $path, DateTimeInterface $expiration, array $options = []): array
     {
-        $url = $this->client->generateSasUrl($path, $expiration, 'rcw');
+        $url = $this->client->generateSasUrl($path, $expiration, 'c');
 
         return [
             'url' => $url,

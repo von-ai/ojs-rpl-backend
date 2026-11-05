@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class SectionEditorService
@@ -270,6 +271,7 @@ class SectionEditorService
 
             return DB::transaction(function () use ($extension, $decision, $reason, $editor): ReviewExtension {
                 $assignment = $extension->assignment;
+                $previousDueAt = $assignment->review_due_at;
 
                 $extension->update([
                     'status' => $decision,
@@ -290,6 +292,26 @@ class SectionEditorService
                         'version' => $assignment->version + 1,
                     ]);
                 }
+
+                $timestamp = now();
+                DB::table('audit_logs')->insert([
+                    'id' => (string) Str::ulid(),
+                    'journal_id' => $assignment->reviewRound->submission->journal_id,
+                    'actor_id' => $editor->id,
+                    'actor_type' => 'user',
+                    'effective_role' => 'section_editor',
+                    'action' => 'review.extension.'.$decision,
+                    'resource_type' => 'review_extension',
+                    'resource_id' => $extension->id,
+                    'before_after' => json_encode([
+                        'before' => ['status' => 'pending', 'due_at' => $previousDueAt],
+                        'after' => ['status' => $decision, 'due_at' => $assignment->review_due_at],
+                    ], JSON_THROW_ON_ERROR),
+                    'reason' => $reason,
+                    'occurred_at' => $timestamp,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ]);
 
                 return $extension;
             });
@@ -351,6 +373,7 @@ class SectionEditorService
                 }
             }
 
+            $recommendationChanged = $round->se_recommendation !== $recommendation || $round->se_recommendation_note !== $note;
             $round->update([
                 'se_recommendation' => $recommendation,
                 'se_recommendation_note' => $note,
@@ -373,6 +396,20 @@ class SectionEditorService
                     'version' => 1,
                 ]
             );
+
+            if ($recommendationChanged) {
+                $editors = User::query()->where('status', 'active')->whereNotNull('email_verified_at')
+                    ->whereHas('userRoles', fn ($query) => $query->where('role_code', 'editor_in_chief')
+                        ->where('journal_id', $round->submission->journal_id))
+                    ->pluck('email');
+                foreach ($editors as $email) {
+                    SendReviewNotice::dispatch(
+                        $email,
+                        'Rekomendasi telaah SIRIDA',
+                        'Rekomendasi Editor Bagian tersedia di ruang kerja. '.route('eic.submissions.show', $round->submission_id)
+                    );
+                }
+            }
 
             return $round;
         });

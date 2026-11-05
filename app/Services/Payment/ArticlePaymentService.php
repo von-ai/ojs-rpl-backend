@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Payment;
 
+use App\Jobs\SendReviewNotice;
 use App\Models\ArticlePayment;
 use App\Models\FileEntry;
 use App\Models\Journal;
@@ -186,6 +187,15 @@ class ArticlePaymentService
                     'version' => $payment->version + 1,
                 ]);
 
+                $recipient = $payment->user?->email;
+                if ($recipient) {
+                    SendReviewNotice::dispatch(
+                        $recipient,
+                        'Bukti pembayaran APC perlu diperbaiki',
+                        'Alasan penolakan dan formulir unggah ulang tersedia di portal penulis. '.route('author.submissions.show', $payment->submission_id)
+                    );
+                }
+
                 return $payment->fresh();
             });
         });
@@ -199,6 +209,10 @@ class ArticlePaymentService
         return DB::transaction(function () use ($payment, $verifier, $role, $reason) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
+
+            if ($payment->isVerified()) {
+                throw new DomainException('Pembayaran yang sudah diverifikasi tidak dapat dibebaskan.');
+            }
 
             if (trim($reason) === '') {
                 throw new DomainException('Alasan pembebasan biaya (waiver) wajib diisi.');

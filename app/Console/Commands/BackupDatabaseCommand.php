@@ -33,11 +33,18 @@ class BackupDatabaseCommand extends Command
 
         $filename = $this->option('filename');
         $disk = $this->option('disk');
+        $retentionDays = filter_var($this->option('prune-days'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($retentionDays === false) {
+            $this->error('Retensi cadangan harus berupa jumlah hari positif.');
+
+            return self::INVALID;
+        }
 
         try {
             $result = $backupService->backup(
                 targetFilename: is_string($filename) ? $filename : null,
-                diskName: is_string($disk) ? $disk : null
+                diskName: is_string($disk) ? $disk : null,
+                retentionDays: $retentionDays
             );
 
             $this->newLine();

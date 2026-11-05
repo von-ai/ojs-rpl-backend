@@ -27,7 +27,7 @@ class ScanFile implements ShouldQueue
     public function handle(ClamAvScanner $scanner): void
     {
         $file = FileEntry::findOrFail($this->fileId);
-        if ($file->virus_scan_status === 'clean' || $file->virus_scan_status === 'infected') {
+        if (! in_array($file->virus_scan_status, ['pending', 'error'], true)) {
             return;
         }
         $temporary = tmpfile();
@@ -46,14 +46,14 @@ class ScanFile implements ShouldQueue
             }
             $path = stream_get_meta_data($temporary)['uri'];
             if (! $file->checksum_sha256 || ! hash_equals($file->checksum_sha256, hash_file('sha256', $path)) || filesize($path) !== $file->byte_size) {
-                $file->update(['virus_scan_status' => 'error']);
+                FileEntry::whereKey($file->id)->whereIn('virus_scan_status', ['pending', 'error'])->update(['virus_scan_status' => 'error']);
                 throw new RuntimeException('Integritas objek unggahan tidak sesuai.');
             }
             $status = $scanner->scan($path);
             if (! in_array($status, ['clean', 'infected'], true)) {
                 throw new RuntimeException('Hasil pemindaian tidak sah.');
             }
-            FileEntry::whereKey($file->id)->where('checksum_sha256', $file->checksum_sha256)->update([
+            FileEntry::whereKey($file->id)->where('checksum_sha256', $file->checksum_sha256)->whereIn('virus_scan_status', ['pending', 'error'])->update([
                 'virus_scan_status' => $status,
             ]);
         } finally {
@@ -63,6 +63,6 @@ class ScanFile implements ShouldQueue
 
     public function failed(?\Throwable $exception): void
     {
-        FileEntry::whereKey($this->fileId)->whereNotIn('virus_scan_status', ['clean', 'infected'])->update(['virus_scan_status' => 'error']);
+        FileEntry::whereKey($this->fileId)->whereIn('virus_scan_status', ['pending', 'error'])->update(['virus_scan_status' => 'error']);
     }
 }

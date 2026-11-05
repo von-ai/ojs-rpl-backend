@@ -62,7 +62,7 @@ class AzureBlobStorageAdapterTest extends TestCase
 
         $this->assertArrayHasKey('url', $result);
         $this->assertArrayHasKey('headers', $result);
-        $this->assertStringContainsString('sp=rcw', $result['url']);
+        $this->assertStringContainsString('sp=c&', $result['url']);
         $this->assertEquals('BlockBlob', $result['headers']['x-ms-blob-type']);
     }
 
@@ -72,5 +72,31 @@ class AzureBlobStorageAdapterTest extends TestCase
 
         $this->assertInstanceOf(FilesystemAdapter::class, $disk);
         $this->assertStringContainsString('sirida-manuscripts', $disk->url('test.pdf'));
+    }
+
+    public function test_shared_key_requests_work_against_path_style_azurite(): void
+    {
+        if (! getenv('RPL_TEST_AZURITE_URL')) {
+            $this->markTestSkipped('Set RPL_TEST_AZURITE_URL to run the isolated Azurite test.');
+        }
+
+        $client = new AzureBlobStorageClient(
+            accountName: 'siridanotion',
+            accountKey: base64_encode('sirida-test-only-azurite-key'),
+            container: 'sirida-manuscripts',
+            baseUrl: getenv('RPL_TEST_AZURITE_URL'),
+            prefix: 'test',
+        );
+        $path = 'database/test file.sql.gz';
+
+        $this->assertTrue($client->putBlob($path, 'test backup'));
+        try {
+            $this->assertTrue($client->blobExists($path));
+            $this->assertSame('test backup', $client->getBlob($path));
+            $listed = iterator_to_array($client->listBlobs('database'));
+            $this->assertContains($path, array_column($listed, 'path'));
+        } finally {
+            $client->deleteBlob($path);
+        }
     }
 }

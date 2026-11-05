@@ -1,5 +1,10 @@
 .git
 .github
+/build
+/vendor
+/node_modules
+/storage
+/terraform
 .env
 .env.*
 !.env.example
