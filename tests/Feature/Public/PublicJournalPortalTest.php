@@ -199,8 +199,10 @@ class PublicJournalPortalTest extends TestCase
 
     public function test_pencarian_publik_menolak_filter_berbentuk_array(): void
     {
-        foreach (['q', 'category', 'year'] as $filter) {
-            $this->get(route('journal.articles.search', [$filter => ['uji']]))->assertBadRequest();
+        foreach (['journal.index', 'journal.articles.search'] as $route) {
+            foreach (['q', 'category', 'year'] as $filter) {
+                $this->get(route($route, [$filter => ['uji']]))->assertBadRequest();
+            }
         }
     }
 
