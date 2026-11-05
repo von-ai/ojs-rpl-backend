@@ -41,7 +41,7 @@ return new class extends Migration
         try {
             $version = DB::selectOne('SELECT VERSION() as v')?->v ?? '';
             $isTiDb = str_contains(strtolower((string) $version), 'tidb');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $isTiDb = false;
         }
 
@@ -54,7 +54,7 @@ return new class extends Migration
                     } elseif (DB::getDriverName() === 'sqlite') {
                         DB::unprepared("CREATE TRIGGER {$name} BEFORE {$action} ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit log is append-only'); END");
                     }
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Engines without trigger support are safely ignored
                 }
             }
@@ -67,7 +67,7 @@ return new class extends Migration
         try {
             $version = DB::selectOne('SELECT VERSION() as v')?->v ?? '';
             $isTiDb = str_contains(strtolower((string) $version), 'tidb');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $isTiDb = false;
         }
 
@@ -75,7 +75,7 @@ return new class extends Migration
             try {
                 DB::unprepared('DROP TRIGGER IF EXISTS audit_logs_forbid_update');
                 DB::unprepared('DROP TRIGGER IF EXISTS audit_logs_forbid_delete');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Silently ignore if triggers are not supported
             }
         }
