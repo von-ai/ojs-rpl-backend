@@ -427,6 +427,7 @@ class ReviewerWorkflowTest extends TestCase
         ]);
 
         $this->reviewRound->update([
+            'manuscript_file_id' => $this->cleanTestFile('naskah-asli.pdf')->id,
             'anonymized_file_id' => $file->id,
             'anonymized_checksum' => $file->checksum_sha256,
         ]);

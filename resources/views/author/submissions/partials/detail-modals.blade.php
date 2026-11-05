@@ -114,7 +114,7 @@
     </div>
 </div>
 
-@if(!empty($pay))
+@if($pay['can_upload'] ?? false)
     <!-- Modal Formulir Unggah Bukti Pembayaran APC -->
     <div 
         id="modal-upload-pembayaran" 

@@ -30,10 +30,13 @@
         </div>
     </div>
 
-    @if(!$isFinalized && (!$activeRound->exists || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
+    @if(!$isFinalized && (!$activeRound->hasDistinctAnonymizedFile() || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
         <form action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3 rounded-lg border border-gray-200 p-4">
             @csrf
             <h3 class="text-sm font-semibold text-gray-900">Siapkan putaran telaah anonim</h3>
+            @if($activeRound->exists && !$activeRound->hasDistinctAnonymizedFile())
+                <p class="text-xs text-amber-800">Berkas anonim putaran ini gagal diverifikasi. Menyiapkan putaran baru akan membatalkan penugasan yang masih aktif.</p>
+            @endif
             <label for="anonymous_file" class="block text-xs font-medium text-gray-700">Berkas anonim PDF atau DOCX</label>
             <x-input id="anonymous_file" type="file" name="anonymous_file" accept=".pdf,.docx" required />
             <label for="reviewer_title" class="block text-xs font-medium text-gray-700">Judul tanpa identitas penulis</label>

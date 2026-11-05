@@ -44,12 +44,12 @@ class PortalSecurityTest extends TestCase
         UserRole::create(['user_id' => $user->id, 'role_code' => $role, 'journal_id' => $journalId]);
     }
 
-    private function file(string $status = 'clean'): FileEntry
+    private function file(string $status = 'clean', string $content = '%PDF-1.4 test document'): FileEntry
     {
         $path = 'security/'.Str::ulid().'.pdf';
-        Storage::disk('local')->put($path, '%PDF-1.4 test document');
+        Storage::disk('local')->put($path, $content);
 
-        return FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => 'identitas-penulis.pdf', 'mime_type' => 'application/pdf', 'byte_size' => 22, 'checksum_sha256' => hash('sha256', '%PDF-1.4 test document'), 'virus_scan_status' => $status]);
+        return FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => 'identitas-penulis.pdf', 'mime_type' => 'application/pdf', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => $status]);
     }
 
     public function test_lockout_never_reactivates_a_disabled_account(): void
@@ -149,7 +149,7 @@ class PortalSecurityTest extends TestCase
         $submission = $this->submission(User::factory()->create());
         $this->role($reviewer, 'reviewer', $submission->journal_id);
         $original = $this->file();
-        $anonymous = $this->file();
+        $anonymous = $this->file(content: '%PDF-1.4 anonymous document');
         $round = ReviewRound::create(['submission_id' => $submission->id, 'round' => 1, 'status' => 'active', 'manuscript_file_id' => $original->id, 'anonymized_file_id' => $anonymous->id, 'anonymized_checksum' => $anonymous->checksum_sha256, 'reviewer_title' => 'Anonim', 'reviewer_abstract' => 'Anonim']);
         $assignment = ReviewAssignment::create(['review_round_id' => $round->id, 'reviewer_id' => $reviewer->id, 'status' => 'accepted', 'response_due_at' => now()->addDay(), 'review_due_at' => now()->addWeek()]);
         $this->actingAs($reviewer)->get(route('reviewer.files.download', [$assignment->id, $original->id]))->assertNotFound();

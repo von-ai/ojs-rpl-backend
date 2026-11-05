@@ -226,6 +226,8 @@ class AuthorPaymentWorkflowTest extends TestCase
         $pageResponse->assertStatus(200);
         $pageResponse->assertSee('Bank Sulselbar');
         $pageResponse->assertSee('130-001-009876-5');
+        $pageResponse->assertSee('id="modal-upload-pembayaran"', false);
+        $this->assertSame(1, substr_count($pageResponse->getContent(), 'id="modal-upload-pembayaran"'));
         $pageResponse->assertSee('Rp 750.000');
         $pageResponse->assertSee('Menunggu Pembayaran');
 
@@ -307,6 +309,18 @@ class AuthorPaymentWorkflowTest extends TestCase
 
         // Naskah kini dianggap payment cleared
         $this->assertTrue($submission->fresh()->isPaymentCleared());
+
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => UploadedFile::fake()->create('pengganti.pdf', 1, 'application/pdf'),
+            'amount_paid' => 1,
+        ])->assertRedirect(route('author.submissions.show', $submission->id))->assertSessionHas('error');
+
+        $this->assertSame($payment->getAttributes(), $payment->fresh()->getAttributes());
+        $this->assertTrue($submission->fresh()->isPaymentCleared());
+        $this->assertDatabaseCount('files', 1);
+        $this->assertCount(1, Storage::disk('local')->allFiles("payments/{$submission->id}"));
+        $this->get(route('author.submissions.show', $submission->id))
+            ->assertOk()->assertDontSee('id="modal-upload-pembayaran"', false);
     }
 
     /**
@@ -358,7 +372,11 @@ class AuthorPaymentWorkflowTest extends TestCase
             ]);
 
         $reuploadResponse->assertSessionHas('success');
-        $this->assertEquals('pending_verification', $payment->fresh()->status);
+        $payment->refresh();
+        $this->assertEquals('pending_verification', $payment->status);
+        $this->assertNull($payment->verified_by);
+        $this->assertNull($payment->verified_at);
+        $this->assertNull($payment->verification_notes);
     }
 
     /**
@@ -389,6 +407,12 @@ class AuthorPaymentWorkflowTest extends TestCase
         $payment = ArticlePayment::where('submission_id', $submission->id)->first();
         $this->assertEquals('waived', $payment->status);
         $this->assertTrue($submission->fresh()->isPaymentCleared());
+
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => UploadedFile::fake()->create('bukti.pdf', 1, 'application/pdf'),
+        ])->assertSessionHas('error');
+        $this->assertSame($payment->getAttributes(), $payment->fresh()->getAttributes());
+        $this->assertDatabaseCount('files', 0);
 
         // Penulis melihat status pembebasan biaya
         $authorPage = $this->actingAs($this->author)
