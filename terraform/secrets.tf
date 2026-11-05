@@ -3,6 +3,14 @@
 # Terisolasi secara aman di control plane ACA tanpa hardcoded credentials (NF-02)
 # -----------------------------------------------------------------------------
 locals {
+  # Resolusi dinamis resource storage (baru vs existing)
+  storage_account_name          = var.create_storage_account ? azurerm_storage_account.storage[0].name : (length(data.azurerm_storage_account.existing) > 0 ? data.azurerm_storage_account.existing[0].name : var.existing_storage_account_name)
+  storage_account_key           = var.create_storage_account ? azurerm_storage_account.storage[0].primary_access_key : (length(data.azurerm_storage_account.existing) > 0 ? data.azurerm_storage_account.existing[0].primary_access_key : "")
+  storage_primary_blob_endpoint = var.create_storage_account ? azurerm_storage_account.storage[0].primary_blob_endpoint : (length(data.azurerm_storage_account.existing) > 0 ? data.azurerm_storage_account.existing[0].primary_blob_endpoint : "https://${var.existing_storage_account_name}.blob.core.windows.net/")
+  storage_container_manuscripts = var.storage_container_name
+  storage_container_backups     = "sirida-backups"
+  storage_rg_name               = var.create_storage_account ? (var.separate_storage_resource_group ? azurerm_resource_group.storage_rg[0].name : azurerm_resource_group.rg.name) : (var.existing_storage_resource_group_name != "" ? var.existing_storage_resource_group_name : (var.storage_resource_group_name != "" ? var.storage_resource_group_name : "rg-${var.project_name}-storage-${var.environment}"))
+
   common_secrets = concat(
     [
       {
@@ -19,7 +27,7 @@ locals {
       },
       {
         name  = "azure-storage-key"
-        value = azurerm_storage_account.storage.primary_access_key
+        value = local.storage_account_key
       },
       {
         name  = "mail-password"
@@ -62,11 +70,11 @@ locals {
     { name = "FILESYSTEM_DISK", value = var.filesystem_disk },
     { name = "PRIVATE_UPLOAD_DISK", value = var.filesystem_disk },
     { name = "FILE_SCAN_DRIVER", value = var.file_scan_driver },
-    { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },
+    { name = "AZURE_STORAGE_NAME", value = local.storage_account_name },
     { name = "AZURE_STORAGE_KEY", secret_name = "azure-storage-key" },
-    { name = "AZURE_STORAGE_CONTAINER", value = azurerm_storage_container.manuscripts.name },
-    { name = "AZURE_BACKUP_CONTAINER", value = azurerm_storage_container.backups.name },
-    { name = "AZURE_STORAGE_URL", value = azurerm_storage_account.storage.primary_blob_endpoint },
+    { name = "AZURE_STORAGE_CONTAINER", value = local.storage_container_manuscripts },
+    { name = "AZURE_BACKUP_CONTAINER", value = local.storage_container_backups },
+    { name = "AZURE_STORAGE_URL", value = local.storage_primary_blob_endpoint },
     { name = "MAIL_MAILER", value = "smtp" },
     { name = "MAIL_HOST", value = var.mail_host },
     { name = "MAIL_PORT", value = tostring(var.mail_port) },
