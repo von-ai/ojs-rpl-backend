@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Support\Facades\Log;
+use Psr\Http\Message\UriInterface;
 use RuntimeException;
 
 /**
@@ -94,7 +95,7 @@ class AzureBlobStorageClient
      */
     public function getBlobUrl(string $path): string
     {
-        $resolved = $this->resolvePath($path);
+        $resolved = implode('/', array_map('rawurlencode', explode('/', $this->resolvePath($path))));
 
         return "{$this->baseUrl}/{$this->container}/{$resolved}";
     }
@@ -105,7 +106,7 @@ class AzureBlobStorageClient
     public function getPublicBlobUrl(string $path): string
     {
         $base = ! empty($this->publicBaseUrl) ? $this->publicBaseUrl : $this->baseUrl;
-        $resolved = $this->resolvePath($path);
+        $resolved = implode('/', array_map('rawurlencode', explode('/', $this->resolvePath($path))));
 
         return "{$base}/{$this->container}/{$resolved}";
     }
@@ -126,7 +127,7 @@ class AzureBlobStorageClient
         ];
 
         try {
-            $signedHeaders = $this->signRequest('PUT', $path, $headers);
+            $signedHeaders = $this->signRequest('PUT', $url, $headers);
             $response = $this->http->request('PUT', $url, [
                 'headers' => $signedHeaders,
                 'body' => $contents,
@@ -146,7 +147,7 @@ class AzureBlobStorageClient
     {
         $url = $this->getBlobUrl($path);
         try {
-            $signedHeaders = $this->signRequest('GET', $path);
+            $signedHeaders = $this->signRequest('GET', $url);
             $response = $this->http->request('GET', $url, [
                 'headers' => $signedHeaders,
             ]);
@@ -167,7 +168,7 @@ class AzureBlobStorageClient
     {
         $url = $this->getBlobUrl($path);
         try {
-            $signedHeaders = $this->signRequest('GET', $path);
+            $signedHeaders = $this->signRequest('GET', $url);
             $response = $this->http->request('GET', $url, [
                 'headers' => $signedHeaders,
                 'stream' => true,
@@ -187,7 +188,7 @@ class AzureBlobStorageClient
     {
         $url = $this->getBlobUrl($path);
         try {
-            $signedHeaders = $this->signRequest('HEAD', $path);
+            $signedHeaders = $this->signRequest('HEAD', $url);
             $response = $this->http->request('HEAD', $url, [
                 'headers' => $signedHeaders,
             ]);
@@ -212,7 +213,7 @@ class AzureBlobStorageClient
     {
         $url = $this->getBlobUrl($path);
         try {
-            $signedHeaders = $this->signRequest('HEAD', $path);
+            $signedHeaders = $this->signRequest('HEAD', $url);
             $response = $this->http->request('HEAD', $url, [
                 'headers' => $signedHeaders,
             ]);
@@ -239,7 +240,7 @@ class AzureBlobStorageClient
     {
         $url = $this->getBlobUrl($path);
         try {
-            $signedHeaders = $this->signRequest('DELETE', $path);
+            $signedHeaders = $this->signRequest('DELETE', $url);
             $response = $this->http->request('DELETE', $url, [
                 'headers' => $signedHeaders,
             ]);
@@ -269,7 +270,7 @@ class AzureBlobStorageClient
         ];
 
         try {
-            $signedHeaders = $this->signRequest('PUT', $destinationPath, $headers);
+            $signedHeaders = $this->signRequest('PUT', $destUrl, $headers);
             $response = $this->http->request('PUT', $destUrl, [
                 'headers' => $signedHeaders,
             ]);
@@ -279,6 +280,38 @@ class AzureBlobStorageClient
             Log::error("AzureBlobStorage: Gagal menyalin blob dari '{$sourcePath}' ke '{$destinationPath}': ".$e->getMessage());
             throw new RuntimeException("Gagal menyalin berkas di Azure Blob Storage: {$e->getMessage()}", $e->getCode(), $e);
         }
+    }
+
+    /**
+     * @return iterable<array{path: string, size: int, modified: int}>
+     */
+    public function listBlobs(string $directory): iterable
+    {
+        $prefix = $this->resolvePath($directory === '' ? '' : rtrim($directory, '/').'/');
+        $marker = '';
+        do {
+            $query = http_build_query(['restype' => 'container', 'comp' => 'list', 'prefix' => $prefix, 'marker' => $marker]);
+            $url = "{$this->baseUrl}/{$this->container}?{$query}";
+            $response = $this->http->request('GET', $url, ['headers' => $this->signRequest('GET', $url)]);
+            $listing = simplexml_load_string((string) $response->getBody(), options: LIBXML_NONET);
+            if ($listing === false) {
+                throw new RuntimeException('Daftar Blob Azure tidak dapat dibaca.');
+            }
+
+            foreach ($listing->Blobs->Blob as $blob) {
+                $name = (string) $blob->Name;
+                if (! str_starts_with($name, $prefix)) {
+                    continue;
+                }
+                yield [
+                    'path' => $this->prefix === null ? $name : substr($name, strlen($this->prefix) + 1),
+                    'size' => (int) $blob->Properties->{'Content-Length'},
+                    'modified' => (int) strtotime((string) $blob->Properties->{'Last-Modified'}),
+                ];
+            }
+
+            $marker = (string) $listing->NextMarker;
+        } while ($marker !== '');
     }
 
     /**
@@ -295,7 +328,7 @@ class AzureBlobStorageClient
         $signedStart = gmdate('Y-m-d\TH:i:s\Z', time() - 300); // 5 menit mundur untuk toleransi clock skew
         $signedExpiry = gmdate('Y-m-d\TH:i:s\Z', $expiry->getTimestamp());
         $canonicalizedResource = "/blob/{$this->accountName}/{$this->container}/{$resolved}";
-        $signedProtocol = 'https,http'; // Kompatibel HTTPS produksi dan HTTP Azurite
+        $signedProtocol = parse_url($blobUrl, PHP_URL_SCHEME) === 'https' ? 'https' : 'https,http';
         $signedVersion = $this->apiVersion;
         $signedResource = 'b'; // 'b' for blob
 
@@ -341,9 +374,9 @@ class AzureBlobStorageClient
      * @param  array<string, string>  $customHeaders
      * @return array<string, string>
      */
-    protected function signRequest(string $method, string $path, array $customHeaders = []): array
+    protected function signRequest(string $method, string $url, array $customHeaders = []): array
     {
-        $resolved = $this->resolvePath($path);
+        $uri = Utils::uriFor($url);
         $date = gmdate('D, d M Y H:i:s \G\M\T');
 
         $headers = array_merge([
@@ -365,14 +398,13 @@ class AzureBlobStorageClient
             $canonicalHeaders[] = "{$k}:{$v}";
         }
 
-        // Canonicalized Resource: /{accountName}/{container}/{path}
-        $canonicalResource = "/{$this->accountName}/{$this->container}/{$resolved}";
+        $canonicalResource = $this->canonicalizedResource($uri);
 
         $stringToSign = implode("\n", [
             strtoupper($method),
             $headers['Content-Encoding'] ?? '',
             $headers['Content-Language'] ?? '',
-            isset($headers['Content-Length']) ? (string) $headers['Content-Length'] : '',
+            ! empty($headers['Content-Length']) ? (string) $headers['Content-Length'] : '',
             $headers['Content-MD5'] ?? '',
             $headers['Content-Type'] ?? '',
             '', // Date kosong karena x-ms-date digunakan
@@ -391,5 +423,18 @@ class AzureBlobStorageClient
         $headers['Authorization'] = "SharedKey {$this->accountName}:{$signature}";
 
         return $headers;
+    }
+
+    private function canonicalizedResource(UriInterface $uri): string
+    {
+        // The emulator includes the account in the request path as well as the signature prefix.
+        $resource = '/'.$this->accountName.$uri->getPath();
+        parse_str($uri->getQuery(), $parameters);
+        ksort($parameters);
+        foreach ($parameters as $key => $value) {
+            $resource .= "\n{$key}:{$value}";
+        }
+
+        return $resource;
     }
 }
