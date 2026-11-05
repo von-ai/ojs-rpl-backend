@@ -62,6 +62,16 @@ class ProductionEscalation extends Model
     }
 
     /**
+     * Alias for openedBy.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function raisedBy(): BelongsTo
+    {
+        return $this->openedBy();
+    }
+
+    /**
      * Whether this escalation is still active (blocks workflow).
      */
     public function isActive(): bool

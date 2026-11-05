@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\Journal;
+use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\SubmissionSeeder;
@@ -335,5 +337,50 @@ class AuthorSubmissionsPageTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Belum Ada Naskah Ditemukan');
         $response->assertSee('Mulai Kirim Naskah Baru');
+    }
+
+    /**
+     * Memastikan isolasi hak akses data: Penulis lain hanya melihat naskahnya sendiri.
+     */
+    public function test_penulis_lain_hanya_melihat_naskah_miliknya_sendiri(): void
+    {
+        $otherAuthor = User::factory()->create([
+            'full_name' => 'Fajar Pratama, S.T.',
+            'email' => 'fajar.author@example.com',
+        ]);
+
+        // Penulis baru belum memiliki naskah, tidak boleh melihat naskah milik Andi Ilyas
+        $response = $this->actingAs($otherAuthor)->get(route('author.submissions.index'));
+        $response->assertStatus(200);
+        $response->assertDontSee('SUB-2026-00104');
+        $response->assertDontSee('Evaluasi Kebijakan Lorong Wisata');
+        $response->assertSee('Belum Ada Naskah Ditemukan');
+
+        // Buat naskah milik penulis baru
+        $journal = Journal::first();
+        $section = Section::first();
+        $otherSubmission = Submission::create([
+            'journal_id' => $journal->id,
+            'section_id' => $section->id,
+            'author_id' => $otherAuthor->id,
+            'submission_number' => 'SUB-2026-99999',
+            'title' => 'Naskah Mandiri Milik Fajar',
+            'abstract' => 'Abstrak naskah mandiri milik fajar.',
+            'keywords' => ['Mandiri', 'Inovasi'],
+            'status' => 'submitted',
+            'version' => 1,
+        ]);
+
+        // Penulis baru dapat melihat naskahnya sendiri
+        $responseOther = $this->actingAs($otherAuthor)->get(route('author.submissions.index'));
+        $responseOther->assertStatus(200);
+        $responseOther->assertSee('Naskah Mandiri Milik Fajar');
+        $responseOther->assertDontSee('Evaluasi Kebijakan Lorong Wisata');
+
+        // Penulis lama (Andi Ilyas) tidak boleh melihat naskah milik Fajar
+        $responseOriginal = $this->actingAs($this->author)->get(route('author.submissions.index'));
+        $responseOriginal->assertStatus(200);
+        $responseOriginal->assertSee('Evaluasi Kebijakan Lorong Wisata');
+        $responseOriginal->assertDontSee('Naskah Mandiri Milik Fajar');
     }
 }

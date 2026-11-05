@@ -132,10 +132,9 @@ class ArticlePaymentService
     /**
      * Memverifikasi dan menyetujui pembayaran (Lunas).
      */
-    public function verifyPayment(ArticlePayment $payment, User $verifier, ?string $notes = null): ArticlePayment
+    public function verifyPayment(ArticlePayment $payment, User $verifier, string $role, ?string $notes = null): ArticlePayment
     {
-        return DB::transaction(function () use ($payment, $verifier, $notes) {
-            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+        return DB::transaction(function () use ($payment, $verifier, $role, $notes) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
             if ($payment->status !== 'pending_verification') {
@@ -165,10 +164,9 @@ class ArticlePaymentService
     /**
      * Menolak bukti pembayaran yang tidak sesuai (misal buram, nominal salah).
      */
-    public function rejectPayment(ArticlePayment $payment, User $verifier, string $reason): ArticlePayment
+    public function rejectPayment(ArticlePayment $payment, User $verifier, string $role, string $reason): ArticlePayment
     {
-        return DB::transaction(function () use ($payment, $verifier, $reason) {
-            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+        return DB::transaction(function () use ($payment, $verifier, $role, $reason) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
             if ($payment->status !== 'pending_verification') {
@@ -196,10 +194,9 @@ class ArticlePaymentService
     /**
      * Memberikan pembebasan biaya (waiver / keringanan) kepada naskah.
      */
-    public function waivePayment(ArticlePayment $payment, User $verifier, string $reason): ArticlePayment
+    public function waivePayment(ArticlePayment $payment, User $verifier, string $role, string $reason): ArticlePayment
     {
-        return DB::transaction(function () use ($payment, $verifier, $reason) {
-            $role = $verifier->hasRole('manager') ? 'manager' : 'editor_in_chief';
+        return DB::transaction(function () use ($payment, $verifier, $role, $reason) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
 

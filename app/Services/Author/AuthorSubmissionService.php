@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Author;
 
 use App\Models\FileEntry;
+use App\Models\ReviewAnnotation;
 use App\Models\Revision;
 use App\Models\Submission;
 use App\Models\SubmissionFile;
@@ -103,14 +104,19 @@ class AuthorSubmissionService
                 $nextRound = $currentRound + 1;
 
                 // 4. Catat record revisi pada tabel revisions
+                $latestDecision = $submission->editorialDecisions()
+                    ->whereIn('decision', ['revisions_required', 'revise', 'resubmit'])
+                    ->latest('created_at')
+                    ->first();
+
                 $revision = Revision::create([
                     'submission_id' => $submission->id,
-                    'decision_id' => null,
+                    'decision_id' => $latestDecision?->id,
                     'round' => $nextRound,
                     'status' => 'submitted',
                     'manuscript_file_id' => $manuscriptEntry->id,
                     'response_letter_file_id' => $responseLetterEntry?->id,
-                    'due_at' => now()->addDays(14),
+                    'due_at' => $latestDecision?->revision_due_at,
                     'submitted_at' => now(),
                     'note' => $note ? trim($note) : null,
                     'version' => 1,
@@ -133,8 +139,16 @@ class AuthorSubmissionService
                     ]);
                 }
 
-                // 6. Kembalikan status naskah ke penelaahan dewan redaksi
-                $submission->status = 'in_review';
+                // 6. Tentukan status naskah: jika revisi berasal dari permintaan perbaikan format pada skrining awal (desk review), kembalikan ke submitted untuk diverifikasi redaksi. Jika pasca telaah sejawat, kembalikan ke in_review.
+                $hasPeerReviewRound = $submission->reviewRounds()->exists();
+                $hasEditorialDecision = $latestDecision !== null;
+                $hasDeskRevisionRequired = $submission->deskReviews()
+                    ->where('status', 'revision_required')
+                    ->exists();
+
+                $isDeskFormatRevision = $hasDeskRevisionRequired && ! $hasPeerReviewRound && ! $hasEditorialDecision;
+
+                $submission->status = $isDeskFormatRevision ? 'submitted' : 'in_review';
                 $submission->version = (int) $submission->version + 1;
                 $submission->save();
 
@@ -149,8 +163,11 @@ class AuthorSubmissionService
     public function downloadFile(Submission $submission, string $fileId, User $actor): StreamedResponse|BinaryFileResponse
     {
         abort_unless($submission->author_id === $actor->id || $submission->contributors()->where('user_id', $actor->id)->exists(), 404);
-        $link = $submission->files()->where('file_id', $fileId)->firstOrFail();
 
-        return app(PrivateFileService::class)->stream($link->file);
+        $file = $submission->files()->where('file_id', $fileId)->firstOrFail()->file;
+        // Reviewer documents can disclose identities in metadata, comments, and tracked changes.
+        abort_if(ReviewAnnotation::where('file_id', $fileId)->exists(), 404);
+
+        return app(PrivateFileService::class)->stream($file);
     }
 }

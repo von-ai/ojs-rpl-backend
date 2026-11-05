@@ -120,4 +120,42 @@ class ProofreaderCatalogPageTest extends TestCase
         $response->assertSee(route('proofreader.submissions.show', 'SUB-2026-00106'));
         $response->assertSee('Periksa Galai');
     }
+
+    /**
+     * Proofreader lain yang tidak ditugaskan dilarang mengakses naskah bukti baca orang lain.
+     */
+    public function test_proofreader_lain_dilarang_mengakses_naskah_bukan_tanggung_jawabnya(): void
+    {
+        $otherProofreader = User::create([
+            'username' => 'proofreader.lain',
+            'name' => 'Proofreader Lain',
+            'full_name' => 'Proofreader Lain',
+            'email' => 'proofreader.lain@brida.makassar.go.id',
+            'password' => Hash::make('password123'),
+            'email_verified_at' => now(),
+        ]);
+        UserRole::create([
+            'user_id' => $otherProofreader->id,
+            'role_code' => 'proofreader',
+        ]);
+
+        $this->actingAs($otherProofreader);
+
+        // Di halaman daftar penugasan, tidak melihat naskah Sitti Aminah
+        $listResponse = $this->get('/proofreader/submissions');
+        $listResponse->assertStatus(200);
+        $listResponse->assertDontSee('SUB-2026-00106');
+
+        // Mengakses ruang kerja pemeriksaan galai orang lain ditolak 403 Forbidden
+        $showResponse = $this->get('/proofreader/submissions/SUB-2026-00106');
+        $showResponse->assertStatus(403);
+
+        // Menambahkan catatan koreksi pada naskah orang lain ditolak 403 Forbidden
+        $addNoteResponse = $this->post('/proofreader/add-note', [
+            'submission_id' => 'SUB-2026-00106',
+            'category' => 'typo',
+            'description' => 'Salah ketik kata',
+        ]);
+        $addNoteResponse->assertStatus(403);
+    }
 }

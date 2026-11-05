@@ -283,7 +283,7 @@ class SysAdminUsersViewModel
     {
         try {
             if (Schema::hasTable('users')) {
-                return User::with(['profile', 'userRoles.journal'])->get()->map(function (User $user) {
+                return User::with(['profile', 'userRoles.journal'])->latest('updated_at')->get()->map(function (User $user) {
                     $isSysAdmin = $user->isSysAdmin();
                     $roleCodes = $user->userRoles->pluck('role_code')->toArray();
 

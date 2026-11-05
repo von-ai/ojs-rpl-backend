@@ -215,6 +215,26 @@ class ReviewerWorkflowTest extends TestCase
         $this->assertEquals('no_response', $this->assignment->fresh()->status);
     }
 
+    public function test_konfirmasi_undangan_ditolak_jika_naskah_sudah_diputuskan_atau_diterbitkan_eic(): void
+    {
+        $this->submission->update(['status' => 'declined']);
+
+        $response = $this->actingAs($this->reviewer)
+            ->post(route('reviewer.assignments.respond', $this->assignment->id), [
+                'response' => 'accepted',
+            ]);
+
+        $response->assertSessionHasErrors('response');
+        $this->assertEquals('cancelled', $this->assignment->fresh()->status);
+
+        // Halaman telaah menampilkan notifikasi penutupan proses telaah
+        $viewResponse = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $viewResponse->assertStatus(200);
+        $viewResponse->assertSee('Proses Penelaahan Ditutup oleh Dewan Redaksi');
+    }
+
     public function test_reviewer_dapat_mengajukan_permohonan_perpanjangan_waktu_telaah(): void
     {
         $this->assignment->update(['status' => 'accepted']);
@@ -337,6 +357,39 @@ class ReviewerWorkflowTest extends TestCase
         $response->assertSessionHasErrors('submit');
     }
 
+    public function test_halaman_telaah_selesai_menampilkan_label_rekomendasi_ramah_pengguna_tanpa_capslock(): void
+    {
+        $this->assignment->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        Review::create([
+            'assignment_id' => $this->assignment->id,
+            'scores' => [
+                'originality' => 80,
+                'methodology' => 80,
+                'structure' => 80,
+                'relevance' => 80,
+            ],
+            'comments_for_author' => 'Naskah memerlukan beberapa revisi minor pada bagian metode.',
+            'recommendation' => 'revisions_required',
+            'certify_no_conflict' => true,
+            'status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $response->assertOk();
+        $response->assertSee('Hasil Telaah Telah Dikirim Resmi (Terkunci)');
+        $response->assertSee('Perlu Revisi');
+        $response->assertDontSee('REVISIONS_REQUIRED');
+        $response->assertSee('Lihat Detail Lembar Evaluasi Lengkap');
+        $response->assertSee('id="completedReviewDetail"', false);
+    }
+
     public function test_reviewer_dapat_mengakses_dashboard_dan_melihat_metrik_statis(): void
     {
         $response = $this->actingAs($this->reviewer)
@@ -401,5 +454,43 @@ class ReviewerWorkflowTest extends TestCase
 
         $acceptedResponse->assertOk();
         $acceptedResponse->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_halaman_penugasan_ditolak_tidak_menampilkan_lembar_evaluasi(): void
+    {
+        $this->assignment->update([
+            'status' => 'declined',
+            'responded_at' => Carbon::now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->get(route('reviewer.assignments.show', $this->assignment->id));
+
+        $response->assertOk();
+        $response->assertSee('Undangan Penelaahan Ditolak');
+        $response->assertSee('Akses pengisian lembar evaluasi dan unduhan berkas manuskrip dinonaktifkan');
+        $response->assertDontSee('Lembar Evaluasi Penelaahan Sejawat');
+        $response->assertDontSee('Rubrik Penilaian Kualitas Naskah');
+    }
+
+    public function test_reviewer_tidak_dapat_mengirim_telaah_jika_undangan_ditolak(): void
+    {
+        $this->assignment->update([
+            'status' => 'declined',
+            'responded_at' => Carbon::now(),
+        ]);
+
+        $response = $this->actingAs($this->reviewer)
+            ->post(route('reviewer.assignments.submit', $this->assignment->id), [
+                'scores' => ['originality' => 80],
+                'comments_for_author' => 'Catatan telaah yang seharusnya tidak bisa terkirim.',
+                'recommendation' => 'accept',
+                'certify_no_conflict' => '1',
+            ]);
+
+        $response->assertSessionHasErrors('submit');
+        $this->assertDatabaseMissing('reviews', [
+            'assignment_id' => $this->assignment->id,
+        ]);
     }
 }

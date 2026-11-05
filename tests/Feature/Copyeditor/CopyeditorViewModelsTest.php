@@ -29,6 +29,7 @@ class CopyeditorViewModelsTest extends TestCase
     {
         $author = User::factory()->create(['name' => 'Prof. Penulis Satu', 'email' => 'author1@test.com']);
         $copyEditor = User::factory()->create(['name' => 'Budi Copyeditor']);
+        $this->actingAs($copyEditor);
 
         $journal = Journal::create([
             'slug' => 'jurnal-inovasi',
@@ -153,6 +154,7 @@ class CopyeditorViewModelsTest extends TestCase
     {
         $author = User::factory()->create(['name' => 'Penulis Uji']);
         $copyEditor = User::factory()->create(['name' => 'Editor Uji']);
+        $this->actingAs($copyEditor);
 
         $journal = Journal::create([
             'slug' => 'jurnal-uji',
@@ -303,6 +305,8 @@ class CopyeditorViewModelsTest extends TestCase
     {
         $author = User::factory()->create();
         $copyEditor = User::factory()->create();
+        $this->actingAs($copyEditor);
+
         $journal = Journal::create(['slug' => 'jurnal-badge', 'name' => 'Jurnal Badge', 'issn' => '6666-7777', 'status' => 'active']);
         $section = Section::create(['journal_id' => $journal->id, 'name' => 'Badge Sec', 'slug' => 'badge-sec', 'position' => 1, 'accepting_submissions' => true]);
 
@@ -331,17 +335,16 @@ class CopyeditorViewModelsTest extends TestCase
         $this->assertSame(3, CopyeditorSubmissionsViewModel::getSidebarBadgeCount());
     }
 
-    public function test_copyeditor_sidebar_component_renders_dynamic_assigned_count(): void
+    public function test_copyeditor_sidebar_component_renders_cleanly_without_number_badges(): void
     {
-        // 1. When explicit count is passed, it renders the provided number
+        // 1. Rendering dengan nilai custom eksplisit bersih tanpa badge
         $customRendered = Blade::render('<x-copyeditor.sidebar :assigned-count="42" />');
-        $this->assertStringContainsString('sidebar-badge-full', $customRendered);
-        $this->assertStringContainsString('42', $customRendered);
+        $this->assertStringNotContainsString('sidebar-badge-full', $customRendered);
+        $this->assertStringContainsString('Penugasan Naskah', $customRendered);
 
-        // 2. When omitted, it resolves automatically via ViewModel
+        // 2. Rendering tanpa props juga bersih tanpa badge
         $autoRendered = Blade::render('<x-copyeditor.sidebar />');
-        $this->assertStringContainsString('sidebar-badge-full', $autoRendered);
-        $expectedCount = (string) CopyeditorSubmissionsViewModel::getSidebarBadgeCount();
-        $this->assertStringContainsString($expectedCount, $autoRendered);
+        $this->assertStringNotContainsString('sidebar-badge-full', $autoRendered);
+        $this->assertStringContainsString('Penugasan Naskah', $autoRendered);
     }
 }

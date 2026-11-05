@@ -166,4 +166,40 @@ class LayoutEditorCatalogPageTest extends TestCase
         // Indikator mendekati batas waktu
         $response->assertSee('Mendekati Batas');
     }
+
+    /**
+     * Layout Editor lain yang tidak ditugaskan dilarang mengakses naskah galai orang lain.
+     */
+    public function test_layout_editor_lain_dilarang_mengakses_naskah_bukan_tanggung_jawabnya(): void
+    {
+        $otherLayoutEditor = User::create([
+            'username' => 'layout.lain',
+            'name' => 'Layout Editor Lain',
+            'full_name' => 'Layout Editor Lain',
+            'email' => 'layout.lain@brida.makassar.go.id',
+            'password' => Hash::make('password123'),
+            'email_verified_at' => now(),
+        ]);
+        UserRole::create([
+            'user_id' => $otherLayoutEditor->id,
+            'role_code' => 'layout_editor',
+        ]);
+
+        $this->actingAs($otherLayoutEditor);
+
+        // Di halaman daftar penugasan, tidak melihat naskah Rahmat Hidayat
+        $listResponse = $this->get('/layouteditor/submissions');
+        $listResponse->assertStatus(200);
+        $listResponse->assertDontSee('SUB-2026-00106');
+
+        // Mengakses ruang kerja naskah orang lain ditolak 403 Forbidden
+        $showResponse = $this->get('/layouteditor/submissions/SUB-2026-00106');
+        $showResponse->assertStatus(403);
+
+        // Mengunggah galai pada naskah orang lain ditolak 403 Forbidden
+        $uploadResponse = $this->post('/layouteditor/upload-galley', [
+            'submission_id' => 'SUB-2026-00106',
+        ]);
+        $uploadResponse->assertStatus(403);
+    }
 }

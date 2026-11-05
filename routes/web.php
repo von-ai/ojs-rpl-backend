@@ -17,6 +17,7 @@ use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
 use App\Http\Controllers\SysAdmin\SysAdminController;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -93,6 +94,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::get('/guidelines', [EditorInChiefController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
+    Route::get('/submissions/{id}/editors/search', [EditorInChiefController::class, 'searchEditors'])->name('submissions.editors.search');
     Route::post('/submissions/{id}/escalations/{escalationId}/resolve', [EditorialMediationController::class, 'resolve'])->name('submissions.escalations.resolve');
     Route::get('/submissions/{id}/files/{fileId}/download', [EditorInChiefController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
@@ -101,6 +103,8 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
     Route::get('/submissions/{id}/payment/proof', [EditorInChiefController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
     Route::post('/submissions/{id}/payment/verify', [EditorInChiefController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [EditorInChiefController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [EditorInChiefController::class, 'waivePayment'])->name('submissions.payment.waive');
 });
 
 // Portal Section Editor (Editor Bagian - UC-11 Telaah & Penugasan Reviewer)
@@ -117,6 +121,10 @@ Route::middleware(['auth', 'role.access:section_editor'])->prefix('section-edito
     Route::post('/assignments/{assignmentId}/reminder', [SectionEditorController::class, 'sendReminder'])->name('assignments.reminder');
     Route::post('/extensions/{extensionId}/decide', [SectionEditorController::class, 'decideExtension'])->name('extensions.decide');
     Route::post('/rounds/{roundId}/recommendation', [SectionEditorController::class, 'submitRecommendation'])->name('rounds.recommendation');
+    Route::get('/submissions/{id}/payment/proof', [SectionEditorController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
+    Route::post('/submissions/{id}/payment/verify', [SectionEditorController::class, 'verifyPayment'])->name('submissions.payment.verify');
+    Route::post('/submissions/{id}/payment/reject', [SectionEditorController::class, 'rejectPayment'])->name('submissions.payment.reject');
+    Route::post('/submissions/{id}/payment/waive', [SectionEditorController::class, 'waivePayment'])->name('submissions.payment.waive');
 });
 
 // Portal Mitra Bestari (Peer Reviewer - UC-08 Undangan & UC-09 Evaluasi Telaah)
@@ -251,7 +259,9 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
 
 Route::redirect('/submissions', '/author/submissions');
 Route::get('/dashboard', function () {
+    /** @var User|null $user */
     $user = Auth::user();
 
+    // Redirect to the user's default portal route or fallback to author submissions
     return redirect()->route($user ? $user->defaultPortalRoute() : 'author.submissions.index');
 })->middleware('auth')->name('dashboard');

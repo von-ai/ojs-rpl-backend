@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Author;
 
+use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -217,11 +218,182 @@ class AuthorNewSubmissionTest extends TestCase
             'comments_for_editor' => 'Catatan draf sementara.',
         ]);
 
+        $submission = Submission::where('author_id', $this->user->id)->firstOrFail();
         $response->assertRedirect(route('author.submissions.index'));
         $response->assertSessionHas('success');
 
         $flash = session('success');
-        $this->assertStringContainsString('Draf pengajuan naskah berhasil disimpan', (string) $flash);
+        $this->assertStringContainsString('Draf pengajuan naskah', (string) $flash);
+    }
+
+    /**
+     * Penulis dapat menyimpan draf parsial meskipun judul dan abstrak belum diisi.
+     */
+    public function test_penulis_dapat_menyimpan_draf_parsial_tanpa_judul_dan_abstrak(): void
+    {
+        $response = $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'checklist_items' => ['chk-original', 'chk-format', 'chk-scope', 'chk-anonymized', 'chk-retraction'],
+            'author_guidelines_accepted' => '1',
+            'comments_for_editor' => 'Baru centang checklist awal.',
+        ]);
+
+        $submission = Submission::where('author_id', $this->user->id)->where('comments_for_editor', 'Baru centang checklist awal.')->firstOrFail();
+        $response->assertRedirect(route('author.submissions.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('submissions', [
+            'author_id' => $this->user->id,
+            'status' => 'draft',
+            'comments_for_editor' => 'Baru centang checklist awal.',
+        ]);
+    }
+
+    /**
+     * Saat membuka kembali formulir edit draf, checklist yang tersimpan tetap tercentang dan draf dapat diperbarui lagi.
+     */
+    public function test_lanjutkan_edit_draf_memuat_kembali_checklist_dan_dapat_diperbarui(): void
+    {
+        // 1. Simpan draf pertama kali
+        $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'checklist_items' => ['chk-orisinil', 'chk-format', 'chk-scope', 'chk-anonymized', 'chk-retraction'],
+            'author_guidelines_accepted' => '1',
+            'comments_for_editor' => 'Catatan tahap pertama.',
+        ]);
+
+        $submission = Submission::where('author_id', $this->user->id)
+            ->where('status', 'draft')
+            ->firstOrFail();
+
+        // 2. Buka halaman formulir pengeditan draf
+        $createResponse = $this->get(route('author.submissions.create', ['draft_id' => $submission->id]));
+        $createResponse->assertStatus(200);
+        $createResponse->assertSee('chk-orisinil');
+        $createResponse->assertSee('checked', false);
+        $createResponse->assertSee('Catatan tahap pertama.');
+        $this->assertMatchesRegularExpression(
+            '/<option\s+value="'.preg_quote($submission->section_id, '/').'"[^>]*\sselected\s*>/',
+            $createResponse->getContent()
+        );
+
+        // 3. Simpan draf kembali (update draf yang sama) tanpa judul/abstrak
+        $updateResponse = $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'draft_id' => $submission->id,
+            'checklist_items' => ['chk-orisinil', 'chk-format', 'chk-scope', 'chk-anonymized', 'chk-retraction'],
+            'author_guidelines_accepted' => '1',
+            'title' => 'Judul Baru Ditambahkan Belakangan',
+            'comments_for_editor' => 'Catatan tahap kedua.',
+        ]);
+
+        $updateResponse->assertRedirect(route('author.submissions.index'));
+        $this->assertDatabaseHas('submissions', [
+            'id' => $submission->id,
+            'title' => 'Judul Baru Ditambahkan Belakangan',
+            'comments_for_editor' => 'Catatan tahap kedua.',
+            'status' => 'draft',
+        ]);
+    }
+
+    /**
+     * Draf yang memiliki berkas naskah akan memuat kembali berkas di formulir wizard langkah 2 & 5.
+     */
+    public function test_draf_dapat_menyimpan_berkas_dan_memuat_kembali_di_formulir(): void
+    {
+        $file = UploadedFile::fake()->create('naskah-draf-awal.docx', 512, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'title' => 'Draf dengan Berkas',
+            'manuscript_file' => $file,
+        ]);
+
+        $submission = Submission::where('author_id', $this->user->id)
+            ->where('title', 'Draf dengan Berkas')
+            ->firstOrFail();
+
+        $this->assertEquals(1, $submission->files()->where('genre', 'manuscript')->count());
+
+        $createResponse = $this->get(route('author.submissions.create', ['draft_id' => $submission->id]));
+        $createResponse->assertStatus(200);
+        $createResponse->assertSee('naskah-draf-awal.docx');
+        $createResponse->assertSee('Tersimpan di Draf');
+    }
+
+    /**
+     * Mengunggah berkas baru saat memperbarui draf akan menggantikan berkas lama tanpa menimbulkan duplikasi.
+     */
+    public function test_mengunggah_berkas_baru_di_draf_menggantikan_berkas_lama_tanpa_duplikasi(): void
+    {
+        $file1 = UploadedFile::fake()->create('naskah-versi-1.docx', 512, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'title' => 'Draf Berkas Pengganti',
+            'manuscript_file' => $file1,
+        ]);
+
+        $submission = Submission::where('author_id', $this->user->id)
+            ->where('title', 'Draf Berkas Pengganti')
+            ->firstOrFail();
+
+        $this->assertEquals(1, $submission->files()->where('genre', 'manuscript')->count());
+
+        // Unggah berkas revisi kedua pada draf yang sama
+        $file2 = UploadedFile::fake()->create('naskah-versi-2.docx', 600, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'draft_id' => $submission->id,
+            'title' => 'Draf Berkas Pengganti Terupdate',
+            'manuscript_file' => $file2,
+        ]);
+
+        $submission->refresh();
+        $this->assertEquals(1, $submission->files()->where('genre', 'manuscript')->count());
+        $this->assertEquals('naskah-versi-2.docx', $submission->files()->where('genre', 'manuscript')->first()->file->original_name);
+    }
+
+    /**
+     * Draf yang sudah memiliki berkas naskah dapat dikirimkan secara final tanpa perlu mengunggah ulang berkas.
+     */
+    public function test_draf_dengan_berkas_dapat_dikirim_final_tanpa_unggah_ulang_berkas(): void
+    {
+        $file = UploadedFile::fake()->create('naskah-final-tersimpan.docx', 512, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $this->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'title' => 'Draf Menuju Final',
+            'manuscript_file' => $file,
+        ]);
+
+        $submission = Submission::where('author_id', $this->user->id)
+            ->where('title', 'Draf Menuju Final')
+            ->firstOrFail();
+
+        // Kirimkan secara final (action = submit) tanpa menyertakan manuscript_file baru
+        $response = $this->post(route('author.submissions.store'), [
+            'action' => 'submit',
+            'draft_id' => $submission->id,
+            'section_id' => 'sec-riset-orisinil',
+            'author_guidelines_accepted' => '1',
+            'title' => 'Judul Naskah Siap Review',
+            'abstract' => 'Abstrak naskah ilmiah lengkap.',
+            'keywords' => ['Inovasi', 'Makassar'],
+            'contributors' => [
+                [
+                    'given_name' => 'Andi Muhammad',
+                    'family_name' => 'Ilyas',
+                    'email' => 'andi.ilyas@unhas.ac.id',
+                    'affiliation' => 'Unhas',
+                    'corresponding' => true,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('author.submissions.index'));
+        $submission->refresh();
+        $this->assertEquals('submitted', $submission->status);
+        $this->assertEquals(1, $submission->files()->where('genre', 'manuscript')->count());
+        $this->assertEquals('naskah-final-tersimpan.docx', $submission->files()->where('genre', 'manuscript')->first()->file->original_name);
     }
 
     /**
@@ -576,5 +748,34 @@ class AuthorNewSubmissionTest extends TestCase
             'position' => 2,
             'is_corresponding' => true,
         ]);
+    }
+
+    public function test_foreign_draft_cannot_replace_required_manuscript(): void
+    {
+        $this->actingAs($this->user)->post(route('author.submissions.store'), [
+            'action' => 'draft',
+            'section_id' => 'sec-riset-orisinil',
+            'title' => 'Draft owner',
+            'manuscript_file' => UploadedFile::fake()->create('manuscript.pdf', 10, 'application/pdf'),
+        ])->assertRedirect();
+        $draft = Submission::where('status', 'draft')->firstOrFail();
+        $this->assertDatabaseHas('submission_files', ['submission_id' => $draft->id, 'genre' => 'manuscript']);
+        $other = User::factory()->create();
+        $this->actingAs($other)->post(route('author.submissions.store'), [
+            'action' => 'submit',
+            'draft_id' => $draft->id,
+            'section_id' => 'sec-riset-orisinil',
+            'title' => 'Submission without manuscript',
+            'abstract' => 'This is a valid abstract.',
+            'keywords' => ['research'],
+            'author_guidelines_accepted' => '1',
+            'contributors' => [[
+                'given_name' => 'Audit',
+                'email' => $other->email,
+                'affiliation' => 'Audit Lab',
+                'corresponding' => true,
+            ]],
+        ])->assertRedirect()->assertSessionHasErrors('manuscript_file');
+        $this->assertDatabaseMissing('submissions', ['author_id' => $other->id, 'status' => 'submitted']);
     }
 }

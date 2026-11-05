@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Transaksi Berhasil">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- Page Title & Header Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

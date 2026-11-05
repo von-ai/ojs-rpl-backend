@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Pemberitahuan">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- Header Halaman & Tombol Impor -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -456,7 +449,14 @@
                         <span data-journal-name class="font-bold text-gray-900 block truncate"></span>
                         <span data-role-label class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border mt-0.5"></span>
                     </div>
-                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}" method="POST" class="inline shrink-0" onsubmit="return confirm('Apakah Anda yakin ingin mencabut peran ini?');">
+                    <form action="{{ route('sysadmin.users.revoke-journal-role') }}"
+                          method="POST"
+                          class="inline shrink-0"
+                          data-confirm="Apakah Anda yakin ingin mencabut peran ini?"
+                          data-confirm-title="Cabut Peran Pengguna?"
+                          data-confirm-btn="Cabut Peran"
+                          data-confirm-cancel="Batal"
+                          data-confirm-type="danger">
                         @csrf
                         <input type="hidden" name="user_id">
                         <input type="hidden" name="journal_id">

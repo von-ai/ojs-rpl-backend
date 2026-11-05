@@ -205,18 +205,19 @@
                             'pending' => 'Menunggu Unggahan',
                             default => 'Dalam Proses',
                         };
+                        $submittedFormatted = $rev->submitted_at ? $rev->submitted_at->timezone('Asia/Makassar')->format('d M Y, H:i') : null;
                     @endphp
                     <div class="p-3.5 rounded-lg border border-orange-200 bg-orange-50/50 text-xs space-y-1.5">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="font-bold text-orange-950">Revisi Putaran #{{ $rev->round }}</span>
+                            <span class="font-bold text-orange-950">{{ $rev->decision_id ? 'Revisi Putaran #'.$rev->round : 'Perbaikan Format Berkas #'.$rev->round }}</span>
                             <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-orange-100 text-orange-900 tabular-nums">
-                                {{ $revStatusLabel }} — {{ $rev->submitted_at ? $rev->submitted_at->format('d M Y, H:i') : 'Menunggu Unggahan' }}
+                                {{ $revStatusLabel }} {{ $submittedFormatted ?? 'Menunggu Unggahan' }}
                             </span>
                         </div>
                         @if($rev->note)
                             <p class="text-gray-700 text-left">Surat Tanggapan Penulis: "{{ $rev->note }}"</p>
                         @endif
-                        @if($rev->due_at)
+                        @if($rev->due_at && $rev->decision_id)
                             <div class="text-[11px] text-orange-800 font-medium tabular-nums">
                                 Tenggat Waktu Revisi: {{ $rev->due_at->format('d F Y') }}
                             </div>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Author;
 
 use App\Models\ArticlePayment;
+use App\Models\EditorAssignment;
 use App\Models\FileEntry;
 use App\Models\Journal;
 use App\Models\Section;
@@ -25,6 +26,8 @@ class AuthorPaymentWorkflowTest extends TestCase
     protected User $manager;
 
     protected User $eic;
+
+    protected User $sectionEditor;
 
     protected Journal $freeJournal;
 
@@ -66,6 +69,15 @@ class AuthorPaymentWorkflowTest extends TestCase
             'role_code' => 'editor_in_chief',
         ]);
 
+        $this->sectionEditor = User::factory()->create([
+            'name' => 'Dr. Suryani, M.T.',
+            'email' => 'se@makassar.go.id',
+        ]);
+        UserRole::create([
+            'user_id' => $this->sectionEditor->id,
+            'role_code' => 'section_editor',
+        ]);
+
         $this->freeJournal = Journal::create([
             'slug' => 'sirida-makassar',
             'name' => 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
@@ -96,6 +108,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         foreach ([$this->freeJournal, $this->paidJournal] as $journal) {
             $this->grantRole($this->manager, 'manager', $journal->id);
             $this->grantRole($this->eic, 'editor_in_chief', $journal->id);
+            $this->grantRole($this->sectionEditor, 'section_editor', $journal->id);
         }
 
         $this->section = Section::create([
@@ -213,8 +226,10 @@ class AuthorPaymentWorkflowTest extends TestCase
         $pageResponse->assertStatus(200);
         $pageResponse->assertSee('Bank Sulselbar');
         $pageResponse->assertSee('130-001-009876-5');
+        $pageResponse->assertSee('id="modal-upload-pembayaran"', false);
+        $this->assertSame(1, substr_count($pageResponse->getContent(), 'id="modal-upload-pembayaran"'));
         $pageResponse->assertSee('Rp 750.000');
-        $pageResponse->assertSee('Menunggu Pembayaran Penulis');
+        $pageResponse->assertSee('Menunggu Pembayaran');
 
         // 2. Author mengunggah berkas bukti transfer
         $proofFile = UploadedFile::fake()->create('bukti_transfer_apc.jpg', 800, 'image/jpeg');
@@ -242,7 +257,7 @@ class AuthorPaymentWorkflowTest extends TestCase
 
         $fileEntry = FileEntry::find($payment->file_entry_id);
         $this->assertNotNull($fileEntry);
-        Storage::disk('local')->assertExists($fileEntry->storage_path);
+        $this->assertTrue(Storage::disk('local')->exists($fileEntry->storage_path));
 
         // 4. Author dapat mengunduh kembali berkas bukti transfer
         $this->scanTestUploads();
@@ -304,6 +319,8 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertTrue($submission->fresh()->isPaymentCleared());
         $this->assertDatabaseCount('files', 1);
         $this->assertCount(1, Storage::disk('local')->allFiles("payments/{$submission->id}"));
+        $this->get(route('author.submissions.show', $submission->id))
+            ->assertOk()->assertDontSee('id="modal-upload-pembayaran"', false);
     }
 
     /**
@@ -475,5 +492,144 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertEquals(1000000.00, (float) $journal->apc_amount);
         $this->assertEquals('Bank BRI', $journal->payment_bank_name);
         $this->assertEquals('001-234-567-890', $journal->payment_account_number);
+    }
+
+    /**
+     * Pemimpin Redaksi (EIC) dapat menolak bukti transfer tidak sah dengan catatan alasan.
+     */
+    public function test_eic_dapat_menolak_bukti_pembayaran_dengan_alasan(): void
+    {
+        $submission = Submission::create([
+            'journal_id' => $this->paidJournal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-PAID07',
+            'title' => 'Kajian Kualitas Air Tanah Pesisir',
+            'abstract' => 'Abstrak air tanah pesisir',
+            'status' => 'in_production',
+            'version' => 1,
+        ]);
+
+        $proof = UploadedFile::fake()->create('bukti_palsu.pdf', 300, 'application/pdf');
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => $proof,
+            'amount_paid' => 750000,
+        ]);
+
+        // EIC membuka halaman dan melihat tombol tolak bukti transfer
+        $eicPage = $this->actingAs($this->eic)->get(route('eic.submissions.show', $submission->id));
+        $eicPage->assertStatus(200);
+        $eicPage->assertSee('Tolak Bukti Transfer');
+
+        // EIC menolak bukti pembayaran
+        $rejectResponse = $this->actingAs($this->eic)
+            ->post(route('eic.submissions.payment.reject', $submission->id), [
+                'reason' => 'Nomor referensi transfer tidak ditemukan di rekening koran kas jurnal.',
+            ]);
+
+        $rejectResponse->assertRedirect();
+        $payment = ArticlePayment::where('submission_id', $submission->id)->first();
+        $this->assertEquals('rejected', $payment->status);
+        $this->assertEquals('Nomor referensi transfer tidak ditemukan di rekening koran kas jurnal.', $payment->verification_notes);
+        $this->assertEquals($this->eic->id, $payment->verified_by);
+
+        // Penulis melihat status ditolak beserta alasan penolakan
+        $authorPage = $this->actingAs($this->author)->get(route('author.submissions.show', $submission->id));
+        $authorPage->assertSee('Bukti Transfer Perlu Diperbaiki');
+        $authorPage->assertSee('Nomor referensi transfer tidak ditemukan');
+    }
+
+    /**
+     * Pemimpin Redaksi (EIC) dapat memberikan pembebasan biaya publikasi (Waiver).
+     */
+    public function test_eic_dapat_memberikan_pembebasan_biaya_waiver(): void
+    {
+        $submission = Submission::create([
+            'journal_id' => $this->paidJournal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-PAID08',
+            'title' => 'Riset Dampak Iklim Terhadap Nelayan Tradisional',
+            'abstract' => 'Abstrak nelayan tradisional',
+            'status' => 'in_production',
+            'version' => 1,
+        ]);
+
+        $waiveResponse = $this->actingAs($this->eic)
+            ->post(route('eic.submissions.payment.waive', $submission->id), [
+                'waiver_reason' => 'Naskah kategori undangan khusus dewan riset daerah.',
+            ]);
+
+        $waiveResponse->assertRedirect();
+        $payment = ArticlePayment::where('submission_id', $submission->id)->first();
+        $this->assertEquals('waived', $payment->status);
+        $this->assertEquals($this->eic->id, $payment->verified_by);
+        $this->assertTrue($submission->fresh()->isPaymentCleared());
+    }
+
+    /**
+     * Editor Bagian (Section Editor) yang ditugaskan dapat memverifikasi dan menolak pembayaran naskah.
+     */
+    public function test_section_editor_dapat_memverifikasi_dan_menolak_pembayaran(): void
+    {
+        $submission = Submission::create([
+            'journal_id' => $this->paidJournal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-PAID09',
+            'title' => 'Studi Transportasi Cerdas Kota Makassar',
+            'abstract' => 'Abstrak transportasi cerdas',
+            'status' => 'in_production',
+            'version' => 1,
+        ]);
+
+        // Tugaskan Section Editor ke naskah
+        EditorAssignment::create([
+            'submission_id' => $submission->id,
+            'editor_id' => $this->sectionEditor->id,
+            'role' => 'section_editor',
+            'assigned_at' => now(),
+        ]);
+
+        // Penulis mengunggah bukti transfer
+        $proof = UploadedFile::fake()->create('bukti_se.pdf', 300, 'application/pdf');
+        $uploadRes = $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => $proof,
+            'amount_paid' => 750000,
+            'sender_bank_name' => 'Bank Mandiri',
+        ]);
+
+        $this->scanTestUploads();
+
+        // Section Editor dapat mengunduh bukti transfer
+        $downloadResponse = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.payment.proof', $submission->id));
+        $downloadResponse->assertStatus(200);
+
+        // Section Editor menolak bukti tidak sah
+        $rejectResponse = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.submissions.payment.reject', $submission->id), [
+                'reason' => 'Nominal transfer kurang Rp 50.000.',
+            ]);
+        $rejectResponse->assertRedirect();
+        $this->assertEquals('rejected', ArticlePayment::where('submission_id', $submission->id)->first()->status);
+
+        // Penulis mengunggah bukti perbaikan
+        $correctedProof = UploadedFile::fake()->create('bukti_se_perbaikan.pdf', 300, 'application/pdf');
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => $correctedProof,
+            'amount_paid' => 750000,
+            'sender_bank_name' => 'Bank Mandiri',
+        ]);
+        $this->scanTestUploads();
+
+        // Section Editor memverifikasi pembayaran setelah perbaikan
+        $verifyResponse = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.submissions.payment.verify', $submission->id), [
+                'notes' => 'Pembayaran telah dikonfirmasi lunas.',
+            ]);
+        $verifyResponse->assertRedirect();
+        $this->assertEquals('verified', ArticlePayment::where('submission_id', $submission->id)->first()->status);
+        $this->assertTrue($submission->fresh()->isPaymentCleared());
     }
 }

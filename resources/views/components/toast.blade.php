@@ -256,31 +256,55 @@
         }
     });
 
-    // Tampilkan toast otomatis dari flash session (mis. saat beralih peran)
+    // Tampilkan toast otomatis dari flash session (mis. saat berhasil aksi atau beralih peran)
     document.addEventListener('DOMContentLoaded', function() {
-        @if(session('role_switched_toast'))
+        @if($errors->any())
+            showToast({
+                type: 'error',
+                title: 'Periksa Isian Formulir',
+                message: @json($errors->count() > 1 ? $errors->first() . ' (dan ' . ($errors->count() - 1) . ' kendala lainnya)' : $errors->first()),
+                duration: 5000
+            });
+        @elseif(session('role_switched_toast'))
             showToast({
                 type: 'success',
                 title: 'Peran Aktif Dialihkan',
                 message: @json(session('role_switched_toast')),
                 duration: 3500
             });
-        @endif
-
-        @if(session('toast_success'))
+        @elseif(session('toast_error'))
+            showToast({
+                type: 'error',
+                title: 'Akses Ditolak',
+                message: @json(session('toast_error')),
+                duration: 4500
+            });
+        @elseif(session('error'))
+            showToast({
+                type: 'error',
+                title: 'Pemberitahuan',
+                message: @json(session('error')),
+                duration: 5000
+            });
+        @elseif(session('toast_success'))
             showToast({
                 type: 'success',
                 title: 'Berhasil',
                 message: @json(session('toast_success')),
                 duration: 4000
             });
-        @endif
-
-        @if(session('toast_error'))
+        @elseif(session('success'))
             showToast({
-                type: 'error',
-                title: 'Akses Ditolak',
-                message: @json(session('toast_error')),
+                type: 'success',
+                title: 'Berhasil',
+                message: @json(session('success')),
+                duration: 4500
+            });
+        @elseif(session('status'))
+            showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: @json(session('status')),
                 duration: 4500
             });
         @endif

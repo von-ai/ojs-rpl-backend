@@ -45,6 +45,9 @@ class CopyeditorSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $copyedit = $this->findCopyedit($id);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
+
         $viewModel = new CopyeditorSubmissionDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -86,13 +89,14 @@ class CopyeditorSubmissionController extends Controller
      */
     public function uploadFile(Request $request): RedirectResponse
     {
+        $submissionId = (string) $request->input('submission_id');
+        $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
+
         $request->validate([
             'submission_id' => 'required|string',
             'copyedit_file' => 'required|file|mimes:docx,doc,pdf|max:20480',
         ]);
-
-        $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
-        $copyedit = $this->findCopyedit($submissionId);
 
         if ($copyedit && $request->hasFile('copyedit_file') && $request->file('copyedit_file')->isValid()) {
             $user = Auth::user();
@@ -110,6 +114,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             try {
@@ -133,6 +138,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             $user = Auth::user();
@@ -158,6 +164,7 @@ class CopyeditorSubmissionController extends Controller
     {
         $submissionId = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $copyedit = $this->findCopyedit($submissionId);
+        $this->authorizeCopyeditorForCopyedit($copyedit);
 
         if ($copyedit) {
             $user = Auth::user();
@@ -233,16 +240,31 @@ class CopyeditorSubmissionController extends Controller
      */
     private function findCopyedit(string $identifier): ?Copyedit
     {
-        $query = Copyedit::with(['submission.author', 'submission.contributors', 'copyEditor', 'outputs.file'])
+        $query = Copyedit::withoutGlobalScope('portal_access')
+            ->with(['submission.author', 'submission.contributors', 'copyEditor', 'outputs.file'])
             ->where(function ($q) use ($identifier) {
-                $q->where('id', $identifier)->orWhereHas('submission', fn ($sq) => $sq->where('submission_number', $identifier)->orWhere('id', $identifier));
+                $q->where('id', $identifier)->orWhereHas('submission', fn ($sq) => $sq->withoutGlobalScope('portal_access')->where('submission_number', $identifier)->orWhere('id', $identifier));
             });
-        if (request()->routeIs('copyeditor.author-decision')) {
-            $query->whereHas('submission', fn ($q) => $q->where('author_id', Auth::id())->orWhereHas('contributors', fn ($cq) => $cq->where('user_id', Auth::id())->where('is_corresponding', true)));
-        } else {
-            $query->where('copy_editor_id', Auth::id());
+
+        return $query->first();
+    }
+
+    /**
+     * Otorisasi ketat hak akses penugasan copyediting.
+     */
+    private function authorizeCopyeditorForCopyedit(?Copyedit $copyedit): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
         }
 
-        return $query->firstOrFail();
+        if (! $copyedit) {
+            abort(404, 'Naskah copyediting tidak ditemukan.');
+        }
+
+        if ((string) $copyedit->copy_editor_id !== (string) $userId) {
+            abort(403, 'Anda tidak ditugaskan sebagai Copy Editor pada naskah ini.');
+        }
     }
 }

@@ -6,8 +6,6 @@
     $isDashboardActive = request()->routeIs('reviewer.dashboard');
     $isAssignmentsActive = request()->routeIs('reviewer.assignments.*');
     $isGuidelinesActive = request()->routeIs('reviewer.guidelines');
-
-    $badgeCount = $activeCount ?? \App\ViewModels\ReviewerAssignmentsViewModel::getSidebarBadgeCount();
 @endphp
 
 <x-portal.sidebar
@@ -34,16 +32,11 @@
     <a
         href="{{ route('reviewer.assignments.index') }}"
         title="Tugas Penelaahan Ilmiah"
-        class="group relative flex items-center justify-between px-3 py-2.5 text-sm rounded-lg transition duration-150 sidebar-nav-item {{ $isAssignmentsActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
+        class="group relative flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition duration-150 sidebar-nav-item {{ $isAssignmentsActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100/80' }}"
     >
-        <div class="flex items-center gap-3 min-w-0">
-            <svg class="w-5 h-5 shrink-0 {{ $isAssignmentsActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            <span class="truncate sidebar-label">Tugas Penelaahan</span>
-        </div>
-        <span class="sidebar-badge-full inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full tabular-nums shrink-0 {{ $isAssignmentsActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' }}">
-            {{ $badgeCount }}
-        </span>
+        <svg class="w-5 h-5 shrink-0 {{ $isAssignmentsActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+        <span class="truncate sidebar-label">Tugas Penelaahan</span>
     </a>
 </x-portal.sidebar>

@@ -9,7 +9,6 @@ use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\ProofreadingNote;
 use App\Models\Submission;
-use App\Models\User;
 use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\PrivateFileService;
 use App\ViewModels\LayoutEditorDetailViewModel;
@@ -46,6 +45,12 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function show(string $id, Request $request): View
     {
+        $submissionModel = $this->findSubmission($id);
+        if (! $submissionModel) {
+            abort(404, "Naskah penugasan tata letak '{$id}' tidak ditemukan.");
+        }
+        $this->authorizeLayoutEditorForSubmission($submissionModel);
+
         $viewModel = new LayoutEditorDetailViewModel($id);
         $submission = $viewModel->submission();
 
@@ -69,6 +74,10 @@ class LayoutEditorSubmissionController extends Controller
      */
     public function uploadGalley(Request $request): RedirectResponse
     {
+        $submissionId = (string) ($request->input('submission_id') ?? '');
+        $submission = $this->findSubmission($submissionId);
+        $this->authorizeLayoutEditorForSubmission($submission);
+
         $data = $request->validate([
             'submission_id' => ['required', 'string'],
             'file' => ['required', 'file', 'mimes:pdf,html', 'max:20480'],
@@ -76,8 +85,6 @@ class LayoutEditorSubmissionController extends Controller
             'format' => ['required', 'in:pdf,html'],
             'change_summary' => ['nullable', 'string', 'max:4000'],
         ]);
-        $submission = $this->findSubmission($data['submission_id']);
-        abort_unless($submission, 404);
         try {
             $this->layoutEditorService->uploadGalley($submission, $request->file('file'), $data['galley_label'], $data['format'], Auth::user(), $data['change_summary'] ?? null);
         } catch (DomainException $e) {
@@ -93,7 +100,9 @@ class LayoutEditorSubmissionController extends Controller
     public function resolveNote(Request $request): RedirectResponse
     {
         $data = $request->validate(['note_id' => ['required', 'string'], 'resolution' => ['required', 'string', 'max:4000']]);
-        $note = ProofreadingNote::findOrFail($data['note_id']);
+        $note = ProofreadingNote::with('galley.submission')->findOrFail($data['note_id']);
+        $submission = $note->galley?->submission;
+        $this->authorizeLayoutEditorForSubmission($submission);
         $this->layoutEditorService->resolveProofreadingNote($note, $data['resolution'], Auth::user());
 
         return redirect()->route('layouteditor.submissions.show', $request->input('submission_id', $note->galley->submission_id))->with('status', 'Catatan koreksi ditandai selesai dan menunggu verifikasi proofreader.');
@@ -106,16 +115,9 @@ class LayoutEditorSubmissionController extends Controller
     {
         $submissionParam = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $submission = $this->findSubmission($submissionParam);
-        abort_unless($submission, 404);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user();
-            }
-        } catch (\Throwable) {
-            abort_unless($submission, 404);
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor) {
             try {
@@ -139,16 +141,9 @@ class LayoutEditorSubmissionController extends Controller
         $reason = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:4000']])['reason'];
 
         $submission = $this->findSubmission($submissionParam);
-        abort_unless($submission, 404);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user();
-            }
-        } catch (\Throwable) {
-            abort_unless($submission, 404);
-            $actor = null;
-        }
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
 
         if ($submission && $actor) {
             $this->layoutEditorService->submitEscalation($submission, $actor, $reason);
@@ -165,15 +160,17 @@ class LayoutEditorSubmissionController extends Controller
     {
         $submissionParam = (string) $request->validate(['submission_id' => ['required', 'string']])['submission_id'];
         $submission = $this->findSubmission($submissionParam);
-        abort_unless($submission, 404);
-        $actor = null;
-        try {
-            if (class_exists(User::class) && Schema::hasTable('users')) {
-                $actor = Auth::user();
+        $this->authorizeLayoutEditorForSubmission($submission);
+
+        $actor = Auth::user();
+
+        if ($submission && $actor) {
+            try {
+                $this->layoutEditorService->requestFinalApproval($submission, $actor);
+            } catch (DomainException $e) {
+                return redirect()->route('layouteditor.submissions.show', $submissionParam)
+                    ->withErrors(['general' => $e->getMessage()]);
             }
-        } catch (\Throwable) {
-            abort_unless($submission, 404);
-            $actor = null;
         }
 
         if ($submission && $actor) {
@@ -219,8 +216,11 @@ class LayoutEditorSubmissionController extends Controller
     {
         try {
             if (class_exists(Submission::class) && Schema::hasTable('submissions')) {
-                return Submission::where('submission_number', $identifier)
-                    ->orWhere('id', $identifier)
+                return Submission::withoutGlobalScope('portal_access')
+                    ->where(function ($q) use ($identifier) {
+                        $q->where('submission_number', $identifier)
+                            ->orWhere('id', $identifier);
+                    })
                     ->first();
             }
         } catch (\Throwable) {
@@ -228,5 +228,29 @@ class LayoutEditorSubmissionController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Otorisasi ketat hak akses ruang kerja penugasan layout editor.
+     */
+    private function authorizeLayoutEditorForSubmission(?Submission $submission): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            abort(401);
+        }
+
+        if (! $submission) {
+            abort(404, 'Naskah tidak ditemukan.');
+        }
+
+        $isAssigned = $submission->layoutAssignments()
+            ->where('layout_editor_id', $userId)
+            ->whereNull('revoked_at')
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Layout Editor pada naskah ini.');
+        }
     }
 }

@@ -168,6 +168,7 @@
                 <a 
                     href="{{ $item['action_url'] }}" 
                     class="block font-normal text-gray-900 text-sm leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon transition duration-150"
+                    title="{{ $item['title'] }}"
                 >
                     {{ $item['title'] }}
                 </a>
