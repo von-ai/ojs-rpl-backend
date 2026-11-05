@@ -66,7 +66,7 @@ assignment status belum terminal; expired/no_response/declined/cancelled tidak
 memperoleh akses manuskrip baru. Tidak ada HTTP endpoint publik untuk menjalankan cron.
 
 Notifikasi durable dibuat satu kali; kegagalan SMTP diretry worker dan tidak
-membatalkan transisi. UI dapat membaca notifikasi melalui query database / Livewire selama email tertunda.
+membatalkan transisi. UI dapat membaca notifikasi melalui query database / reload tampilan ViewModel selama email tertunda.
 Kebijakan deadline ditegakkan pada lapisan Application Service dan background worker scheduler.
 
 ## Tes penerimaan wajib saat backend dibangun

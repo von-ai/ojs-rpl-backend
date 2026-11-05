@@ -24,7 +24,7 @@ Berdasarkan analisis kebutuhan proposal SRS dan evaluasi berbagai opsi layanan c
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **Komputasi Web** | Azure VM, App Service, Azure Container Apps (ACA) | **Azure Container Apps (ACA)** | Docker Desktop / Compose | Serverless container, *scale-to-zero* saat idle, *cold start* cepat (5–15 detik), Envoy Ingress terkelola, kuota gratis 180.000 vCPU-s/bln. |
 | 2 | **Komputasi Worker** | Azure VM, Celery/Supervisor, Dedicated ACA | **ACA Dedicated Worker** | Docker Container | Menjalankan `php artisan queue:work` secara asinkron (pemrosesan PDF dan pemindaian berkas), isolasi proses dari traffic web. |
-| 3 | **Komputasi Scheduler** | Cron VM, Azure Function, ACA Scheduled Job | **ACA Scheduled Job** | Host Cron / Artisan | Menjalankan `php artisan schedule:run` setiap 1 menit untuk deadline review & outbox retry tanpa server standby 24/7. |
+| 3 | **Komputasi Scheduler** | ACA Scheduled Job (Cron), Azure Function, Dedicated ACA Daemon | **ACA Scheduler Daemon** | Host Cron / Artisan | Menjalankan `php artisan schedule:work` secara kontinu (min 1, max 1 replika). Dipilih karena pola ACA Scheduled Job 1-menit (`* * * * *`) di Azure Container Apps memiliki keterbatasan latensi cold-start (15–30 dtk) dan potensi overlap, sedangkan daemon loop internal PHP menjamin eksekusi tepat waktu di detik ke-0. |
 | 4 | **RDBMS** | Azure Database for MySQL, TiDB Serverless, AWS RDS | **TiDB Cloud Serverless** | Container MySQL 8.0 | 100% MySQL 8.0 wire protocol, *scale-to-zero*, bebas biaya sewa disk tetap, kuota gratis 5 GB storage & 50M Request Units/bln. |
 | 5 | **In-Memory Cache & Broker** | Azure Managed Redis, Upstash, DB Store | **Azure Managed Redis (AMR Balanced_B0)** | Container Redis | Layanan Redis Enterprise terkelola native Azure dengan mesin multi-threading performa tinggi, dedicated in-memory store untuk session, atomic locking naskah, dan cache layer (~Rp 210 rb/bln saat aktif atau Rp 0 saat di-destroy). |
 | 6 | **Object Storage** | Azure Blob Storage, AWS S3, Cloudflare R2 | **Azure Blob Storage** | Azurite Container (Port 10000) | Penyimpanan objek terkelola native Azure dengan integrasi langsung Microsoft Defender for Storage (Malware Scanning). Enkripsi data at-rest otomatis (AES-256), integrasi SAS (Shared Access Signature) token, dan manajemen lifecycle versi berkas 30 hari. |
@@ -50,7 +50,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                           ▼ HTTPS / TLS 1.3
    ┌─────────────────────────────────────────────────────────────────────────────┐
    │                       CLOUDFLARE EDGE PLATFORM                              │
-   │  • Anycast DNS (jurnal.makassar.go.id)                                      │
+   │  • Anycast DNS (sirida.web.id / jurnal.makassar.go.id)                      │
    │  • CDN Edge Caching (Aset Statis & Terbitan PDF Publik)                     │
    │  • Web Application Firewall (WAF) & DDoS Shield                             │
    └──────────────────────┬───────────────────────────────┬──────────────────────┘
@@ -59,7 +59,7 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                           │                               ▼ (Port 443 / HTTPS)
    ┌──────────────────────▼──────┐       ┌───────────────────────────────────────┐
    │  AZURE BLOB STORAGE ACCOUNT │       │     AZURE CONTAINER APPS (ACA)        │
-   │ • Container: `sirida-files` │       │ • Managed Ingress (Envoy Proxy)       │
+   │ • `sirida-manuscripts`      │       │ • Managed Ingress (Envoy Proxy)       │
    │ • SAS Token Direct Upload   │       │ • Virtual Network Environment         │
    │ • Defender Malware Scanning │       │                                       │
    │ • Blob Versioning (30 Hr)   │       │ ┌───────────────────────────────────┐ │
@@ -72,21 +72,21 @@ Berikut adalah visualisasi aliran lalu lintas jaringan (*traffic flow*) dan bata
                                          │ │ php artisan queue:work (Worker)   │ │
                                          │ └───────────────────────────────────┘ │
                                          │ ┌───────────────────────────────────┐ │
-                                         │ │ Scheduled Job (Cron Pemicu)       │ │
-                                         │ │ php artisan schedule:run (* * * *)│ │
+                                         │ │ Scheduler Container (Daemon)      │ │
+                                         │ │ php artisan schedule:work (Min 1) │ │
                                          │ └───────────────────────────────────┘ │
                                          │ • ACA Encrypted Secrets               │
                                          │ • Azure Log Analytics (stdout/stderr) │
                                          └───────┬──────────────┬───────┬────────┘
                                                  │              │       │
-                                  TLS Port 3306  │ TLS Port 6380│       │ TLS Port 587
-                                  MySQL Protocol │ Redis Native │       │ SMTP Protocol
+                                  TLS Port 4000  │TLS Port 10000│       │ TLS Port 587
+                                  MySQL Protocol │Redis (AMR)   │       │ SMTP Protocol
                                                  ▼              ▼       ▼
                           ┌──────────────────────────────┐ ┌─────────┐ ┌─────────┐
                           │    TiDB CLOUD SERVERLESS     │ │ AZURE   │ │ AZURE   │
-                          │ • Dialek MySQL 8.0           │ │ REDIS   │ │ COMM    │
-                          │ • Auto-scaling & Zero Idle   │ │ (C0)    │ │ SERVICES│
-                          │ • Automated Snapshot Backup  │ │ Sub-1ms │ │ (ACS)   │
+                          │ • Dialek MySQL 8.0           │ │ MANAGED │ │ COMM    │
+                          │ • Auto-scaling & Zero Idle   │ │ REDIS   │ │ SERVICES│
+                          │ • Automated Snapshot Backup  │ │(Bld_B0) │ │ (ACS)   │
                           └──────────────────────────────┘ └─────────┘ └─────────┘
 ```
 
@@ -115,6 +115,17 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
    * Backend memvalidasi hak akses (otorisasi double-blind) lalu menghasilkan *SAS GET URL* berdurasi terbatas.
    * File diunduh langsung dari Azure Blob Storage.
 
+### 4.3 Strategi Pembagian Wilayah Multi-Region Azure (*Multi-Region Split Strategy*)
+Untuk mengoptimalkan latensi pengguna lokal sekaligus memanfaatkan ketersediaan fitur keamanan cloud tercanggih:
+1. **Region Komputasi & Telemetri (`indonesiacentral` / Jakarta)**:
+   * Menampung ACA Environment (Web, Queue Worker, Scheduler Daemon), Azure Managed Redis (AMR Balanced_B0), Log Analytics Workspace, dan Application Insights.
+   * Memberikan latensi ultra-rendah (< 20 ms) ke pengguna di Indonesia dan memenuhi prinsip kedekatan pemrosesan data.
+2. **Region Objek & Pemindaian Berkas (`southeastasia` / Singapura)**:
+   * Menampung Storage Account (`sirida-manuscripts`, `sirida-backups`) dan modul keamanan **Microsoft Defender for Storage (Malware Scanning)**.
+   * Dipilih karena layanan Defender for Storage Malware Scanning memerlukan dukungan fitur cloud AI terkelola yang stabil di region `southeastasia`.
+3. **Konektivitas Antar-Region**:
+   * Komunikasi antara ACA di Jakarta dan Azure Blob Storage di Singapura berjalan melalui jalur privat berkecepatan tinggi *Azure Global Backbone*, sehingga latensi transfer antar-region tetap sangat minim (~10–15 ms).
+
 ---
 
 ## 5. Spesifikasi Teknis & Dimensi Resource (*Sizing*)
@@ -123,8 +134,8 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 | :--- | :---: | :---: | :--- | :--- |
 | **ACA Web Container** | 0.5 vCPU | 1.0 GiB | Min 0 replika, Max 5 replika (KEDA HTTP Concurrent Request > 30) | *Scale-to-zero* saat tidak ada traffic untuk hemat biaya. |
 | **ACA Queue Worker** | 0.5 vCPU | 0.5 GiB | Min 1 replika (saat aktif) atau KEDA Queue Rule | Eksekusi pekerjaan antrean asinkron (outbox processing & engine PDF). |
-| **ACA Scheduled Job** | 0.25 vCPU | 0.5 GiB | Trigger cron `* * * * *` (Maks durasi eksekusi: 60 detik) | Hidup hanya beberapa detik tiap menit untuk `schedule:run`. |
-| **Redis Container (ACA)**| 0.25 vCPU | 0.5 GiB | Min 1 replika (Internal TCP Ingress Port 6379) | Collocated di dalam ACA Environment (latensi < 1 ms), $0 gratis masuk kuota ACA. |
+| **ACA Scheduler Daemon** | 0.25 vCPU | 0.5 GiB | Dedicated Daemon (min 1, max 1 replika) | Menjalankan `php artisan schedule:work` secara kontinu di memori tanpa penalti cold-start 1-menit. |
+| **Azure Managed Redis (AMR)** | Balanced_B0 (~500 MB) | Dedicated In-Memory | Redis Enterprise Engine terkelola | TLS Port 10000, latensi sub-1ms, dedicated cache, session store, dan atomic locks naskah. |
 | **TiDB Serverless** | Dynamic (RU) | Dynamic | Otomatis menyesuaikan beban query | Mendukung hingga 50 juta Request Units (RU) gratis/bulan. |
 | **Azure Blob Storage** | - | Pay-as-you-go | Unlimited kapasitas | Hot Tier dengan enkripsi AES-256 bawaan; kuota gratis 100 GB egress/bulan dari Azure. |
 | **Defender for Storage** | - | Cloud-native Security | On-demand scan | Pemindaian malware near real-time ($0.15/GB dipindai), menandai Blob Index Tags otomatis. |
@@ -136,7 +147,7 @@ Untuk memenuhi syarat performa proposal (NF-01: upload/download file hingga 20 M
 ## 6. Strategi Keamanan & Kepatuhan (*Security & Compliance*)
 
 1. **Enkripsi Data**:
-   * **In-Transit**: Seluruh komunikasi eksternal wajib melalui HTTPS dengan TLS 1.3. Koneksi database ke TiDB Serverless wajib menggunakan enkripsi TLS/SSL (Port 3306).
+   * **In-Transit**: Seluruh komunikasi eksternal wajib melalui HTTPS dengan TLS 1.3. Koneksi database ke TiDB Serverless wajib menggunakan enkripsi TLS/SSL (Port 4000 standar TiDB Serverless / Port 3306 pada MySQL lokal).
    * **At-Rest**: Berkas naskah di Azure Blob Storage dienkripsi otomatis menggunakan algoritma **AES-256** (Azure Storage Service Encryption). Data di TiDB dienkripsi di tingkat storage volume.
 2. **Isolasi Rahasia (*Secret Management*)**:
    * Nilai sensitif (`APP_KEY`, password database, kredensial SMTP, token API Crossref/ORCID) disimpan di dalam fitur *Secrets* terkelola milik Azure Container Apps.
@@ -157,7 +168,7 @@ Sesuai spesifikasi kebutuhan non-fungsional proposal (**NF-08: Backup setiap 24 
    * *Lifecycle Management Rules* dikonfigurasi untuk memindahkan atau membersihkan versi lama (*previous versions*) setelah 30 hari.
 2. **Pencadangan Basis Data (RDBMS)**:
    * TiDB Cloud Serverless mengelola snapshot cluster dan *Continuous Point-in-Time Recovery (PITR)* secara internal.
-   * Untuk redundansi jangka panjang, disiapkan skrip otomatis yang mengekspor dump SQL terkompresi (`mysqldump`) terjadwal setiap malam ke dalam container `/backups/database/` di Azure Blob Storage.
+   * Untuk redundansi jangka panjang, disiapkan skrip otomatis yang mengekspor dump SQL terkompresi (`mysqldump`) terjadwal setiap malam ke dalam container `sirida-backups` di Azure Blob Storage.
 
 ---
 
@@ -171,7 +182,7 @@ terraform/
 ├── providers.tf       # Definisi provider azurerm (~> 4.0) dan cloudflare (~> 4.0)
 ├── variables.tf       # Variabel konfigurasi lingkungan (region, domain, credentials)
 ├── main.tf            # Azure Resource Group & Log Analytics Workspace
-├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduled Job
+├── aca.tf             # ACA Environment, Web App, Worker, dan Scheduler Daemon
 ├── storage.tf         # Azure Storage Account, Blob Container, dan Defender for Storage
 ├── redis.tf           # Azure Managed Redis (AMR Balanced_B0, Redis Enterprise Engine)
 ├── monitoring.tf      # Azure Monitor Application Insights & Availability Web Test
@@ -187,7 +198,7 @@ Karena proyek ini berstatus *Proof of Concept* untuk pengujian dan expo berduras
    ```bash
    terraform apply -auto-approve
    ```
-   Dalam waktu 3 s.d. 5 menit, seluruh ekosistem (ACA, Azure Blob Storage, Defender for Storage, DNS, dan WAF) telah berdiri dan dapat diakses langsung secara global melalui URL resmi `https://jurnal.makassar.go.id`.
+   Dalam waktu 3 s.d. 5 menit, seluruh ekosistem (ACA, Azure Blob Storage, Defender for Storage, DNS, dan WAF) telah berdiri dan dapat diakses langsung secara global melalui URL resmi `https://sirida.web.id` (atau domain instansi `https://jurnal.makassar.go.id`).
 2. **Fase Evaluasi / Pengujian (Durasi 1–2 Jam)**:
    Aplikasi dan seluruh worker bekerja secara penuh untuk melayani demonstrasi alur peer-review naskah.
 3. **Fase Pembersihan (*Tear-Down*)**:

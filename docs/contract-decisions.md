@@ -1,6 +1,6 @@
 # SIRIDA — Aturan Domain & Keputusan Alur Bisnis (Invariants)
 
-Dokumen ini mendefinisikan aturan bisnis (*business invariants*), batasan privasi, otorisasi peran, dan alur kerja editorial jurnal ilmiah SIRIDA dalam arsitektur **Modular Monolith Laravel 13 (Blade + Livewire)**. Aturan ini melengkapi kebutuhan use case SRS (UC-01–18) dan wajib ditegakkan pada lapisan Eloquent Models, Form Requests, dan Application Services/Policies.
+Dokumen ini mendefinisikan aturan bisnis (*business invariants*), batasan privasi, otorisasi peran, dan alur kerja editorial jurnal ilmiah SIRIDA dalam arsitektur **Modular Monolith Laravel 13 (Blade + ViewModel Pattern OOP)**. Aturan ini melengkapi kebutuhan use case SRS (UC-01–18) dan wajib ditegakkan pada lapisan Eloquent Models, Form Requests, dan Application Services/Policies.
 
 ---
 

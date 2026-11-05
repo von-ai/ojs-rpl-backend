@@ -1,6 +1,6 @@
 # Panduan Integrasi Eksternal SIRIDA 1.0.0
 
-Aplikasi SIRIDA mengadopsi arsitektur **Modular Monolith Laravel 13 (Blade + Livewire 4)**. Antarmuka pengguna internal (penyerahan naskah, review, copyedit, penerbitan) berkomunikasi langsung dengan server melalui sesi stateful web (`auth:web`) tanpa perantara REST API atau Bearer token.
+Aplikasi SIRIDA mengadopsi arsitektur **Modular Monolith Laravel 13 (Blade + ViewModel Pattern OOP)**. Antarmuka pengguna internal (penyerahan naskah, review, copyedit, penerbitan) berkomunikasi langsung dengan server melalui sesi stateful web (`auth:web`) tanpa perantara REST API atau Bearer token.
 
 Dokumen ini memuat panduan integrasi sistem terhadap antarmuka dan layanan eksternal:
 

@@ -78,6 +78,7 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::get('/submissions', [AuthorSubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/create', [AuthorSubmissionController::class, 'create'])->name('submissions.create');
     Route::get('/submissions/sections', [AuthorSubmissionController::class, 'sectionsApi'])->name('submissions.sections');
+    Route::post('/submissions/upload-session', [AuthorSubmissionController::class, 'createUploadSession'])->name('submissions.upload-session');
     Route::post('/submissions', [AuthorSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');

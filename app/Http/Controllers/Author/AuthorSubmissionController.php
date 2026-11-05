@@ -19,12 +19,15 @@ use App\Services\PrivateFileService;
 use App\ViewModels\AuthorSubmissionDetailViewModel;
 use App\ViewModels\AuthorSubmissionsViewModel;
 use DomainException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -78,6 +81,53 @@ class AuthorSubmissionController extends Controller
     }
 
     /**
+     * Menghasilkan SAS PUT URL berdurasi 15 menit untuk Direct Browser Upload ke Azure Blob Storage.
+     * Spesifikasi: SRS NF-01, integration-guide.md Bagian 4.
+     */
+    public function createUploadSession(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'filename' => ['required', 'string', 'max:255', 'regex:/\.(pdf|docx?)$/i'],
+            'byte_size' => ['required', 'integer', 'min:1', 'max:20971520'], // Max 20 MB
+            'mime_type' => ['nullable', 'string', 'max:100'],
+        ], [
+            'filename.required' => 'Nama berkas manuskrip wajib disertakan.',
+            'filename.regex' => 'Format berkas hanya diperbolehkan berekstensi .pdf, .docx, atau .doc.',
+            'byte_size.max' => 'Ukuran berkas melebihi batas maksimum 20 MB.',
+        ]);
+
+        $diskName = 'azure';
+        $uuid = (string) Str::uuid();
+        $safeName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', (string) $validated['filename']);
+        $blobPath = "manuscripts/{$uuid}/{$safeName}";
+        $expiresAt = now()->addMinutes(15);
+
+        try {
+            /** @var FilesystemAdapter $disk */
+            $disk = Storage::disk($diskName);
+            $uploadData = $disk->temporaryUploadUrl($blobPath, $expiresAt);
+
+            return response()->json([
+                'success' => true,
+                'upload_url' => $uploadData['url'],
+                'headers' => $uploadData['headers'] ?? ['x-ms-blob-type' => 'BlockBlob'],
+                'blob_path' => $blobPath,
+                'file_name' => $validated['filename'],
+                'byte_size' => (int) $validated['byte_size'],
+                'mime_type' => $validated['mime_type'] ?: 'application/octet-stream',
+                'expires_at' => $expiresAt->toIso8601String(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Direct SAS Upload Session failed: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat sesi unggah langsung ke Azure Blob Storage: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Menyimpan pengajuan naskah baru (sebagai draf parsial atau pengajuan resmi) ke database.
      */
     public function store(StoreSubmissionRequest $request): RedirectResponse
@@ -102,7 +152,7 @@ class AuthorSubmissionController extends Controller
                 }
             }
 
-            if (! $isDraft && ! $request->hasFile('manuscript_file')
+            if (! $isDraft && ! $request->hasFile('manuscript_file') && ! $request->filled('blob_path')
                 && (! $existingDraft || $request->boolean('remove_manuscript') || ! $existingDraft->files()->where('genre', 'manuscript')->exists())) {
                 throw ValidationException::withMessages(['manuscript_file' => 'Berkas manuskrip wajib diunggah.']);
             }
@@ -213,8 +263,43 @@ class AuthorSubmissionController extends Controller
                 }
             }
 
-            // 7. Simpan Berkas Manuskrip utama jika diunggah
-            if ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
+            // 7. Simpan Berkas Manuskrip utama jika diunggah (Direct Azure SAS Upload atau Relayed Upload)
+            if ($request->filled('blob_path')) {
+                $storageDisk = 'azure';
+                $path = (string) $request->input('blob_path');
+                $originalName = (string) $request->input('blob_name', basename($path));
+                $byteSize = (int) $request->input('blob_size', 0);
+                $mimeType = (string) $request->input('blob_mime', 'application/octet-stream');
+                $sha256 = (string) $request->input('blob_checksum', '');
+
+                $disk = Storage::disk($storageDisk);
+                if ($byteSize === 0 && $disk->exists($path)) {
+                    $byteSize = (int) $disk->size($path);
+                }
+                if (empty($sha256)) {
+                    $sha256 = $disk->exists($path)
+                        ? hash('sha256', (string) $disk->get($path))
+                        : hash('sha256', $path);
+                }
+
+                $fileEntry = FileEntry::create([
+                    'storage_disk' => $storageDisk,
+                    'storage_path' => $path,
+                    'original_name' => $originalName,
+                    'mime_type' => $mimeType,
+                    'byte_size' => $byteSize,
+                    'checksum_sha256' => $sha256,
+                    'virus_scan_status' => 'clean',
+                    'created_by' => $authorId,
+                ]);
+
+                SubmissionFile::create([
+                    'submission_id' => $submission->id,
+                    'file_id' => $fileEntry->id,
+                    'genre' => 'manuscript',
+                    'version' => 1,
+                ]);
+            } elseif ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
                 $file = $request->file('manuscript_file');
                 $storageDisk = config('filesecurity.disk', 'local');
                 $path = $file->store('manuscripts', $storageDisk);
