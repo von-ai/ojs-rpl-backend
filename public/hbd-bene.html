@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎉 TOP SECRET: HBD BENE! 🎉</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --primary: #ff5e7e;
+      --primary-dark: #e03d60;
+      --secondary: #ffbe0b;
+      --accent: #8338ec;
+      --bg: #0f172a;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --text: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 20% 20%, #1e1b4b, #0f172a 70%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient animated bubbles/blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      opacity: 0.45;
+      animation: floatBlobs 12s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+    .blob-1 {
+      width: 320px;
+      height: 320px;
+      background: #ec4899;
+      top: 5%;
+      left: 10%;
+    }
+    .blob-2 {
+      width: 380px;
+      height: 380px;
+      background: #8b5cf6;
+      bottom: 5%;
+      right: 10%;
+      animation-delay: -5s;
+    }
+    .blob-3 {
+      width: 250px;
+      height: 250px;
+      background: #f59e0b;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -2s;
+    }
+
+    @keyframes floatBlobs {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 50px) scale(1.15); }
+    }
+
+    /* ========================================================
+       PASSWORD GATE SCREEN
+       ======================================================== */
+    #gate-screen {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 460px;
+      padding: 2.5rem 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7),
+                  0 0 35px rgba(236, 72, 153, 0.2);
+      text-align: center;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .badge-classified {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      animation: pulseAlert 2s infinite;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.75; transform: scale(1.03); }
+    }
+
+    .gate-icon {
+      font-size: 3.5rem;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+      animation: bounce 2s infinite ease-in-out;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .gate-title {
+      font-family: 'Fredoka', cursive;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gate-desc {
+      color: #94a3b8;
+      font-size: 0.92rem;
+      margin-bottom: 1.8rem;
+      line-height: 1.5;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1rem;
+      text-align: center;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .password-input:focus {
+      border-color: #ec4899;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.35);
+    }
+
+    .btn-unlock {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 25px rgba(236, 72, 153, 0.4);
+    }
+
+    .btn-unlock:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(236, 72, 153, 0.55);
+    }
+
+    .btn-unlock:active {
+      transform: scale(0.98);
+    }
+
+    .hint-trigger {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    .hint-trigger:hover {
+      color: #7dd3fc;
+    }
+
+    .hint-box {
+      margin-top: 0.8rem;
+      padding: 10px 14px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      font-size: 0.85rem;
+      color: #bae6fd;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .error-msg {
+      margin-top: 0.8rem;
+      font-size: 0.85rem;
+      color: #f87171;
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    .shake {
+      animation: shakeAnim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes shakeAnim {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    /* ========================================================
+       MAIN BIRTHDAY CONTENT SCREEN
+       ======================================================== */
+    #birthday-screen {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+      padding: 2.5rem 1.5rem;
+      z-index: 10;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes zoomIn {
+      0% { opacity: 0; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Audio floating controller */
+    .audio-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      color: #f1f5f9;
+      user-select: none;
+    }
+    .audio-badge:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    .audio-badge.playing {
+      background: rgba(236, 72, 153, 0.25);
+      border-color: #ec4899;
+      color: #fbcfe8;
+    }
+
+    /* Hero section */
+    .hero-card {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 32px;
+      padding: 3rem 2rem;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-title {
+      font-family: 'Fredoka', cursive;
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #f472b6, #fbbf24, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: rainbowGlow 5s infinite alternate ease-in-out;
+    }
+
+    @keyframes rainbowGlow {
+      0% { filter: drop-shadow(0 0 15px rgba(244, 114, 182, 0.5)); }
+      100% { filter: drop-shadow(0 0 25px rgba(167, 139, 250, 0.7)); }
+    }
+
+    .hero-tagline {
+      font-size: 1.15rem;
+      color: #cbd5e1;
+      max-width: 600px;
+      margin: 0 auto 1.8rem;
+      line-height: 1.6;
+    }
+
+    /* Badges row */
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .fun-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Interactive Cake */
+    .cake-container {
+      margin: 2rem auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .cake {
+      position: relative;
+      width: 180px;
+      height: 140px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s;
+    }
+    .cake:hover {
+      transform: scale(1.05);
+    }
+
+    .plate {
+      width: 210px;
+      height: 14px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      position: absolute;
+      bottom: 0;
+      left: -15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    }
+
+    .layer-bottom {
+      width: 170px;
+      height: 55px;
+      background: linear-gradient(to right, #78350f, #92400e, #78350f);
+      border-radius: 14px 14px 6px 6px;
+      position: absolute;
+      bottom: 12px;
+      left: 5px;
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,0.25);
+    }
+
+    .layer-bottom::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 0;
+      width: 100%;
+      height: 14px;
+      background: #f43f5e;
+      border-radius: 20px;
+    }
+
+    .layer-top {
+      width: 130px;
+      height: 48px;
+      background: linear-gradient(to right, #ec4899, #f472b6, #ec4899);
+      border-radius: 14px 14px 4px 4px;
+      position: absolute;
+      bottom: 65px;
+      left: 25px;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.15);
+    }
+
+    .icing-drips {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 12px;
+      background: #fff;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .candle {
+      position: absolute;
+      width: 12px;
+      height: 38px;
+      background: repeating-linear-gradient(45deg, #38bdf8, #38bdf8 6px, #fff 6px, #fff 12px);
+      border-radius: 4px;
+      top: 18px;
+      left: 84px;
+    }
+
+    .flame {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 22px;
+      background: radial-gradient(ellipse at bottom, #fef08a, #f97316 70%, transparent 90%);
+      border-radius: 50% 50% 35% 35%;
+      box-shadow: 0 0 15px #f97316, 0 0 30px #f59e0b;
+      animation: flicker 0.6s infinite alternate ease-in-out;
+      transform-origin: center bottom;
+      transition: all 0.3s ease;
+    }
+
+    .flame.extinguished {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.2);
+    }
+
+    .smoke {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    .smoke.active {
+      opacity: 0.8;
+      animation: riseSmoke 1.5s forwards ease-out;
+    }
+
+    @keyframes riseSmoke {
+      0% { transform: translate(-50%, 0) scale(0.5); opacity: 0.8; }
+      100% { transform: translate(-50%, -40px) scale(1.6); opacity: 0; }
+    }
+
+    @keyframes flicker {
+      0% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+      100% { transform: translateX(-50%) rotate(3deg) scale(1.08); }
+    }
+
+    .blow-btn {
+      background: linear-gradient(135deg, #f59e0b, #ec4899);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .blow-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(245, 158, 11, 0.6);
+    }
+
+    /* GRID SECTIONS */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .card-title {
+      font-family: 'Fredoka', cursive;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* OM ZUHDI SPECIAL SECTION */
+    .om-zuhdi-card {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(131, 56, 236, 0.25), rgba(236, 72, 153, 0.2));
+      border: 2px solid rgba(131, 56, 236, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .om-zuhdi-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .om-avatar {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ffbe0b, #fb5607);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 0 20px rgba(255, 190, 11, 0.5);
+      flex-shrink: 0;
+    }
+
+    .quote-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-left: 4px solid #ffbe0b;
+      padding: 1.2rem;
+      border-radius: 0 16px 16px 0;
+      font-style: italic;
+      color: #e2e8f0;
+      line-height: 1.6;
+      font-size: 1.05rem;
+    }
+
+    /* MYSTERY BOX GACHA */
+    .gift-boxes {
+      display: flex;
+      justify-content: space-around;
+      gap: 12px;
+      margin-top: 0.5rem;
+    }
+
+    .gift-box-item {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 1.2rem 0.8rem;
+      text-align: center;
+      cursor: pointer;
+      flex: 1;
+      transition: all 0.25s ease;
+    }
+    .gift-box-item:hover {
+      background: rgba(236, 72, 153, 0.2);
+      border-color: #ec4899;
+      transform: translateY(-3px) scale(1.03);
+    }
+    .gift-box-item.opened {
+      border-style: solid;
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      cursor: default;
+    }
+
+    .gift-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.4rem;
+      display: block;
+      transition: transform 0.3s;
+    }
+    .gift-box-item:hover .gift-icon {
+      transform: scale(1.2) rotate(6deg);
+    }
+
+    .gift-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .gift-reveal-result {
+      min-height: 44px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #fde047;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    /* WISH GENERATOR */
+    .wish-display {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1.2rem;
+      border-radius: 16px;
+      font-size: 0.98rem;
+      line-height: 1.6;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* CERTIFICATE CARD */
+    .cert-content {
+      background: rgba(0,0,0,0.25);
+      border: 2px dashed rgba(245, 158, 11, 0.5);
+      border-radius: 16px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .cert-title {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      color: #fbbf24;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .cert-name {
+      font-family: 'Fredoka', cursive;
+      font-size: 1.6rem;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .cert-desc {
+      font-size: 0.86rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #64748b;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    /* POPUP TOAST */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #ec4899;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 999;
+      display: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .hero-card { padding: 2rem 1.2rem; }
+      .gift-boxes { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient glowing shapes -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- ========================================================
+       1. SCREEN KEAMANAN / PASSWORD GATE
+       ======================================================== -->
+  <div id="gate-screen">
+    <div class="badge-classified">🔒 ZONA ULTRA RAHASIA</div>
+    <div class="gate-icon">🕵️‍♂️</div>
+    <h1 class="gate-title">Verifikasi Identitas</h1>
+    <p class="gate-desc">
+      Area ini dilindungi enkripsi level kayangan! Masukkan kata sandi keramat untuk membuka kejutan ulang tahun Bene.
+    </p>
+
+    <form id="password-form" onsubmit="handleLogin(event)">
+      <div class="input-group">
+        <input 
+          type="password" 
+          id="password-input" 
+          class="password-input" 
+          placeholder="Ketik password di sini..." 
+          autocomplete="off" 
+          autofocus
+        />
+        <button type="submit" class="btn-unlock">
+          <span>Buka Gerbang Rahasia</span> 🚀
+        </button>
+      </div>
+    </form>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <span class="hint-trigger" onclick="toggleHint()">💡 Lupa atau butuh bocoran password?</span>
+    <div class="hint-box" id="hint-box">
+      <strong>Bocoran dari Intel:</strong><br>
+      Dua kata, sosok panutan, diawali <em>"om"</em> dan diakhiri <em>"zuhdi"</em> 😉
+    </div>
+  </div>
+
+  <!-- ========================================================
+       2. SCREEN HALAMAN ULANG TAHUN BENE
+       ======================================================== -->
+  <div id="birthday-screen">
+    
+    <!-- Audio controls -->
+    <div class="audio-badge" id="audio-toggle" onclick="toggleBGM()">
+      <span id="audio-icon">🎵</span>
+      <span id="audio-label">Nyalakan Musik HBD (8-bit)</span>
+    </div>
+
+    <!-- Hero Card -->
+    <div class="hero-card">
+      <div class="hero-sub">🚨 BREAKING NEWS DUNIA PERSILATAN 🚨</div>
+      <h1 class="hero-title">HAPPY BIRTHDAY BENE! 🎂🥳</h1>
+      <p class="hero-tagline">
+        Selamat bertambah usia, Bene! Usia bertambah, ketampanan/aura makin membara, dan yang paling penting: jatah makan siang traktiran makin ditunggu teman-teman! 😎
+      </p>
+
+      <div class="badge-row">
+        <span class="fun-badge">✨ Level Up Umur</span>
+        <span class="fun-badge">👑 Sah Makin Keren</span>
+        <span class="fun-badge">☕ Beban Hidup: Dihadapi Santai</span>
+        <span class="fun-badge">💸 Dompet: Siap Berkah</span>
+      </div>
+
+      <!-- Interactive Birthday Cake -->
+      <div class="cake-container">
+        <div class="cake" onclick="blowCandle()" title="Klik kue untuk meniup lilin!">
+          <div class="plate"></div>
+          <div class="layer-bottom"></div>
+          <div class="layer-top">
+            <div class="icing-drips"></div>
+          </div>
+          <div class="candle">
+            <div class="flame" id="flame"></div>
+            <div class="smoke" id="smoke">💨</div>
+          </div>
+        </div>
+
+        <div>
+          <button class="blow-btn" id="candle-btn" onclick="blowCandle()">
+            <span>💨 Tiup Lilin & Buat Harapan!</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <button class="btn-secondary" onclick="launchConfettiRain()">
+          🎉 Banjirkan Konfeti Lagi!
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid: Sabda Om Zuhdi & Fitur-fitur Kocak -->
+    <div class="grid-container">
+
+      <!-- Sabda Spesial dari Om Zuhdi -->
+      <div class="card om-zuhdi-card">
+        <div class="om-zuhdi-header">
+          <div class="om-avatar">👳‍♂️</div>
+          <div>
+            <h3 style="font-family: 'Fredoka', cursive; font-size: 1.3rem; color: #fbbf24;">
+              Sabda & Wejangan Khusus: Om Zuhdi
+            </h3>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">Penasihat Spiritual & Keamanan Cyber</p>
+          </div>
+        </div>
+
+        <div class="quote-box" id="om-zuhdi-quote">
+          "Wahai anak muda bernama Bene... Ingatlah, bertambahnya usia itu seperti compiling kode: sesekali ada warning, kadang muncul bug, tapi jangan pernah panik! Selama masih ada kopi dan teman yang suportif, hidup akan selalu running with exit code 0. HBD Bene, doa terbaik buatmu selalu!"
+        </div>
+
+        <div style="display:flex; justify-content: flex-end;">
+          <button class="btn-secondary" style="font-size: 0.8rem; padding: 6px 14px;" onclick="refreshOmQuote()">
+            🔄 Minta Petuah Lain dari Om Zuhdi
+          </button>
+        </div>
+      </div>
+
+      <!-- Gacha Kotak Kado Misterius -->
+      <div class="card">
+        <h3 class="card-title">🎁 Gacha Hadiah Ultah</h3>
+        <p style="font-size: 0.88rem; color: #94a3b8;">
+          Pilih salah satu kotak misterius di bawah untuk klaim hadiah spesialmu hari ini:
+        </p>
+
+        <div class="gift-boxes">
+          <div class="gift-box-item" onclick="openGift(1, this)">
+            <span class="gift-icon">📦</span>
+            <span class="gift-label">Kotak A</span>
+          </div>
+          <div class="gift-box-item" onclick="openGift(2, this)">
+            <span class="gift-icon">📦</span>
+            <span class="gift-label">Kotak B</span>
+          </div>
+          <div class="gift-box-item" onclick="openGift(3, this)">
+            <span class="gift-icon">📦</span>
+            <span class="gift-label">Kotak C</span>
+          </div>
+        </div>
+
+        <div class="gift-reveal-result" id="gift-result">
+          👉 Klik salah satu kotak di atas!
+        </div>
+      </div>
+
+      <!-- Generator Doa Lucu & Random -->
+      <div class="card">
+        <h3 class="card-title">💌 Mesin Generator Doa Kocak</h3>
+        <p style="font-size: 0.88rem; color: #94a3b8;">
+          Tekan tombol untuk meracik doa dan harapan spektakuler untuk Bene:
+        </p>
+
+        <div class="wish-display" id="wish-display">
+          "Semoga Bene rezekinya seluas samudra Hindia, tidurnya selalu nyenyak 8 jam sehari tanpa gangguan notifikasi grup, dan makin disayang semua orang!"
+        </div>
+
+        <button class="btn-secondary" onclick="generateRandomWish()">
+          🎲 Racik Doa Baru
+        </button>
+      </div>
+
+      <!-- Sertifikat Resmi Kelulusan Umur -->
+      <div class="card">
+        <h3 class="card-title">📜 Sertifikat Resmi</h3>
+        <div class="cert-content">
+          <div class="cert-title">Piagam Penghargaan Level Up</div>
+          <div class="cert-name">BENE ⭐</div>
+          <p class="cert-desc">
+            Dinyatakan resmi lulus menjalani tahun kemarin dengan penuh kegantengan, ketabahan, dan humor tinggi. Berhak mendapatkan traktiran dan ucapan selamat tanpa henti!
+          </p>
+          <div style="margin-top: 10px; font-size: 0.75rem; color: #fbbf24; font-weight: 700;">
+            Tertanda: Om Zuhdi & Seluruh Rekan Seperjuangan ✍️
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      Dibuat khusus penuh cinta & tawa untuk Bene • Password Kehormatan: "om zuhdi" 🎂✨
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <script>
+    // ==========================================================
+    // 1. LOGIKA PASSWORD GATE
+    // ==========================================================
+    const gateScreen = document.getElementById('gate-screen');
+    const birthdayScreen = document.getElementById('birthday-screen');
+    const passwordInput = document.getElementById('password-input');
+    const errorMsg = document.getElementById('error-msg');
+    const hintBox = document.getElementById('hint-box');
+
+    let failAttempts = 0;
+    const failResponses = [
+      "❌ Password salah bree! Coba diinget-inget lagi 🧐",
+      "❌ Masih salah! Clue: ada hubungannya sama Om yang satu itu 🗿",
+      "❌ Waduh, jangan-jangan penyusup nih? Passwordnya 'om zuhdi' woy! 😂",
+      "❌ Kebangetan kalo masih salah! Tinggal ketik: om zuhdi 🙏"
+    ];
+
+    function toggleHint() {
+      hintBox.style.display = hintBox.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function showToast(text, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, duration);
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const entered = passwordInput.value.trim().toLowerCase();
+
+      // Target password: "om zuhdi"
+      if (entered === 'om zuhdi') {
+        errorMsg.style.color = '#4ade80';
+        errorMsg.textContent = '✅ AKSES DITERIMA! Menyiapkan pesta ultah...';
+        playCheerSound();
+        triggerSuperConfetti();
+
+        setTimeout(() => {
+          gateScreen.style.opacity = '0';
+          gateScreen.style.transform = 'scale(0.8)';
+          setTimeout(() => {
+            gateScreen.style.display = 'none';
+            birthdayScreen.style.display = 'flex';
+            // Start audio synthesizer automatically or let user toggle
+            startBGM();
+            triggerSuperConfetti();
+          }, 400);
+        }, 900);
+
+      } else {
+        failAttempts++;
+        gateScreen.classList.remove('shake');
+        void gateScreen.offsetWidth; // trigger reflow
+        gateScreen.classList.add('shake');
+
+        playBuzzerSound();
+        const responseIdx = Math.min(failAttempts - 1, failResponses.length - 1);
+        errorMsg.style.color = '#f87171';
+        errorMsg.textContent = failResponses[responseIdx];
+        passwordInput.select();
+      }
+    }
+
+    // ==========================================================
+    // 2. INTERAKTIF KUE ULANG TAHUN & LILIN
+    // ==========================================================
+    let isCandleLit = true;
+    const flame = document.getElementById('flame');
+    const smoke = document.getElementById('smoke');
+    const candleBtn = document.getElementById('candle-btn');
+
+    function blowCandle() {
+      if (isCandleLit) {
+        // Tiup lilin
+        isCandleLit = false;
+        flame.classList.add('extinguished');
+        smoke.classList.add('active');
+        playBlowingSound();
+
+        candleBtn.innerHTML = '<span>🔥 Nyalakan Lilin Lagi</span>';
+        showToast('🎂 Horeee! Lilin padam, semoga semua harapan Bene terkabul!');
+        triggerSuperConfetti();
+      } else {
+        // Nyalakan lagi
+        isCandleLit = true;
+        flame.classList.remove('extinguished');
+        smoke.classList.remove('active');
+        candleBtn.innerHTML = '<span>💨 Tiup Lilin & Buat Harapan!</span>';
+        showToast('🔥 Lilin kembali menyala! Make a wish lagi gas!');
+      }
+    }
+
+    // ==========================================================
+    // 3. GACHA KADO RANDOM
+    // ==========================================================
+    const gifts = [
+      "🎟️ Voucher Makan Siang Gratis (Syarat & Ketentuan: Bayar Masing-Masing) 😂",
+      "🤲 Paket Doa Mustajab 30 Juz: Rezeki lancar, jodoh didekatkan, skripsi/kerjaan beres kilat!",
+      "☕ Pasokan Kopi Tak Terbatas dari Semesta & Anti-Ngantuk Sepanjang Masa!",
+      "👑 Mahkota Keberuntungan: Hari ini Bene bebas dari segala omelan!",
+      "💳 Saldo Rekening Nambah 1 Triliun (Versi simulasi alam mimpi) 💸",
+      "👕 Kaos Eksklusif bertuliskan: 'Saya Sahabat Karibnya Om Zuhdi' 😎"
+    ];
+
+    let openedBoxes = 0;
+    function openGift(boxNum, element) {
+      if (element.classList.contains('opened')) {
+        showToast('Kotak ini sudah dibuka! Buka kotak lain ya!');
+        return;
+      }
+      element.classList.add('opened');
+      const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+      const resultBox = document.getElementById('gift-result');
+      resultBox.innerHTML = `🎉 <strong>Kotak ${boxNum}:</strong> ${randomGift}`;
+      element.querySelector('.gift-icon').textContent = '🎁✨';
+      playCheerSound();
+      launchConfettiRain();
+    }
+
+    // ==========================================================
+    // 4. RANDOM WISH GENERATOR & PETUAH OM ZUHDI
+    // ==========================================================
+    const funnyWishes = [
+      "Semoga Bene makin kaya raya sampai bingung mau ngabisin uang ke mana, dan kalau bingung bisa transfer ke saya! 🤑",
+      "Semoga selalu sehat walafiat, jarang sakit pinggang, dan metabolisme tetap seperti umur 17 tahun! 💪",
+      "Semoga Bene enteng jodoh, enteng rezeki, dan beban hidup seringan kerupuk kaleng warteg! 🍜",
+      "Semoga semua rencana besar Bene tahun ini di-approve semesta secepat kilat tanpa revisi! ⚡",
+      "Semoga setiap kali buka dompet atau m-banking, saldonya selalu bikin tersenyum lebar! ✨",
+      "Doa tulus: Semoga Bene senantiasa diberkahi kebahagiaan, dikelilingi orang baik, dan sukses dunia akhirat! 🤲"
+    ];
+
+    function generateRandomWish() {
+      const display = document.getElementById('wish-display');
+      const random = funnyWishes[Math.floor(Math.random() * funnyWishes.length)];
+      display.style.opacity = '0';
+      setTimeout(() => {
+        display.textContent = random;
+        display.style.opacity = '1';
+      }, 200);
+      playClickSound();
+    }
+
+    const omZuhdiQuotes = [
+      `"Wahai anak muda bernama Bene... Ingatlah, bertambahnya usia itu seperti compiling kode: sesekali ada warning, kadang muncul bug, tapi jangan pernah panik! Selama masih ada kopi dan teman yang suportif, hidup akan selalu running with exit code 0. HBD Bene!"`,
+      `"Sabda Om Zuhdi hari ini: Jangan hitung berapa lilin yang ada di atas kuemu, tapi hitunglah berapa banyak teman yang siap membantumu saat susah (dan siap minta traktiran saat ultah). Selamat milad Bene!"`,
+      `"Jadilah seperti query database yang terindeks rapi: cepat dalam bertindak, tepat dalam mengambil keputusan, dan hemat resource mental. Happy Birthday Bene, berkah selalu!"`,
+      `"Dunia ini keras, Bene. Tapi tenang saja, selagi kamu memegang password 'om zuhdi', pintu-pintu kemudahan akan selalu terbuka lebar. Maju terus pantang mundur!"`
+    ];
+
+    let quoteIdx = 0;
+    function refreshOmQuote() {
+      quoteIdx = (quoteIdx + 1) % omZuhdiQuotes.length;
+      const quoteBox = document.getElementById('om-zuhdi-quote');
+      quoteBox.style.opacity = '0';
+      setTimeout(() => {
+        quoteBox.textContent = omZuhdiQuotes[quoteIdx];
+        quoteBox.style.opacity = '1';
+      }, 200);
+      playClickSound();
+    }
+
+    // ==========================================================
+    // 5. WEB AUDIO API SYNTHESIZER (Happy Birthday Melody + SFX)
+    // Works 100% offline without external mp3 files!
+    // ==========================================================
+    let audioCtx = null;
+    let isBgmPlaying = false;
+    let bgmTimeouts = [];
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Notes frequency for "Happy Birthday"
+    const notes = {
+      'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23,
+      'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46
+    };
+
+    const hbdScore = [
+      { note: 'C4', dur: 0.35 }, { note: 'C4', dur: 0.15 }, { note: 'D4', dur: 0.5 }, { note: 'C4', dur: 0.5 }, { note: 'F4', dur: 0.5 }, { note: 'E4', dur: 0.9 },
+      { note: 'C4', dur: 0.35 }, { note: 'C4', dur: 0.15 }, { note: 'D4', dur: 0.5 }, { note: 'C4', dur: 0.5 }, { note: 'G4', dur: 0.5 }, { note: 'F4', dur: 0.9 },
+      { note: 'C4', dur: 0.35 }, { note: 'C4', dur: 0.15 }, { note: 'C5', dur: 0.5 }, { note: 'A4', dur: 0.5 }, { note: 'F4', dur: 0.5 }, { note: 'E4', dur: 0.5 }, { note: 'D4', dur: 0.8 },
+      { note: 'B4', dur: 0.35 }, { note: 'B4', dur: 0.15 }, { note: 'A4', dur: 0.5 }, { note: 'F4', dur: 0.5 }, { note: 'G4', dur: 0.5 }, { note: 'F4', dur: 1.1 }
+    ];
+
+    function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(err) {
+        console.error(err);
+      }
+    }
+
+    function startBGM() {
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      isBgmPlaying = true;
+      document.getElementById('audio-toggle').classList.add('playing');
+      document.getElementById('audio-icon').textContent = '🔊';
+      document.getElementById('audio-label').textContent = 'Matikan Musik';
+
+      playSongLoop();
+    }
+
+    function stopBGM() {
+      isBgmPlaying = false;
+      bgmTimeouts.forEach(t => clearTimeout(t));
+      bgmTimeouts = [];
+      document.getElementById('audio-toggle').classList.remove('playing');
+      document.getElementById('audio-icon').textContent = '🔈';
+      document.getElementById('audio-label').textContent = 'Nyalakan Musik (8-bit)';
+    }
+
+    function toggleBGM() {
+      if (isBgmPlaying) {
+        stopBGM();
+      } else {
+        startBGM();
+      }
+    }
+
+    function playSongLoop() {
+      if (!isBgmPlaying) return;
+      let accumTime = 0;
+
+      hbdScore.forEach(item => {
+        const t = setTimeout(() => {
+          if (isBgmPlaying) {
+            playTone(notes[item.note], item.dur * 0.9, 'triangle', 0.2);
+          }
+        }, accumTime * 1000);
+        bgmTimeouts.push(t);
+        accumTime += item.dur * 1.15;
+      });
+
+      // Repeat loop after melody ends
+      const loopTimeout = setTimeout(() => {
+        if (isBgmPlaying) {
+          playSongLoop();
+        }
+      }, (accumTime + 1) * 1000);
+      bgmTimeouts.push(loopTimeout);
+    }
+
+    function playCheerSound() {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // Arpeggio sound
+      [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 0.25, 'sine', 0.2), idx * 80);
+      });
+    }
+
+    function playBuzzerSound() {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      playTone(130, 0.35, 'sawtooth', 0.25);
+    }
+
+    function playBlowingSound() {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      playTone(300, 0.4, 'sine', 0.1);
+      setTimeout(() => playCheerSound(), 300);
+    }
+
+    function playClickSound() {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      playTone(600, 0.08, 'square', 0.08);
+    }
+
+    // ==========================================================
+    // 6. CONFETTI ANIMATIONS (With Offline Canvas Fallback)
+    // ==========================================================
+    function triggerSuperConfetti() {
+      if (typeof confetti === 'function') {
+        const count = 200;
+        const defaults = { origin: { y: 0.7 } };
+
+        function fire(particleRatio, opts) {
+          confetti(Object.assign({}, defaults, opts, {
+            particleCount: Math.floor(count * particleRatio)
+          }));
+        }
+
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+      } else {
+        fallbackConfetti();
+      }
+    }
+
+    function launchConfettiRain() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } else {
+        fallbackConfetti();
+      }
+      playCheerSound();
+    }
+
+    // Pure JS canvas confetti fallback if CDN is not reachable
+    function fallbackConfetti() {
+      let canvas = document.getElementById('fallback-canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = 'fallback-canvas';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '9999';
+        document.body.appendChild(canvas);
+      }
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+      const particles = [];
+      const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight * 0.7,
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() - 0.8) * 18,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 10
+        });
+      }
+
+      let frame = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.4; // gravity
+          p.rotation += p.rotSpeed;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        frame++;
+        if (frame < 90) {
+          requestAnimationFrame(animate);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      animate();
+    }
+  </script>
+</body>
+</html>
