@@ -24,6 +24,9 @@ use App\Models\Revision;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Services\PortalAccess;
+use App\Services\Security\MalwareScannerInterface;
+use App\Services\Security\MicrosoftDefenderScanner;
+use App\Services\Security\MockMalwareScanner;
 use App\Services\Storage\AzureBlobStorageAdapter;
 use App\Services\Storage\AzureBlobStorageClient;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -43,6 +46,15 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Auth::provider('sirida', fn ($app, $config) => new HashedRememberUserProvider($app['hash'], $config['model']));
+
+        $this->app->bind(MalwareScannerInterface::class, function ($app) {
+            $driver = config('filesecurity.driver', 'mock');
+
+            return match ($driver) {
+                'defender' => $app->make(MicrosoftDefenderScanner::class),
+                default => $app->make(MockMalwareScanner::class),
+            };
+        });
     }
 
     /**

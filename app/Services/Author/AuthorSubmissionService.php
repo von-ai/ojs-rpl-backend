@@ -63,7 +63,7 @@ class AuthorSubmissionService
             }
 
             return DB::transaction(function () use ($submission, $actor, $manuscriptFile, $responseLetterFile, $note): Revision {
-                $storageDisk = config('filesecurity.disk', 'local');
+                $storageDisk = (string) config('filesecurity.disk', 'azure');
                 $disk = Storage::disk($storageDisk);
 
                 // 1. Simpan berkas revisi manuskrip

@@ -35,7 +35,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
 
         $this->author = User::factory()->create(['name' => 'Prof. Penulis Korespondensi']);
         $this->copyEditor = User::factory()->create(['name' => 'Budi Copyeditor']);
@@ -63,7 +63,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         ]);
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/accepted_manuscript.docx',
             'original_name' => 'accepted_manuscript.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -234,15 +234,15 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $this->actingAs($this->copyEditor);
 
         $fakeFile = UploadedFile::fake()->create('manuscript_to_download.docx', 300);
-        $path = $fakeFile->store('copyedits/test', 'local');
+        $path = $fakeFile->store('copyedits/test', 'azure');
 
         $fileEntry = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $path,
             'original_name' => 'manuscript_to_download.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'byte_size' => 300 * 1024,
-            'checksum_sha256' => hash('sha256', Storage::disk('local')->get($path)),
+            'checksum_sha256' => hash('sha256', Storage::disk('azure')->get($path)),
             'created_by' => $this->copyEditor->id, 'virus_scan_status' => 'clean',
         ]);
 
@@ -258,7 +258,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $this->actingAs($this->copyEditor);
 
         $fileEntry = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/missing_file_on_disk.docx',
             'original_name' => 'missing_file_on_disk.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -270,7 +270,7 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $response = $this->get(route('copyeditor.files.download', $fileEntry->id));
 
         $response->assertStatus(404);
-        $this->assertFalse(Storage::disk('local')->exists('submissions/missing_file_on_disk.docx'));
+        $this->assertFalse(Storage::disk('azure')->exists('submissions/missing_file_on_disk.docx'));
     }
 
     public function test_controller_download_file_aborts_404_when_not_in_database(): void
@@ -287,10 +287,10 @@ class CopyeditorTransactionalControllerTest extends TestCase
         $this->actingAs($this->copyEditor);
 
         $fakeFile = UploadedFile::fake()->create('SUB2026-00106_Source_Accepted.docx', 200);
-        $path = $fakeFile->storeAs('submissions', 'SUB2026-00106_Source_Accepted.docx', 'local');
+        $path = $fakeFile->storeAs('submissions', 'SUB2026-00106_Source_Accepted.docx', 'azure');
 
         FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $path,
             'original_name' => 'SUB2026-00106_Source_Accepted.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

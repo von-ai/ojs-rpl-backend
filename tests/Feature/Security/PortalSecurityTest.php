@@ -47,9 +47,9 @@ class PortalSecurityTest extends TestCase
     private function file(string $status = 'clean', string $content = '%PDF-1.4 test document'): FileEntry
     {
         $path = 'security/'.Str::ulid().'.pdf';
-        Storage::disk('local')->put($path, $content);
+        Storage::disk('azure')->put($path, $content);
 
-        return FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => 'identitas-penulis.pdf', 'mime_type' => 'application/pdf', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => $status]);
+        return FileEntry::create(['storage_disk' => 'azure', 'storage_path' => $path, 'original_name' => 'identitas-penulis.pdf', 'mime_type' => 'application/pdf', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => $status]);
     }
 
     public function test_lockout_never_reactivates_a_disabled_account(): void
@@ -97,7 +97,7 @@ class PortalSecurityTest extends TestCase
 
     public function test_author_cannot_substitute_a_file_from_another_submission(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $author = User::factory()->create();
         $own = $this->submission($author);
         $other = $this->submission(User::factory()->create());
@@ -108,7 +108,7 @@ class PortalSecurityTest extends TestCase
 
     public function test_copyeditor_file_route_checks_ownership_even_without_role_middleware(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $owner = User::factory()->create();
         $submission = $this->submission($owner);
         $file = $this->file();
@@ -118,7 +118,7 @@ class PortalSecurityTest extends TestCase
 
     public function test_quarantined_and_tampered_files_cannot_be_downloaded(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $author = User::factory()->create();
         $submission = $this->submission($author);
         $file = $this->file('pending');
@@ -126,25 +126,25 @@ class PortalSecurityTest extends TestCase
         $url = route('author.submissions.files.download', [$submission->id, $file->id]);
         $this->actingAs($author)->get($url)->assertStatus(423);
         $file->update(['virus_scan_status' => 'clean']);
-        Storage::disk('local')->put($file->storage_path, 'tampered content');
+        Storage::disk('azure')->put($file->storage_path, 'tampered content');
         $this->get($url)->assertStatus(409);
     }
 
     public function test_missing_files_do_not_generate_placeholder_documents(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $author = User::factory()->create();
         $submission = $this->submission($author);
         $file = $this->file();
         SubmissionFile::create(['submission_id' => $submission->id, 'file_id' => $file->id]);
-        Storage::disk('local')->delete($file->storage_path);
+        Storage::disk('azure')->delete($file->storage_path);
         $this->actingAs($author)->get(route('author.submissions.files.download', [$submission->id, $file->id]))->assertNotFound();
-        Storage::disk('local')->assertMissing($file->storage_path);
+        Storage::disk('azure')->assertMissing($file->storage_path);
     }
 
     public function test_reviewer_cannot_download_the_original_manuscript(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $reviewer = User::factory()->create();
         $submission = $this->submission(User::factory()->create());
         $this->role($reviewer, 'reviewer', $submission->journal_id);

@@ -63,10 +63,10 @@ class ArticlePaymentSeeder extends Seeder
 
         if ($subPending) {
             $path1 = "payments/{$subPending->id}/bukti_transfer_brimo_sub106.png";
-            Storage::disk('local')->put($path1, $dummyReceiptPng);
+            Storage::disk('azure')->put($path1, $dummyReceiptPng);
 
             $file1 = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => $path1,
                 'original_name' => 'bukti_transfer_brimo_sub106.png',
                 'mime_type' => 'image/png',
@@ -109,10 +109,10 @@ class ArticlePaymentSeeder extends Seeder
 
         if ($subRejected && $subRejected->id !== ($subPending?->id ?? null)) {
             $path2 = "payments/{$subRejected->id}/struk_atm_mandiri_sub110.png";
-            Storage::disk('local')->put($path2, $dummyReceiptPng);
+            Storage::disk('azure')->put($path2, $dummyReceiptPng);
 
             $file2 = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => $path2,
                 'original_name' => 'struk_atm_mandiri_sub110.png',
                 'mime_type' => 'image/png',
@@ -187,10 +187,10 @@ class ArticlePaymentSeeder extends Seeder
 
         if ($subVerified) {
             $path3 = "payments/{$subVerified->id}/bukti_transfer_bni_sub107.png";
-            Storage::disk('local')->put($path3, $dummyReceiptPng);
+            Storage::disk('azure')->put($path3, $dummyReceiptPng);
 
             $file3 = FileEntry::create([
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => $path3,
                 'original_name' => 'bukti_transfer_bni_sub107.png',
                 'mime_type' => 'image/png',

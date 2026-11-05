@@ -20,9 +20,8 @@ services:
       - SESSION_DRIVER=redis
       - CACHE_STORE=redis
       - QUEUE_CONNECTION=database
-      - FILE_SCAN_DRIVER=clamd
-      - CLAMD_HOST=clamav
-      - CLAMD_PORT=3310
+      - FILE_SCAN_DRIVER=${FILE_SCAN_DRIVER:-mock}
+      - PRIVATE_UPLOAD_DISK=azure
       - MAIL_HOST=mailpit
       - MAIL_PORT=1025
       - FILESYSTEM_DISK=azure
@@ -56,29 +55,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      clamav:
-        condition: service_healthy
+      azurite:
+        condition: service_started
     command: ["php", "artisan", "queue:work", "database", "--queue=file-security", "--tries=3", "--timeout=180"]
 
   scheduler:
     <<: *application
     ports: []
     command: ["php", "artisan", "schedule:work"]
-
-  clamav:
-    platform: linux/amd64
-    mem_limit: 4g
-    image: clamav/clamav@sha256:6d87c712e3391e13c1ba6e05dfb074d4b1ddb5a6834b23bb9da990d2a4ef042a
-    restart: unless-stopped
-    # Keep the unauthenticated clamd protocol inside the application network.
-    volumes:
-      - clamav_data:/var/lib/clamav
-    healthcheck:
-      test: ["CMD", "clamdcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 120s
 
   mysql:
     image: mysql:8.0
@@ -131,7 +115,6 @@ services:
     command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --location /data
 
 volumes:
-  clamav_data:
   mysql_data:
   redis_data:
   azurite_data:

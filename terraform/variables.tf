@@ -188,7 +188,7 @@ variable "storage_retention_days" {
 }
 
 variable "filesystem_disk" {
-  description = "Driver penyimpanan default Laravel (local atau azure)"
+  description = "Driver penyimpanan default Laravel (azure)"
   type        = string
   default     = "azure"
 }
@@ -197,6 +197,12 @@ variable "enable_storage_defender" {
   description = "Aktifkan Microsoft Defender for Storage (Malware Scanning)"
   type        = bool
   default     = true
+}
+
+variable "file_scan_driver" {
+  description = "Driver pemindai malware (defender untuk Microsoft Defender for Storage di cloud)"
+  type        = string
+  default     = "defender"
 }
 
 # -----------------------------------------------------------------------------

@@ -39,7 +39,7 @@ class CopyeditorServiceTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->service = new CopyeditorService;
 
         $this->author = User::factory()->create(['name' => 'Dr. Penulis Korespondensi']);
@@ -66,7 +66,7 @@ class CopyeditorServiceTest extends TestCase
         ]);
 
         $this->sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'manuscripts/source_001.docx',
             'original_name' => 'source_001.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -109,8 +109,8 @@ class CopyeditorServiceTest extends TestCase
 
         $this->assertEquals('in_progress', $this->copyedit->fresh()->status);
         $this->assertNotEmpty($fileEntry->checksum_sha256);
-        $this->assertSame((int) Storage::disk('local')->size($fileEntry->storage_path), $fileEntry->byte_size);
-        $this->assertSame(hash('sha256', (string) Storage::disk('local')->get($fileEntry->storage_path)), $fileEntry->checksum_sha256);
+        $this->assertSame((int) Storage::disk('azure')->size($fileEntry->storage_path), $fileEntry->byte_size);
+        $this->assertSame(hash('sha256', (string) Storage::disk('azure')->get($fileEntry->storage_path)), $fileEntry->checksum_sha256);
     }
 
     public function test_invalidation_guard_triggers_when_new_output_is_uploaded(): void

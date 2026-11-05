@@ -34,7 +34,7 @@ class PrivateFileService
         abort_unless($file->virus_scan_status === 'clean', 423, 'Berkas belum lulus pemindaian keamanan.');
         $path = $file->storage_path;
         abort_if(! is_string($path) || $path === '' || str_contains($path, "\0") || preg_match('~(^|[\\\\/])\.\.([\\\\/]|$)~', $path) || str_starts_with($path, '/'), 404);
-        $disk = Storage::disk($file->storage_disk ?: 'local');
+        $disk = Storage::disk($file->storage_disk ?: 'azure');
         abort_unless($disk->exists($path), 404, 'Berkas fisik tidak ditemukan.');
         if ($file->checksum_sha256) {
             $stream = $disk->readStream($path);

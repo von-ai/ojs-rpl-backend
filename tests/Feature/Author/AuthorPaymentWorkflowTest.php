@@ -40,7 +40,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
-        Storage::fake('local');
+        Storage::fake('azure');
 
         $this->author = User::factory()->create([
             'name' => 'Fadli Rahman, S.Sos., M.A.',
@@ -257,7 +257,7 @@ class AuthorPaymentWorkflowTest extends TestCase
 
         $fileEntry = FileEntry::find($payment->file_entry_id);
         $this->assertNotNull($fileEntry);
-        $this->assertTrue(Storage::disk('local')->exists($fileEntry->storage_path));
+        $this->assertTrue(Storage::disk('azure')->exists($fileEntry->storage_path));
 
         // 4. Author dapat mengunduh kembali berkas bukti transfer
         $this->scanTestUploads();
@@ -318,7 +318,7 @@ class AuthorPaymentWorkflowTest extends TestCase
         $this->assertSame($payment->getAttributes(), $payment->fresh()->getAttributes());
         $this->assertTrue($submission->fresh()->isPaymentCleared());
         $this->assertDatabaseCount('files', 1);
-        $this->assertCount(1, Storage::disk('local')->allFiles("payments/{$submission->id}"));
+        $this->assertCount(1, Storage::disk('azure')->allFiles("payments/{$submission->id}"));
         $this->get(route('author.submissions.show', $submission->id))
             ->assertOk()->assertDontSee('id="modal-upload-pembayaran"', false);
     }

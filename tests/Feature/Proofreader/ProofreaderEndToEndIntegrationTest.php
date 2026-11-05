@@ -28,7 +28,7 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->seed(DatabaseSeeder::class);
     }
 

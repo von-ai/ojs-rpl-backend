@@ -36,7 +36,7 @@ class LayoutEditorMailNotificationTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->seed(DatabaseSeeder::class);
 
         $this->layoutEditor = User::where('email', 'rahmat.hidayat@brida.makassar.go.id')->firstOrFail();
@@ -76,7 +76,7 @@ class LayoutEditorMailNotificationTest extends TestCase
         Mail::fake();
 
         $file = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => "galleys/{$this->submission->id}/test.pdf",
             'original_name' => 'test.pdf',
             'mime_type' => 'application/pdf',
@@ -139,7 +139,7 @@ class LayoutEditorMailNotificationTest extends TestCase
         Mail::fake();
 
         $file = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => "galleys/{$this->submission->id}/test_final.pdf",
             'original_name' => 'test_final.pdf',
             'mime_type' => 'application/pdf',

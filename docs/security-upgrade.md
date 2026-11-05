@@ -17,11 +17,11 @@ Tetapkan APP_ENV=production, APP_DEBUG=false, APP_URL HTTPS yang benar, APP_KEY 
 
 Tetapkan TRUSTED_PROXIES ke IP/CIDR reverse proxy yang benar; hindari wildcard. TRUSTED_HOSTS hanya untuk hostname tambahan yang memang dipakai, termasuk probe internal bila diperlukan. Host utama mengikuti APP_URL.
 
-Gunakan disk privat yang dapat dibaca web dan worker. PRIVATE_UPLOAD_DISK=local menyimpan pada storage privat Laravel; untuk beberapa replika mount volume privat yang sama atau pasang adapter object storage privat. Jangan mengekspos direktori privat melalui symlink public/storage atau ACL bucket publik. Simpan APP_KEY/SMTP/database/Redis credentials pada secret store deployment.
+Gunakan disk privat Azure Blob Storage yang dapat dibaca web dan worker. Konfigurasi PRIVATE_UPLOAD_DISK=azure menyimpan seluruh berkas ke container privat Azure Blob Storage (atau Azurite untuk lingkungan pengembangan lokal). Jangan mengekspos direktori privat melalui symlink publik atau ACL container publik. Simpan kredensial Azure Storage, APP_KEY, SMTP, database, dan Redis pada secret store deployment.
 
-Untuk ClamAV daemon gunakan FILE_SCAN_DRIVER=clamd, CLAMD_HOST dan CLAMD_PORT. Alternatif FILE_SCAN_DRIVER=clamav membutuhkan binary CLAMAV_BINARY beserta signature yang diperbarui. Driver disabled sengaja menahan seluruh file dalam karantina. Socket clamd tidak memiliki autentikasi; hanya izinkan jaringan privat aplikasi/worker. [Dokumentasi INSTREAM](https://docs.clamav.net/manual/Usage/ClamdProtocol.html) dan [Docker resmi](https://docs.clamav.net/manual/Installing/Docker.html) menjadi rujukan protokol dan kebutuhan memori.
+Untuk pemindaian malware di lingkungan produksi Azure, gunakan Microsoft Defender for Storage dengan FILE_SCAN_DRIVER=defender. Defender akan secara otomatis memindai setiap blob yang diunggah dan menyematkan tag indeks `Malware Scanning scan result` (`No threats found` atau `Malicious`). Aplikasi juga menyediakan endpoint webhook (`/api/webhooks/azure-defender`) yang terintegrasi dengan Azure Event Grid untuk pembaruan status pemindaian secara seketika (*real-time*). Untuk lingkungan pengembangan lokal dan pengujian otomatis (CI), gunakan driver mock Azurite (FILE_SCAN_DRIVER=mock) yang secara otomatis meloloskan berkas normal dan mendeteksi berkas uji standar EICAR untuk validasi keamanan karantina.
 
-Compose menyediakan clamav, worker, scan-worker dan scheduler. ClamAV memakai image digest terpin, platform amd64 dan batas memori 4 GB; startup/signature update membutuhkan waktu dan koneksi keluar. Jangan mengubah stack aplikasi yang sedang digunakan hanya untuk menjalankan test.
+Compose menyediakan azurite, worker, scan-worker dan scheduler. Seluruh pemindaian lokal ditangani secara efisien dan ringan oleh mock driver Azurite tanpa beban memori antivirus lokal.
 
 Untuk deployment di luar Compose, jalankan proses berikut secara terawasi dengan storage/database dan konfigurasi yang sama:
 
@@ -54,4 +54,4 @@ composer audit
 npm audit
 ```
 
-Test default selalu SQLite in-memory. Pengujian MySQL menggunakan schema tetap `sirida_latest_test` pada host 127.0.0.1, port default 13319; override port/password melalui RPL_TEST_DB_PORT dan RPL_TEST_DB_PASSWORD. Gunakan server pengujian khusus, jangan arahkan port tersebut ke database produksi. RPL_TEST_MYSQL=1 mengaktifkan mode ini. RPL_TEST_CLAMD_HOST dan RPL_TEST_CLAMD_PORT (default 13320) mengaktifkan uji scanner asli. CI menjalankan SQLite dan MySQL secara berurutan agar fixture storage tidak saling dihapus.
+Test default selalu SQLite in-memory. Pengujian MySQL menggunakan schema tetap `sirida_latest_test` pada host 127.0.0.1, port default 13319; override port/password melalui RPL_TEST_DB_PORT dan RPL_TEST_DB_PASSWORD. Gunakan server pengujian khusus, jangan arahkan port tersebut ke database produksi. RPL_TEST_MYSQL=1 mengaktifkan mode ini. CI menjalankan SQLite dan MySQL secara berurutan agar fixture storage tidak saling dihapus.

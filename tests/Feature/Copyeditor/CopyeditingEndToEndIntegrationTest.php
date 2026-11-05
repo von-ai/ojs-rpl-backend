@@ -21,7 +21,7 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->seed(DatabaseSeeder::class);
     }
 
@@ -84,7 +84,7 @@ class CopyeditingEndToEndIntegrationTest extends TestCase
 
         // Pastikan file baru tercatat di database dengan byte_size dan SHA-256 yang presisi sesuai disk
         $newFileEntry = FileEntry::where('original_name', 'SUB2026-00106_Copyedit_v2.docx')->firstOrFail();
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('azure');
         $this->assertSame((int) $disk->size($newFileEntry->storage_path), $newFileEntry->byte_size);
         $this->assertSame(hash('sha256', (string) $disk->get($newFileEntry->storage_path)), $newFileEntry->checksum_sha256);
 

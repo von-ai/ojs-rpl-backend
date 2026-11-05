@@ -14,7 +14,7 @@ Acuan data dibaca langsung dari [SIRIDA ERD di FigJam](https://www.figma.com/boa
 | Sesi dan akun | Status lockout dapat menimpa status nonaktif. Akun diperiksa ulang setiap permintaan; registry MySQL mendukung pencabutan, fingerprint password, dan kedaluwarsa absolut 24 jam. Batas idle maksimum 120 menit. Remember token disimpan sebagai HMAC dengan expiry server. |
 | Pemulihan akun | Tautan reset manajer sebelumnya bukan token broker yang dapat digunakan. Pemulihan kini memakai token hash, expiry, konsumsi sekali, notifikasi antrean terenkripsi, dan pencabutan sesi. Reset tidak mengaktifkan akun nonaktif. Host/proxy dipercaya secara eksplisit. |
 | Berkas privat | Unduh berdasarkan nama/fallback dokumen dapat mengabaikan identitas atau keberadaan objek. Unduh sekarang memerlukan relasi objek, hasil scan bersih, objek fisik, dan checksum yang cocok. Berkas tidak ditemukan menghasilkan 404; karantina 423; integritas gagal 409. |
-| Pemindaian | Upload tidak lagi langsung ditandai bersih. Job persisten memverifikasi ukuran/hash dan meminta ClamAV; scanner gagal atau belum dikonfigurasi mempertahankan karantina. INSTREAM mendukung disk privat tanpa mengekspos socket ke Internet. |
+| Pemindaian | Upload tidak lagi langsung ditandai bersih. Job persisten memverifikasi ukuran/hash dan meminta scanner (Microsoft Defender / Azurite mock); scanner gagal atau belum dikonfigurasi mempertahankan karantina. |
 | Double blind | Reviewer hanya menerima file anonim terpisah dari snapshot putaran yang dibekukan dan penugasannya sendiri. Judul/abstrak asli dan filename asli tidak digunakan sebagai fallback. Undangan ditolak/tidak diterima tidak memberikan akses file atau penyuntingan review. |
 | Keputusan editorial | Kuorum menghitung reviewer berbeda dengan hasil review benar-benar disubmit. Keputusan final menutup putaran; penerimaan membuat penugasan copyeditor jurnal yang sah. Hasil telaah final tidak dapat ditimpa. |
 | Produksi | Persetujuan penulis tersedia di portal author dan membekukan checksum output. Handoff membuat penugasan layout. Menyelesaikan catatan tidak menyelesaikan pemeriksaan proofreader. Versi galai baru memerlukan penugasan/pemeriksaan baru; catatan yang belum diverifikasi dibawa ke versi baru. Layout hanya meminta persetujuan; EIC yang mengesahkan. Permintaan ulang tidak mencabut persetujuan final. |
@@ -40,8 +40,8 @@ Hasil lokal final: **331 test / 2.560 assertion lulus pada MySQL 8.4**, termasuk
 Pengujian meliputi:
 
 - Suite fitur dan unit lengkap pada SQLite serta MySQL 8.4 dengan schema pengujian terpisah.
-- ClamAV asli untuk konten bersih dan EICAR melalui job aplikasi.
-- Alur formulir HTTP author → desk review/SE → dua reviewer → EIC → copyeditor → persetujuan author → layout → proofreader → EIC → manager → edisi/artikel/galai publik. Fixture scan pada alur workflow disimulasikan secara eksplisit; uji ClamAV asli dijalankan terpisah.
+- Pemindaian malware untuk konten bersih dan EICAR melalui job aplikasi (didukung Microsoft Defender for Storage dan mock Azurite).
+- Alur formulir HTTP author → desk review/SE → dua reviewer → EIC → copyeditor → persetujuan author → layout → proofreader → EIC → manager → edisi/artikel/galai publik. Fixture scan pada alur workflow disimulasikan secara eksplisit; uji pemindai keamanan dijalankan terpisah.
 - Regresi otorisasi lintas jurnal/penugasan, unduh privat, file hilang/karantina/tamper, review anonim, sesi dicabut, reset sekali pakai, host tak dipercaya, retensi limiter dan audit append-only.
 - Kontrak seluruh route literal yang dirujuk Blade, termasuk tampilan daftar isi publik berisi artikel nyata.
 - Build Vite, Composer validate/audit, npm audit, Pint dan pemeriksaan whitespace/sintaks.
@@ -51,4 +51,4 @@ Pengujian meliputi:
 
 Audit dan test mengurangi risiko; hasil ini bukan jaminan tidak ada celah. Tidak ada pengujian penetrasi terhadap deployment publik, migrasi database produksi, deploy cloud, atau pengiriman email eksternal. Pengujian lokal memakai mail fake/array dan database/berkas terisolasi. Beberapa notifikasi produksi lama masih mengirim mail secara sinkron dan mencatat kegagalan; outbox universal belum diimplementasikan.
 
-CSP yang ditambahkan membatasi frame, object, base dan target form; aplikasi masih memiliki script inline. Jangan menganggapnya CSP script ketat. TLS, proxy, SMTP, backup, hak akun database, penyimpanan privat, signature antivirus dan pemantauan worker harus dikonfigurasi pada deployment. [Panduan upgrade](security-upgrade.md) menjelaskan dampak migrasi dan konfigurasi yang diperlukan.
+CSP yang ditambahkan membatasi frame, object, base dan target form; aplikasi masih memiliki script inline. Jangan menganggapnya CSP script ketat. TLS, proxy, SMTP, backup, hak akun database, penyimpanan privat Azure Blob, dan pemantauan worker harus dikonfigurasi pada deployment. [Panduan upgrade](security-upgrade.md) menjelaskan dampak migrasi dan konfigurasi yang diperlukan.

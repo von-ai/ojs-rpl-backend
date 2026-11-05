@@ -419,7 +419,7 @@ class ReviewerWorkflowTest extends TestCase
         $file = FileEntry::create([
             'original_name' => 'Naskah-Anonim-Kebijakan-Pesisir.pdf',
             'storage_path' => 'submissions/files/anon-001.pdf',
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'mime_type' => 'application/pdf',
             'byte_size' => 102400,
             'checksum_sha256' => hash('sha256', 'dummy content'),
@@ -432,7 +432,7 @@ class ReviewerWorkflowTest extends TestCase
             'anonymized_checksum' => $file->checksum_sha256,
         ]);
 
-        Storage::disk('local')->put($file->storage_path, 'dummy content');
+        Storage::disk('azure')->put($file->storage_path, 'dummy content');
         // 1. Saat status masih 'invited', unduh berkas ditolak (guard ERD baris 1571)
         $invitedResponse = $this->actingAs($this->reviewer)
             ->get(route('reviewer.files.download', [

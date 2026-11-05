@@ -47,7 +47,7 @@ class CopyeditorViewModelsTest extends TestCase
         ]);
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/manuscript_accepted.docx',
             'original_name' => 'manuscript_accepted.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -75,7 +75,7 @@ class CopyeditorViewModelsTest extends TestCase
         ]);
 
         $outputFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'copyedits/output_final.docx',
             'original_name' => 'output_final.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -172,7 +172,7 @@ class CopyeditorViewModelsTest extends TestCase
         ]);
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/src.docx',
             'original_name' => 'src.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -230,8 +230,8 @@ class CopyeditorViewModelsTest extends TestCase
 
     public function test_detail_view_model_falls_back_to_disk_size_when_byte_size_is_zero_or_missing(): void
     {
-        Storage::fake('local');
-        $disk = Storage::disk('local');
+        Storage::fake('azure');
+        $disk = Storage::disk('azure');
 
         $author = User::factory()->create();
         $copyEditor = User::factory()->create();
@@ -243,7 +243,7 @@ class CopyeditorViewModelsTest extends TestCase
         $disk->put($diskPath, str_repeat('A', 2244000));
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $diskPath,
             'original_name' => 'source_zero_byte.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -275,7 +275,7 @@ class CopyeditorViewModelsTest extends TestCase
         $disk->put($outputPath, str_repeat('B', 2149580));
 
         $outputFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $outputPath,
             'original_name' => 'output_zero_byte.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -311,7 +311,7 @@ class CopyeditorViewModelsTest extends TestCase
         $section = Section::create(['journal_id' => $journal->id, 'name' => 'Badge Sec', 'slug' => 'badge-sec', 'position' => 1, 'accepting_submissions' => true]);
 
         $sourceFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'submissions/badge_test.docx',
             'original_name' => 'badge_test.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

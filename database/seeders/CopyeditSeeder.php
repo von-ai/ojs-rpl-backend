@@ -94,7 +94,7 @@ class CopyeditSeeder extends Seeder
             $srcFile = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Source_Accepted.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00106_Source_Accepted.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2244000,
@@ -117,7 +117,7 @@ class CopyeditSeeder extends Seeder
             $outFile1 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Copyedit_Final_Clean.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'copyedits/SUB2026-00106_Copyedit_Final_Clean.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2149580,
@@ -134,7 +134,7 @@ class CopyeditSeeder extends Seeder
             $outFile2 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00106_Supplementary_Data.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'copyedits/SUB2026-00106_Supplementary_Data.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 1174405,
@@ -164,7 +164,7 @@ class CopyeditSeeder extends Seeder
             $srcFile107 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00107_Source.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00107_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2044723,
@@ -201,7 +201,7 @@ class CopyeditSeeder extends Seeder
             $srcFile108 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00108_Source.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00108_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 3565158,
@@ -237,7 +237,7 @@ class CopyeditSeeder extends Seeder
             $srcFile109 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00109_Source.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00109_Source.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 1887436,
@@ -259,7 +259,7 @@ class CopyeditSeeder extends Seeder
             $outFile109 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00109_Copyedit_Approved.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'copyedits/SUB2026-00109_Copyedit_Approved.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 1835008,
@@ -294,7 +294,7 @@ class CopyeditSeeder extends Seeder
             $srcFile110 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00110_Accepted_Sampah_Tallo.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00110_Accepted_Sampah_Tallo.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2621440,
@@ -317,7 +317,7 @@ class CopyeditSeeder extends Seeder
             $outFile110 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00110_Copyedit_Final_Approved.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'copyedits/SUB2026-00110_Copyedit_Final_Approved.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2537553,
@@ -364,7 +364,7 @@ class CopyeditSeeder extends Seeder
             $srcFile111 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00111_Source_Accepted.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'submissions/SUB2026-00111_Source_Accepted.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2450000,
@@ -387,7 +387,7 @@ class CopyeditSeeder extends Seeder
             $outFile111 = FileEntry::updateOrCreate(
                 ['original_name' => 'SUB2026-00111_Copyedit_Draft1.docx'],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => 'copyedits/SUB2026-00111_Copyedit_Draft1.docx',
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => 2380000,
@@ -471,7 +471,7 @@ class CopyeditSeeder extends Seeder
             FileEntry::updateOrCreate(
                 ['original_name' => $demoFile['original_name']],
                 [
-                    'storage_disk' => 'local',
+                    'storage_disk' => 'azure',
                     'storage_path' => $demoFile['storage_path'],
                     'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     'byte_size' => $demoFile['byte_size'],
@@ -511,7 +511,7 @@ class CopyeditSeeder extends Seeder
 
     private function ensureFileOnDisk(FileEntry $file): void
     {
-        $disk = Storage::disk($file->storage_disk ?: 'local');
+        $disk = Storage::disk($file->storage_disk ?: 'azure');
         $targetBytes = (int) ($file->byte_size ?: 1024);
 
         if (! $disk->exists($file->storage_path) || (int) $disk->size($file->storage_path) !== $targetBytes) {

@@ -204,7 +204,7 @@ class SectionEditorController extends Controller
             'note' => ['nullable', 'string', 'max:4000'],
         ]);
         $upload = $request->file('anonymous_file');
-        $disk = config('filesecurity.disk', 'local');
+        $disk = (string) config('filesecurity.disk', 'azure');
         $path = $upload->store('review-anonymous/'.$submission->id, $disk);
         try {
             DB::transaction(function () use ($submission, $upload, $disk, $path, $data) {

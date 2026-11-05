@@ -301,7 +301,7 @@ class AuthorSubmissionController extends Controller
                 ]);
             } elseif ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
                 $file = $request->file('manuscript_file');
-                $storageDisk = config('filesecurity.disk', 'local');
+                $storageDisk = (string) config('filesecurity.disk', 'azure');
                 $path = $file->store('manuscripts', $storageDisk);
                 $sha256 = hash_file('sha256', $file->getRealPath());
 

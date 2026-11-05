@@ -37,7 +37,7 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        Storage::fake('azure');
 
         // 1. Setup Author
         $this->author = User::create([
@@ -115,7 +115,7 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
 
         // 7. Berkas Anotasi Reviewer 1 (nama file di disk memuat nama reviewer)
         $this->annotationFile = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'review-annotations/annotation_rev1.docx',
             'original_name' => 'Budi_Santoso_Catatan_Revisi_Unhas.docx',
             'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -124,7 +124,7 @@ class AuthorDoubleBlindPeerReviewConfidentialityTest extends TestCase
             'virus_scan_status' => 'clean',
             'created_by' => $this->reviewer1->id,
         ]);
-        Storage::disk('local')->put($this->annotationFile->storage_path, 'Catatan telaah reviewer 1');
+        Storage::disk('azure')->put($this->annotationFile->storage_path, 'Catatan telaah reviewer 1');
 
         // 8. Assignment & Review Reviewer 1
         $assignment1 = ReviewAssignment::create([

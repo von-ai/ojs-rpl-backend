@@ -60,6 +60,8 @@ locals {
     { name = "REDIS_DB", value = "0" },
     { name = "REDIS_CACHE_DB", value = "0" },
     { name = "FILESYSTEM_DISK", value = var.filesystem_disk },
+    { name = "PRIVATE_UPLOAD_DISK", value = var.filesystem_disk },
+    { name = "FILE_SCAN_DRIVER", value = var.file_scan_driver },
     { name = "AZURE_STORAGE_NAME", value = azurerm_storage_account.storage.name },
     { name = "AZURE_STORAGE_KEY", secret_name = "azure-storage-key" },
     { name = "AZURE_STORAGE_CONTAINER", value = azurerm_storage_container.manuscripts.name },

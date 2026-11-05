@@ -205,13 +205,13 @@ class SectionEditorWorkflowTest extends TestCase
 
     public function test_round_rejects_a_renamed_copy_of_the_original_manuscript(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->submission->update(['status' => 'submitted']);
         $original = $this->cleanTestFile('asli.pdf');
         $this->submission->files()->create(['file_id' => $original->id, 'genre' => 'manuscript', 'version' => 1]);
 
         $this->actingAs($this->sectionEditor)->post(route('section-editor.rounds.store', $this->submission->id), [
-            'anonymous_file' => UploadedFile::fake()->createWithContent('anonim.pdf', Storage::disk('local')->get($original->storage_path)),
+            'anonymous_file' => UploadedFile::fake()->createWithContent('anonim.pdf', Storage::disk('azure')->get($original->storage_path)),
             'reviewer_title' => 'Judul anonim',
             'reviewer_abstract' => 'Abstrak anonim',
             'anonymity_confirmed' => 1,
@@ -219,7 +219,7 @@ class SectionEditorWorkflowTest extends TestCase
 
         $this->assertDatabaseCount('review_rounds', 0);
         $this->assertDatabaseCount('files', 1);
-        $this->assertSame([], Storage::disk('local')->allFiles('review-anonymous'));
+        $this->assertSame([], Storage::disk('azure')->allFiles('review-anonymous'));
         $this->assertSame('submitted', $this->submission->fresh()->status);
 
         $this->post(route('section-editor.rounds.store', $this->submission->id), [
@@ -234,7 +234,7 @@ class SectionEditorWorkflowTest extends TestCase
 
     public function test_editor_can_replace_a_legacy_round_with_an_identical_copy(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $original = $this->cleanTestFile('asli.pdf');
         $copy = $this->cleanTestFile('asli.pdf');
         $this->submission->files()->create(['file_id' => $original->id, 'genre' => 'manuscript', 'version' => 1]);
@@ -567,7 +567,7 @@ class SectionEditorWorkflowTest extends TestCase
             'virus_scan_status' => 'clean',
         ]);
 
-        Storage::disk('local')->put($fileEntry->storage_path, 'dummy content');
+        Storage::disk('azure')->put($fileEntry->storage_path, 'dummy content');
         $subFile = SubmissionFile::create([
             'submission_id' => $this->submission->id,
             'file_id' => $fileEntry->id,
@@ -724,7 +724,7 @@ class SectionEditorWorkflowTest extends TestCase
 
     public function test_cannot_invite_global_reviewer_who_cannot_access_the_submission(): void
     {
-        Storage::fake('local');
+        Storage::fake('azure');
         $file = $this->cleanTestFile('anonymous.pdf');
         $round = ReviewRound::create([
             'submission_id' => $this->submission->id,

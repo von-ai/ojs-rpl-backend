@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('files', function (Blueprint $table) {
             $table->char('id', 26)->primary();
-            $table->string('storage_disk', 50)->default('local');
+            $table->string('storage_disk', 50)->default('azure');
             $table->text('storage_path');
             $table->text('original_name');
             $table->string('mime_type', 191);

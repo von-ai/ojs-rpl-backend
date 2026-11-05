@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Auth\SessionRegistry;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesWorkflowFixtures;
 
 abstract class TestCase extends BaseTestCase
@@ -45,5 +46,7 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->withoutVite();
+        Storage::fake('azure');
+        Storage::fake('azure-backups');
     }
 }

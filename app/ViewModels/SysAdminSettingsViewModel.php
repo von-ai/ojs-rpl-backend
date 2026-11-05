@@ -96,7 +96,11 @@ class SysAdminSettingsViewModel
             'disk_percentage' => $diskPercentage,
             'disk_free_formatted' => $diskFreeFormatted,
             'cache_driver' => (string) config('cache.default', 'file'),
-            'malware_scanner_status' => in_array(config('filesecurity.driver'), ['clamav', 'clamd'], true) ? 'ClamAV dikonfigurasi; periksa worker pemindaian' : 'Belum dikonfigurasi; berkas dikarantina',
+            'malware_scanner_status' => match (config('filesecurity.driver')) {
+                'defender' => 'Microsoft Defender for Storage aktif',
+                'mock', 'azurite' => 'Mock Scanner (Bypass Azurite / Pengujian)',
+                default => 'Belum dikonfigurasi; berkas dikarantina',
+            },
             'timezone' => $timezoneLabel,
             'uptime' => '99.98% (30 Hari Terakhir)',
             'laravel_version' => 'Laravel '.app()->version(),
@@ -135,7 +139,11 @@ class SysAdminSettingsViewModel
             ],
             [
                 'title' => 'Pemindai Malware',
-                'value' => in_array(config('filesecurity.driver'), ['clamav', 'clamd'], true) ? 'ClamAV dikonfigurasi' : 'Pemindai belum dikonfigurasi',
+                'value' => match (config('filesecurity.driver')) {
+                    'defender' => 'Microsoft Defender Aktif',
+                    'mock', 'azurite' => 'Mock Scanner (Bypass)',
+                    default => 'Pemindai belum dikonfigurasi',
+                },
                 'badge_text' => '0 Ancaman',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],

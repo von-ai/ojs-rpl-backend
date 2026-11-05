@@ -13,9 +13,9 @@ use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
-use App\Services\ClamAvScanner;
 use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\Reviewer\ReviewerService;
+use App\Services\Security\MalwareScannerInterface;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -29,9 +29,9 @@ trait CreatesWorkflowFixtures
     /** Explicitly simulate a successful external scan between workflow steps. */
     protected function scanTestUploads(): void
     {
-        $scanner = new class extends ClamAvScanner
+        $scanner = new class implements MalwareScannerInterface
         {
-            public function scan(string $path): string
+            public function scan(FileEntry $file): string
             {
                 return 'clean';
             }
@@ -47,9 +47,9 @@ trait CreatesWorkflowFixtures
     {
         $content = '%PDF-1.4 valid test fixture '.$name;
         $path = 'test-fixtures/'.Str::ulid().'.pdf';
-        Storage::disk('local')->put($path, $content);
+        Storage::disk('azure')->put($path, $content);
 
-        return FileEntry::create(['storage_disk' => 'local', 'storage_path' => $path, 'original_name' => $name, 'mime_type' => 'application/pdf', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => 'clean']);
+        return FileEntry::create(['storage_disk' => 'azure', 'storage_path' => $path, 'original_name' => $name, 'mime_type' => 'application/pdf', 'byte_size' => strlen($content), 'checksum_sha256' => hash('sha256', $content), 'virus_scan_status' => 'clean']);
     }
 
     /** Construct an editorially approved fixture for issue-management tests. */

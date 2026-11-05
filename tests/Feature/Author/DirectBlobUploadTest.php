@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\SectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DirectBlobUploadTest extends TestCase
@@ -19,6 +20,7 @@ class DirectBlobUploadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::forgetDisk('azure');
 
         $this->withoutVite();
 

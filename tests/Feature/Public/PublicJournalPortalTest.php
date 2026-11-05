@@ -40,7 +40,7 @@ class PublicJournalPortalTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
-        Storage::fake('local');
+        Storage::fake('azure');
 
         $this->author = User::factory()->create([
             'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
@@ -120,10 +120,10 @@ class PublicJournalPortalTest extends TestCase
 
         // Buat file PDF galai
         $pdfPath = "galleys/{$this->publishedArticle->id}/article.pdf";
-        Storage::disk('local')->put($pdfPath, 'PDF Content for Lorong Wisata Article');
+        Storage::disk('azure')->put($pdfPath, 'PDF Content for Lorong Wisata Article');
 
         $fileEntry = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => $pdfPath,
             'original_name' => 'lorong-wisata.pdf',
             'mime_type' => 'application/pdf',

@@ -36,7 +36,7 @@ class CopyeditorService
             }
 
             return DB::transaction(function () use ($copyedit, $file, $uploader): FileEntry {
-                $storageDisk = config('filesecurity.disk', 'local');
+                $storageDisk = (string) config('filesecurity.disk', 'azure');
                 $path = $file->store("copyedits/{$copyedit->id}", $storageDisk);
                 $disk = Storage::disk($storageDisk);
                 $byteSize = (int) $disk->size($path);

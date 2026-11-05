@@ -33,7 +33,9 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="array" force="true"/>
-        <env name="FILESYSTEM_DISK" value="local" force="true"/>
+        <env name="FILESYSTEM_DISK" value="azure" force="true"/>
+        <env name="PRIVATE_UPLOAD_DISK" value="azure" force="true"/>
+        <env name="FILE_SCAN_DRIVER" value="mock" force="true"/>
         <env name="LOG_CHANNEL" value="null" force="true"/>
         <env name="PULSE_ENABLED" value="false" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>

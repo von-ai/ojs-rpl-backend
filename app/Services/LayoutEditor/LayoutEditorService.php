@@ -50,7 +50,7 @@ class LayoutEditorService
             }
 
             return DB::transaction(function () use ($submission, $file, $label, $format, $uploader): Galley {
-                $storageDisk = config('filesecurity.disk', 'local');
+                $storageDisk = (string) config('filesecurity.disk', 'azure');
                 $path = $file->store("galleys/{$submission->id}", $storageDisk);
                 $disk = Storage::disk($storageDisk);
                 $byteSize = (int) $disk->size($path);

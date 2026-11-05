@@ -578,7 +578,7 @@ class LayoutEditorSeeder extends Seeder
         int $targetBytes = 0,
         string $type = 'pdf'
     ): FileEntry {
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('azure');
 
         if (! $disk->exists($storagePath)) {
             $content = $type === 'pdf'
@@ -594,7 +594,7 @@ class LayoutEditorSeeder extends Seeder
         $entry = FileEntry::updateOrCreate(
             ['original_name' => $originalName],
             [
-                'storage_disk' => 'local',
+                'storage_disk' => 'azure',
                 'storage_path' => $storagePath,
                 'mime_type' => $mimeType,
                 'byte_size' => $actualBytes,

@@ -302,7 +302,7 @@ class ReviewerService
 
                 // Jika ada berkas naskah beranotasi yang diunggah
                 if ($annotatedFile && $annotatedFile->isValid()) {
-                    $storageDisk = config('filesecurity.disk', 'local');
+                    $storageDisk = (string) config('filesecurity.disk', 'azure');
                     $storedPath = $annotatedFile->store('review-annotations', $storageDisk);
 
                     $fileEntry = FileEntry::create([

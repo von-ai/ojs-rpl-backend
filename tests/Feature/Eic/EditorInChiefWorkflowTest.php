@@ -543,7 +543,7 @@ class EditorInChiefWorkflowTest extends TestCase
         $this->submission->update(['status' => 'in_production']);
 
         $file = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'galleys/test-sample.pdf',
             'original_name' => 'Galley-Final.pdf',
             'mime_type' => 'application/pdf',
@@ -610,7 +610,7 @@ class EditorInChiefWorkflowTest extends TestCase
         $this->submission->update(['status' => 'in_production']);
 
         $file = FileEntry::create([
-            'storage_disk' => 'local',
+            'storage_disk' => 'azure',
             'storage_path' => 'galleys/test-sample-unresolved.pdf',
             'original_name' => 'Galley-Unresolved.pdf',
             'mime_type' => 'application/pdf',

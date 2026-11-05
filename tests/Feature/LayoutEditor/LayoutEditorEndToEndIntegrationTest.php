@@ -26,7 +26,7 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('azure');
         $this->seed(DatabaseSeeder::class);
     }
 
@@ -102,7 +102,7 @@ class LayoutEditorEndToEndIntegrationTest extends TestCase
         $this->assertNull($galleyV1->supersedes_galley_id);
 
         // Pastikan checksum presisi
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('azure');
         $this->assertSame((int) $disk->size($galleyV1->file->storage_path), $galleyV1->file->byte_size);
         $this->assertSame(hash('sha256', (string) $disk->get($galleyV1->file->storage_path)), $galleyV1->checksum_sha256);
 
