@@ -197,6 +197,13 @@ class PublicJournalPortalTest extends TestCase
         $response->assertSee('Tidak ada artikel ilmiah yang sesuai');
     }
 
+    public function test_pencarian_publik_menolak_filter_berbentuk_array(): void
+    {
+        foreach (['q', 'category', 'year'] as $filter) {
+            $this->get(route('journal.articles.search', [$filter => ['uji']]))->assertBadRequest();
+        }
+    }
+
     /**
      * Hasil pencarian kosong menampilkan pesan informatif tanpa galat (UC-04).
      */

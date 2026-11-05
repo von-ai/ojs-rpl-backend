@@ -9,6 +9,7 @@ use App\ViewModels\PublicJournalViewModel;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,10 +56,18 @@ class PublicJournalController extends Controller
      */
     public function search(Request $request): View
     {
+        $validator = Validator::make($request->query(), [
+            'q' => ['nullable', 'string'],
+            'category' => ['nullable', 'string'],
+            'year' => ['nullable', 'integer'],
+        ]);
+        abort_if($validator->fails(), 400, 'Parameter pencarian tidak valid.');
+
+        $filters = $validator->validated();
+        $query = $filters['q'] ?? null;
+        $category = $filters['category'] ?? null;
+        $year = isset($filters['year']) ? (int) $filters['year'] : null;
         $journal = $this->publicArticleService->getJournal();
-        $query = $request->input('q');
-        $category = $request->input('category');
-        $year = $request->filled('year') ? (int) $request->input('year') : null;
 
         $results = $this->publicArticleService->searchArticles([
             'q' => $query,
