@@ -58,7 +58,7 @@ class EditorialPipelineTest extends TestCase
         ])->assertSessionHas('success')->assertSessionMissing('error');
         $this->actingAs($people['section_editor']);
         $this->post(route('section-editor.rounds.store', $id), [
-            'anonymous_file' => UploadedFile::fake()->create('anonim.pdf', 10, 'application/pdf'),
+            'anonymous_file' => UploadedFile::fake()->createWithContent('anonim.pdf', "%PDF-1.4\n% Manuskrip anonim\n%%EOF"),
             'reviewer_title' => 'Riset integrasi sistem ilmiah', 'reviewer_abstract' => 'Abstrak anonim tanpa identitas penulis.', 'anonymity_confirmed' => 1,
         ])->assertSessionHasNoErrors()->assertSessionHas('success');
         $round = ReviewRound::where('submission_id', $id)->where('status', 'active')->firstOrFail();

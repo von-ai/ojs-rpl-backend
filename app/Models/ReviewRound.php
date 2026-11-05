@@ -50,6 +50,22 @@ class ReviewRound extends Model
         return $this->assignments()->where('status', 'completed')->whereHas('review', fn ($q) => $q->where('status', 'submitted'))->distinct()->count('reviewer_id');
     }
 
+    public function hasDistinctAnonymizedFile(): bool
+    {
+        if ($this->review_type !== 'double_blind' || ! $this->manuscript_file_id || $this->manuscript_file_id === $this->anonymized_file_id) {
+            return false;
+        }
+
+        $original = strtolower((string) $this->manuscriptFile?->checksum_sha256);
+        $anonymous = strtolower((string) $this->anonymizedFile?->checksum_sha256);
+
+        return preg_match('/\A[0-9a-f]{64}\z/', $original) === 1
+            && preg_match('/\A[0-9a-f]{64}\z/', $anonymous) === 1
+            && hash_equals(strtolower((string) ($this->manuscript_checksum ?? $original)), $original)
+            && hash_equals(strtolower((string) $this->anonymized_checksum), $anonymous)
+            && ! hash_equals($original, $anonymous);
+    }
+
     /**
      * @return BelongsTo<Submission, $this>
      */

@@ -95,30 +95,15 @@ class SectionEditorService
                 }
                 throw new InvalidArgumentException('Siapkan berkas, judul, dan abstrak anonim sebelum membuka putaran telaah.');
             }
-            if ($active && $active->assignments()->whereIn('status', ['invited', 'accepted', 'overdue'])->exists()) {
+            $replaceUnsafeRound = $active && ! $active->hasDistinctAnonymizedFile();
+            if ($active && ! $replaceUnsafeRound && $active->activeAssignments()->exists()) {
                 throw new InvalidArgumentException('Selesaikan penugasan pada putaran aktif sebelum membuka putaran baru.');
             }
             $primary = $submission->files()->with('file')->whereIn('genre', ['manuscript', 'revision'])->latest('created_at')->first()?->file;
             if (! $primary || ! $reviewerTitle || ! $reviewerAbstract) {
                 throw new InvalidArgumentException('Naskah acuan, judul anonim, dan abstrak anonim wajib tersedia.');
             }
-            // Editorial confirmation plus a conservative identity check prevents copying raw metadata blindly.
-            foreach ($submission->contributors as $contributor) {
-                foreach ([$contributor->full_name, $contributor->email] as $identity) {
-                    if ($identity && mb_strlen($identity) > 3 && (mb_stripos($reviewerTitle, $identity) !== false || mb_stripos($reviewerAbstract, $identity) !== false)) {
-                        throw new InvalidArgumentException('Identitas kontributor masih tercantum dalam proyeksi anonim.');
-                    }
-                }
-            }
-            if ($active) {
-                $active->update(['status' => 'closed', 'closed_at' => now(), 'version' => $active->version + 1]);
-            }
-
-            if ($submission->status === 'submitted') {
-                $submission->update(['status' => 'in_review']);
-            }
-
-            return ReviewRound::create([
+            $round = new ReviewRound([
                 'submission_id' => $submission->id,
                 'round' => (int) $submission->reviewRounds()->max('round') + 1,
                 'manuscript_file_id' => $primary->id,
@@ -131,6 +116,33 @@ class SectionEditorService
                 'minimum_completed_reviews' => 2,
                 'status' => 'active', 'version' => 1, 'review_type' => 'double_blind', 'note' => $note,
             ]);
+            $round->setRelation('manuscriptFile', $primary);
+            $round->setRelation('anonymizedFile', $anonymousFile);
+            if (! $round->hasDistinctAnonymizedFile()) {
+                throw new InvalidArgumentException('Berkas anonim harus berbeda isinya dari naskah acuan.');
+            }
+            // Editorial confirmation plus a conservative identity check prevents copying raw metadata blindly.
+            foreach ($submission->contributors as $contributor) {
+                foreach ([$contributor->full_name, $contributor->email] as $identity) {
+                    if ($identity && mb_strlen($identity) > 3 && (mb_stripos($reviewerTitle, $identity) !== false || mb_stripos($reviewerAbstract, $identity) !== false)) {
+                        throw new InvalidArgumentException('Identitas kontributor masih tercantum dalam proyeksi anonim.');
+                    }
+                }
+            }
+            if ($active) {
+                if ($replaceUnsafeRound) {
+                    $active->activeAssignments()->update(['status' => 'cancelled', 'version' => DB::raw('version + 1')]);
+                }
+                $active->update(['status' => 'closed', 'closed_at' => now(), 'version' => $active->version + 1]);
+            }
+
+            if ($submission->status === 'submitted') {
+                $submission->update(['status' => 'in_review']);
+            }
+
+            $round->save();
+
+            return $round;
         });
     }
 
@@ -148,7 +160,10 @@ class SectionEditorService
                 throw new InvalidArgumentException('Putaran telaah sudah ditutup.');
             }
 
-            if (! $round->anonymizedFile || $round->anonymizedFile->virus_scan_status !== 'clean' || ! $round->anonymized_checksum || $round->anonymized_file_id === $round->manuscript_file_id) {
+            if (! $round->hasDistinctAnonymizedFile()) {
+                throw new InvalidArgumentException('Siapkan putaran dengan berkas anonim yang berbeda dari naskah acuan.');
+            }
+            if ($round->anonymizedFile->virus_scan_status !== 'clean') {
                 throw new InvalidArgumentException('Berkas anonim terpisah harus selesai dipindai sebelum reviewer diundang.');
             }
 
