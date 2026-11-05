@@ -149,6 +149,18 @@ Prefix rute: `/journalmanager`
 
 ---
 
+### Paginasi direktori pengguna
+
+Direktori `GET /journalmanager/users` menampilkan 10 pengguna per halaman setelah filter peran dan pencarian diterapkan. Tab `role=all` mencakup seluruh anggota melalui paginasi. Parameter `page` memilih halaman berikutnya.
+
+Pengguna diurutkan berdasarkan `updated_at` terbaru, lalu `id` menaik ketika waktu pembaruan sama. Urutan tambahan ini menjaga pembagian halaman tetap konsisten pada SQLite dan MySQL selama data tidak berubah.
+
+Tes `JournalManagerUsersTest` memeriksa filter peran, kelengkapan anggota di beberapa halaman, urutan untuk waktu pembaruan yang sama, dan prioritas pengguna yang baru diperbarui.
+
+```sh
+PAO_DISABLE=1 vendor/bin/phpunit --filter=JournalManagerUsersTest
+```
+
 ## 5. Kontrak Data ViewModel (Tanpa Hardcode)
 
 ### A. Kontrak Data Katalog Terbitan (`JournalManagerIssuesViewModel`)

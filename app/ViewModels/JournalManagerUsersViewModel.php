@@ -409,7 +409,7 @@ class JournalManagerUsersViewModel
                 });
             }
 
-            $users = $query->latest('updated_at')->get();
+            $users = $query->latest('updated_at')->orderBy('id')->get();
 
             if ($users->isNotEmpty()) {
                 // Hitung total manager dan EIC untuk perlindungan last admin / last eic

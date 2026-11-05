@@ -74,11 +74,17 @@ class JournalManagerUsersTest extends TestCase
      */
     public function test_filter_peran_pengguna(): void
     {
-        // Tab All: menampilkan semua pengguna
+        // Tab All tetap dipaginasi, sehingga anggota dapat berada di halaman berikutnya.
         $responseAll = $this->get('/journalmanager/users?role=all');
         $responseAll->assertStatus(200);
-        $responseAll->assertSee('Andi Muhammad Yusuf, M.Si.');
-        $responseAll->assertSee('Prof. Dr. Ir. Muhammad Basri, M.T.');
+        $responseNext = $this->get('/journalmanager/users?role=all&page=2');
+        $responseNext->assertStatus(200);
+        $allNames = array_column(array_merge(
+            $responseAll->viewData('viewModel')->users(),
+            $responseNext->viewData('viewModel')->users(),
+        ), 'name');
+        $this->assertContains('Andi Muhammad Yusuf, M.Si.', $allNames);
+        $this->assertContains('Prof. Dr. Ir. Muhammad Basri, M.T.', $allNames);
 
         // Tab Editorial: dewan editor
         $responseEditorial = $this->get('/journalmanager/users?role=editorial');
@@ -100,6 +106,31 @@ class JournalManagerUsersTest extends TestCase
         $responseProduction->assertSee('Rahmat Hidayat, S.Kom.');
         $responseProduction->assertSee('Dra. Sitti Aminah, M.Hum.');
         $responseProduction->assertDontSee('Prof. Dr. Ir. H. Nasaruddin, M.T.');
+    }
+
+    public function test_paginasi_pengguna_stabil_saat_waktu_pembaruan_sama(): void
+    {
+        $this->freezeTime();
+        User::factory()->create(['id' => '00000000000000000000000002']);
+        User::factory()->create(['id' => '00000000000000000000000001']);
+        User::query()->update(['updated_at' => now()]);
+        $expectedIds = User::query()->orderBy('id')->pluck('id')->all();
+
+        $first = $this->get('/journalmanager/users?role=all')->assertOk();
+        $second = $this->get('/journalmanager/users?role=all&page=2')->assertOk();
+        $repeated = $this->get('/journalmanager/users?role=all')->assertOk();
+
+        $firstIds = array_column($first->viewData('viewModel')->users(), 'id');
+        $secondIds = array_column($second->viewData('viewModel')->users(), 'id');
+        $this->assertCount(10, $firstIds);
+        $this->assertSame(array_slice($expectedIds, 0, 10), $firstIds);
+        $this->assertSame($expectedIds, array_merge($firstIds, $secondIds));
+        $this->assertSame($firstIds, array_column($repeated->viewData('viewModel')->users(), 'id'));
+        $this->assertSame(count($expectedIds), $first->viewData('viewModel')->pagination()['total']);
+
+        User::whereKey('00000000000000000000000002')->update(['updated_at' => now()->addSecond()]);
+        $newest = $this->get('/journalmanager/users?role=all')->assertOk();
+        $this->assertSame('00000000000000000000000002', $newest->viewData('viewModel')->users()[0]['id']);
     }
 
     /**
