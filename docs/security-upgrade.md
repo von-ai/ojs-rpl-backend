@@ -11,6 +11,12 @@ Perubahan ini mencakup migrasi data. Terapkan dalam jendela pemeliharaan setelah
 - Unique/FK baru memerlukan data yang konsisten. Selesaikan duplikasi nomor, slot aktif atau relasi section/jurnal pada salinan staging sebelum migrasi produksi. Jangan menghapus riwayat audit untuk memaksa migrasi.
 - Rollback tidak otomatis mengembalikan file menjadi clean atau memperluas kembali grant. Gunakan backup teruji jika perlu memulihkan seluruh versi aplikasi dan skemanya.
 
+## Konteks image produksi
+
+Build image mengecualikan storage host, dependency host, laporan tes, dan direktori Terraform. Berkas privat, hasil pengujian, serta state infrastruktur harus disimpan melalui volume atau secret store deployment. Dockerfile membuat direktori storage kosong dan memasang dependency produksi dari lockfile dalam stage terpisah.
+
+CI memeriksa bahwa image memiliki direktori storage yang diperlukan, tanpa isi storage host, file `.env`, dependency pengembangan PHPUnit, atau direktori Terraform dan Node.js.
+
 ## Konfigurasi
 
 Tetapkan APP_ENV=production, APP_DEBUG=false, APP_URL HTTPS yang benar, APP_KEY unik, SESSION_SECURE_COOKIE=true, SESSION_HTTP_ONLY=true, SESSION_SAME_SITE=lax, SESSION_LIFETIME maksimum 120. Sesi dienkripsi oleh aplikasi. Jangan memakai key test dari phpunit.xml.
