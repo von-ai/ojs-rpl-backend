@@ -62,7 +62,7 @@ class AzureBlobStorageAdapterTest extends TestCase
 
         $this->assertArrayHasKey('url', $result);
         $this->assertArrayHasKey('headers', $result);
-        $this->assertStringContainsString('sp=rcw', $result['url']);
+        $this->assertStringContainsString('sp=c&', $result['url']);
         $this->assertEquals('BlockBlob', $result['headers']['x-ms-blob-type']);
     }
 

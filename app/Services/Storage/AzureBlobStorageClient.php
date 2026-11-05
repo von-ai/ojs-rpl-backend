@@ -317,7 +317,7 @@ class AzureBlobStorageClient
     /**
      * Menghasilkan Shared Access Signature (SAS) URL untuk akses langsung (Direct Download / Upload).
      *
-     * @param  string  $permissions  'r' untuk download (read), 'rcw' untuk upload (read/create/write)
+     * @param  string  $permissions  'r' untuk download (read), 'c' untuk membuat blob baru
      */
     public function generateSasUrl(string $path, DateTimeInterface $expiry, string $permissions = 'r'): string
     {

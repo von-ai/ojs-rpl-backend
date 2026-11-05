@@ -204,7 +204,7 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
      */
     public function temporaryUploadUrl(string $path, DateTimeInterface $expiration, array $options = []): array
     {
-        $url = $this->client->generateSasUrl($path, $expiration, 'rcw');
+        $url = $this->client->generateSasUrl($path, $expiration, 'c');
 
         return [
             'url' => $url,

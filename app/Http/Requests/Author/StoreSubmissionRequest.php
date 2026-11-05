@@ -87,6 +87,7 @@ class StoreSubmissionRequest extends FormRequest
         $rules = [
             'action' => ['required', 'string', 'in:draft,submit'],
             'draft_id' => ['nullable', 'string', 'max:50'],
+            'blob_path' => ['nullable', 'string', 'max:300'],
             'existing_manuscript_id' => ['nullable', 'string', 'max:50'],
             'remove_manuscript' => ['nullable'],
             'section_id' => $isSubmit ? ['required', 'string', 'max:50'] : ['nullable', 'string', 'max:50'],
@@ -106,11 +107,6 @@ class StoreSubmissionRequest extends FormRequest
             $rules['manuscript_file'] = ($this->filled('blob_path') || ($hasExistingManuscript && ! $this->boolean('remove_manuscript')))
                 ? ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480']
                 : ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'];
-            $rules['blob_path'] = ['nullable', 'string', 'max:500'];
-            $rules['blob_name'] = ['nullable', 'string', 'max:255'];
-            $rules['blob_size'] = ['nullable', 'integer', 'min:1', 'max:20971520'];
-            $rules['blob_mime'] = ['nullable', 'string', 'max:100'];
-            $rules['blob_checksum'] = ['nullable', 'string', 'max:64'];
             $rules['contributors'] = ['required', 'array', 'min:1', 'max:100'];
             $rules['contributors.*.given_name'] = ['required', 'string', 'min:1', 'max:100'];
             $rules['contributors.*.family_name'] = ['nullable', 'string', 'max:100'];

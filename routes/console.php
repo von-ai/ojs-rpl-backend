@@ -8,6 +8,7 @@ use App\Jobs\ScanFile;
 use App\Models\FileEntry;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -33,6 +34,9 @@ Schedule::job(new ProcessOutboxJob)->everyMinute();
 
 // Pembersihan berkas & token tantangan registrasi kedaluwarsa setiap hari
 Schedule::job(new PruneExpiredChallengesJob)->daily();
+
+Schedule::call(fn () => DB::table('manuscript_upload_sessions')->where('expires_at', '<=', now())->delete())
+    ->name('prune-manuscript-upload-sessions')->daily();
 
 // Pencadangan otomatis basis data ke Azure Blob Storage (SRS NF-08: siklus 24 jam dengan retensi 30 hari)
 // Dijadwalkan pukul 02:00 WITA (UTC+8) saat beban sistem terendah
