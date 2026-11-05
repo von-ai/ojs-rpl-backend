@@ -136,7 +136,7 @@ resource "azurerm_container_app" "worker" {
       image   = var.container_image
       cpu     = var.aca_worker_cpu
       memory  = var.aca_worker_memory
-      command = ["php", "/var/www/html/artisan", "queue:work", "--queue=default,identity,notifications,imports,file-security", "--verbose", "--tries=3", "--timeout=180"]
+      command = ["/bin/sh", "-c", "exec /usr/local/bin/entrypoint.sh php /var/www/html/artisan queue:work --queue=default,identity,notifications,imports,file-security --verbose --tries=3 --timeout=180"]
 
       dynamic "env" {
         for_each = local.common_env_vars
@@ -187,7 +187,7 @@ resource "azurerm_container_app" "scheduler" {
       image   = var.container_image
       cpu     = var.aca_job_cpu
       memory  = var.aca_job_memory
-      command = ["php", "/var/www/html/artisan", "schedule:work"]
+      command = ["/bin/sh", "-c", "exec /usr/local/bin/entrypoint.sh php /var/www/html/artisan schedule:work"]
 
       dynamic "env" {
         for_each = local.common_env_vars

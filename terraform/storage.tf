@@ -94,7 +94,7 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_storage_container" "manuscripts" {
   count                 = var.create_storage_account ? 1 : 0
   name                  = var.storage_container_name
-  storage_account_name  = azurerm_storage_account.storage[0].name
+  storage_account_id    = azurerm_storage_account.storage[0].id
   container_access_type = "private"
 
   depends_on = [azurerm_storage_account.storage]
@@ -106,7 +106,7 @@ resource "azurerm_storage_container" "manuscripts" {
 resource "azurerm_storage_container" "backups" {
   count                 = var.create_storage_account ? 1 : 0
   name                  = "sirida-backups"
-  storage_account_name  = azurerm_storage_account.storage[0].name
+  storage_account_id    = azurerm_storage_account.storage[0].id
   container_access_type = "private"
 
   depends_on = [azurerm_storage_account.storage]

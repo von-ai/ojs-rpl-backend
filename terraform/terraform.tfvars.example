@@ -62,3 +62,9 @@ alert_email = "benediktus.gianto.jarod@gmail.com"
 # Azure Managed Redis (AMR)
 # redis_sku_name = "Balanced_B0" # Default: Balanced_B0 (~500MB, ~$0.02/jam on-demand)
 
+# ACA Resource Sizing (Web: 2 vCPU & 4.0Gi RAM, Worker: 1.0 vCPU & 2.0Gi RAM)
+# aca_web_cpu       = 2.0
+# aca_web_memory    = "4.0Gi"
+# aca_worker_cpu    = 1.0
+# aca_worker_memory = "2.0Gi"
+
