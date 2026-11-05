@@ -1,6 +1,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const STORAGE_KEY = 'sirida_submission_draft_v1';
+    const draftOwner = @js(auth()->id());
+    const STORAGE_KEY = `sirida_submission_draft_v2:${draftOwner}`;
     let currentStep = 1;
     const totalSteps = 5;
 
@@ -502,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     const DB_NAME = 'brida_ojs_draft_store';
     const DB_VERSION = 1;
-    const DB_FILE_KEY = 'manuscript_file';
+    const DB_FILE_KEY = `manuscript_file:${draftOwner}`;
 
     function formatFileSize(bytes) {
         if (!bytes || isNaN(bytes) || bytes <= 0) return '0 KB';
@@ -1629,7 +1630,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function clearDraftStorage() {
         try {
             sessionStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(STORAGE_KEY);
             clearFileFromDraftDB();
         } catch (e) {}
     }
@@ -1856,7 +1856,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         try {
-            const saved = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
+            const saved = sessionStorage.getItem(STORAGE_KEY);
             if (!saved) return;
             const draftData = JSON.parse(saved);
             if (!draftData || !hasMeaningfulDraft(draftData)) {
