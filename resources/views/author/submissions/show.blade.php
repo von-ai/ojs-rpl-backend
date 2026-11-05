@@ -28,7 +28,6 @@
     @endif
 
     @include('author.submissions.partials.copyedit-approval')
-
     <!-- Header & Breadcrumbs Navigasi -->
     @include('author.submissions.partials.detail-header', ['submission' => $submission])
 
@@ -55,6 +54,9 @@
             @include('author.submissions.partials.detail-sidebar', ['submission' => $submission])
         </aside>
     </div>
+
+    <!-- Modals Interaktif Penulis (Unggah Revisi & Bukti Pembayaran) di Level Root agar Bebas Stacking Context -->
+    @include('author.submissions.partials.detail-modals', ['submission' => $submission])
 
 </div>
 

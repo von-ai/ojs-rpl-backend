@@ -37,7 +37,7 @@ class ReviewerService
                 'extensions',
                 'pendingExtension',
             ])
-            ->latest('created_at');
+            ->latest('updated_at');
 
         if (! empty($filters['status']) && $filters['status'] !== 'all') {
             $status = $filters['status'];
@@ -110,6 +110,16 @@ class ReviewerService
         });
         if (! $result) {
             throw new InvalidArgumentException('Batas waktu konfirmasi undangan telaah telah berakhir.');
+        }
+
+        $submission = $assignment->reviewRound?->submission;
+        if ($submission && in_array($submission->status, ['declined', 'published', 'accepted', 'in_production', 'ready_for_issue', 'archived', 'withdrawn'], true)) {
+            $assignment->update([
+                'status' => 'cancelled',
+                'version' => $assignment->version + 1,
+            ]);
+
+            throw new InvalidArgumentException('Proses penelaahan untuk naskah ini telah ditutup oleh Dewan Redaksi karena naskah telah berstatus '.($submission->status === 'declined' ? 'Ditolak' : 'Selesai/Terbit').'.');
         }
 
         return $result;
@@ -216,6 +226,12 @@ class ReviewerService
      */
     public function submitReview(ReviewAssignment $assignment, array $data, ?UploadedFile $annotatedFile, User $reviewer): Review
     {
+        // Guard Status Naskah: Jika naskah sudah diputuskan/diterbitkan oleh EIC
+        $submission = $assignment->reviewRound?->submission;
+        if ($submission && in_array($submission->status, ['declined', 'published', 'accepted', 'in_production', 'ready_for_issue', 'archived', 'withdrawn'], true)) {
+            throw new InvalidArgumentException('Proses penelaahan telah ditutup karena naskah telah berstatus '.($submission->status === 'declined' ? 'Ditolak' : 'Selesai/Terbit').'.');
+        }
+
         return DB::transaction(function () use ($assignment, $data, $annotatedFile, $reviewer) {
             $round = ReviewRound::findOrFail($assignment->review_round_id);
             PortalAccess::lockSubmission($round->submission, $reviewer, 'reviewer');

@@ -48,8 +48,8 @@ class ProofreaderEndToEndIntegrationTest extends TestCase
         $indexResponse->assertSee('SUB-2026-00103');
         $indexResponse->assertSee('Dra. Sitti Aminah, M.Hum.');
 
-        // Sidebar badge dinamis dari basis data
-        $indexResponse->assertSee('sidebar-badge-full', false);
+        // Sidebar navigasi bersih tanpa angka badge sesuai pedoman UI
+        $indexResponse->assertDontSee('sidebar-badge-full', false);
 
         // Akses detail naskah SUB-2026-00105
         $detailResponse = $this->get('/proofreader/submissions/SUB-2026-00105');

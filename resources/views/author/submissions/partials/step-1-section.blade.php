@@ -28,14 +28,17 @@
             tabindex="-1"
             aria-hidden="true"
         >
-            <option value="" disabled {{ old('section_id') ? '' : 'selected' }}>-- Pilih Seksi / Bidang Jurnal --</option>
+            @php
+                $selectedSectionId = old('section_id', $draft?->section_id);
+            @endphp
+            <option value="" disabled @selected(!$selectedSectionId)>-- Pilih Seksi / Bidang Jurnal --</option>
             @foreach($viewModel->wizardJournalSections() as $section)
                 <option 
                     value="{{ $section['id'] }}"
                     data-name="{{ $section['name'] }}"
                     data-description="{{ $section['description'] }}"
                     data-policy="{{ $section['policy'] }}"
-                    {{ old('section_id', 'sec-riset-orisinil') === $section['id'] ? 'selected' : '' }}
+                    {{ ($selectedSectionId === $section['id'] || $selectedSectionId === ($section['raw_id'] ?? null)) ? 'selected' : '' }}
                 >
                     {{ $section['name'] }}
                 </option>
@@ -111,7 +114,7 @@
                             data-name="{{ $section['name'] }}"
                             data-description="{{ $section['description'] }}"
                             data-policy="{{ $section['policy'] }}"
-                            class="section-combobox-option group flex items-start justify-between gap-3 p-3 rounded-lg text-left transition cursor-pointer hover:bg-gray-50 {{ old('section_id', 'sec-riset-orisinil') === $section['id'] ? 'bg-red-50/70 text-brand-maroon is-selected font-semibold' : 'text-gray-700' }}"
+                            class="section-combobox-option group flex items-start justify-between gap-3 p-3 rounded-lg text-left transition cursor-pointer hover:bg-gray-50 {{ $selectedSectionId === $section['id'] ? 'bg-red-50/70 text-brand-maroon is-selected font-semibold' : 'text-gray-700' }}"
                         >
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
@@ -121,7 +124,7 @@
                                     {{ $section['description'] }}
                                 </p>
                             </div>
-                            <svg class="option-check w-4 h-4 text-brand-maroon shrink-0 self-center {{ old('section_id', 'sec-riset-orisinil') === $section['id'] ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="option-check w-4 h-4 text-brand-maroon shrink-0 self-center {{ $selectedSectionId === $section['id'] ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
@@ -213,14 +216,22 @@
                 </svg>
             </button>
         </div>
+        @php
+            $draftChecklist = is_array($draft?->guideline_acceptance) ? ($draft->guideline_acceptance['checklist'] ?? []) : [];
+            $isDraftAccepted = is_array($draft?->guideline_acceptance) ? ($draft->guideline_acceptance['accepted'] ?? false) : false;
+        @endphp
         <div class="bg-gray-50/50 rounded-xl border border-gray-200 p-4 sm:p-5 space-y-3.5">
             @foreach($viewModel->submissionChecklist() as $chk)
+                @php
+                    $isChecked = in_array($chk['id'], old('checklist_items', $draftChecklist)) || $isDraftAccepted || old('author_guidelines_accepted');
+                @endphp
                 <label class="flex items-start gap-3 cursor-pointer group">
                     <input 
                         type="checkbox" 
                         name="checklist_items[]" 
                         value="{{ $chk['id'] }}" 
                         class="checklist-item mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon shrink-0 cursor-pointer"
+                        {{ $isChecked ? 'checked' : '' }}
                     >
                     <div class="text-xs">
                         <span class="font-bold text-gray-900 group-hover:text-brand-maroon transition">{{ $chk['title'] }}</span>
@@ -230,7 +241,7 @@
             @endforeach
         </div>
         <!-- Master Hidden Checkbox untuk Form Request OpenAPI author_guidelines_accepted -->
-        <input type="checkbox" name="author_guidelines_accepted" id="author_guidelines_accepted" value="1" class="sr-only" {{ old('author_guidelines_accepted') ? 'checked' : '' }}>
+        <input type="checkbox" name="author_guidelines_accepted" id="author_guidelines_accepted" value="1" class="sr-only" {{ old('author_guidelines_accepted') || $isDraftAccepted ? 'checked' : '' }}>
     </div>
 
     <!-- Catatan Pengantar untuk Dewan Redaksi / Editor -->
@@ -248,6 +259,6 @@
             maxlength="2000"
             placeholder="Tuliskan catatan khusus, konteks hibah riset, atau permohonan pengecualian kepada dewan redaksi..."
             class="w-full p-3 sm:p-3.5 text-xs sm:text-sm rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-2xs hover:border-gray-400 focus:outline-none focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition-all"
-        >{{ old('comments_for_editor') }}</textarea>
+        >{{ old('comments_for_editor', $draft?->comments_for_editor ?? '') }}</textarea>
     </div>
 </div>

@@ -54,27 +54,6 @@
     </div>
 </div>
 
-<!-- Error Validation Feedback Alert -->
-@if($errors->any())
-    <div class="rounded-lg bg-red-50 border border-red-200 p-4 shadow-2xs" role="alert">
-        <div class="flex items-start gap-3">
-            <div class="shrink-0 text-red-600 mt-0.5">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-bold text-red-900">Periksa Kembali Isian Formulir Anda</h3>
-                <ul class="mt-1.5 list-disc list-inside text-xs text-red-700 space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-@endif
-
 <!-- Header Judul Halaman -->
 <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-2xs">
     <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">

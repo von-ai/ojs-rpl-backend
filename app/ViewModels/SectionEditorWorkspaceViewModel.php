@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\EditorialDecision;
+use App\Models\Journal;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
@@ -74,6 +76,23 @@ class SectionEditorWorkspaceViewModel
     public function hasSeRecommendation(): bool
     {
         return ! empty($this->activeRound->se_recommendation);
+    }
+
+    public function currentEditorialDecision(): ?EditorialDecision
+    {
+        return $this->submission->editorialDecisions
+            ->where('review_round_id', $this->activeRound->id)
+            ->first();
+    }
+
+    public function minimumReviewOverrideReason(): ?string
+    {
+        return $this->currentEditorialDecision()?->minimum_review_override_reason;
+    }
+
+    public function hasOverrideRecommendation(): bool
+    {
+        return $this->hasSeRecommendation() && ! empty($this->minimumReviewOverrideReason());
     }
 
     /**
@@ -151,7 +170,7 @@ class SectionEditorWorkspaceViewModel
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
             || in_array($status, ['in_review', 'under_review', 'revisions_requested', 'accepted', 'in_production', 'published'], true);
         $hasSe = true; // Section Editor sudah ditugaskan
-        $hasDecision = $this->submission->editorialDecisions->isNotEmpty()
+        $hasDecision = $this->submission->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->isNotEmpty()
             || in_array($status, ['accepted', 'in_production', 'published', 'declined'], true);
         $inProdOrPub = in_array($status, ['accepted', 'in_production', 'published'], true);
 
@@ -196,6 +215,57 @@ class SectionEditorWorkspaceViewModel
                 'subtitle' => $status === 'published' ? 'Telah Terbit Resmi' : 'Penyuntingan & Galai',
                 'state' => $status === 'published' ? 'completed' : ($inProdOrPub ? 'current' : 'upcoming'),
             ],
+        ];
+    }
+
+    /**
+     * Rincian status dan berkas bukti pembayaran APC naskah.
+     *
+     * @return array<string, mixed>
+     */
+    public function paymentInfo(): array
+    {
+        $sub = $this->submission;
+        $journal = $sub->journal ?? Journal::first();
+        $isPaid = (bool) ($journal?->isPaidApc() ?? false);
+        $payment = $sub->latestPayment;
+
+        if (! $isPaid) {
+            return [
+                'is_free' => true,
+                'status' => 'free',
+                'status_label' => 'Bebas Biaya (Diamond Open Access)',
+                'status_badge' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'apc_fee' => (string) ($journal?->apc_fee ?? 'Rp 0,-'),
+                'has_proof' => false,
+                'proof_url' => null,
+                'can_verify' => false,
+                'can_reject' => false,
+                'can_waive' => false,
+            ];
+        }
+
+        $hasProof = (bool) ($payment && $payment->file_entry_id);
+
+        return [
+            'is_free' => false,
+            'status' => $payment ? $payment->status : 'pending_payment',
+            'status_label' => $payment ? $payment->statusLabel() : 'Menunggu Pembayaran',
+            'status_badge' => $payment ? $payment->statusBadgeClass() : 'bg-amber-50 text-amber-800 border-amber-200',
+            'invoice_number' => $payment?->invoice_number ?? '-',
+            'amount_formatted' => $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : 'Rp '.number_format((float) ($journal?->apc_amount ?? 500000), 0, ',', '.')),
+            'sender_bank_name' => $payment?->sender_bank_name,
+            'sender_account_name' => $payment?->sender_account_name,
+            'transfer_date' => $payment?->transfer_date?->format('d M Y'),
+            'author_notes' => $payment?->author_notes,
+            'verification_notes' => $payment?->verification_notes,
+            'uploaded_at' => $payment?->uploaded_at?->format('d M Y H:i'),
+            'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
+            'has_proof' => $hasProof,
+            'proof_url' => $hasProof ? route('section-editor.submissions.payment.proof', $sub->id) : null,
+            'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
+            'can_reject' => (bool) ($payment && in_array($payment->status, ['pending_verification', 'verified'], true)),
+            'can_waive' => (bool) (! $payment || (! $payment->isVerified() && ! $payment->isWaived())),
         ];
     }
 }

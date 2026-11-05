@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Flash Status Notification -->
-    @if (session('status'))
-        <x-alert type="success" title="Pemberitahuan">
-            {{ session('status') }}
-        </x-alert>
-    @endif
-
     <!-- Banner Status Eskalasi Aktif -->
     @if (!empty($submission['escalation']['has_active']))
         <div class="p-4 rounded-xl bg-purple-50/90 border border-purple-200 text-purple-900 flex items-start gap-3 shadow-2xs">

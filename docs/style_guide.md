@@ -212,9 +212,9 @@ Komponen dalam folder ini dikhususkan untuk struktur tata letak (*layout shell*)
 Setiap antarmuka naskah wajib menerapkan aturan defensif berikut:
 
 1. **Pencegahan Teks Meluap (Anti-Broken Layout):**
-   * Seluruh judul naskah, abstrak, dan email panjang wajib menggunakan kombinasi:
+   * Seluruh judul naskah, abstrak, dan email panjang wajib menggunakan:
      ```html
-     class="break-words [overflow-wrap:anywhere]"
+     class="wrap-break-word"
      ```
 2. **Elemen yang Tidak Boleh Menciut (No-Shrink Protection):**
    * Seluruh badge status, tombol download berkas, dan ikon status wajib diberi class `shrink-0` agar bentuknya tetap sempurna di layar sempit.

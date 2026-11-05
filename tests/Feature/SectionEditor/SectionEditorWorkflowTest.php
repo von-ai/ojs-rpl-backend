@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SectionEditor;
 
+use App\Jobs\SendReviewNotice;
 use App\Models\EditorAssignment;
 use App\Models\FileEntry;
 use App\Models\Journal;
@@ -16,8 +17,10 @@ use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Services\Reviewer\ReviewerService;
+use App\Services\SectionEditor\SectionEditorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -91,9 +94,23 @@ class SectionEditorWorkflowTest extends TestCase
             'email' => 'hasanuddin.rev@unhas.ac.id',
         ]);
 
+        UserRole::create([
+            'user_id' => $this->reviewerA->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+            'expertise_keywords' => ['IoT', 'Sensor Cerdas', 'Mitigasi Banjir'],
+        ]);
+
         $this->reviewerB = User::factory()->create([
             'name' => 'Dr. Fatimah Zuhra, M.Kom.',
             'email' => 'fatimah.rev@unm.ac.id',
+        ]);
+
+        UserRole::create([
+            'user_id' => $this->reviewerB->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+            'expertise_keywords' => ['Kecerdasan Buatan', 'Smart City'],
         ]);
 
         $this->grantRole($this->reviewerA, 'reviewer', $this->journal->id);
@@ -144,6 +161,31 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertSee('SUB-2026-SE-001');
         $response->assertSee('Optimalisasi Jaringan Sensor IoT');
         $response->assertDontSee('Naskah Lain Milik Editor Lain');
+    }
+
+    public function test_section_editor_dilarang_mengakses_workspace_naskah_editor_lain(): void
+    {
+        $otherSubmission = Submission::create([
+            'submission_number' => 'SUB-2026-SE-099',
+            'journal_id' => $this->journal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'title' => 'Naskah Rahasia Editor Lain',
+            'abstract' => 'Abstrak naskah rahasia.',
+            'status' => 'in_review',
+        ]);
+
+        EditorAssignment::create([
+            'submission_id' => $otherSubmission->id,
+            'editor_id' => $this->otherEditor->id,
+            'role' => 'section_editor',
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $otherSubmission->id));
+
+        $this->assertTrue(in_array($response->status(), [403, 404], true));
     }
 
     public function test_section_editor_dapat_membuka_workspace_dan_memastikan_review_round_aktif(): void
@@ -333,6 +375,61 @@ class SectionEditorWorkflowTest extends TestCase
         $this->assertEquals($newDueAt->format('Y-m-d H:i'), $assignment->fresh()->review_due_at->format('Y-m-d H:i'));
     }
 
+    public function test_section_editor_tidak_dapat_mengirim_rekomendasi_jika_kuorum_telaah_belum_terpenuhi(): void
+    {
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'minimum_completed_reviews' => 2,
+        ]);
+
+        // Coba kirim rekomendasi saat kuorum belum tercapai (0/2 selesai)
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.rounds.recommendation', $round->id), [
+                'recommendation' => 'revisions_required',
+                'note' => 'Catatan telaah yang seharusnya ditolak karena kuorum belum cukup.',
+            ]);
+
+        $response->assertSessionHasErrors('recommendation');
+        $this->assertNull($round->fresh()->se_recommendation);
+    }
+
+    public function test_section_editor_dapat_mengirim_rekomendasi_dengan_alasan_override_kuorum(): void
+    {
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'minimum_completed_reviews' => 2,
+        ]);
+
+        // Belum ada review selesai (0/2), tetapi Section Editor menyertakan alasan override kuorum resmi
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.rounds.recommendation', $round->id), [
+                'recommendation' => 'decline',
+                'note' => 'Ditemukan indikasi plagiarisme berat dan naskah ditarik atas permintaan resmi.',
+                'is_override' => '1',
+                'override_reason' => 'Naskah ditarik secara tertulis oleh penulis utama dan ditemukan indikasi fabrikasi data.',
+            ]);
+
+        $response->assertRedirect(route('section-editor.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        $freshRound = $round->fresh();
+        $this->assertEquals('decline', $freshRound->se_recommendation);
+        $this->assertNotNull($freshRound->se_recommended_at);
+
+        // Memastikan draft EditorialDecision tersimpan dengan minimum_review_override_reason
+        $this->assertDatabaseHas('editorial_decisions', [
+            'submission_id' => $this->submission->id,
+            'review_round_id' => $round->id,
+            'decision' => 'decline',
+            'status' => 'draft',
+            'minimum_review_override_reason' => 'Naskah ditarik secara tertulis oleh penulis utama dan ditemukan indikasi fabrikasi data.',
+        ]);
+    }
+
     public function test_section_editor_dapat_mengirimkan_rekomendasi_editorial_ke_eic(): void
     {
         $round = ReviewRound::create([
@@ -425,5 +522,152 @@ class SectionEditorWorkflowTest extends TestCase
         $response->assertDontSee('text-justify');
         $response->assertDontSee('UC-11');
         $response->assertDontSee('UC-08');
+    }
+
+    public function test_get_available_reviewers_hanya_menampilkan_mitra_bestari_sah_sesuai_jurnal(): void
+    {
+        // 1. Buat pengguna tanpa peran reviewer (misal: hanya penulis atau staf)
+        $nonReviewer = User::factory()->create([
+            'name' => 'Staf Tata Usaha',
+            'email' => 'tu@makassarkota.go.id',
+        ]);
+
+        // 2. Buat reviewer dari jurnal lain
+        $otherJournal = Journal::create([
+            'name' => 'Jurnal Ekologi Maritim',
+            'slug' => 'jurnal-ekologi-maritim',
+        ]);
+        $otherJournalReviewer = User::factory()->create([
+            'name' => 'Dr. Reviewer Ekologi',
+            'email' => 'ekologi.rev@unhas.ac.id',
+        ]);
+        UserRole::create([
+            'user_id' => $otherJournalReviewer->id,
+            'journal_id' => $otherJournal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        // 3. Buat reviewer C di jurnal ini
+        $reviewerC = User::factory()->create([
+            'name' => 'Zulfa Reviewer, M.Si.',
+            'email' => 'zulfa.rev@unhas.ac.id',
+        ]);
+        UserRole::create([
+            'user_id' => $reviewerC->id,
+            'journal_id' => $this->journal->id,
+            'role_code' => 'reviewer',
+        ]);
+
+        /** @var SectionEditorService $service */
+        $service = app(SectionEditorService::class);
+        $reviewers = $service->getAvailableReviewers($this->submission);
+
+        // Hanya reviewer terdaftar di jurnal ini yang muncul
+        $reviewerIds = $reviewers->pluck('id')->all();
+        $this->assertContains($this->reviewerA->id, $reviewerIds);
+        $this->assertContains($this->reviewerB->id, $reviewerIds);
+        $this->assertContains($reviewerC->id, $reviewerIds);
+        $this->assertNotContains($this->author->id, $reviewerIds); // Penulis harus dikecualikan
+        $this->assertNotContains($nonReviewer->id, $reviewerIds); // Bukan reviewer
+        $this->assertNotContains($otherJournalReviewer->id, $reviewerIds); // Reviewer jurnal lain
+    }
+
+    public function test_halaman_detail_section_editor_merender_combobox_mitra_bestari(): void
+    {
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'minimum_completed_reviews' => 2,
+        ]);
+        $original = $this->cleanTestFile('asli.pdf');
+        $anonymous = $this->cleanTestFile('anonim.pdf');
+        $round->update([
+            'manuscript_file_id' => $original->id,
+            'anonymized_file_id' => $anonymous->id,
+            'anonymized_checksum' => $anonymous->checksum_sha256,
+            'reviewer_title' => 'Judul anonim',
+            'reviewer_abstract' => 'Abstrak anonim',
+            'rubric_snapshot' => app(ReviewerService::class)->getDefaultRubricCriteria(),
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $this->submission->id));
+
+        $response->assertOk();
+        $response->assertSee('reviewer-combobox-container');
+        $response->assertSee('reviewer-combobox-input');
+        $response->assertSee('Kategori:');
+        $response->assertSee($this->section->name);
+        $response->assertSee($this->reviewerA->name);
+    }
+
+    public function test_section_editor_dapat_mengirim_pengingat_dan_memicu_email_ke_mitra_bestari(): void
+    {
+        Queue::fake();
+
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+        ]);
+
+        $assignment = ReviewAssignment::create([
+            'review_round_id' => $round->id,
+            'reviewer_id' => $this->reviewerA->id,
+            'status' => 'accepted',
+            'response_due_at' => Carbon::now()->subDay(),
+            'review_due_at' => Carbon::now()->addDays(5),
+            'version' => 1,
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->post(route('section-editor.assignments.reminder', $assignment->id), [
+                'message' => 'Segera selesaikan telaah.',
+            ]);
+
+        $response->assertRedirect(route('section-editor.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        // Pastikan record pengingat tercatat di basis data
+        $this->assertDatabaseHas('review_reminders', [
+            'assignment_id' => $assignment->id,
+            'sent_by' => $this->sectionEditor->id,
+            'delivery_status' => 'queued',
+        ]);
+
+        Queue::assertPushed(SendReviewNotice::class, function (SendReviewNotice $job) {
+            return $job->email === $this->reviewerA->email;
+        });
+
+        // Pastikan tampilan memuat jejak pengingat
+        $showResponse = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.show', $this->submission->id));
+
+        $showResponse->assertOk();
+        $showResponse->assertSee('Pengingat terakhir dikirim:');
+        $showResponse->assertSee('Kirim Pengingat Ulang');
+    }
+
+    public function test_cannot_invite_global_reviewer_who_cannot_access_the_submission(): void
+    {
+        Storage::fake('local');
+        $file = $this->cleanTestFile('anonymous.pdf');
+        $round = ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'review_type' => 'double_blind',
+            'status' => 'active',
+            'anonymized_file_id' => $file->id,
+            'anonymized_checksum' => $file->checksum_sha256,
+        ]);
+        $reviewer = User::factory()->create();
+        UserRole::create(['user_id' => $reviewer->id, 'role_code' => 'reviewer']);
+        $this->actingAs($this->sectionEditor)->post(route('section-editor.reviewers.assign', $round->id), [
+            'reviewer_id' => $reviewer->id,
+            'response_due_at' => now()->addDays(3)->toDateString(),
+            'review_due_at' => now()->addDays(5)->toDateString(),
+        ])->assertRedirect();
+        $this->assertDatabaseMissing('review_assignments', ['reviewer_id' => $reviewer->id, 'review_round_id' => $round->id]);
     }
 }

@@ -17,7 +17,9 @@ use App\Services\PortalAccess;
 use App\Services\Reviewer\ReviewerService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -82,7 +84,7 @@ class SectionEditorService
     public function ensureActiveReviewRound(Submission $submission, ?string $note = null, ?FileEntry $anonymousFile = null, ?string $reviewerTitle = null, ?string $reviewerAbstract = null): ReviewRound
     {
         return DB::transaction(function () use ($submission, $note, $anonymousFile, $reviewerTitle, $reviewerAbstract) {
-            $submission = PortalAccess::lockSubmission($submission, auth()->user(), 'section_editor');
+            $submission = PortalAccess::lockSubmission($submission, Auth::user(), 'section_editor');
             if (! in_array($submission->status, ['submitted', 'in_review', 'under_review', 'revisions_requested'], true)) {
                 throw new InvalidArgumentException('Status naskah tidak mengizinkan putaran telaah baru.');
             }
@@ -110,6 +112,10 @@ class SectionEditorService
             }
             if ($active) {
                 $active->update(['status' => 'closed', 'closed_at' => now(), 'version' => $active->version + 1]);
+            }
+
+            if ($submission->status === 'submitted') {
+                $submission->update(['status' => 'in_review']);
             }
 
             return ReviewRound::create([
@@ -146,22 +152,17 @@ class SectionEditorService
                 throw new InvalidArgumentException('Berkas anonim terpisah harus selesai dipindai sebelum reviewer diundang.');
             }
 
-            // 1. Guard: Putaran review harus berstatus aktif
-            if ($round->status !== 'active') {
-                throw new InvalidArgumentException('Tidak dapat menugaskan reviewer pada putaran review yang telah ditutup atau dibatalkan.');
-            }
-
-            // 2. Guard: Pencegahan konflik kepentingan / self-review (Penulis tidak boleh menelaah naskahnya sendiri)
+            // 1. Guard: Pencegahan konflik kepentingan / self-review (Penulis tidak boleh menelaah naskahnya sendiri)
             $authorId = $round->submission->author_id;
             if ($reviewer->id === $authorId || $round->submission->contributors()->where(fn ($q) => $q->where('user_id', $reviewer->id)->orWhere('email', $reviewer->email))->exists()) {
                 throw new InvalidArgumentException('Penulis naskah tidak dapat ditugaskan sebagai mitra bestari (konflik kepentingan/self-review).');
             }
 
-            if (! $this->getAvailableReviewers($round->submission)->contains('id', $reviewer->id)) {
+            if (! $this->eligibleReviewers($round->submission)->whereKey($reviewer->id)->exists()) {
                 throw new InvalidArgumentException('Reviewer harus aktif, terverifikasi, dan terdaftar pada jurnal ini.');
             }
 
-            // 3. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
+            // 2. Guard: Pencegahan penugasan ganda aktif di putaran yang sama (live_slot check)
             $existingActive = $round->assignments()
                 ->where('reviewer_id', $reviewer->id)
                 ->whereIn('status', ['invited', 'accepted', 'overdue'])
@@ -171,7 +172,7 @@ class SectionEditorService
                 throw new InvalidArgumentException('Mitra bestari ini sudah memiliki penugasan aktif pada putaran telaah ini.');
             }
 
-            // 4. Validasi tanggal deadline
+            // 3. Validasi tanggal deadline
             $responseDue = Carbon::parse($data['response_due_at'])->utc();
             $reviewDue = Carbon::parse($data['review_due_at'])->utc();
 
@@ -179,29 +180,27 @@ class SectionEditorService
                 throw new InvalidArgumentException('Batas waktu telaah (review due date) harus setelah batas waktu respon (response due date).');
             }
 
-            return DB::transaction(function () use ($round, $reviewer, $responseDue, $reviewDue, $data): ReviewAssignment {
-                $assignment = ReviewAssignment::create([
-                    'review_round_id' => $round->id,
-                    'reviewer_id' => $reviewer->id,
-                    'status' => 'invited',
-                    'response_due_at' => $responseDue,
-                    'review_due_at' => $reviewDue,
-                    'deadline_version' => 1,
-                    'version' => 1,
-                    'invitation_message' => $data['invitation_message'] ?? null,
-                ]);
+            $assignment = ReviewAssignment::create([
+                'review_round_id' => $round->id,
+                'reviewer_id' => $reviewer->id,
+                'status' => 'invited',
+                'response_due_at' => $responseDue,
+                'review_due_at' => $reviewDue,
+                'deadline_version' => 1,
+                'version' => 1,
+                'invitation_message' => $data['invitation_message'] ?? null,
+            ]);
 
-                SendReviewNotice::dispatch($reviewer->email, 'Undangan telaah naskah SIRIDA',
-                    'Anda diundang menelaah naskah anonim: '.$round->reviewer_title."\n".route('reviewer.assignments.show', $assignment->id));
+            SendReviewNotice::dispatch($reviewer->email, 'Undangan telaah naskah SIRIDA',
+                'Anda diundang menelaah naskah anonim: '.$round->reviewer_title."\n".route('reviewer.assignments.show', $assignment->id));
 
-                // Mutasi status naskah menjadi under_review
-                $submission = $round->submission;
-                if ($submission->status !== 'under_review') {
-                    $submission->update(['status' => 'under_review']);
-                }
+            // Mutasi status naskah menjadi under_review
+            $submission = $round->submission;
+            if ($submission->status !== 'under_review') {
+                $submission->update(['status' => 'under_review']);
+            }
 
-                return $assignment;
-            });
+            return $assignment;
         });
     }
 
@@ -307,66 +306,86 @@ class SectionEditorService
     /**
      * Mengirimkan rekomendasi editorial resmi Section Editor ke Pemimpin Redaksi (EIC).
      */
-    public function submitRecommendation(ReviewRound $round, string $recommendation, string $note, User $editor): ReviewRound
-    {
-        return DB::transaction(function () use ($round, $recommendation, $note, $editor) {
+    public function submitRecommendation(
+        ReviewRound $round,
+        string $recommendation,
+        string $note,
+        User $editor,
+        ?string $overrideReason = null
+    ): ReviewRound {
+        return DB::transaction(function () use ($round, $recommendation, $note, $editor, $overrideReason): ReviewRound {
             PortalAccess::lockSubmission($round->submission, $editor, 'section_editor');
             $round = ReviewRound::query()->lockForUpdate()->findOrFail($round->id);
             if ($round->status !== 'active') {
                 throw new InvalidArgumentException('Putaran telaah sudah ditutup.');
             }
 
-            if ($round->completedReviewCount() < $round->minimum_completed_reviews) {
-                throw new InvalidArgumentException('Jumlah telaah selesai belum memenuhi kuorum.');
-            }
             $allowed = ['accept', 'revisions_required', 'resubmit', 'decline'];
             if (! in_array($recommendation, $allowed, true)) {
                 throw new InvalidArgumentException('Rekomendasi editorial tidak valid.');
             }
 
-            return DB::transaction(function () use ($round, $recommendation, $note, $editor): ReviewRound {
-                $round->update([
-                    'se_recommendation' => $recommendation,
-                    'se_recommendation_note' => $note,
-                    'se_recommended_at' => Carbon::now('UTC'),
-                ]);
+            $completedCount = $round->completedReviewCount();
+            $minReq = max(1, (int) $round->minimum_completed_reviews);
+            $isQuorumMet = $completedCount >= $minReq;
 
-                // Simpan draf keputusan editorial agar EIC dapat langsung menelaah dan menyetujui
-                EditorialDecision::updateOrCreate(
-                    [
-                        'submission_id' => $round->submission_id,
-                        'review_round_id' => $round->id,
-                        'status' => 'draft',
-                    ],
-                    [
-                        'decided_by' => $editor->id,
-                        'decision' => $recommendation,
-                        'note_for_author' => $note,
-                        'internal_note' => "Rekomendasi dari Section Editor {$editor->name}: {$note}",
-                        'version' => 1,
-                    ]
-                );
+            if (! $isQuorumMet) {
+                $trimmedOverride = trim((string) $overrideReason);
+                if (mb_strlen($trimmedOverride) < 10) {
+                    throw new InvalidArgumentException("Kuorum telaah belum terpenuhi ({$completedCount}/{$minReq} review selesai). Pengajuan rekomendasi mendahului kuorum wajib menyertakan alasan dispensasi/override minimal 10 karakter.");
+                }
+            }
 
-                return $round;
-            });
+            $round->update([
+                'se_recommendation' => $recommendation,
+                'se_recommendation_note' => $note,
+                'se_recommended_at' => Carbon::now('UTC'),
+            ]);
+
+            // Simpan draf keputusan editorial agar EIC dapat langsung menelaah dan menyetujui
+            EditorialDecision::updateOrCreate(
+                [
+                    'submission_id' => $round->submission_id,
+                    'review_round_id' => $round->id,
+                    'status' => 'draft',
+                ],
+                [
+                    'decided_by' => $editor->id,
+                    'decision' => $recommendation,
+                    'note_for_author' => $note,
+                    'internal_note' => "Rekomendasi dari Section Editor {$editor->name}: {$note}",
+                    'minimum_review_override_reason' => (! $isQuorumMet && ! empty($overrideReason)) ? trim($overrideReason) : null,
+                    'version' => 1,
+                ]
+            );
+
+            return $round;
         });
     }
 
-    /**
-     * Mengambil daftar calon reviewer yang memenuhi syarat untuk naskah ini.
-     *
-     * @return Collection<int, User>
-     */
-    public function getAvailableReviewers(Submission $submission)
+    /** @return Collection<int, User> */
+    public function getAvailableReviewers(Submission $submission): Collection
     {
-        return User::query()
-            ->where('id', '!=', $submission->author_id)
-            ->where('status', 'active')
-            ->whereNotNull('email_verified_at')
-            ->whereNotIn('id', DB::table('submission_contributors')->select('user_id')->where('submission_id', $submission->id)->whereNotNull('user_id'))
-            ->whereNotIn('email', DB::table('submission_contributors')->select('email')->where('submission_id', $submission->id)->whereNotNull('email'))
-            ->whereHas('userRoles', fn ($q) => $q->where('role_code', 'reviewer')->where('journal_id', $submission->journal_id))
+        return $this->eligibleReviewers($submission)
+            ->withCount([
+                'reviewAssignments as active_reviews_count' => fn ($q) => $q->whereIn('status', ['invited', 'accepted', 'overdue']),
+                'reviewAssignments as completed_reviews_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
             ->orderBy('full_name')
             ->get();
+    }
+
+    /** @return Builder<User> */
+    private function eligibleReviewers(Submission $submission): Builder
+    {
+        return User::query()
+            ->when($submission->author_id, fn ($query) => $query->where('id', '!=', $submission->author_id))
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->whereNotIn('id', $submission->contributors()->select('user_id')->whereNotNull('user_id'))
+            ->whereNotIn('email', $submission->contributors()->select('email')->whereNotNull('email'))
+            ->whereHas('userRoles', fn ($query) => $query
+                ->where('role_code', 'reviewer')
+                ->where('journal_id', $submission->journal_id));
     }
 }

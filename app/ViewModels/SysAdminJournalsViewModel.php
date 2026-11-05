@@ -280,7 +280,7 @@ class SysAdminJournalsViewModel
     {
         try {
             if (Schema::hasTable('journals')) {
-                return Journal::with(['currentIssue', 'submissions'])->get()->map(function (Journal $j) {
+                return Journal::with(['currentIssue', 'submissions'])->latest('updated_at')->get()->map(function (Journal $j) {
                     return [
                         'id' => (string) $j->id,
                         'slug' => (string) $j->slug,

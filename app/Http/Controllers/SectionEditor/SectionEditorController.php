@@ -11,6 +11,7 @@ use App\Models\ReviewExtension;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\Payment\ArticlePaymentService;
 use App\Services\PrivateFileService;
 use App\Services\SectionEditor\SectionEditorService;
 use App\ViewModels\SectionEditorSubmissionsViewModel;
@@ -22,12 +23,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SectionEditorController extends Controller
 {
     public function __construct(
-        protected readonly SectionEditorService $sectionEditorService
+        protected readonly SectionEditorService $sectionEditorService,
+        protected readonly ArticlePaymentService $articlePaymentService
     ) {}
 
     /**
@@ -63,7 +66,7 @@ class SectionEditorController extends Controller
                 $q->where('editor_id', $editor->id)->whereNull('revoked_at');
             })
             ->with(['assignment.reviewer', 'assignment.reviewRound.submission'])
-            ->latest()
+            ->latest('updated_at')
             ->limit(5)
             ->get();
 
@@ -139,6 +142,8 @@ class SectionEditorController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $activeRound = $submission->currentReviewRound ?? new ReviewRound(['submission_id' => $submission->id, 'round' => (int) $submission->reviewRounds()->max('round') + 1, 'status' => 'not_started', 'minimum_completed_reviews' => 2]);
         $activeRound->load([
             'assignments.reviewer',
@@ -158,10 +163,15 @@ class SectionEditorController extends Controller
      */
     public function downloadFile(string $id, string $fileId): StreamedResponse|RedirectResponse
     {
+        /** @var User $editor */
+        $editor = Auth::user();
+
         $submission = Submission::with('files.file')
             ->where('id', $id)
             ->orWhere('submission_number', $id)
             ->firstOrFail();
+
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
 
         $subFile = $submission->files->first(function ($item) use ($fileId): bool {
             return $item->id === $fileId || $item->file_id === $fileId;
@@ -181,6 +191,11 @@ class SectionEditorController extends Controller
      */
     public function storeRound(Request $request, string $id): RedirectResponse
     {
+        /** @var User $editor */
+        $editor = Auth::user();
+        $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $data = $request->validate([
             'anonymous_file' => ['required', 'file', 'mimes:pdf,docx', 'max:20480'],
             'reviewer_title' => ['required', 'string', 'max:500'],
@@ -188,7 +203,6 @@ class SectionEditorController extends Controller
             'anonymity_confirmed' => ['required', 'accepted'],
             'note' => ['nullable', 'string', 'max:4000'],
         ]);
-        $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
         $upload = $request->file('anonymous_file');
         $disk = config('filesecurity.disk', 'local');
         $path = $upload->store('review-anonymous/'.$submission->id, $disk);
@@ -223,11 +237,21 @@ class SectionEditorController extends Controller
             'response_due_at' => ['required', 'date', 'after:today'],
             'review_due_at' => ['required', 'date', 'after:response_due_at'],
             'invitation_message' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'reviewer_id.required' => 'Mitra bestari wajib dipilih dari direktori.',
+            'reviewer_id.exists' => 'Mitra bestari yang dipilih tidak terdaftar di sistem.',
+            'response_due_at.required' => 'Batas waktu respon konfirmasi wajib diisi.',
+            'response_due_at.after' => 'Batas waktu respon konfirmasi harus setelah hari ini.',
+            'review_due_at.required' => 'Batas waktu penyelesaian telaah wajib diisi.',
+            'review_due_at.after' => 'Batas waktu penyelesaian telaah harus setelah batas waktu respon.',
+            'invitation_message.max' => 'Pesan pengantar undangan maksimal 2000 karakter.',
         ]);
 
         /** @var User $editor */
         $editor = Auth::user();
-        $round = ReviewRound::findOrFail($roundId);
+        $round = ReviewRound::with('submission')->findOrFail($roundId);
+        $this->authorizeSectionEditorForSubmission($round->submission, $editor);
+
         $reviewer = User::findOrFail($validated['reviewer_id']);
 
         try {
@@ -257,8 +281,11 @@ class SectionEditorController extends Controller
     {
         /** @var User $editor */
         $editor = Auth::user();
-        $assignment = ReviewAssignment::findOrFail($assignmentId);
-        $submissionId = $assignment->reviewRound->submission_id;
+        $assignment = ReviewAssignment::with('reviewRound.submission')->findOrFail($assignmentId);
+        $submission = $assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $submissionId = $submission->id;
 
         try {
             $this->sectionEditorService->cancelInvitation($assignment, $editor);
@@ -278,12 +305,15 @@ class SectionEditorController extends Controller
     {
         /** @var User $editor */
         $editor = Auth::user();
-        $assignment = ReviewAssignment::findOrFail($assignmentId);
+        $assignment = ReviewAssignment::with('reviewRound.submission')->findOrFail($assignmentId);
+        $submission = $assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
         $message = $request->input('message');
 
         $this->sectionEditorService->sendReminder($assignment, $editor, $message);
 
-        return redirect()->route('section-editor.submissions.show', $assignment->reviewRound->submission_id)
+        return redirect()->route('section-editor.submissions.show', $submission->id)
             ->with('success', "Surat pengingat telaah berhasil dikirimkan kepada {$assignment->reviewer->name}.");
     }
 
@@ -299,8 +329,11 @@ class SectionEditorController extends Controller
 
         /** @var User $editor */
         $editor = Auth::user();
-        $extension = ReviewExtension::findOrFail($extensionId);
-        $submissionId = $extension->assignment->reviewRound->submission_id;
+        $extension = ReviewExtension::with('assignment.reviewRound.submission')->findOrFail($extensionId);
+        $submission = $extension->assignment->reviewRound->submission;
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $submissionId = $submission->id;
 
         try {
             $this->sectionEditorService->decideExtension(
@@ -330,25 +363,184 @@ class SectionEditorController extends Controller
         $validated = $request->validate([
             'recommendation' => ['required', 'string', 'in:accept,revisions_required,resubmit,decline'],
             'note' => ['required', 'string', 'min:10', 'max:5000'],
+            'is_override' => ['nullable', 'boolean'],
+            'override_reason' => ['nullable', 'string', 'min:10', 'max:2000'],
+        ], [
+            'recommendation.required' => 'Rekomendasi keputusan editorial wajib dipilih.',
+            'recommendation.in' => 'Pilihan rekomendasi keputusan tidak valid.',
+            'note.required' => 'Catatan evaluasi substantif untuk EIC wajib diisi.',
+            'note.min' => 'Catatan evaluasi substantif untuk EIC wajib diisi minimal 10 karakter.',
+            'note.max' => 'Catatan evaluasi substantif untuk EIC maksimal 5000 karakter.',
+            'override_reason.min' => 'Alasan pengabaian kuorum minimum wajib diisi minimal 10 karakter.',
+            'override_reason.max' => 'Alasan pengabaian kuorum minimum maksimal 2000 karakter.',
         ]);
 
         /** @var User $editor */
         $editor = Auth::user();
-        $round = ReviewRound::findOrFail($roundId);
+        $round = ReviewRound::with('submission')->findOrFail($roundId);
+        $this->authorizeSectionEditorForSubmission($round->submission, $editor);
 
         try {
+            $overrideReason = $request->filled('override_reason') ? (string) $request->input('override_reason') : null;
+
             $this->sectionEditorService->submitRecommendation(
                 $round,
                 $validated['recommendation'],
                 $validated['note'],
-                $editor
+                $editor,
+                $overrideReason
             );
 
+            $msg = ! empty($overrideReason)
+                ? 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC) dengan dispensasi pengabaian kuorum.'
+                : 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC).';
+
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
-                ->with('success', 'Rekomendasi editorial berhasil dikirimkan ke Pemimpin Redaksi (EIC).');
+                ->with('success', $msg);
         } catch (InvalidArgumentException $e) {
             return redirect()->route('section-editor.submissions.show', $round->submission_id)
-                ->withErrors(['recommendation' => $e->getMessage()]);
+                ->withErrors(['recommendation' => $e->getMessage()])
+                ->withInput();
         }
+    }
+
+    /**
+     * Memastikan bahwa editor yang sedang login secara sah ditugaskan ke naskah terkait.
+     */
+    private function authorizeSectionEditorForSubmission(Submission $submission, User $editor): void
+    {
+        if ($editor->isSysAdmin() || in_array('editor_in_chief', $editor->availableRoleCodes(), true)) {
+            return;
+        }
+
+        $isAssigned = $submission->editorAssignments()
+            ->where('editor_id', $editor->id)
+            ->whereNull('revoked_at')
+            ->exists();
+
+        if (! $isAssigned) {
+            abort(403, 'Anda tidak ditugaskan sebagai Editor Bagian untuk naskah ini.');
+        }
+    }
+
+    /**
+     * Mengunduh berkas bukti transfer pembayaran APC untuk ditinjau Editor Bagian.
+     */
+    public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment || ! $payment->fileEntry) {
+            abort(404, 'Berkas bukti pembayaran tidak ditemukan.');
+        }
+
+        return app(PrivateFileService::class)->stream($payment->fileEntry);
+    }
+
+    /**
+     * Memverifikasi pembayaran oleh Editor Bagian.
+     */
+    public function verifyPayment(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $notes = (string) $request->input('notes', 'Pembayaran diverifikasi sah oleh Editor Bagian.');
+        $this->articlePaymentService->verifyPayment($payment, $editor, 'section_editor', $notes);
+
+        return back()
+            ->with('status', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Editor Bagian.")
+            ->with('success', "Pembayaran untuk naskah '{$submission->title}' berhasil diverifikasi oleh Editor Bagian.");
+    }
+
+    /**
+     * Menolak bukti pembayaran naskah oleh Editor Bagian.
+     */
+    public function rejectPayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+            'reason.max' => 'Alasan penolakan tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            return back()->with('error', 'Catatan tagihan pembayaran untuk naskah ini tidak ditemukan.');
+        }
+
+        $reason = (string) $request->input('reason');
+        $this->articlePaymentService->rejectPayment($payment, $editor, 'section_editor', $reason);
+
+        return back()
+            ->with('status', "Bukti transfer naskah '{$submission->title}' berhasil ditolak. Penulis telah diinstruksikan untuk mengirimkan berkas bukti yang valid.")
+            ->with('success', "Bukti transfer naskah '{$submission->title}' berhasil ditolak.");
+    }
+
+    /**
+     * Memberikan pembebasan biaya publikasi (Waiver) oleh Editor Bagian.
+     */
+    public function waivePayment(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'waiver_reason.required' => 'Alasan pembebasan biaya wajib diisi.',
+            'waiver_reason.max' => 'Alasan pembebasan biaya tidak boleh melebihi 1000 karakter.',
+        ]);
+
+        $submission = Submission::where(function ($query) use ($id): void {
+            $query->where('id', $id)
+                ->orWhere('submission_number', $id);
+        })->firstOrFail();
+
+        /** @var User $editor */
+        $editor = Auth::user();
+        $this->authorizeSectionEditorForSubmission($submission, $editor);
+
+        $payment = $submission->latestPayment;
+        if (! $payment) {
+            $payment = $this->articlePaymentService->resolveOrCreatePayment($submission, $editor);
+        }
+
+        if (! $payment) {
+            return back()->with('error', 'Gagal menginisialisasi catatan pembayaran naskah.');
+        }
+
+        $reason = (string) $request->input('waiver_reason');
+        $this->articlePaymentService->waivePayment($payment, $editor, 'section_editor', $reason);
+
+        return back()
+            ->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).")
+            ->with('success', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
     }
 }

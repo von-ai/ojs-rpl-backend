@@ -57,20 +57,15 @@
         </div>
     </div>
 
-    <!-- Spesifikasi Taksonomi Ilmiah & Lisensi -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 text-xs">
-        @if(!empty($submission['subject_area']))
+    <!-- Bidang Fokus / Keilmuan (Taksonomi Ilmiah) -->
+    @if(!empty($submission['subject_area']))
+        <div class="pt-2 border-t border-gray-100 text-xs">
             <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200/70 space-y-1">
                 <span class="font-semibold text-gray-500 block text-[11px] uppercase tracking-wider">Bidang Fokus / Keilmuan</span>
                 <span class="text-gray-900 font-bold block">{{ $submission['subject_area'] }}</span>
             </div>
-        @endif
-
-        <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200/70 space-y-1">
-            <span class="font-semibold text-gray-500 block text-[11px] uppercase tracking-wider">Lisensi Publikasi</span>
-            <span class="text-gray-900 font-bold block">Creative Commons Attribution 4.0 (CC BY 4.0)</span>
         </div>
-    </div>
+    @endif
 
     <!-- Daftar Pustaka / Referensi -->
     @if(!empty($submission['references']))
@@ -90,6 +85,26 @@
             </div>
             <div class="p-4 rounded-lg bg-gray-50 border border-gray-200 font-mono text-xs text-gray-700 whitespace-pre-line leading-relaxed max-h-56 overflow-y-auto">
                 {{ $submission['references'] }}
+            </div>
+        </div>
+    @endif
+
+    <!-- Catatan Pengantar untuk Dewan Redaksi / Editor -->
+    @if(!empty($submission['comments_for_editor']))
+        <div class="pt-3 border-t border-gray-100 space-y-2">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Catatan Pengantar untuk Dewan Redaksi</h3>
+                </div>
+                <span class="text-[11px] text-gray-400 font-medium">Dari Penulis saat Pengajuan</span>
+            </div>
+            <div class="p-3.5 sm:p-4 rounded-lg bg-amber-50/50 border border-amber-200/60">
+                <p class="font-sans text-xs text-gray-800 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                    {{ $submission['comments_for_editor'] }}
+                </p>
             </div>
         </div>
     @endif

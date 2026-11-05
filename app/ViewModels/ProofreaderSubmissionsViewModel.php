@@ -27,22 +27,16 @@ class ProofreaderSubmissionsViewModel
     {
         try {
             if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments') && ProofAssignment::query()->exists()) {
-                $query = ProofAssignment::query()->whereHas('galley.submission');
-
                 if (Auth::check()) {
-                    $userCount = (clone $query)->where('proofreader_id', Auth::id())->count();
-                    if ($userCount > 0) {
-                        return $userCount;
-                    }
+                    return ProofAssignment::whereHas('galley.submission')
+                        ->where('proofreader_id', Auth::id())
+                        ->count();
                 }
 
-                $total = $query->count();
-                if ($total > 0) {
-                    return $total;
-                }
+                return 0;
             }
 
-            return (new self)->totalAssignedCount();
+            return 0;
         } catch (\Throwable) {
             return 0;
         }
@@ -258,21 +252,17 @@ class ProofreaderSubmissionsViewModel
     {
         try {
             if (class_exists(ProofAssignment::class) && Schema::hasTable('proof_assignments')) {
+                $userId = Auth::id();
+
                 $query = ProofAssignment::with([
                     'galley.submission.section',
                     'galley.submission.author',
                     'galley.submission.activeLayoutAssignment.layoutEditor',
                     'galley.proofreadingNotes',
-                ]);
+                ])
+                    ->where('proofreader_id', $userId);
 
-                if (Auth::check()) {
-                    $userAssigned = (clone $query)->where('proofreader_id', Auth::id());
-                    if ($userAssigned->exists()) {
-                        $query = $userAssigned;
-                    }
-                }
-
-                $assignments = $query->latest('created_at')->get();
+                $assignments = $query->latest('updated_at')->get();
 
                 if ($assignments->isNotEmpty()) {
                     $results = [];

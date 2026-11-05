@@ -424,15 +424,15 @@ class SysAdminEndToEndIntegrationTest extends TestCase
     /**
      * 8. Komponen Sidebar SysAdmin me-render badge dinamis secara tepat.
      */
-    public function test_sysadmin_sidebar_component_renders_dynamic_counts(): void
+    public function test_sysadmin_sidebar_component_renders_cleanly_without_number_badges(): void
     {
-        // 1. Rendering dengan nilai custom eksplisit
+        // 1. Rendering dengan nilai custom eksplisit bersih tanpa badge angka
         $renderedCustom = Blade::render('<x-sysadmin.sidebar :journals-count="8" :users-count="88" />');
-        $this->assertStringContainsString('sidebar-badge-full', $renderedCustom);
-        $this->assertStringContainsString('8', $renderedCustom);
-        $this->assertStringContainsString('88', $renderedCustom);
+        $this->assertStringNotContainsString('sidebar-badge-full', $renderedCustom);
+        $this->assertStringContainsString('Jurnal Ilmiah', $renderedCustom);
+        $this->assertStringContainsString('Pengguna &amp; Akses', $renderedCustom);
 
-        // 2. Rendering tanpa props (fallback otomatis ke ViewModel)
+        // 2. Rendering tanpa props juga bersih tanpa badge angka
         Journal::create([
             'name' => 'Jurnal Uji Render',
             'slug' => 'jurnal-uji-render',
@@ -441,9 +441,9 @@ class SysAdminEndToEndIntegrationTest extends TestCase
         ]);
 
         $renderedAuto = Blade::render('<x-sysadmin.sidebar />');
-        $this->assertStringContainsString('sidebar-badge-full', $renderedAuto);
-        $this->assertStringContainsString((string) SysAdminJournalsViewModel::getSidebarBadgeCount(), $renderedAuto);
-        $this->assertStringContainsString((string) SysAdminUsersViewModel::getSidebarBadgeCount(), $renderedAuto);
+        $this->assertStringNotContainsString('sidebar-badge-full', $renderedAuto);
+        $this->assertStringContainsString('Jurnal Ilmiah', $renderedAuto);
+        $this->assertStringContainsString('Pengguna &amp; Akses', $renderedAuto);
     }
 
     /**
