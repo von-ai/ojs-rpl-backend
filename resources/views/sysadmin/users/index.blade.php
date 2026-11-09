@@ -31,28 +31,8 @@
         </div>
     </div>
 
-    <!-- 4 Metrik Ringkas Pengguna -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">
-                        {{ $metric['value'] }}
-                    </span>
-                    <span class="text-[11px] text-gray-400">pengguna</span>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
     <!-- Container Utama 1: Direktori Pengguna Global -->
-    <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200/90 overflow-hidden">
 
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
@@ -263,8 +243,28 @@
         </div>
     </div>
 
+    <!-- 4 Metrik Ringkas Pengguna -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        @foreach ($viewModel->summaryMetrics() as $metric)
+            <div class="bg-white rounded-xl border border-gray-200/90 p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums {{ $metric['color_class'] }}">
+                        {{ $metric['badge_text'] }}
+                    </span>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span class="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">
+                        {{ $metric['value'] }}
+                    </span>
+                    <span class="text-[11px] text-gray-400">pengguna</span>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
     <!-- Container Utama 2: Riwayat Pengimporan Massal CSV (Tabel 54 user_imports) -->
-    <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
+    <div class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 space-y-4">
         <div class="border-b border-gray-100 pb-3">
             <h2 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                 Riwayat Pengimporan Massal Pengguna via CSV

@@ -20,7 +20,7 @@
         </a>
 
         <!-- Desktop Minimize / Maximize Toggle Button -->
-        <button id="sidebar-collapse-toggle-btn" type="button" class="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" title="Kecilkan / Perluas Navigasi" aria-label="Kecilkan atau perluas navigasi">
+        <button id="sidebar-collapse-toggle-btn" type="button" class="hidden lg:flex w-11 h-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" title="Kecilkan / Perluas Navigasi" aria-label="Kecilkan atau perluas navigasi">
             <svg id="collapse-icon-left" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
@@ -30,7 +30,7 @@
         </button>
 
         <!-- Mobile Close Button -->
-        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-9 min-h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
+        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -40,7 +40,7 @@
     <!-- Navigation Menu Items (Sesuai Peran) -->
     <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-1.5 sidebar-scroll" aria-label="Navigasi Utama {{ $roleLabel }}">
         <div class="pb-1 px-2.5 sidebar-heading">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Menu Utama</span>
+            <span class="text-xs font-semibold text-gray-600">Menu utama</span>
         </div>
 
         {{ $slot }}
