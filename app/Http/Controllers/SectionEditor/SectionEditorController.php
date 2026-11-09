@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\SectionEditor;
 
 use App\Http\Controllers\Controller;
-use App\Models\FileEntry;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewExtension;
 use App\Models\ReviewRound;
@@ -13,14 +12,13 @@ use App\Models\Submission;
 use App\Models\User;
 use App\Services\Payment\ArticlePaymentService;
 use App\Services\PrivateFileService;
+use App\Services\SectionEditor\ReviewRoundOpeningInput;
 use App\Services\SectionEditor\SectionEditorService;
 use App\ViewModels\SectionEditorSubmissionsViewModel;
 use App\ViewModels\SectionEditorWorkspaceViewModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -153,7 +151,7 @@ class SectionEditorController extends Controller
         ]);
 
         $availableReviewers = $this->sectionEditorService->getAvailableReviewers($submission);
-        $viewModel = new SectionEditorWorkspaceViewModel($submission, $activeRound, $editor, $availableReviewers);
+        $viewModel = new SectionEditorWorkspaceViewModel($submission, $activeRound, $editor, $availableReviewers, $this->articlePaymentService);
 
         return view('section-editor.submissions.show', compact('viewModel', 'submission'));
     }
@@ -204,24 +202,15 @@ class SectionEditorController extends Controller
             'note' => ['nullable', 'string', 'max:4000'],
         ]);
         $upload = $request->file('anonymous_file');
-        $disk = (string) config('filesecurity.disk', 'azure');
-        $path = $upload->store('review-anonymous/'.$submission->id, $disk);
         try {
-            DB::transaction(function () use ($submission, $upload, $disk, $path, $data) {
-                $entry = FileEntry::create([
-                    'storage_disk' => $disk, 'storage_path' => $path, 'original_name' => 'manuskrip-anonim.'.$upload->extension(),
-                    'mime_type' => $upload->getMimeType(), 'byte_size' => (int) Storage::disk($disk)->size($path),
-                    'checksum_sha256' => hash_file('sha256', $upload->getRealPath()), 'virus_scan_status' => 'pending', 'created_by' => Auth::id(),
-                ]);
-                $this->sectionEditorService->ensureActiveReviewRound($submission, $data['note'] ?? null, $entry, $data['reviewer_title'], $data['reviewer_abstract']);
-            });
+            $this->sectionEditorService->openReviewRound($submission, $editor, new ReviewRoundOpeningInput(
+                anonymousFile: $upload,
+                reviewerTitle: $data['reviewer_title'],
+                reviewerAbstract: $data['reviewer_abstract'],
+                note: $data['note'] ?? null,
+            ));
         } catch (InvalidArgumentException $e) {
-            Storage::disk($disk)->delete($path);
-
             return back()->withErrors(['round' => $e->getMessage()])->withInput();
-        } catch (\Throwable $e) {
-            Storage::disk($disk)->delete($path);
-            throw $e;
         }
 
         return redirect()->route('section-editor.submissions.show', $submission->id)->with('success', 'Putaran disiapkan. Undangan tersedia setelah berkas anonim lulus pemindaian.');

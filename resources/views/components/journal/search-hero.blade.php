@@ -23,7 +23,7 @@
                             name="q"
                             value="{{ request('q') }}"
                             placeholder="Cari judul artikel, kata kunci, atau penulis..."
-                            class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
+                            class="w-full min-h-11 pl-9 pr-3 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
                         >
                         <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -44,7 +44,7 @@
                         panel-class="min-w-48 rounded-md"
                     />
 
-                    <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-md border border-brand-maroon transition-all shrink-0">
+                    <button type="submit" class="min-h-11 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-md border border-brand-maroon transition-all shrink-0">
                         Telusuri
                     </button>
                 </div>
@@ -60,7 +60,7 @@
                 @forelse ($categories as $cat)
                     <a
                         href="{{ route('journal.index', ['category' => $cat['name']]) }}"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all {{ request('category') === $cat['name'] ? 'bg-brand-maroon text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                        class="inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded text-xs font-semibold transition-all {{ request('category') === $cat['name'] ? 'bg-brand-maroon text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
                     >
                         <span>{{ $cat['name'] }}</span>
                         <span class="text-[10px] opacity-75">({{ $cat['count'] }})</span>

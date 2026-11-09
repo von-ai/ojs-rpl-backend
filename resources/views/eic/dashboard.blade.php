@@ -39,44 +39,6 @@
         </div>
     </div>
 
-    <!-- 4 Kartu Metrik Ringkasan -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach($viewModel->metricCards() as $card)
-            <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex flex-col justify-between select-none">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider leading-tight truncate">
-                        {{ $card['title'] }}
-                    </span>
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg {{ $card['icon_bg'] }} {{ $card['icon_text'] }} flex items-center justify-center shrink-0">
-                        @if($card['icon'] === 'clipboard')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                        @elseif($card['icon'] === 'users')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        @elseif($card['icon'] === 'refresh')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        @else
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        @endif
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-4">
-                    <span class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
-                        {{ $card['count'] }}
-                    </span>
-                    <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{{ $card['subtitle'] }}</p>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
     <!-- Grid Utama 2 Kolom (2/3 Prioritas Naskah, 1/3 Riwayat Keputusan & Rubrik) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
@@ -256,6 +218,44 @@
         </aside>
 
     </div>
+    <!-- 4 Kartu Metrik Ringkasan -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        @foreach($viewModel->metricCards() as $card)
+            <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex flex-col justify-between select-none">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm font-semibold text-gray-700 leading-tight">
+                        {{ $card['title'] }}
+                    </span>
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg {{ $card['icon_bg'] }} {{ $card['icon_text'] }} flex items-center justify-center shrink-0">
+                        @if($card['icon'] === 'clipboard')
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                        @elseif($card['icon'] === 'users')
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        @elseif($card['icon'] === 'refresh')
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        @else
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @endif
+                    </div>
+                </div>
+                <div class="mt-2 sm:mt-4">
+                    <span class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
+                        {{ $card['count'] }}
+                    </span>
+                    <p class="text-xs text-gray-600 mt-0.5 sm:mt-1">{{ $card['subtitle'] }}</p>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
 
 </div>
 @endsection

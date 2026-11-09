@@ -8,6 +8,7 @@ use App\Models\EditorialDecision;
 use App\Models\Journal;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\Payment\ArticlePaymentService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Schema;
 
 class AuthorSubmissionDetailViewModel
 {
+    public function __construct(private readonly ArticlePaymentService $paymentService) {}
+
     /**
      * Mengambil dan memformat data detail naskah secara komprehensif.
      *
@@ -999,8 +1002,7 @@ class AuthorSubmissionDetailViewModel
             ];
         }
 
-        $canUpload = in_array($sub->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)
-            && (! $payment || in_array($payment->status, ['pending_payment', 'rejected'], true));
+        $canUpload = $this->paymentService->availableActions($sub, $payment)['can_upload'];
 
         $amount = $payment ? (float) $payment->amount : (float) ($journal->apc_amount ?? 500000.00);
 

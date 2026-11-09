@@ -183,22 +183,20 @@ class PublicJournalViewModel
         if ($this->dbArticles && $this->dbArticles->isNotEmpty()) {
             return $this->dbArticles->getCollection()->map(function (Article $a): array {
                 $authors = $a->contributors->map(fn ($c) => $c->full_name)->all();
-                if (empty($authors)) {
-                    $authors = ['Peneliti BRIDA'];
-                }
-
-                $affiliations = $a->contributors->map(fn ($c, $idx) => ($idx + 1).". {$c->affiliation}")->all();
-                if (empty($affiliations)) {
-                    $affiliations = ['1. BRIDA Kota Makassar'];
-                }
+                $affiliations = $a->contributors
+                    ->filter(fn ($c) => filled($c->affiliation))
+                    ->pluck('affiliation')
+                    ->values()
+                    ->map(fn ($affiliation, $idx) => ($idx + 1).". {$affiliation}")
+                    ->all();
 
                 $firstGalley = $a->galleys->first();
                 $downloadUrl = $firstGalley
                     ? route('journal.articles.galleys.download', ['slugOrId' => $a->slug, 'galleyId' => $firstGalley->id])
-                    : route('journal.articles.show', $a->slug);
+                    : null;
 
-                $viewsCount = 0;
-                $downloadsCount = 0;
+                $viewsCount = null;
+                $downloadsCount = null;
                 if (Schema::hasTable('article_metrics')) {
                     $viewsCount = (int) $a->metrics()->where('event_type', 'abstract_view')->sum('count');
                     $downloadsCount = (int) $a->metrics()->where('event_type', 'galley_download')->sum('count');
@@ -207,18 +205,18 @@ class PublicJournalViewModel
                 return [
                     'id' => $a->id,
                     'slug' => $a->slug,
-                    'section' => $a->section?->name ?? 'Artikel Riset Orisinil',
-                    'pages' => $a->issues->first()?->pivot->pages ?? '1–15',
-                    'received_at' => $a->created_at ? $a->created_at->format('d M Y') : '-',
-                    'published_at' => $a->published_at ? $a->published_at->format('d M Y') : ($a->created_at ? $a->created_at->format('d M Y') : '-'),
+                    'section' => $a->section?->name,
+                    'pages' => $a->issues->first()?->pivot->pages,
+                    'received_at' => $a->created_at?->format('d M Y'),
+                    'published_at' => $a->published_at?->format('d M Y'),
                     'title' => $a->title,
                     'authors' => $authors,
                     'affiliations' => $affiliations,
                     'abstract' => $a->abstract,
                     'keywords' => is_array($a->keywords) ? $a->keywords : [],
-                    'doi' => $a->doi ?: "10.55981/sirida.{$a->slug}",
-                    'doi_url' => $a->doi ? "https://doi.org/{$a->doi}" : "https://doi.org/10.55981/sirida.{$a->slug}",
-                    'pdf_size' => '1.8 MB',
+                    'doi' => $a->doi,
+                    'doi_url' => $a->doi ? "https://doi.org/{$a->doi}" : null,
+                    'pdf_size' => null,
                     'downloads_count' => $downloadsCount,
                     'views_count' => $viewsCount,
                     'read_url' => route('journal.articles.show', $a->slug),
