@@ -7,15 +7,13 @@ namespace App\Http\Controllers\Author;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Author\StoreSubmissionRequest;
 use App\Models\CopyeditApproval;
-use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\Section;
 use App\Models\Submission;
-use App\Models\SubmissionContributor;
-use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Services\Author\AuthorSubmissionService;
 use App\Services\Author\DirectManuscriptUpload;
+use App\Services\Author\SubmissionIntakeInput;
 use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\Payment\ArticlePaymentService;
 use App\Services\PrivateFileService;
@@ -27,9 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -118,196 +114,16 @@ class AuthorSubmissionController extends Controller
     {
         $validated = $request->validated();
         $isDraft = ($validated['action'] ?? 'submit') === 'draft';
-        $author = $request->user();
-        $draftId = $validated['draft_id'] ?? null;
-
-        $directFile = null;
-        $persist = function () use ($request, $validated, $isDraft, $draftId, $author, &$directFile): Submission {
-            $authorId = $author->id;
-            $existingDraft = null;
-            if ($draftId !== null) {
-                $existingDraft = Submission::whereKey($draftId)
-                    ->where('author_id', $authorId)
-                    ->where('status', 'draft')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $existingDraft) {
-                    throw ValidationException::withMessages(['draft_id' => 'Draf tidak tersedia untuk diedit.']);
-                }
-            }
-
-            if (! $isDraft && ! $request->hasFile('manuscript_file') && ! $request->filled('blob_path')
-                && (! $existingDraft || $request->boolean('remove_manuscript') || ! $existingDraft->files()->where('genre', 'manuscript')->exists())) {
-                throw ValidationException::withMessages(['manuscript_file' => 'Berkas manuskrip wajib diunggah.']);
-            }
-
-            $sectionId = $validated['section_id'] ?? $existingDraft?->section_id;
-            $sectionQuery = Section::with('journal')
-                ->where('accepting_submissions', true)
-                ->whereHas('journal', fn ($query) => $query->where('status', 'active'));
-            if ($sectionId !== null) {
-                $sectionQuery->where(fn ($query) => $query->where('id', $sectionId)->orWhere('slug', $sectionId));
-                $matchingSections = $sectionQuery->limit(2)->get();
-                $section = $matchingSections->count() === 1 ? $matchingSections->first() : null;
-            } else {
-                $section = $sectionQuery->orderBy('position')->orderBy('id')->first();
-            }
-
-            if (! $section) {
-                throw ValidationException::withMessages(['section_id' => 'Seksi tidak tersedia atau sedang ditutup untuk pengajuan.']);
-            }
-            $journal = $section->journal;
-
-            // 3. Checklist & Guidelines Acceptance
-            $checklistItems = $request->input('checklist_items', []);
-            $hasAccepted = ! empty($validated['author_guidelines_accepted']) || count($checklistItems) >= 5;
-            $guidelineData = $hasAccepted ? [
-                'accepted' => true,
-                'checklist' => $checklistItems,
-                'timestamp' => now()->toIso8601String(),
-            ] : (! empty($checklistItems) ? [
-                'accepted' => false,
-                'checklist' => $checklistItems,
-                'timestamp' => now()->toIso8601String(),
-            ] : null);
-
-            // 4. Judul dan Abstrak (fleksibel untuk draf tanpa memblokir input parsial)
-            $titleInput = trim((string) ($validated['title'] ?? ''));
-            $title = $titleInput !== '' ? $titleInput : ($isDraft ? 'Draf Naskah Belum Diberi Judul' : 'Naskah Baru');
-
-            $abstractInput = trim((string) ($validated['abstract'] ?? ''));
-            $abstract = $abstractInput !== '' ? $abstractInput : ($isDraft ? 'Draf naskah belum dilengkapi abstrak.' : null);
-
-            if ($existingDraft) {
-                $existingDraft->update([
-                    'journal_id' => $journal->id,
-                    'section_id' => $section->id,
-                    'title' => $title,
-                    'abstract' => $abstract,
-                    'keywords' => $validated['keywords'] ?? ($existingDraft->keywords ?? []),
-                    'references' => $validated['references'] ?? $existingDraft->references,
-                    'subject_area' => $validated['subject_area'] ?? $existingDraft->subject_area,
-                    'comments_for_editor' => $validated['comments_for_editor'] ?? $existingDraft->comments_for_editor,
-                    'status' => $isDraft ? 'draft' : 'submitted',
-                    'guideline_acceptance' => $guidelineData ?? $existingDraft->guideline_acceptance,
-                    'submitted_at' => $isDraft ? null : now(),
-                ]);
-                $submission = $existingDraft;
-            } else {
-                // Nomor pengajuan unik berformat SUB-YYYY-XXXXX dengan sequence atomic
-                $year = (int) now()->format('Y');
-                DB::table('submission_sequences')->insertOrIgnore(['year' => $year, 'last_number' => 0]);
-                $sequence = DB::table('submission_sequences')->where('year', $year)->lockForUpdate()->first();
-                $number = (int) $sequence->last_number + 1;
-                DB::table('submission_sequences')->where('year', $year)->update(['last_number' => $number]);
-                $submissionNumber = 'SUB-'.$year.'-'.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
-
-                // Simpan record pengajuan baru (Submission)
-                $submission = Submission::create([
-                    'journal_id' => $journal->id,
-                    'section_id' => $section->id,
-                    'author_id' => $authorId,
-                    'submission_number' => $submissionNumber,
-                    'title' => $title,
-                    'abstract' => $abstract,
-                    'keywords' => $validated['keywords'] ?? [],
-                    'references' => $validated['references'] ?? null,
-                    'subject_area' => $validated['subject_area'] ?? null,
-                    'comments_for_editor' => $validated['comments_for_editor'] ?? null,
-                    'status' => $isDraft ? 'draft' : 'submitted',
-                    'guideline_acceptance' => $guidelineData,
-                    'submitted_at' => $isDraft ? null : now(),
-                    'version' => 1,
-                ]);
-            }
-
-            // 6. Simpan daftar kontributor naskah
-            $contributors = $validated['contributors'] ?? [];
-            if (! empty($contributors)) {
-                if ($existingDraft) {
-                    SubmissionContributor::where('submission_id', $submission->id)->delete();
-                }
-
-                foreach ($contributors as $index => $c) {
-                    $isCorr = filter_var($c['corresponding'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                    $givenName = $c['given_name'] ?? ($c['name'] ?? 'Penulis');
-                    $familyName = $c['family_name'] ?? null;
-
-                    SubmissionContributor::create([
-                        'submission_id' => $submission->id,
-                        'user_id' => ($isCorr && $authorId) ? $authorId : null,
-                        'given_name' => $givenName,
-                        'family_name' => $familyName,
-                        'email' => $c['email'] ?? ($author?->email ?? 'author@makassar.go.id'),
-                        'affiliation' => $c['affiliation'] ?? 'BRIDA Kota Makassar',
-                        'orcid' => $c['orcid_id'] ?? null,
-                        'is_corresponding' => $isCorr,
-                        'position' => (int) ($c['sequence'] ?? ($index + 1)),
-                    ]);
-                }
-            }
-
-            // 7. Simpan Berkas Manuskrip utama jika diunggah (Direct Azure SAS Upload atau Relayed Upload)
-            if ($request->filled('blob_path')) {
-                $directFile = $this->directManuscriptUpload->claim($author, $validated['blob_path']);
-                if ($existingDraft) {
-                    $submission->files()->where('genre', 'manuscript')->delete();
-                }
-
-                SubmissionFile::create([
-                    'submission_id' => $submission->id,
-                    'file_id' => $directFile->id,
-                    'genre' => 'manuscript',
-                    'version' => 1,
-                ]);
-            } elseif ($request->hasFile('manuscript_file') && $request->file('manuscript_file')->isValid()) {
-                $file = $request->file('manuscript_file');
-                $storageDisk = (string) config('filesecurity.disk', 'azure');
-                $path = $file->store('manuscripts', $storageDisk);
-                $sha256 = hash_file('sha256', $file->getRealPath());
-
-                $fileEntry = FileEntry::create([
-                    'storage_disk' => $storageDisk,
-                    'storage_path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
-                    'byte_size' => (int) Storage::disk($storageDisk)->size($path),
-                    'checksum_sha256' => $sha256,
-                    'virus_scan_status' => 'pending',
-                    'created_by' => $authorId,
-                ]);
-
-                // Hapus berkas manuskrip utama sebelumnya pada naskah ini agar tidak terjadi duplikat berkas
-                if ($existingDraft) {
-                    SubmissionFile::where('submission_id', $submission->id)
-                        ->where('genre', 'manuscript')
-                        ->delete();
-                }
-
-                SubmissionFile::create([
-                    'submission_id' => $submission->id,
-                    'file_id' => $fileEntry->id,
-                    'genre' => 'manuscript',
-                    'version' => 1,
-                ]);
-            } elseif ($existingDraft && $request->boolean('remove_manuscript')) {
-                SubmissionFile::where('submission_id', $submission->id)
-                    ->where('genre', 'manuscript')
-                    ->delete();
-            }
-
-            return $submission;
-        };
-
-        try {
-            $submission = DB::transaction($persist);
-        } catch (\Throwable $e) {
-            if ($directFile !== null) {
-                $this->directManuscriptUpload->discard($directFile->storage_path);
-            }
-            throw $e;
-        }
+        $submission = $this->authorSubmissionService->saveSubmission(
+            new SubmissionIntakeInput(
+                data: $validated,
+                manuscriptFile: $request->file('manuscript_file'),
+                removeManuscript: $request->boolean('remove_manuscript'),
+                checklistItems: (array) $request->input('checklist_items', []),
+                directBlobPath: $request->filled('blob_path') ? (string) $validated['blob_path'] : null,
+            ),
+            $request->user(),
+        );
 
         if ($isDraft) {
             return redirect()
