@@ -421,7 +421,7 @@ class AuthorSubmissionController extends Controller
     public function show(Request $request, string $id): View|JsonResponse
     {
         $user = $request->user();
-        $detailViewModel = new AuthorSubmissionDetailViewModel;
+        $detailViewModel = new AuthorSubmissionDetailViewModel($this->articlePaymentService);
         $submission = $detailViewModel->find($id, $user);
 
         if (! $submission) {
@@ -457,7 +457,7 @@ class AuthorSubmissionController extends Controller
         $user = $request->user();
         $submission = $user ? $this->findAuthorSubmission($id, $user) : null;
 
-        $detailViewModel = new AuthorSubmissionDetailViewModel;
+        $detailViewModel = new AuthorSubmissionDetailViewModel($this->articlePaymentService);
 
         if (! $submission) {
             return redirect()

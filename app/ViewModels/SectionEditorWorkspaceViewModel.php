@@ -9,6 +9,7 @@ use App\Models\Journal;
 use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Support\Collection;
 
 class SectionEditorWorkspaceViewModel
@@ -20,7 +21,8 @@ class SectionEditorWorkspaceViewModel
         public readonly Submission $submission,
         public readonly ReviewRound $activeRound,
         public readonly User $editor,
-        public readonly Collection $availableReviewers
+        public readonly Collection $availableReviewers,
+        private readonly ArticlePaymentService $paymentService
     ) {}
 
     public function submissionNumber(): string
@@ -246,6 +248,7 @@ class SectionEditorWorkspaceViewModel
         }
 
         $hasProof = (bool) ($payment && $payment->file_entry_id);
+        $actions = $this->paymentService->availableActions($sub, $payment);
 
         return [
             'is_free' => false,
@@ -263,9 +266,9 @@ class SectionEditorWorkspaceViewModel
             'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
             'has_proof' => $hasProof,
             'proof_url' => $hasProof ? route('section-editor.submissions.payment.proof', $sub->id) : null,
-            'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
-            'can_reject' => (bool) ($payment && in_array($payment->status, ['pending_verification', 'verified'], true)),
-            'can_waive' => (bool) (! $payment || (! $payment->isVerified() && ! $payment->isWaived())),
+            'can_verify' => $actions['can_verify'],
+            'can_reject' => $actions['can_reject'],
+            'can_waive' => $actions['can_waive'],
         ];
     }
 }

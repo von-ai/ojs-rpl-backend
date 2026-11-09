@@ -13,6 +13,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -647,5 +648,43 @@ class AuthorPaymentWorkflowTest extends TestCase
         $verifyResponse->assertRedirect();
         $this->assertEquals('verified', ArticlePayment::where('submission_id', $submission->id)->first()->status);
         $this->assertTrue($submission->fresh()->isPaymentCleared());
+    }
+
+    public function test_verified_payment_does_not_offer_rejection_to_editors(): void
+    {
+        $submission = Submission::create([
+            'journal_id' => $this->paidJournal->id,
+            'section_id' => $this->section->id,
+            'author_id' => $this->author->id,
+            'submission_number' => 'SUB-2026-PAID10',
+            'title' => 'Kajian pembayaran terverifikasi',
+            'abstract' => 'Abstrak pengujian status pembayaran.',
+            'status' => 'in_production',
+            'version' => 1,
+        ]);
+        EditorAssignment::create([
+            'submission_id' => $submission->id,
+            'editor_id' => $this->sectionEditor->id,
+            'role' => 'section_editor',
+            'assigned_at' => now(),
+        ]);
+        $this->actingAs($this->author)->post(route('author.submissions.payment.store', $submission->id), [
+            'payment_proof' => UploadedFile::fake()->create('bukti.pdf', 300, 'application/pdf'),
+            'amount_paid' => 750000,
+        ]);
+        $this->scanTestUploads();
+        $this->actingAs($this->eic)->post(route('eic.submissions.payment.verify', $submission->id))
+            ->assertRedirect();
+        $this->assertDatabaseHas('article_payments', ['submission_id' => $submission->id, 'status' => 'verified']);
+
+        $this->actingAs($this->eic)->get(route('eic.submissions.show', $submission->id))
+            ->assertOk()->assertDontSee('Batalkan Verifikasi');
+        $this->actingAs($this->sectionEditor)->get(route('section-editor.submissions.show', $submission->id))
+            ->assertOk()->assertDontSee('Batalkan Verifikasi');
+
+        $payment = ArticlePayment::where('submission_id', $submission->id)->firstOrFail();
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Tagihan ini tidak dapat dibebaskan dari status pembayaran saat ini.');
+        app(ArticlePaymentService::class)->waivePayment($payment, $this->eic, 'editor_in_chief', 'Pembebasan setelah pelunasan');
     }
 }

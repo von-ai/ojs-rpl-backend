@@ -153,7 +153,7 @@ class SectionEditorController extends Controller
         ]);
 
         $availableReviewers = $this->sectionEditorService->getAvailableReviewers($submission);
-        $viewModel = new SectionEditorWorkspaceViewModel($submission, $activeRound, $editor, $availableReviewers);
+        $viewModel = new SectionEditorWorkspaceViewModel($submission, $activeRound, $editor, $availableReviewers, $this->articlePaymentService);
 
         return view('section-editor.submissions.show', compact('viewModel', 'submission'));
     }

@@ -118,7 +118,7 @@ class EditorInChiefController extends Controller
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
-        $viewModel = new EicSubmissionDetailViewModel($submission, $this->eicService);
+        $viewModel = new EicSubmissionDetailViewModel($submission, $this->eicService, $this->articlePaymentService);
 
         return view('eic.submissions.show', compact('submission', 'viewModel'));
     }
