@@ -126,11 +126,11 @@
             <div class="text-xs text-gray-700 space-y-2">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Terbitan:</span>
-                    <strong class="text-gray-900 font-semibold text-right wrap-break-word">{{ $submission['publication']['volume'] }}</strong>
+                    <span class="text-gray-800 font-medium text-right wrap-break-word">{{ $submission['publication']['volume'] }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Edisi:</span>
-                    <strong class="text-gray-900 font-semibold text-right wrap-break-word">{{ $submission['publication']['issue_title'] }}</strong>
+                    <span class="text-gray-800 font-medium text-right wrap-break-word">{{ $submission['publication']['issue_title'] }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Halaman:</span>

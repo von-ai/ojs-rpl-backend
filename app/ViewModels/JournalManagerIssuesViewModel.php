@@ -74,11 +74,9 @@ class JournalManagerIssuesViewModel
             // Artikel siap terbit: Naskah tahap produksi yang belum masuk ke dalam edisi apapun
             $readyCount = 0;
             if (Schema::hasTable('submissions')) {
-                $readyCount = Submission::where(function ($query) {
-                    $query->whereIn('status', ['in_production', 'approved', 'ready_for_issue'])
-                        ->orWhereHas('galleys', fn ($g) => $g->where('status', 'active'));
-                })
-                    ->whereDoesntHave('issueArticle')
+                $readyCount = Submission::whereDoesntHave('issueArticle')
+                    ->whereIn('status', ['accepted', 'in_production', 'ready_for_issue', 'approved'])
+                    ->whereNotIn('status', ['declined', 'rejected', 'archived', 'withdrawn', 'in_review', 'under_review', 'revisions_requested', 'draft', 'submitted', 'published'])
                     ->count();
             }
 
@@ -106,8 +104,8 @@ class JournalManagerIssuesViewModel
                 [
                     'title' => 'Artikel Siap Terbit',
                     'value' => $readyCount,
-                    'description' => 'Galai disetujui EIC siap masuk edisi',
-                    'badge_text' => 'Antrean EIC',
+                    'description' => 'Galai disetujui Pemimpin Redaksi siap masuk edisi',
+                    'badge_text' => 'Antrean Redaksi',
                     'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
                 ],
                 [
@@ -138,8 +136,8 @@ class JournalManagerIssuesViewModel
             [
                 'title' => 'Artikel Siap Terbit',
                 'value' => 0,
-                'description' => 'Galai disetujui EIC siap masuk edisi',
-                'badge_text' => 'Antrean EIC',
+                'description' => 'Galai disetujui Pemimpin Redaksi siap masuk edisi',
+                'badge_text' => 'Antrean Redaksi',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [

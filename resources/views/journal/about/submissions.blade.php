@@ -17,11 +17,11 @@
     <!-- Header Halaman -->
     <div class="bg-white rounded-md border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                PETUNJUK PENYIAPAN NASKAH
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+                Petunjuk Penyiapan Naskah
             </span>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                Panduan Penulis (Author Guidelines)
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
+                Panduan Penulis
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
                 Pedoman format, sistematika penulisan, dan tata cara pengajuan naskah ilmiah hasil riset ke {{ $journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) BRIDA Kota Makassar' }}.
@@ -32,7 +32,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span>Kirim Naskah Baru (Online Submission)</span>
+            <span>Kirim Naskah Baru</span>
         </a>
     </div>
 
@@ -53,8 +53,8 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-gray-900">Template Resmi Naskah SIRIDA (Microsoft Word)</h3>
-                        <p class="text-[11px] text-gray-500">Format siap pakai (.docx) berisi gaya penulisan, heading, dan layout gambar/tabel standar.</p>
+                        <h3 class="text-sm font-bold text-gray-900">Template Resmi Naskah SIRIDA</h3>
+                        <p class="text-[11px] text-gray-500">Format siap pakai berisi gaya penulisan, heading, dan layout gambar/tabel standar.</p>
                     </div>
                 </div>
 
@@ -62,7 +62,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>Unduh Template .DOCX</span>
+                    <span>Unduh Template</span>
                 </a>
             </div>
 
@@ -72,42 +72,42 @@
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>Sistematika Penulisan Naskah (IMRAD Structure)</span>
+                    <span>Sistematika Penulisan Naskah</span>
                 </h2>
 
                 <div class="space-y-3 text-xs text-gray-600 leading-relaxed">
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">1. Judul Artikel (Title)</strong>
+                        <strong class="text-gray-900 font-bold block">1. Judul Artikel</strong>
                         <p class="text-[11px] text-gray-500">Lugas, spesifik, mencerminkan esensi temuan riset, maksimal 15 kata dalam Bahasa Indonesia atau Bahasa Inggris. Hindari akronim atau singkatan yang tidak umum.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">2. Abstrak & Kata Kunci (Abstract & Keywords)</strong>
+                        <strong class="text-gray-900 font-bold block">2. Abstrak & Kata Kunci</strong>
                         <p class="text-[11px] text-gray-500">Ditulis dalam Bahasa Indonesia dan Bahasa Inggris, panjang 150–250 kata. Memuat ringkasan latar belakang, tujuan, metode empiris, hasil utama, serta implikasi praktis. Dilengkapi 3–5 kata kunci dipisahkan tanda koma.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">3. Pendahuluan (Introduction)</strong>
-                        <p class="text-[11px] text-gray-500">Menguraikan urgensi isu pembangunan, kajian literatur terkini (state of the art), kesenjangan penelitian (research gap), hipotesis, dan kontribusi baru yang ditawarkan naskah.</p>
+                        <strong class="text-gray-900 font-bold block">3. Pendahuluan</strong>
+                        <p class="text-[11px] text-gray-500">Menguraikan urgensi isu pembangunan, kajian literatur terkini, kesenjangan penelitian, hipotesis, dan kontribusi baru yang ditawarkan naskah.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">4. Metode Penelitian (Methods)</strong>
-                        <p class="text-[11px] text-gray-500">Menjelaskan pendekatan penelitian, waktu dan lokasi studi (khususnya di wilayah Kota Makassar), teknik pengumpulan data, populasi/sampel, instrumen kalibrasi, serta tahapan analisis data empiris agar dapat direplikasi (reproducible).</p>
+                        <strong class="text-gray-900 font-bold block">4. Metode Penelitian</strong>
+                        <p class="text-[11px] text-gray-500">Menjelaskan pendekatan penelitian, waktu dan lokasi studi (khususnya di wilayah Kota Makassar), teknik pengumpulan data, populasi/sampel, instrumen kalibrasi, serta tahapan analisis data empiris agar dapat direplikasi.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">5. Hasil dan Pembahasan (Results and Discussion)</strong>
+                        <strong class="text-gray-900 font-bold block">5. Hasil dan Pembahasan</strong>
                         <p class="text-[11px] text-gray-500">Disajikan secara sistematis dengan dukungan tabel dan gambar informatif. Pembahasan tidak sekadar mengulang angka, melainkan menginterpretasikan temuan, menghubungkan dengan teori, dan mendiskusikan implikasi bagi kebijakan daerah.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">6. Kesimpulan (Conclusion)</strong>
+                        <strong class="text-gray-900 font-bold block">6. Kesimpulan</strong>
                         <p class="text-[11px] text-gray-500">Merangkum jawaban atas tujuan penelitian secara ringkas tanpa mengutip angka mentah statistik. Berikan rekomendasi kebijakan konkret atau agenda riset lanjutan.</p>
                     </div>
 
                     <div class="p-3.5 rounded border border-gray-100 bg-gray-50/70 space-y-1">
-                        <strong class="text-gray-900 font-bold block">7. Daftar Pustaka (References)</strong>
+                        <strong class="text-gray-900 font-bold block">7. Daftar Pustaka</strong>
                         <p class="text-[11px] text-gray-500">Disusun menggunakan standar <strong>APA Style Edisi ke-7</strong>. Minimal memuat 20 rujukan pustaka, dengan proporsi 80% berasal dari artikel jurnal bereputasi yang terbit dalam 10 tahun terakhir. Penulis diwajibkan menggunakan aplikasi manajemen referensi (Mendeley, Zotero, atau EndNote).</p>
                     </div>
                 </div>
@@ -144,7 +144,7 @@
 
             <!-- 3. Submission Checklist -->
             <section class="space-y-3 p-4 rounded-md bg-gray-50 border border-gray-200 text-xs">
-                <h3 class="font-bold text-gray-900 text-sm">Daftar Periksa Pengajuan Naskah (Submission Checklist)</h3>
+                <h3 class="font-bold text-gray-900 text-sm">Daftar Periksa Pengajuan Naskah</h3>
                 <p class="text-gray-600 text-[11px]">Pastikan butir-butir kelengkapan berikut telah terpenuhi sebelum mengunggah manuskrip:</p>
 
                 <ul class="space-y-1.5 text-gray-700">

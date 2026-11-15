@@ -131,7 +131,7 @@
 
                                     <a 
                                         href="{{ route('eic.submissions.show', $sub->id) }}" 
-                                        class="block text-sm font-semibold text-gray-900 hover:text-brand-maroon transition line-clamp-1"
+                                        class="block text-sm font-medium text-gray-900 hover:text-brand-maroon transition line-clamp-1"
                                     >
                                         {{ $sub->title }}
                                     </a>

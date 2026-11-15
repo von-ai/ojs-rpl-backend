@@ -63,7 +63,7 @@
     </div>
 
     <!-- Judul Manuskrip Akademik -->
-    <h1 class="font-sans text-2xl sm:text-[26px] lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight break-words [overflow-wrap:anywhere] pt-1">
+    <h1 class="font-sans text-lg sm:text-xl lg:text-2xl font-medium text-gray-900 leading-snug break-words [overflow-wrap:anywhere] pt-1">
         {{ $viewModel->title() }}
     </h1>
 

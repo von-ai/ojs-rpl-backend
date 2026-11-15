@@ -31,10 +31,10 @@
                 @foreach($submission->contributors as $contributor)
                     <div class="p-3.5 rounded-lg border border-gray-200 bg-gray-50/70 flex items-start justify-between gap-2 text-xs">
                         <div class="min-w-0 space-y-0.5">
-                            <div class="font-bold text-gray-900 flex items-center gap-1.5 flex-wrap">
+                            <div class="font-medium text-gray-900 flex items-center gap-1.5 flex-wrap">
                                 <span>{{ trim($contributor->given_name . ' ' . $contributor->family_name) }}</span>
                                 @if($contributor->is_corresponding)
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-maroon/10 text-brand-maroon">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-maroon/10 text-brand-maroon">
                                         Korespondensi
                                     </span>
                                 @endif

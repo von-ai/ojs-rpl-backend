@@ -60,7 +60,7 @@ class LayoutEditorWorkspaceTest extends TestCase
         $response->assertSee('Penerapan Sensor IoT dan Telemetri Kualitas Udara Real-Time');
         $response->assertSee('Dr. Andi Muhammad Ilyas');
         $response->assertSee('SUB2026-00106_Copyedit_Final_Approved.docx');
-        $response->assertSee('Unduh Naskah Final (.docx)');
+        $response->assertSee('Unduh Naskah Final');
 
         // Langkah 1: Belum ada galai & tombol unggah draf pertama
         $response->assertSee('Berkas Galai Publikasi');

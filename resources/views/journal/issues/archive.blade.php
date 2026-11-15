@@ -15,10 +15,10 @@
     <!-- Header Arsip Edisi -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                PUSTAKA BERKALA ILMIAH
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+                Pustaka Berkala Ilmiah
             </span>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
                 Arsip Seluruh Edisi Terbitan
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -26,7 +26,7 @@
             </p>
         </div>
 
-        <a href="{{ route('journal.issues.current') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-maroon text-white font-bold text-xs hover:bg-brand-maroon-hover transition shrink-0 self-start sm:self-auto">
+        <a href="{{ route('journal.issues.current') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-maroon text-white font-medium text-xs hover:bg-brand-maroon-hover transition shrink-0 self-start sm:self-auto">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
             </svg>
@@ -52,15 +52,15 @@
                             </div>
 
                             <div class="bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
-                                <span class="font-extrabold text-gray-900 text-base block">
+                                <span class="font-medium text-gray-900 text-base block">
                                     Vol. {{ $arc->volume }} No. {{ $arc->number }}
                                 </span>
-                                <span class="text-xs text-gray-500 font-medium block mt-0.5">
+                                <span class="text-xs text-gray-500 font-normal block mt-0.5">
                                     {{ $arc->publication_date ? $arc->publication_date->format('F Y') : ($arc->published_at ? $arc->published_at->format('F Y') : "Tahun {$arc->year}") }}
                                 </span>
                             </div>
 
-                            <h2 class="font-bold text-gray-900 text-sm hover:text-brand-maroon transition-colors line-clamp-2">
+                            <h2 class="font-medium text-gray-900 text-sm hover:text-brand-maroon transition-colors line-clamp-2">
                                 <a href="{{ route('journal.issues.show', $arc->id) }}">
                                     {{ $arc->title }}
                                 </a>

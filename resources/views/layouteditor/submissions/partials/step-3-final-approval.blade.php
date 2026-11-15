@@ -11,7 +11,7 @@
                     Persetujuan Akhir Galai Publikasi
                 </h2>
                 <p class="text-xs text-gray-500 mt-0.5">
-                    Persetujuan final naskah oleh Penulis dan Pemimpin Redaksi (Editor in Chief) untuk penerbitan resmi.
+                    Persetujuan final naskah oleh Penulis dan Pemimpin Redaksi untuk penerbitan resmi.
                 </p>
             </div>
         </div>
@@ -52,7 +52,7 @@
                         </div>
                     @endif
                     <div>
-                        <span class="text-xs font-bold text-gray-800 block">Persetujuan Penulis (Author Sign-off)</span>
+                        <span class="text-xs font-medium text-gray-800 block">Persetujuan Penulis</span>
                         <span class="text-[11px] text-gray-500">
                             @if($submission['approval']['author_signoff']['approved'])
                                 Telah disetujui pada: <strong class="text-gray-700">{{ $submission['approval']['author_signoff']['approved_at'] }}</strong>
@@ -100,12 +100,12 @@
                         </div>
                     @endif
                     <div>
-                        <span class="text-xs font-bold text-gray-900 block">Persetujuan Akhir Editor in Chief</span>
+                        <span class="text-xs font-medium text-gray-900 block">Persetujuan Akhir Pemimpin Redaksi</span>
                         <span class="text-[11px] text-gray-500">
                             @if($submission['approval']['editor_final']['ready_for_publication'])
-                                Disetujui EIC pada: <strong class="text-emerald-900">{{ $submission['approval']['editor_final']['approved_at'] }}</strong>
+                                Disetujui Pemimpin Redaksi pada: <strong class="text-emerald-900">{{ $submission['approval']['editor_final']['approved_at'] }}</strong>
                             @else
-                                Otorisasi final publikasi nomor edisi jurnal oleh Editor in Chief.
+                                Otorisasi final publikasi nomor edisi jurnal oleh Pemimpin Redaksi.
                             @endif
                         </span>
                     </div>
@@ -150,7 +150,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <span>Mohon Persetujuan Akhir EIC</span>
+                            <span>Mohon Persetujuan Akhir Pemimpin Redaksi</span>
                         </button>
                     </form>
                 @endif

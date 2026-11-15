@@ -8,7 +8,7 @@
     <!-- Header & Hero Search Box -->
     <div class="bg-white rounded-md border border-gray-200 p-6 sm:p-8 space-y-6">
         <div class="space-y-1">
-            <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
                 Pencarian Artikel
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 max-w-2xl">
@@ -98,7 +98,7 @@
                             </span>
                         </div>
 
-                        <h3 class="text-base font-bold text-gray-900 hover:text-brand-maroon transition duration-150">
+                        <h3 class="text-base font-medium text-gray-900 hover:text-brand-maroon transition duration-150">
                             <a href="{{ route('journal.articles.show', $article->slug) }}">
                                 {{ $article->title }}
                             </a>

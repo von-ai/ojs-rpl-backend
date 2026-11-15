@@ -143,17 +143,20 @@ class JournalManagerIssueDetailViewModel
         if (Schema::hasTable('submissions')) {
             $readySubmissions = Submission::where('journal_id', $issue->journal_id)
                 ->whereDoesntHave('issueArticle')
-                ->where(function ($q) {
-                    $q->whereIn('status', ['approved', 'in_production', 'ready_for_issue'])
-                        ->orWhereHas('galleys', fn ($g) => $g->where('status', 'active'));
-                })
+                ->whereIn('status', ['accepted', 'in_production', 'ready_for_issue', 'approved'])
+                ->whereNotIn('status', ['declined', 'rejected', 'archived', 'withdrawn', 'in_review', 'under_review', 'revisions_requested', 'draft', 'submitted', 'published'])
                 ->with(['section', 'author', 'activeGalley', 'latestPayment.fileEntry', 'journal'])
                 ->get();
 
             $readyArticles = $readySubmissions->map(function (Submission $sub) use ($isJournalPaid, $issue) {
-                $formatLabel = $sub->activeGalley
-                    ? "{$sub->activeGalley->label} (v{$sub->activeGalley->version})"
-                    : 'PDF Full Text (v1 Final)';
+                if ($sub->activeGalley) {
+                    $cleanLabel = preg_replace('/\s*\([^)]*\)/', '', $sub->activeGalley->label);
+                    $cleanLabel = str_ireplace('PDF Full Text', 'PDF Teks Lengkap', $cleanLabel);
+                    $cleanLabel = trim((string) $cleanLabel) ?: 'PDF Teks Lengkap';
+                    $formatLabel = "{$cleanLabel} (Versi {$sub->activeGalley->version})";
+                } else {
+                    $formatLabel = 'PDF Teks Lengkap (Versi 1)';
+                }
 
                 $payment = $sub->latestPayment;
                 $paymentStatus = ! $isJournalPaid ? 'free' : ($payment ? $payment->status : 'pending_payment');
@@ -208,7 +211,7 @@ class JournalManagerIssueDetailViewModel
         if (count($articles) > 0) {
             $lastArticle = end($articles);
             $timeline[] = [
-                'title' => 'Artikel #'.count($articles).' Ditambahkan ke Daftar Isi',
+                'title' => 'Artikel '.count($articles).' Ditambahkan ke Daftar Isi',
                 'actor' => 'Journal Manager',
                 'date' => $issue->updated_at ? $issue->updated_at->translatedFormat('d M Y H:i').' WITA' : 'Hari ini',
                 'description' => "Artikel {$lastArticle['submission_number']} dimasukkan ke posisi nomor {$lastArticle['position']} dengan halaman {$lastArticle['pages']}.",

@@ -11,7 +11,10 @@
     <!-- Favicon / Website Title Icon -->
     <link rel="icon" type="image/png" href="{{ asset('images/brida-logo.png') }}">
 
-    <!-- Google Fonts: Inter (Akademis, Rapi & Seragam) -->
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -22,8 +25,8 @@
 
     <!-- Topbar & Main Navigation Header -->
     <header class="w-full bg-white border-b border-gray-200 sticky top-0 z-40">
-        <x-journal.topbar :topbarData="$topbarData ?? null" />
-        <x-journal.navbar :navLinks="$navLinks ?? null" />
+        <x-journal.topbar :topbarData="$topbarData ?? null" :journal="$journal ?? null" />
+        <x-journal.navbar :navLinks="$navLinks ?? null" :journal="$journal ?? null" />
     </header>
 
     <!-- Main Page Content -->

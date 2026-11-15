@@ -20,7 +20,7 @@
                 <span>/</span>
                 <span class="text-indigo-700 font-semibold">Putaran Telaah {{ $viewModel->assignment->reviewRound->round }}</span>
             </div>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight leading-snug">
+            <h1 class="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900 leading-snug">
                 {{ $viewModel->title() }}
             </h1>
         </div>

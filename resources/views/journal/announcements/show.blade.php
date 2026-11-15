@@ -22,15 +22,15 @@
             
             <div class="border-b border-gray-100 pb-5 space-y-3">
                 <div class="flex items-center justify-between gap-2 text-xs">
-                    <span class="px-2.5 py-0.5 rounded-full font-bold bg-brand-maroon/10 text-brand-maroon text-[10px] uppercase tracking-wider">
+                    <span class="px-2.5 py-0.5 rounded-full font-medium bg-brand-maroon/10 text-brand-maroon text-[11px] uppercase tracking-normal">
                         Pengumuman Resmi
                     </span>
-                    <time class="text-gray-400 font-medium">
+                    <time class="text-gray-400 font-normal">
                         {{ $announcement->published_at ? $announcement->published_at->format('d F Y') : $announcement->created_at->format('d F Y') }}
                     </time>
                 </div>
 
-                <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug tracking-tight">
+                <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 leading-snug">
                     {{ $announcement->title }}
                 </h1>
             </div>

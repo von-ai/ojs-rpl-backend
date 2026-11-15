@@ -85,8 +85,7 @@ class JournalManagerSettingsTest extends TestCase
         $response->assertSee('Double-Blind Peer Review');
 
         // Pengumuman Warta Publik
-        $response->assertSee('Call for Papers');
-        $response->assertSee('Pembaruan Panduan Gaya Selingkung');
+        $response->assertSee('Panggilan Pengajuan Naskah');
         $response->assertSee('Simpan Perubahan Pengaturan');
     }
 

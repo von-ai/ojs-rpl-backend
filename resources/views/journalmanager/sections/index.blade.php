@@ -74,13 +74,13 @@
                     @foreach ($viewModel->sections() as $section)
                         <tr class="hover:bg-gray-50/80 transition-colors">
                             <!-- Kolom Urutan -->
-                            <td class="py-3.5 px-4 sm:px-5 text-center font-bold text-gray-400 font-mono text-xs">
+                            <td class="py-3.5 px-4 sm:px-5 text-center font-medium text-gray-400 font-mono text-xs">
                                 #{{ $section['position'] }}
                             </td>
 
                             <!-- Kolom Nama & Slug -->
                             <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block leading-tight">
+                                <span class="font-medium text-gray-900 block leading-tight">
                                     {{ $section['name'] }}
                                 </span>
                                 <span class="font-mono text-[10px] text-gray-400 block mt-0.5">

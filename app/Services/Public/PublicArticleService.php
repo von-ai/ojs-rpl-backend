@@ -26,6 +26,30 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PublicArticleService
 {
     /**
+     * Mengambil entitas jurnal berdasarkan slug unik (Multi-Tenancy).
+     */
+    public function findJournalBySlug(string $slug): ?Journal
+    {
+        try {
+            if (! Schema::hasTable('journals')) {
+                return null;
+            }
+
+            $query = Journal::where('slug', $slug)
+                ->with(['sections' => fn ($q) => $q->orderBy('position')]);
+
+            // Jika bukan sysadmin, hanya jurnal berstatus active yang bisa diakses publik
+            if (! auth()->user()?->isSysAdmin()) {
+                $query->where('status', 'active');
+            }
+
+            return $query->first();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Mengambil profil entitas jurnal aktif dari basis data.
      */
     public function getJournal(): Journal
@@ -115,7 +139,7 @@ class PublicArticleService
      *     section_id?: ?string
      * } $filters
      */
-    public function searchArticles(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function searchArticles(array $filters = [], int $perPage = 10, ?Journal $journal = null): LengthAwarePaginator
     {
         try {
             if (! Schema::hasTable('articles')) {
@@ -123,7 +147,13 @@ class PublicArticleService
             }
 
             $query = Article::with(['contributors', 'section', 'galleys', 'issues'])
-                ->where('status', 'published')->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+                ->where('status', 'published');
+
+            if ($journal !== null) {
+                $query->where('journal_id', $journal->id);
+            } else {
+                $query->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+            }
 
             // Filter kata kunci (judul, abstrak, referensi)
             if (! empty($filters['q'])) {

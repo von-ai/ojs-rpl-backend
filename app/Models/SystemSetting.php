@@ -44,7 +44,11 @@ class SystemSetting extends Model
      */
     public static function getValue(string $key, mixed $default = null): mixed
     {
-        $setting = static::where('key', $key)->first();
+        try {
+            $setting = static::where('key', $key)->first();
+        } catch (\Throwable) {
+            return $default ?? (static::defaults()[$key] ?? null);
+        }
 
         if ($setting === null) {
             return $default ?? (static::defaults()[$key] ?? null);

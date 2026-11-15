@@ -235,7 +235,7 @@ class JournalManagerSeeder extends Seeder
                 UserRole::firstOrCreate(
                     [
                         'user_id' => $user->id,
-                        'journal_id' => $journal->id,
+                        'journal_id' => ($roleCode === 'sysadmin') ? null : $journal->id,
                         'role_code' => $roleCode,
                     ],
                     [
@@ -482,7 +482,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Panggilan Pengajuan Naskah (Call for Papers) Vol. 6 No. 2 Tahun 2026',
+                'title' => 'Panggilan Pengajuan Naskah Vol. 6 No. 2 Tahun 2026',
             ],
             [
                 'body' => 'Redaksi mengundang para akademisi, peneliti, dan praktisi kebijakan daerah untuk mengirimkan naskah hasil riset terbaik bertema Inovasi Kebijakan Publik dan Ketahanan Perkotaan. Batas akhir pengiriman naskah adalah 15 November 2026.',
@@ -506,7 +506,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Pembaruan Panduan Gaya Selingkung (Author Guidelines) Tahun 2026',
+                'title' => 'Pembaruan Panduan Gaya Selingkung Tahun 2026',
             ],
             [
                 'body' => 'Mulai Volume 6, seluruh rujukan wajib menggunakan standar sitasi APA Edisi ke-7 dengan minimal 80% rujukan bersumber dari artikel jurnal terindeks bereputasi 5 tahun terakhir.',

@@ -126,7 +126,7 @@
                                     </div>
                                     <div class="min-w-0">
                                         <div class="flex items-center gap-1.5 flex-wrap">
-                                            <span class="font-bold text-gray-900 leading-tight">
+                                            <span class="font-medium text-gray-900 leading-tight">
                                                 {{ $user['name'] }}
                                             </span>
                                             @if($user['is_last_admin'])

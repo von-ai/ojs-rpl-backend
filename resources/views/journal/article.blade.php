@@ -74,20 +74,20 @@
                 </div>
 
                 <!-- Judul Artikel Ilmiah -->
-                <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 leading-snug tracking-tight font-sans">
+                <h1 class="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900 leading-snug">
                     {{ $article->title }}
                 </h1>
 
                 <!-- DOI & Tanggal Terbit -->
                 <div class="flex items-center gap-4 text-xs text-gray-500 flex-wrap pt-1">
                     <div class="flex items-center gap-1.5">
-                        <span class="font-bold text-gray-700">DOI:</span>
-                        <a href="https://doi.org/10.55981/sirida.{{ $article->slug }}" target="_blank" class="text-brand-maroon hover:underline font-mono">
+                        <span class="font-medium text-gray-700">DOI:</span>
+                        <a href="https://doi.org/10.55981/sirida.{{ $article->slug }}" target="_blank" class="text-brand-maroon hover:underline">
                             https://doi.org/10.55981/sirida.{{ $article->slug }}
                         </a>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <span class="font-bold text-gray-700">Diterbitkan:</span>
+                        <span class="font-medium text-gray-700">Diterbitkan:</span>
                         <span>{{ $article->published_at ? $article->published_at->format('d F Y') : date('d F Y') }}</span>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
 
             <!-- Penulis & Afiliasi Institusi -->
             <div class="space-y-3 bg-gray-50/70 rounded-xl p-5 border border-gray-100">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Kontributor / Penulis:</h3>
+                <h3 class="text-xs font-semibold uppercase tracking-normal text-gray-500">Kontributor / Penulis:</h3>
                 <div class="space-y-2">
                     @forelse($article->contributors as $contributor)
                         <div class="flex items-start gap-2 text-xs">
@@ -134,7 +134,7 @@
             <!-- Kata Kunci (Keywords) -->
             @if(!empty($article->keywords))
                 <div class="space-y-2 pt-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Kata Kunci:</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-normal text-gray-500">Kata Kunci:</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($article->keywords as $kw)
                             <a href="{{ route('journal.articles.search', ['q' => $kw]) }}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 hover:bg-brand-maroon/10 hover:text-brand-maroon transition duration-150">
@@ -239,16 +239,16 @@
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Statistik Pembaca</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
-                        <span class="block text-lg font-extrabold text-gray-900 tabular-nums">
+                        <span class="block text-lg font-semibold text-gray-900 tabular-nums">
                             {{ $article->metrics()->where('event_type', 'abstract_view')->sum('count') ?: 1 }}
                         </span>
-                        <span class="text-[11px] text-gray-500 font-medium">Kali Dilihat</span>
+                        <span class="text-[11px] text-gray-500 font-normal">Kali Dilihat</span>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
-                        <span class="block text-lg font-extrabold text-brand-maroon tabular-nums">
+                        <span class="block text-lg font-semibold text-brand-maroon tabular-nums">
                             {{ $article->metrics()->where('event_type', 'galley_download')->sum('count') ?: 0 }}
                         </span>
-                        <span class="text-[11px] text-gray-500 font-medium">Kali Diunduh</span>
+                        <span class="text-[11px] text-gray-500 font-normal">Kali Diunduh</span>
                     </div>
                 </div>
             </div>

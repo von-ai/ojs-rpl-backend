@@ -14,10 +14,10 @@
 
     <!-- Header Halaman -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-            INFORMASI RESMI PENERBITAN
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+            Informasi Resmi Penerbitan
         </span>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
             Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">

@@ -7,7 +7,7 @@
     <x-journal.announcement-banner :announcement="$viewModel->announcement()" />
 
     <!-- Main Container -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-5 space-y-5">
 
         <!-- 1. Hero Catalog Search & Submit CTA Card -->
         <section>
@@ -15,10 +15,10 @@
         </section>
 
         <!-- 2. Main Content Grid: 2-Cols (Left: Issues & Articles, Right: Sidebar) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             
             <!-- Left Main Content Column (Span 2) -->
-            <div class="lg:col-span-2 space-y-8">
+            <div class="lg:col-span-2 space-y-5">
                 
                 <!-- Current Issue Highlight (Dari Database) -->
                 @if (!empty($viewModel->currentIssue()))
@@ -46,11 +46,11 @@
                 <!-- Articles List Section -->
                 <section class="space-y-4">
                     <div class="flex items-center justify-between border-b border-gray-200 pb-2">
-                        <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <span>Artikel Terbit</span>
                             <span class="text-xs font-normal text-gray-500">({{ count($viewModel->articles()) }})</span>
                         </h2>
-                        <span class="text-xs text-gray-500 font-medium">Terbaru</span>
+                        <span class="text-xs text-gray-500 font-normal">Terbaru</span>
                     </div>
 
                     <div class="space-y-4">

@@ -136,7 +136,7 @@
                                             @endif
                                         @endif
                                     </div>
-                                    <h3 class="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                                    <h3 class="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
                                         {{ $displayTitle }}
                                     </h3>
                                 </div>
@@ -209,7 +209,7 @@
                                             </span>
                                         @endif
                                     </div>
-                                    <h3 class="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                                    <h3 class="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
                                         {{ $displayTitle }}
                                     </h3>
                                 </div>

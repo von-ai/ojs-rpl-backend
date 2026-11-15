@@ -20,20 +20,20 @@
 
             <!-- Book Cover Badge Mockup -->
             <div class="md:col-span-1 bg-gradient-to-b from-[#ED1C24] via-[#DE131B] to-[#BA0E16] text-white p-5 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-[#A80B12] shadow-sm">
-                <div class="text-[9px] font-bold text-white/80 uppercase tracking-widest border-b border-white/20 pb-1.5">
-                    PUBLIKASI ILMIAH RESMI
+                <div class="text-[10px] font-medium text-white/85 uppercase tracking-normal border-b border-white/20 pb-1.5">
+                    Publikasi Ilmiah Resmi
                 </div>
                 <div class="my-auto py-2">
-                    <h3 class="text-sm font-extrabold leading-tight text-white mb-1">
+                    <h3 class="text-sm font-semibold leading-tight text-white mb-1">
                         {{ $journal->name ?? 'Jurnal Riset & Inovasi Daerah' }}
                     </h3>
                     <p class="text-[10px] font-medium text-white/85">{{ $journal->publisher ?? 'BRIDA Kota Makassar' }}</p>
 
                     <div class="mt-3 p-2 bg-black/15 rounded border border-white/20">
-                        <span class="text-[11px] font-bold text-white block">
+                        <span class="text-xs font-medium text-white block">
                             Vol. {{ $issue->volume }} No. {{ $issue->number }} ({{ $issue->year }})
                         </span>
-                        <span class="text-[9px] text-white/80 block">
+                        <span class="text-[10px] text-white/80 block">
                             {{ $issue->title }}
                         </span>
                     </div>
@@ -49,22 +49,22 @@
             <div class="md:col-span-3 space-y-3.5">
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     @if($isCurrent ?? false)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider border border-emerald-300/60">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800 tracking-normal border border-emerald-300/60">
                             Edisi Terkini
                         </span>
                     @else
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase tracking-wider border border-gray-300/60">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 tracking-normal border border-gray-300/60">
                             Arsip Terbitan
                         </span>
                     @endif
-                    <span class="text-gray-500 text-xs">Terbit Resmi: <strong>{{ $issue->published_at ? $issue->published_at->format('d F Y') : ($issue->publication_date ? $issue->publication_date->format('d F Y') : date('d F Y')) }}</strong></span>
+                    <span class="text-gray-500 text-xs">Terbit Resmi: <strong class="font-medium text-gray-700">{{ $issue->published_at ? $issue->published_at->format('d F Y') : ($issue->publication_date ? $issue->publication_date->format('d F Y') : date('d F Y')) }}</strong></span>
                     @if($issue->doi_prefix)
                         <span class="text-gray-300">•</span>
-                        <span class="text-xs text-gray-600 font-mono">DOI Prefix: {{ $issue->doi_prefix }}</span>
+                        <span class="text-xs text-gray-600">DOI Prefix: {{ $issue->doi_prefix }}</span>
                     @endif
                 </div>
 
-                <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug tracking-tight">
+                <h1 class="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900 leading-snug">
                     Vol. {{ $issue->volume }} No. {{ $issue->number }} ({{ $issue->year }}): {{ $issue->title }}
                 </h1>
 
@@ -98,13 +98,13 @@
         <!-- Daftar Artikel (2 Kolom Kiri) -->
         <div class="lg:col-span-2 space-y-6">
             <div class="flex items-center justify-between border-b border-gray-200 pb-3">
-                <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                <h2 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     <span>Daftar Isi Naskah Ilmiah</span>
                 </h2>
-                <span class="text-xs text-gray-500 font-medium">{{ $issue->articles->count() }} Artikel</span>
+                <span class="text-xs text-gray-500 font-normal">{{ $issue->articles->count() }} Artikel</span>
             </div>
 
             @php
@@ -116,7 +116,7 @@
 
             @forelse($groupedArticles as $sectionName => $articles)
                 <div class="space-y-4">
-                    <div class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider bg-gray-100/80 px-3.5 py-2 rounded-lg border-l-4 border-brand-maroon">
+                    <div class="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase tracking-normal bg-gray-100/80 px-3.5 py-2 rounded-lg border-l-4 border-brand-maroon">
                         <span>{{ $sectionName }}</span>
                     </div>
 

@@ -15,7 +15,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 id="{{ $modalId }}-title" class="text-sm font-bold text-gray-900 leading-snug">Verifikasi Pembayaran APC</h3>
+                    <h3 id="{{ $modalId }}-title" class="text-sm font-semibold text-gray-900 leading-snug">Verifikasi Biaya Publikasi</h3>
                     <p class="text-[11px] text-gray-500">{{ $item['submission_number'] ?? ($item['number'] ?? 'Naskah') }} • {{ Str::limit($item['title'], 40) }}</p>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-gray-500">Nominal Tagihan:</span>
-                    <span class="font-extrabold text-sm text-gray-900">{{ $item['amount_formatted'] ?? 'Rp 0' }}</span>
+                    <span class="font-semibold text-sm text-gray-900">{{ $item['amount_formatted'] ?? 'Rp 0' }}</span>
                 </div>
             </div>
 
@@ -133,11 +133,11 @@
                 </div>
             @endif
 
-            <!-- Opsi Keringanan / Pembebasan Biaya (Waiver) -->
+            <!-- Opsi Keringanan / Pembebasan Biaya -->
             @if(($item['payment_status'] ?? '') !== 'verified' && ($item['payment_status'] ?? '') !== 'waived')
                 <details class="text-xs group border-t border-gray-100 pt-2">
                     <summary class="text-purple-700 font-semibold cursor-pointer hover:underline flex items-center justify-between">
-                        <span>Berikan Pembebasan Biaya (Grant Waiver)</span>
+                        <span>Berikan Pembebasan Biaya</span>
                         <span class="text-[10px] text-purple-500 font-normal">Keringanan Redaksi</span>
                     </summary>
                     <form action="{{ route('journalmanager.submissions.payment.waive', $item['submission_id'] ?? $item['id']) }}" method="POST" class="pt-2 space-y-2">
@@ -145,9 +145,9 @@
                         <input type="text" name="waiver_reason" required placeholder="Alasan pembebasan biaya (misal: penulis mahasiswa, naskah undangan)..." class="w-full px-3 py-1.5 text-xs border border-purple-300 rounded-lg">
                         <button 
                             type="submit" 
-                            class="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-lg transition cursor-pointer"
+                            class="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-purple-700 hover:bg-purple-800 rounded-lg transition cursor-pointer"
                         >
-                            Bebaskan Biaya APC (Waiver)
+                            Bebaskan Biaya Publikasi
                         </button>
                     </form>
                 </details>

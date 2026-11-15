@@ -120,7 +120,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <!-- ID Catatan & Kategori -->
-                        <span class="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        <span class="text-[10px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded tabular-nums">
                             {{ $note['id'] }}
                         </span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-200">

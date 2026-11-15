@@ -57,8 +57,8 @@ class JournalManagerIssuesTest extends TestCase
         // Data Edisi
         $response->assertSee('Vol. 6 No. 2 (2026)');
         $response->assertSee('Vol. 6 No. 1 (2026)');
-        $response->assertSee('Current Issue');
-        $response->assertSee('Daftar Isi');
+        $response->assertSee('Edisi Terkini');
+        $response->assertSee('Detail');
 
         // Modal Form Buat Edisi Baru
         $response->assertSee('Buat Edisi Nomor Terbitan Baru');
@@ -168,7 +168,7 @@ class JournalManagerIssuesTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Vol. 6 No. 1 (2026)');
-        $response->assertSee('Terbit (Current Issue)');
+        $response->assertSee('Terbit (Edisi Terkini)');
         $response->assertSee('Edisi Telah Terbit Resmi');
         $response->assertSee('Studi Komparasi Efisiensi Pelayanan Perizinan');
     }
@@ -199,6 +199,6 @@ class JournalManagerIssuesTest extends TestCase
         // 3. Tetapkan current issue
         $resCurrent = $this->post('/journalmanager/issues/ISSUE-01JARK960A/set-current');
         $resCurrent->assertRedirect('/journalmanager/issues');
-        $resCurrent->assertSessionHas('status', 'Edisi berhasil ditetapkan sebagai Terbitan Berjalan (Current Issue) jurnal.');
+        $resCurrent->assertSessionHas('status', 'Edisi berhasil ditetapkan sebagai Edisi Terkini jurnal.');
     }
 }

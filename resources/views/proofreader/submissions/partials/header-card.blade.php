@@ -13,7 +13,7 @@
         </a>
 
         <div class="flex items-center gap-2">
-            <span class="text-xs font-mono font-bold text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
+            <span class="text-xs font-sans font-medium text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
                 {{ $submission['assignment_code'] }}
             </span>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $submission['status_badge_class'] }}">
@@ -24,10 +24,10 @@
 
     <!-- Judul & Bidang Naskah -->
     <div>
-        <span class="text-xs font-mono font-bold text-brand-maroon uppercase tracking-wide block mb-1">
+        <span class="text-xs font-sans font-medium text-brand-maroon uppercase tracking-wide block mb-1">
             {{ $submission['number'] }} • {{ $submission['section_title'] }}
         </span>
-        <h1 class="text-xl sm:text-2xl font-bold font-sans text-gray-900 leading-snug tracking-tight">
+        <h1 class="text-lg sm:text-xl lg:text-2xl font-medium font-sans text-gray-900 leading-snug">
             {{ $submission['title'] }}
         </h1>
     </div>

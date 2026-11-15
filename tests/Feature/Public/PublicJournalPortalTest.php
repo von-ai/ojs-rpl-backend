@@ -275,4 +275,35 @@ class PublicJournalPortalTest extends TestCase
         $response->assertSee('@article{', false);
         $response->assertSee($this->publishedArticle->title);
     }
+
+    /**
+     * Beranda portal jurnal dapat diakses berdasarkan slug jurnal (Multi-Tenancy).
+     */
+    public function test_beranda_portal_jurnal_dapat_diakses_berdasarkan_slug_jurnal_publik(): void
+    {
+        $secondJournal = Journal::create([
+            'slug' => 'jtiik-makassar',
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Perkotaan (JTIIK)',
+            'issn' => '2746-9999',
+            'eissn' => '2746-8888',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+
+        $response = $this->get('/jtiik-makassar');
+
+        $response->assertStatus(200);
+        $response->assertSee('Jurnal Teknologi Informasi dan Inovasi Perkotaan (JTIIK)');
+        $response->assertSee('2746-9999');
+    }
+
+    /**
+     * Mengakses slug jurnal yang tidak terdaftar menghasilkan 404 Not Found.
+     */
+    public function test_akses_slug_jurnal_yang_tidak_ada_menghasilkan_404(): void
+    {
+        $response = $this->get('/slug-jurnal-tidak-ditemukan-xyz');
+
+        $response->assertStatus(404);
+    }
 }

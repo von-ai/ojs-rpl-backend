@@ -131,7 +131,7 @@ class JournalManagerController extends Controller
             return redirect()->route('journalmanager.issues.index')->withErrors(['current' => $e->getMessage()]);
         }
 
-        return redirect()->route('journalmanager.issues.index')->with('status', 'Edisi berhasil ditetapkan sebagai Terbitan Berjalan (Current Issue) jurnal.');
+        return redirect()->route('journalmanager.issues.index')->with('status', 'Edisi berhasil ditetapkan sebagai Edisi Terkini jurnal.');
     }
 
     /**
@@ -372,7 +372,7 @@ class JournalManagerController extends Controller
             return back()->withErrors(['payment' => $e->getMessage()]);
         }
 
-        return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
+        return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan.");
     }
 
     /**
