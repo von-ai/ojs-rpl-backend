@@ -130,4 +130,46 @@ class SysAdminJournalsTest extends TestCase
             'role_code' => 'manager',
         ]);
     }
+
+    /**
+     * SysAdmin dapat memperbarui metadata nama, slug, dan ISSN jurnal.
+     */
+    public function test_sysadmin_dapat_memperbarui_metadata_jurnal(): void
+    {
+        $journal = Journal::where('slug', 'jtiik-makassar')->firstOrFail();
+
+        $response = $this->post("/sysadmin/journals/{$journal->id}", [
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Makassar Terkini',
+            'slug' => 'jtiik-makassar-updated',
+            'primary_contact' => 'Prof. Ir. Hendra Gunawan, Ph.D.',
+            'issn' => '2746-1111',
+            'eissn' => '2746-2222',
+            'description' => 'Fokus dan ruang lingkup yang diperbarui.',
+        ]);
+
+        $response->assertRedirect(route('sysadmin.journals.index'));
+        $response->assertSessionHas('status');
+
+        $this->assertDatabaseHas('journals', [
+            'id' => $journal->id,
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Makassar Terkini',
+            'slug' => 'jtiik-makassar-updated',
+            'issn' => '2746-1111',
+            'eissn' => '2746-2222',
+        ]);
+    }
+
+    /**
+     * SysAdmin dapat masuk ke ruang kerja Journal Manager untuk jurnal tertentu.
+     */
+    public function test_sysadmin_dapat_masuk_ke_ruang_kerja_jurnal_manager(): void
+    {
+        $journal = Journal::where('slug', 'jtiik-makassar')->firstOrFail();
+
+        $response = $this->get("/sysadmin/journals/{$journal->id}/manage");
+
+        $response->assertRedirect(route('journalmanager.issues.index'));
+        $response->assertSessionHas('status');
+        $this->assertEquals($journal->id, session('active_journal_id'));
+    }
 }

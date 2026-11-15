@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\SysAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Journal;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Services\SysAdmin\SysAdminService;
@@ -86,6 +87,43 @@ class SysAdminController extends Controller
             return redirect()->route('sysadmin.journals.index')
                 ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
         }
+    }
+
+    /**
+     * Memperbarui metadata dan profil instansi jurnal ilmiah.
+     */
+    public function updateJournal(Request $request, string $id): RedirectResponse
+    {
+        $actor = $this->resolveActor();
+
+        try {
+            $journal = $this->sysAdminService->updateJournal($id, $request->all(), $actor);
+
+            return redirect()->route('sysadmin.journals.index')
+                ->with('status', "Data instansi jurnal '{$journal->name}' berhasil diperbarui.");
+        } catch (DomainException|\InvalidArgumentException $e) {
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.journals.index')
+                ->withErrors(['operation' => 'Operasi gagal diproses. Silakan coba kembali atau hubungi pengelola.']);
+        }
+    }
+
+    /**
+     * Mengalihkan sesi aktif Administrator Sistem ke Ruang Kerja Pengelolaan Jurnal (Journal Manager).
+     */
+    public function enterWorkspace(Request $request, string $id): RedirectResponse
+    {
+        $this->resolveActor();
+        $journal = Journal::findOrFail($id);
+
+        session(['active_journal_id' => $journal->id]);
+
+        return redirect()->route('journalmanager.issues.index')
+            ->with('status', "Beralih ke ruang kerja pengelola jurnal '{$journal->name}'.");
     }
 
     /**

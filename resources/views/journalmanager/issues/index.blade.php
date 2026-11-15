@@ -28,6 +28,30 @@
         </button>
     </div>
 
+    @if(isset($journal) && $journal)
+        <!-- Tenant Workspace Active Context Bar -->
+        <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200/90 text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-brand-maroon/10 text-brand-maroon border border-brand-maroon/20 shrink-0 uppercase tracking-wider">
+                    Ruang Kerja Jurnal
+                </span>
+                <span class="font-semibold text-gray-900 truncate" title="{{ $journal->name }}">
+                    {{ $journal->name }}
+                </span>
+                <span class="text-gray-400 hidden sm:inline">•</span>
+                <span class="text-gray-500 font-mono text-[11px] hidden sm:inline">/{{ $journal->slug }}</span>
+            </div>
+            @if(auth()->user()?->isSysAdmin())
+                <a href="{{ route('sysadmin.journals.index') }}" class="inline-flex items-center gap-1 font-semibold text-brand-maroon hover:underline shrink-0 text-xs" title="Kembali ke konsol System Administrator">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Portal SysAdmin</span>
+                </a>
+            @endif
+        </div>
+    @endif
+
     <!-- 4 Metrik Ringkas & Ergonomis -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         @foreach ($viewModel->summaryMetrics() as $metric)

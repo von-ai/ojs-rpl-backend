@@ -6,6 +6,7 @@ namespace App\ViewModels;
 
 use App\Models\Issue;
 use App\Models\IssueArticle;
+use App\Models\Journal;
 use App\Models\Submission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -16,10 +17,18 @@ class JournalManagerIssuesViewModel
 
     private string $searchQuery;
 
-    public function __construct(string $activeTab = 'all', string $searchQuery = '')
+    protected ?Journal $journal;
+
+    public function __construct(string $activeTab = 'all', string $searchQuery = '', ?Journal $journal = null)
     {
         $this->activeTab = $activeTab;
         $this->searchQuery = trim($searchQuery);
+        $this->journal = $journal;
+    }
+
+    public function journal(): ?Journal
+    {
+        return $this->journal;
     }
 
     /**
@@ -68,22 +77,39 @@ class JournalManagerIssuesViewModel
     public function summaryMetrics(): array
     {
         if (Schema::hasTable('issues') && Issue::count() > 0) {
-            $publishedCount = Issue::where('status', 'published')->count();
-            $futureCount = Issue::whereIn('status', ['draft', 'scheduled'])->count();
+            $issueQuery = Issue::query();
+            if ($this->journal !== null) {
+                $issueQuery->where('journal_id', $this->journal->id);
+            }
+
+            $publishedCount = (clone $issueQuery)->where('status', 'published')->count();
+            $futureCount = (clone $issueQuery)->whereIn('status', ['draft', 'scheduled'])->count();
 
             // Artikel siap terbit: Naskah tahap produksi yang belum masuk ke dalam edisi apapun
             $readyCount = 0;
             if (Schema::hasTable('submissions')) {
-                $readyCount = Submission::whereDoesntHave('issueArticle')
+                $subQuery = Submission::whereDoesntHave('issueArticle')
                     ->whereIn('status', ['accepted', 'in_production', 'ready_for_issue', 'approved'])
-                    ->whereNotIn('status', ['declined', 'rejected', 'archived', 'withdrawn', 'in_review', 'under_review', 'revisions_requested', 'draft', 'submitted', 'published'])
-                    ->count();
+                    ->whereNotIn('status', ['declined', 'rejected', 'archived', 'withdrawn', 'in_review', 'under_review', 'revisions_requested', 'draft', 'submitted', 'published']);
+
+                if ($this->journal !== null) {
+                    $subQuery->where('journal_id', $this->journal->id);
+                }
+
+                $readyCount = $subQuery->count();
             }
 
             // Total artikel terbit: Akumulasi artikel dalam seluruh edisi terbit
             $totalPublishedArticles = 0;
             if (Schema::hasTable('issue_articles')) {
-                $totalPublishedArticles = IssueArticle::whereHas('issue', fn ($q) => $q->where('status', 'published'))->count();
+                $artQuery = IssueArticle::whereHas('issue', function ($q) {
+                    $q->where('status', 'published');
+                    if ($this->journal !== null) {
+                        $q->where('journal_id', $this->journal->id);
+                    }
+                });
+
+                $totalPublishedArticles = $artQuery->count();
             }
 
             return [
@@ -259,7 +285,12 @@ class JournalManagerIssuesViewModel
     private function allIssues(): array
     {
         if (Schema::hasTable('issues')) {
-            $issues = Issue::withCount('issueArticles')
+            $issuesQuery = Issue::withCount('issueArticles');
+            if ($this->journal !== null) {
+                $issuesQuery->where('journal_id', $this->journal->id);
+            }
+
+            $issues = $issuesQuery
                 ->orderByDesc('year')
                 ->orderByDesc('volume')
                 ->orderByDesc('number')

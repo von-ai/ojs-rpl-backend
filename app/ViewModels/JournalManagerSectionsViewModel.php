@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Journal;
 use App\Models\Section;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class JournalManagerSectionsViewModel
 {
+    public function __construct(protected ?Journal $journal = null) {}
+
     /**
      * Profil pengguna aktif Journal Manager.
      *
@@ -84,7 +87,12 @@ class JournalManagerSectionsViewModel
     public function sections(): array
     {
         if (Schema::hasTable('sections')) {
-            $sections = Section::withCount('submissions')
+            $sectionsQuery = Section::withCount('submissions');
+            if ($this->journal !== null) {
+                $sectionsQuery->where('journal_id', $this->journal->id);
+            }
+
+            $sections = $sectionsQuery
                 ->orderBy('position')
                 ->get();
 

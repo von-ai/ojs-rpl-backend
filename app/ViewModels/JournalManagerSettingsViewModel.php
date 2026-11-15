@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 class JournalManagerSettingsViewModel
 {
+    public function __construct(protected ?Journal $journal = null) {}
+
     /**
      * Profil pengguna aktif Journal Manager.
      *
@@ -145,6 +147,10 @@ class JournalManagerSettingsViewModel
 
     private function resolveJournal(): ?Journal
     {
+        if ($this->journal !== null) {
+            return $this->journal;
+        }
+
         if (Schema::hasTable('journals')) {
             return Journal::first();
         }

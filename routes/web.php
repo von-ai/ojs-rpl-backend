@@ -242,6 +242,8 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
     // 1. Manajemen Jurnal Ilmiah (Multi-Tenancy)
     Route::get('/journals', [SysAdminController::class, 'journals'])->name('journals.index');
     Route::post('/journals', [SysAdminController::class, 'storeJournal'])->name('journals.store');
+    Route::post('/journals/{id}', [SysAdminController::class, 'updateJournal'])->name('journals.update');
+    Route::get('/journals/{id}/manage', [SysAdminController::class, 'enterWorkspace'])->name('journals.manage');
     Route::post('/journals/{id}/status', [SysAdminController::class, 'updateJournalStatus'])->name('journals.update-status');
 
     // 2. Direktori Pengguna & Hak Akses Global

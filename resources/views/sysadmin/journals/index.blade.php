@@ -207,18 +207,42 @@
                             <!-- Kolom Aksi -->
                             <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1.5 justify-end">
+                                    <!-- Tombol Kelola Ruang Kerja Jurnal -->
+                                    <a
+                                        href="{{ route('sysadmin.journals.manage', $journal['id']) }}"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md text-white bg-brand-maroon hover:bg-brand-maroon/90 active:bg-brand-maroon transition shadow-2xs"
+                                        title="Masuk ke ruang kerja pengelolaan jurnal ini"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span>Kelola</span>
+                                    </a>
+
+                                    <!-- Tombol Edit Metadata Jurnal -->
+                                    <button
+                                        type="button"
+                                        onclick='openEditJournalModal(@json($journal))'
+                                        class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition shadow-2xs cursor-pointer"
+                                        title="Sunting identitas dan informasi jurnal"
+                                    >
+                                        <span>Edit</span>
+                                    </button>
+
+                                    <!-- Tombol Lihat Website Publik -->
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition shadow-2xs"
-                                        title="Buka website publik jurnal"
+                                        title="Buka website publik jurnal (tab baru)"
                                     >
                                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
-                                        <span>Lihat</span>
+                                        <span>Web</span>
                                     </a>
 
+                                    <!-- Tombol Status -->
                                     <form action="{{ route('sysadmin.journals.update-status', $journal['id']) }}" method="POST" class="inline">
                                         @csrf
                                         @if($journal['status'] === 'active')
@@ -453,6 +477,142 @@
     </div>
 </div>
 
+<!-- Modal Dialog Edit Metadata Jurnal -->
+<div
+    id="modal-edit-journal"
+    class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-edit-journal-title"
+>
+    <!-- Click outside backdrop to close -->
+    <div class="fixed inset-0" onclick="closeEditJournalModal()"></div>
+
+    <div class="relative bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4 z-10">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div>
+                <h3 id="modal-edit-journal-title" class="text-base font-semibold text-gray-900">
+                    Sunting Identitas Instansi Jurnal
+                </h3>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Perbarui nama, URL slug, ISSN, dan informasi penanggung jawab jurnal.
+                </p>
+            </div>
+            <button
+                type="button"
+                onclick="closeEditJournalModal()"
+                class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                aria-label="Tutup dialog"
+            >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="form-edit-journal" action="" method="POST" class="space-y-4">
+            @csrf
+
+            <div>
+                <label for="edit_name" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Nama Lengkap Jurnal <span class="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    id="edit_name"
+                    name="name"
+                    required
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                >
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="edit_slug" class="block text-xs font-semibold text-gray-700 mb-1">
+                        URL Slug <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_slug"
+                        name="slug"
+                        required
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    >
+                    <p class="text-[11px] text-gray-400 mt-0.5">Akses via: domain/slug</p>
+                </div>
+                <div>
+                    <label for="edit_primary_contact" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Kontak Utama / PIC <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_primary_contact"
+                        name="primary_contact"
+                        required
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    >
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="edit_issn" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Print ISSN (P-ISSN)
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_issn"
+                        name="issn"
+                        placeholder="2655-xxxx"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    >
+                </div>
+                <div>
+                    <label for="edit_eissn" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Electronic ISSN (E-ISSN)
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_eissn"
+                        name="eissn"
+                        placeholder="2722-xxxx"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    >
+                </div>
+            </div>
+
+            <div>
+                <label for="edit_description" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Fokus &amp; Ruang Lingkup (Deskripsi Jurnal)
+                </label>
+                <textarea
+                    id="edit_description"
+                    name="description"
+                    rows="2"
+                    placeholder="Tuliskan fokus, ruang lingkup, dan tujuan penerbitan jurnal ilmiah..."
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                ></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                    type="button"
+                    onclick="closeEditJournalModal()"
+                    class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition cursor-pointer"
+                >
+                    Batal
+                </button>
+                <button
+                    type="submit"
+                    class="px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition cursor-pointer"
+                >
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     let slugIsManuallyEdited = false;
@@ -464,6 +624,25 @@
 
     function closeAddJournalModal() {
         document.getElementById('modal-add-journal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function openEditJournalModal(journal) {
+        const form = document.getElementById('form-edit-journal');
+        form.action = `/sysadmin/journals/${journal.id}`;
+        document.getElementById('edit_name').value = journal.name || '';
+        document.getElementById('edit_slug').value = journal.slug || '';
+        document.getElementById('edit_primary_contact').value = journal.primary_contact || '';
+        document.getElementById('edit_issn').value = journal.issn || '';
+        document.getElementById('edit_eissn').value = journal.eissn || '';
+        document.getElementById('edit_description').value = journal.description || '';
+
+        document.getElementById('modal-edit-journal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeEditJournalModal() {
+        document.getElementById('modal-edit-journal').classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
     }
 
@@ -490,9 +669,14 @@
         // Close on Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
-                const modal = document.getElementById('modal-add-journal');
-                if (modal && !modal.classList.contains('hidden')) {
+                const addModal = document.getElementById('modal-add-journal');
+                if (addModal && !addModal.classList.contains('hidden')) {
                     closeAddJournalModal();
+                }
+
+                const editModal = document.getElementById('modal-edit-journal');
+                if (editModal && !editModal.classList.contains('hidden')) {
+                    closeEditJournalModal();
                 }
             }
         });

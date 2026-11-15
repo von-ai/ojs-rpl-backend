@@ -20,12 +20,15 @@ class JournalManagerUsersViewModel
 
     private int $perPage;
 
-    public function __construct(string $activeFilter = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10)
+    protected ?Journal $journal;
+
+    public function __construct(string $activeFilter = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10, ?Journal $journal = null)
     {
         $this->activeFilter = $activeFilter;
         $this->searchQuery = trim($searchQuery);
         $this->currentPage = max(1, $currentPage);
         $this->perPage = max(1, $perPage);
+        $this->journal = $journal;
     }
 
     /**
@@ -378,7 +381,7 @@ class JournalManagerUsersViewModel
     private function allUsers(): array
     {
         if (Schema::hasTable('users')) {
-            $journalId = Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
+            $journalId = $this->journal?->id ?? Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
 
             $query = User::with([
                 'profile',

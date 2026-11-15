@@ -42,10 +42,11 @@ class JournalManagerController extends Controller
     {
         $tab = (string) $request->query('tab', 'all');
         $search = (string) $request->query('q', '');
+        $journal = $this->resolveJournal();
 
-        $viewModel = new JournalManagerIssuesViewModel($tab, $search);
+        $viewModel = new JournalManagerIssuesViewModel($tab, $search, $journal);
 
-        return view('journalmanager.issues.index', compact('viewModel'));
+        return view('journalmanager.issues.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -142,10 +143,11 @@ class JournalManagerController extends Controller
         $role = (string) $request->query('role', 'all');
         $search = (string) $request->query('q', '');
         $page = max(1, (int) $request->query('page', 1));
+        $journal = $this->resolveJournal();
 
-        $viewModel = new JournalManagerUsersViewModel($role, $search, $page);
+        $viewModel = new JournalManagerUsersViewModel($role, $search, $page, 10, $journal);
 
-        return view('journalmanager.users.index', compact('viewModel'));
+        return view('journalmanager.users.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -223,9 +225,10 @@ class JournalManagerController extends Controller
      */
     public function sections(Request $request): View
     {
-        $viewModel = new JournalManagerSectionsViewModel;
+        $journal = $this->resolveJournal();
+        $viewModel = new JournalManagerSectionsViewModel($journal);
 
-        return view('journalmanager.sections.index', compact('viewModel'));
+        return view('journalmanager.sections.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -254,9 +257,10 @@ class JournalManagerController extends Controller
      */
     public function settings(Request $request): View
     {
-        $viewModel = new JournalManagerSettingsViewModel;
+        $journal = $this->resolveJournal();
+        $viewModel = new JournalManagerSettingsViewModel($journal);
 
-        return view('journalmanager.settings.index', compact('viewModel'));
+        return view('journalmanager.settings.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -394,10 +398,26 @@ class JournalManagerController extends Controller
     }
 
     /**
-     * Mengambil entitas jurnal aktif sistem atau inisialisasi default.
+     * Mengambil entitas jurnal aktif sistem atau inisialisasi default berdasarkan sesi tenant.
      */
     private function resolveJournal(): Journal
     {
+        $activeJournalId = session('active_journal_id');
+        if ($activeJournalId) {
+            $journal = Journal::find($activeJournalId);
+            if ($journal) {
+                return $journal;
+            }
+        }
+
+        $userRole = Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->first();
+        if ($userRole?->journal_id) {
+            $journal = Journal::find($userRole->journal_id);
+            if ($journal) {
+                return $journal;
+            }
+        }
+
         return Journal::query()->firstOrFail();
     }
 }

@@ -157,6 +157,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Alias for userRoles relationship.
+     *
+     * @return HasMany<UserRole, $this>
+     */
+    public function roles(): HasMany
+    {
+        return $this->userRoles();
+    }
+
+    /**
      * @return HasMany<ReviewAssignment, $this>
      */
     public function reviewAssignments(): HasMany
