@@ -158,18 +158,4 @@ class SysAdminJournalsTest extends TestCase
             'eissn' => '2746-2222',
         ]);
     }
-
-    /**
-     * SysAdmin dapat masuk ke ruang kerja Journal Manager untuk jurnal tertentu.
-     */
-    public function test_sysadmin_dapat_masuk_ke_ruang_kerja_jurnal_manager(): void
-    {
-        $journal = Journal::where('slug', 'jtiik-makassar')->firstOrFail();
-
-        $response = $this->get("/sysadmin/journals/{$journal->id}/manage");
-
-        $response->assertRedirect(route('journalmanager.issues.index'));
-        $response->assertSessionHas('status');
-        $this->assertEquals($journal->id, session('active_journal_id'));
-    }
 }

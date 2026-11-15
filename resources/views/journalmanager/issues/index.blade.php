@@ -41,14 +41,6 @@
                 <span class="text-gray-400 hidden sm:inline">•</span>
                 <span class="text-gray-500 font-mono text-[11px] hidden sm:inline">/{{ $journal->slug }}</span>
             </div>
-            @if(auth()->user()?->isSysAdmin())
-                <a href="{{ route('sysadmin.journals.index') }}" class="inline-flex items-center gap-1 font-semibold text-brand-maroon hover:underline shrink-0 text-xs" title="Kembali ke konsol System Administrator">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    <span>Portal SysAdmin</span>
-                </a>
-            @endif
         </div>
     @endif
 
