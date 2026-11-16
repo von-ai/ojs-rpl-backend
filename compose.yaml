@@ -35,7 +35,6 @@ services:
       - ./docker/entrypoint.sh:/usr/local/bin/entrypoint.sh
       - /var/www/html/vendor
       - /var/www/html/bootstrap/cache
-      - /var/www/html/public/build
     depends_on:
       mysql:
         condition: service_healthy
