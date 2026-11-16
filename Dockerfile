@@ -48,7 +48,18 @@ RUN apk add --no-cache \
         opcache \
         zip \
         intl \
-        phpredis/phpredis@6.1.0 \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS tar \
+    && mkdir -p /tmp/redis \
+    && curl -fsSL https://github.com/phpredis/phpredis/archive/refs/tags/6.1.0.tar.gz | tar -xz -C /tmp/redis --strip-components=1 \
+    && cd /tmp/redis \
+    && phpize \
+    && ./configure \
+    && make -j$(nproc) \
+    && make install \
+    && docker-php-ext-enable redis \
+    && cd /var/www/html \
+    && rm -rf /tmp/redis \
+    && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
 # Salin binary composer untuk kemudahan operasional / artisan CLI di dalam container
