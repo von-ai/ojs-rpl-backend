@@ -32,6 +32,7 @@ services:
       - AZURE_STORAGE_PUBLIC_URL=${AZURE_STORAGE_PUBLIC_URL:-http://127.0.0.1:${AZURITE_PORT:-10000}/devstoreaccount1}
     volumes:
       - .:/var/www/html
+      - ./docker/entrypoint.sh:/usr/local/bin/entrypoint.sh
       - /var/www/html/vendor
       - /var/www/html/bootstrap/cache
       - /var/www/html/public/build
