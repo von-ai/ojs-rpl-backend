@@ -48,7 +48,7 @@ RUN apk add --no-cache \
         opcache \
         zip \
         intl \
-        redis \
+        phpredis/phpredis@6.1.0 \
     && rm -rf /var/cache/apk/*
 
 # Salin binary composer untuk kemudahan operasional / artisan CLI di dalam container
