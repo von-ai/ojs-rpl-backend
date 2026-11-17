@@ -144,6 +144,14 @@
                 }
                 const isHidden = menu.classList.contains('hidden');
                 closeAllRoleSwitchers(container);
+                document.querySelectorAll('[data-journal-switcher]').forEach(function (jContainer) {
+                    const jMenu = jContainer.querySelector('[data-journal-switcher-menu]');
+                    const jTrigger = jContainer.querySelector('[data-journal-switcher-trigger]');
+                    const jChevron = jContainer.querySelector('[data-journal-switcher-chevron]');
+                    if (jMenu && !jMenu.classList.contains('hidden')) jMenu.classList.add('hidden');
+                    if (jTrigger) jTrigger.setAttribute('aria-expanded', 'false');
+                    if (jChevron) jChevron.classList.remove('rotate-180');
+                });
                 if (isHidden) {
                     menu.classList.remove('hidden');
                     trigger.setAttribute('aria-expanded', 'true');

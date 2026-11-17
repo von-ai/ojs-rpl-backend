@@ -398,6 +398,14 @@ class JournalManagerController extends Controller
      */
     private function resolveJournal(): Journal
     {
+        $user = Auth::user();
+        if ($user) {
+            $active = $user->activeJournal('manager');
+            if ($active) {
+                return $active;
+            }
+        }
+
         return Journal::query()->firstOrFail();
     }
 }
