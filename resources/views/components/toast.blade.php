@@ -265,6 +265,13 @@
                 message: @json($errors->count() > 1 ? $errors->first() . ' (dan ' . ($errors->count() - 1) . ' kendala lainnya)' : $errors->first()),
                 duration: 5000
             });
+        @elseif(session('journal_switched_toast'))
+            showToast({
+                type: 'success',
+                title: 'Konteks Jurnal Dialihkan',
+                message: @json(session('journal_switched_toast')),
+                duration: 3500
+            });
         @elseif(session('role_switched_toast'))
             showToast({
                 type: 'success',

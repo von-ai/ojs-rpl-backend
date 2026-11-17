@@ -402,19 +402,11 @@ class JournalManagerController extends Controller
      */
     private function resolveJournal(): Journal
     {
-        $activeJournalId = session('active_journal_id');
-        if ($activeJournalId) {
-            $journal = Journal::find($activeJournalId);
-            if ($journal) {
-                return $journal;
-            }
-        }
-
-        $userRole = Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->first();
-        if ($userRole?->journal_id) {
-            $journal = Journal::find($userRole->journal_id);
-            if ($journal) {
-                return $journal;
+        $user = Auth::user();
+        if ($user) {
+            $active = $user->activeJournal('manager');
+            if ($active) {
+                return $active;
             }
         }
 

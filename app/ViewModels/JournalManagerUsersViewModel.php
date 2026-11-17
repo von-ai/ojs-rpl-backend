@@ -38,7 +38,8 @@ class JournalManagerUsersViewModel
     {
         try {
             if (class_exists(User::class) && Schema::hasTable('users') && User::query()->exists()) {
-                $journalId = Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
+                $journalId = Auth::user()?->activeJournal('manager')?->id
+                    ?? Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
                 $query = User::whereDoesntHave('userRoles', function ($q) {
                     $q->where('role_code', 'sysadmin')->whereNull('journal_id');
                 });
@@ -381,7 +382,9 @@ class JournalManagerUsersViewModel
     private function allUsers(): array
     {
         if (Schema::hasTable('users')) {
-            $journalId = $this->journal?->id ?? Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
+            $journalId = $this->journal?->id
+                ?? Auth::user()?->activeJournal('manager')?->id
+                ?? Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
 
             $query = User::with([
                 'profile',

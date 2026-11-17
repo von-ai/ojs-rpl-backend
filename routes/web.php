@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Auth\JournalSwitchController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistrationController;
@@ -71,6 +72,7 @@ Route::middleware('throttle:identity')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('/auth/switch-role', [RoleSwitchController::class, 'switchRole'])->name('role.switch');
+    Route::post('/auth/switch-journal', [JournalSwitchController::class, 'switchJournal'])->name('journal.switch');
 });
 
 // Portal Penulis (Author Submissions & Management) - Wajib Autentikasi
