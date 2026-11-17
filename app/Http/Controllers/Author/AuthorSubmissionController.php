@@ -52,13 +52,19 @@ class AuthorSubmissionController extends Controller
         $draftId = $request->query('draft_id') ?? $request->query('id');
 
         if ($draftId && Auth::check()) {
-            $draft = Submission::with(['files.file', 'contributors', 'section'])
+            $draftQuery = Submission::with(['files.file', 'contributors', 'section'])
                 ->where('author_id', Auth::id())
                 ->where('status', 'draft')
                 ->where(function ($q) use ($draftId) {
                     $q->where('id', $draftId)->orWhere('submission_number', $draftId);
-                })
-                ->first();
+                });
+
+            $selectedJournalId = $this->selectedJournalId();
+            if ($selectedJournalId) {
+                $draftQuery->where('journal_id', $selectedJournalId);
+            }
+
+            $draft = $draftQuery->first();
         }
 
         return view('author.submissions.create', compact('viewModel', 'draft'));
@@ -71,6 +77,12 @@ class AuthorSubmissionController extends Controller
     {
         $data = $request->validate(['q' => ['nullable', 'string', 'max:200'], 'page' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:30']]);
         $query = Section::where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+
+        $selectedJournalId = $this->selectedJournalId();
+        if ($selectedJournalId) {
+            $query->where('journal_id', $selectedJournalId);
+        }
+
         if (! empty($data['q'])) {
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$data['q'].'%')->orWhere('description', 'like', '%'.$data['q'].'%'));
         }
@@ -124,13 +136,18 @@ class AuthorSubmissionController extends Controller
         $directFile = null;
         $persist = function () use ($request, $validated, $isDraft, $draftId, $author, &$directFile): Submission {
             $authorId = $author->id;
+            $selectedJournalId = $this->selectedJournalId();
             $existingDraft = null;
             if ($draftId !== null) {
-                $existingDraft = Submission::whereKey($draftId)
+                $draftQuery = Submission::whereKey($draftId)
                     ->where('author_id', $authorId)
-                    ->where('status', 'draft')
-                    ->lockForUpdate()
-                    ->first();
+                    ->where('status', 'draft');
+
+                if ($selectedJournalId) {
+                    $draftQuery->where('journal_id', $selectedJournalId);
+                }
+
+                $existingDraft = $draftQuery->lockForUpdate()->first();
 
                 if (! $existingDraft) {
                     throw ValidationException::withMessages(['draft_id' => 'Draf tidak tersedia untuk diedit.']);
@@ -146,6 +163,9 @@ class AuthorSubmissionController extends Controller
             $sectionQuery = Section::with('journal')
                 ->where('accepting_submissions', true)
                 ->whereHas('journal', fn ($query) => $query->where('status', 'active'));
+            if ($selectedJournalId) {
+                $sectionQuery->where('journal_id', $selectedJournalId);
+            }
             if ($sectionId !== null) {
                 $sectionQuery->where(fn ($query) => $query->where('id', $sectionId)->orWhere('slug', $sectionId));
                 $matchingSections = $sectionQuery->limit(2)->get();
@@ -497,6 +517,15 @@ class AuthorSubmissionController extends Controller
      */
     public function storeRevision(Request $request, string $id): RedirectResponse
     {
+        $user = $request->user();
+        $submission = $user ? $this->findAuthorSubmission($id, $user) : null;
+
+        if (! $submission) {
+            return redirect()
+                ->route('author.submissions.index')
+                ->with('error', 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');
+        }
+
         $validated = $request->validate([
             'manuscript_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
             'response_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
@@ -508,19 +537,6 @@ class AuthorSubmissionController extends Controller
             'response_letter_file.mimes' => 'Format response letter harus berupa PDF, DOC, atau DOCX.',
             'response_letter_file.max' => 'Ukuran response letter tidak boleh melebihi 20 MB.',
         ]);
-
-        $user = $request->user();
-
-        $submission = Submission::where(function ($query) use ($id): void {
-            $query->where('id', $id)
-                ->orWhere('submission_number', $id);
-        })->first();
-
-        if (! $submission) {
-            return redirect()
-                ->route('author.submissions.index')
-                ->with('error', 'Naskah ilmiah tidak ditemukan.');
-        }
 
         try {
             $this->authorSubmissionService->submitRevision(
@@ -551,16 +567,12 @@ class AuthorSubmissionController extends Controller
     public function downloadFile(Request $request, string $id, string $fileId): BinaryFileResponse|StreamedResponse|RedirectResponse
     {
         $user = $request->user();
-
-        $submission = Submission::where(function ($query) use ($id): void {
-            $query->where('id', $id)
-                ->orWhere('submission_number', $id);
-        })->first();
+        $submission = $user ? $this->findAuthorSubmission($id, $user) : null;
 
         if (! $submission) {
             return redirect()
                 ->route('author.submissions.index')
-                ->with('error', 'Naskah ilmiah tidak ditemukan.');
+                ->with('error', 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');
         }
 
         try {
@@ -655,11 +667,27 @@ class AuthorSubmissionController extends Controller
         }
     }
 
+    private function selectedJournalId(): ?string
+    {
+        try {
+            if (session()->has('active_journal_id')) {
+                $id = session('active_journal_id');
+
+                return is_string($id) && $id !== '' ? $id : null;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
+    }
+
     /**
      * Mengambil naskah yang dimiliki penulis atau di mana pengguna terdaftar sebagai kontributor.
      */
     private function findAuthorSubmission(string $id, User $user): ?Submission
     {
+        $selectedJournalId = $this->selectedJournalId();
+
         return Submission::where(function ($query) use ($id): void {
             $query->where('id', $id)
                 ->orWhere('submission_number', $id);
@@ -671,6 +699,7 @@ class AuthorSubmissionController extends Controller
                             ->orWhere('email', $user->email);
                     });
             })
+            ->when($selectedJournalId, fn ($q) => $q->where('journal_id', $selectedJournalId))
             ->first();
     }
 
@@ -689,10 +718,11 @@ class AuthorSubmissionController extends Controller
      */
     public function downloadPaymentProof(Request $request, string $id): StreamedResponse|BinaryFileResponse
     {
-        $submission = Submission::where(function ($query) use ($id): void {
-            $query->where('id', $id)
-                ->orWhere('submission_number', $id);
-        })->firstOrFail();
+        $user = $request->user();
+        $submission = $user ? $this->findAuthorSubmission($id, $user) : null;
+        if (! $submission) {
+            abort(404, 'Naskah ilmiah tidak ditemukan atau Anda tidak memiliki hak akses.');
+        }
 
         $payment = $submission->latestPayment;
         if (! $payment || ! $payment->fileEntry) {

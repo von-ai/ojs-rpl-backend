@@ -27,6 +27,11 @@ class PortalAccess
         } elseif (in_array($table, ['journals', 'sections', 'issues'], true)) {
             if (in_array($role, ['manager', 'editor_in_chief', 'section_editor'], true)) {
                 $query->whereIn($table.'.'.($table === 'journals' ? 'id' : 'journal_id'), self::journalIds($user, $role));
+            } elseif ($role === 'author' && in_array($table, ['sections', 'issues'], true)) {
+                $selectedJournalId = self::selectedJournalId();
+                if ($selectedJournalId) {
+                    $query->where($table.'.journal_id', $selectedJournalId);
+                }
             }
         } elseif (in_array($table, ['copyedits', 'galleys', 'layout_assignments', 'review_rounds', 'editor_assignments', 'revisions', 'article_payments', 'production_escalations'], true)) {
             $query->whereIn($table.'.submission_id', self::visibleSubmissions($user, $role));
@@ -112,6 +117,13 @@ class PortalAccess
             $query->whereIn('submissions.journal_id', self::journalIds($user, $role));
         }
 
+        if ($role === 'author') {
+            $selectedJournalId = self::selectedJournalId();
+            if ($selectedJournalId) {
+                $query->where('submissions.journal_id', $selectedJournalId);
+            }
+        }
+
         if (in_array($role, ['editor_in_chief', 'section_editor'], true)) {
             $query->where(fn ($q) => $q->whereNull('submissions.author_id')->orWhere('submissions.author_id', '!=', $user->id))
                 ->whereNotIn('submissions.id', DB::table('submission_contributors')->select('submission_id')->where(fn ($q) => $q->where('user_id', $user->id)->orWhere('email', $user->email)));
@@ -129,5 +141,19 @@ class PortalAccess
             'editor_in_chief', 'manager', 'sysadmin' => null,
             default => $query->whereRaw('1 = 0'),
         };
+    }
+
+    public static function selectedJournalId(): ?string
+    {
+        try {
+            if (session()->has('active_journal_id')) {
+                $id = session('active_journal_id');
+
+                return is_string($id) && $id !== '' ? $id : null;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 }
