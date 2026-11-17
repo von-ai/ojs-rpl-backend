@@ -74,7 +74,28 @@ class PortalAccess
 
     public static function journalIds(User $user, string $role): \Illuminate\Database\Query\Builder
     {
-        return DB::table('user_roles')->select('journal_id')->where('user_id', $user->id)->where('role_code', $role)->whereNotNull('journal_id');
+        $query = DB::table('user_roles')->select('journal_id')->where('user_id', $user->id)->where('role_code', $role)->whereNotNull('journal_id');
+
+        try {
+            if (session()->has('active_journal_id')) {
+                $activeJournalId = session('active_journal_id');
+                if (is_string($activeJournalId) && $activeJournalId !== '') {
+                    $hasRoleInActive = DB::table('user_roles')
+                        ->where('user_id', $user->id)
+                        ->where('role_code', $role)
+                        ->where('journal_id', $activeJournalId)
+                        ->exists();
+
+                    if ($hasRoleInActive) {
+                        $query->where('journal_id', $activeJournalId);
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Sesi belum terinisialisasi
+        }
+
+        return $query;
     }
 
     public static function visibleSubmissions(User $user, string $role): Builder

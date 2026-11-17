@@ -52,6 +52,9 @@
 
     <!-- Right Section: Role Switcher, Quick Actions & User Profile -->
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Pengalih Jurnal Multi-Journal (Standar OJS) -->
+        <x-journal-switcher :current-role="$roleCode" />
+
         <!-- Pengalih Peran Multi-Role -->
         <x-role-switcher :current-role="$roleCode" />
 

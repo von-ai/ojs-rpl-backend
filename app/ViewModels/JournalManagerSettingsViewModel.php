@@ -145,6 +145,14 @@ class JournalManagerSettingsViewModel
 
     private function resolveJournal(): ?Journal
     {
+        $user = Auth::user();
+        if ($user) {
+            $active = $user->activeJournal('manager');
+            if ($active) {
+                return $active;
+            }
+        }
+
         if (Schema::hasTable('journals')) {
             return Journal::first();
         }
