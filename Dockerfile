@@ -85,6 +85,7 @@ COPY --from=frontend /app/public/build ./public/build
 RUN mkdir -p storage/app/private storage/app/public \
         storage/framework/cache/data storage/framework/sessions \
         storage/framework/views storage/logs bootstrap/cache \
+    && rm -f bootstrap/cache/*.php \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
