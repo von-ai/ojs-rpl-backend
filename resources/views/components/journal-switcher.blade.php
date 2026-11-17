@@ -10,7 +10,7 @@
     $journalsCount = count($journals);
 @endphp
 
-@if($user && $journalsCount > 0)
+@if($user && $journalsCount > 0 && $activeRole !== 'sysadmin')
 <div class="relative inline-block text-left" data-journal-switcher>
     <!-- Tombol Pemicu Pengalih Jurnal (Icon-only pada mobile, teks penuh pada layar lebar) -->
     <button
