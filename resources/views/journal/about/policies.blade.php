@@ -108,7 +108,7 @@
 
                 <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 text-xs space-y-1.5">
                     <strong class="text-emerald-950 font-bold block text-sm">
-                        {{ $journal->apc_fee ?: 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)' }}
+                        {{ $journal->apc_fee ?: 'Rp 0' }}
                     </strong>
                     <p class="text-emerald-900 leading-relaxed">
                         Penulis tidak dikenakan biaya pengiriman (submission fee), biaya penelaahan (peer-review fee), maupun biaya penerbitan (article processing charges). Seluruh proses disubsidi penuh oleh {{ $journal->publisher ?: 'Pemerintah Kota Makassar' }}.

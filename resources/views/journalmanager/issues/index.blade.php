@@ -30,37 +30,36 @@
 
     @if(isset($journal) && $journal)
         <!-- Tenant Workspace Active Context Bar -->
-        <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200/90 text-xs">
-            <div class="flex items-center gap-2 min-w-0">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-brand-maroon/10 text-brand-maroon border border-brand-maroon/20 shrink-0 uppercase tracking-wider">
+        <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white border border-gray-200/90 shadow-2xs text-xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-brand-maroon border border-rose-200/70 shrink-0">
                     Ruang Kerja Jurnal
                 </span>
                 <span class="font-semibold text-gray-900 truncate" title="{{ $journal->name }}">
                     {{ $journal->name }}
                 </span>
-                <span class="text-gray-400 hidden sm:inline">•</span>
+                <span class="text-gray-300 hidden sm:inline">•</span>
                 <span class="text-gray-500 font-mono text-[11px] hidden sm:inline">/{{ $journal->slug }}</span>
             </div>
         </div>
     @endif
 
     <!-- 4 Metrik Ringkas & Ergonomis -->
+    @php
+        $issueIcons = [
+            0 => 'book-open',
+            1 => 'clock',
+            2 => 'document-text',
+            3 => 'collection',
+        ];
+    @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-semibold text-gray-900 tabular-nums">
-                        {{ $metric['value'] }}
-                    </span>
-                    <span class="text-[11px] text-gray-400">edisi</span>
-                </div>
-            </div>
+        @foreach ($viewModel->summaryMetrics() as $idx => $metric)
+            <x-kpi-card
+                :title="$metric['title']"
+                :value="$metric['value']"
+                :icon="$issueIcons[$idx] ?? 'document-text'"
+            />
         @endforeach
     </div>
 

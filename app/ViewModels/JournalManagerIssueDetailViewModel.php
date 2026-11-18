@@ -153,9 +153,11 @@ class JournalManagerIssueDetailViewModel
                     $cleanLabel = preg_replace('/\s*\([^)]*\)/', '', $sub->activeGalley->label);
                     $cleanLabel = str_ireplace('PDF Full Text', 'PDF Teks Lengkap', $cleanLabel);
                     $cleanLabel = trim((string) $cleanLabel) ?: 'PDF Teks Lengkap';
-                    $formatLabel = "{$cleanLabel} (Versi {$sub->activeGalley->version})";
+                    $formatLabel = $cleanLabel;
+                    $galleyVersion = $sub->activeGalley->version ?? 1;
                 } else {
-                    $formatLabel = 'PDF Teks Lengkap (Versi 1)';
+                    $formatLabel = 'PDF Teks Lengkap';
+                    $galleyVersion = 1;
                 }
 
                 $payment = $sub->latestPayment;
@@ -166,6 +168,29 @@ class JournalManagerIssueDetailViewModel
                 $proofUrl = $hasProof ? route('journalmanager.submissions.payment.proof', $sub->id) : null;
                 $amountFormatted = $payment && $payment->amount_paid ? 'Rp '.number_format((float) $payment->amount_paid, 0, ',', '.') : ($payment ? 'Rp '.number_format((float) $payment->amount, 0, ',', '.') : ($isJournalPaid ? 'Rp '.number_format((float) ($issue->journal?->apc_amount ?? 500000), 0, ',', '.') : 'Gratis'));
 
+                $isPaymentCleared = ! $isJournalPaid || ($payment && ($payment->isVerified() || $payment->isWaived()));
+                $isIssuePublished = $issue->isPublished();
+
+                $canAddToIssue = false;
+                $cantAddReason = '';
+
+                if ($isIssuePublished) {
+                    $canAddToIssue = false;
+                    $cantAddReason = 'Edisi ini telah resmi terbit. Penambahan naskah baru ke daftar isi hanya dapat dilakukan pada edisi Draf atau Terjadwal.';
+                } elseif (! $isPaymentCleared) {
+                    $canAddToIssue = false;
+                    if ($paymentStatus === 'pending_verification') {
+                        $cantAddReason = 'Bukti pembayaran menunggu verifikasi redaksi. Verifikasi atau bebaskan biaya terlebih dahulu.';
+                    } elseif ($paymentStatus === 'rejected') {
+                        $cantAddReason = 'Bukti pembayaran ditolak. Perlu perbaikan bukti atau berikan pembebasan biaya terlebih dahulu.';
+                    } else {
+                        $cantAddReason = 'Pembayaran APC belum lunas. Naskah harus dibayar atau dibebaskan terlebih dahulu sebelum masuk edisi.';
+                    }
+                } else {
+                    $canAddToIssue = true;
+                    $cantAddReason = 'Masukkan ke Edisi Terbitan';
+                }
+
                 return [
                     'id' => (string) $sub->id,
                     'number' => (string) $sub->submission_number,
@@ -173,6 +198,7 @@ class JournalManagerIssueDetailViewModel
                     'section_title' => (string) ($sub->section?->name ?? 'Bidang Riset'),
                     'author_name' => (string) ($sub->author?->name ?? 'Penulis Naskah'),
                     'galley_format' => $formatLabel,
+                    'galley_version' => $galleyVersion,
                     'approved_at' => $sub->updated_at ? $sub->updated_at->translatedFormat('d M Y H:i').' WITA' : 'Tersedia',
                     'is_paid_journal' => $isJournalPaid,
                     'payment_status' => $paymentStatus,
@@ -189,6 +215,9 @@ class JournalManagerIssueDetailViewModel
                     'verification_notes' => $payment?->verification_notes,
                     'uploaded_at' => $payment?->uploaded_at?->format('d M Y H:i'),
                     'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
+                    'can_add_to_issue' => $canAddToIssue,
+                    'cant_add_reason' => $cantAddReason,
+                    'is_payment_cleared' => $isPaymentCleared,
                 ];
             })->values()->all();
         }
@@ -204,7 +233,7 @@ class JournalManagerIssueDetailViewModel
                 'actor' => 'Journal Manager',
                 'date' => $issue->published_at->translatedFormat('d M Y H:i').' WITA',
                 'description' => "Edisi {$issue->title} telah resmi dipublikasikan dan terbuka untuk pembaca.",
-                'badge_class' => 'bg-emerald-600',
+                'badge_class' => 'bg-brand-maroon',
             ];
         }
 
@@ -224,7 +253,7 @@ class JournalManagerIssueDetailViewModel
             'actor' => 'Journal Manager',
             'date' => $issue->created_at ? $issue->created_at->translatedFormat('d M Y H:i').' WITA' : 'Bulan ini',
             'description' => "Nomor terbitan Vol. {$issue->volume} No. {$issue->number} ({$issue->year}) dibuka untuk kurasi naskah.",
-            'badge_class' => 'bg-blue-500',
+            'badge_class' => 'bg-brand-maroon',
         ];
 
         return [

@@ -92,20 +92,28 @@ class JournalManagerSettingsViewModel
     {
         $journal = $this->resolveJournal();
 
+        $isPaid = (bool) ($journal?->isPaidApc() ?? false);
+        $rawApcFee = trim((string) ($journal?->apc_fee ?? ''));
+        if ($rawApcFee === '' || $rawApcFee === 'Rp 0' || str_contains($rawApcFee, 'Didanai Penuh') || str_contains($rawApcFee, 'Bebas biaya pemrosesan dan publikasi')) {
+            $computedApcFee = $isPaid ? 'Biaya Publikasi' : 'Gratis';
+        } else {
+            $computedApcFee = $rawApcFee;
+        }
+
         return [
             'focus_scope' => (string) ($journal?->focus_scope ?? 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.'),
-            'frequency' => (string) ($journal?->frequency ?? '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)'),
-            'open_access_policy' => (string) ($journal?->open_access_policy ?? 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.'),
-            'apc_fee' => (string) ($journal?->apc_fee ?? 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)'),
-            'apc_enabled' => (bool) ($journal?->isPaidApc() ?? false),
-            'apc_amount' => (string) ($journal?->apc_amount ? number_format((float) $journal->apc_amount, 0, ',', '.') : '500.000'),
+            'frequency' => (string) ($journal?->frequency ?? '2 Kali Setahun, terbit pada bulan Juni dan bulan Desember'),
+            'open_access_policy' => (string) ($journal?->open_access_policy ?? 'Jurnal ini menyediakan akses terbuka langsung ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.'),
+            'apc_fee' => $computedApcFee,
+            'apc_enabled' => $isPaid,
+            'apc_amount' => $isPaid ? (string) ($journal?->apc_amount ? number_format((float) $journal->apc_amount, 0, ',', '.') : '500.000') : '0',
             'payment_bank_name' => (string) ($journal?->payment_bank_name ?? 'Bank Sulselbar'),
             'payment_account_number' => (string) ($journal?->payment_account_number ?? '130-001-009876-5'),
-            'payment_account_holder' => (string) ($journal?->payment_account_holder ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar'),
-            'payment_instructions' => (string) ($journal?->payment_instructions ?? 'Sertakan ID Naskah pada berita transfer (contoh: SUB-2026-00106). Setelah melakukan transfer, unggah foto/berkas bukti transfer pembayaran melalui portal penulis.'),
+            'payment_account_holder' => (string) ($journal?->payment_account_holder ?? 'Badan Riset dan Inovasi Daerah Kota Makassar'),
+            'payment_instructions' => (string) ($journal?->payment_instructions ?? 'Sertakan ID Naskah pada berita transfer. Setelah melakukan transfer, unggah berkas bukti pembayaran melalui formulir di portal naskah.'),
             'is_paid' => (bool) ($journal?->isPaidApc() ?? false),
-            'peer_review_policy' => (string) ($journal?->peer_review_policy ?? 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).'),
-            'license' => (string) ($journal?->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)'),
+            'peer_review_policy' => (string) ($journal?->peer_review_policy ?? 'Penelaahan sejawat berpasangan tertutup dengan identitas penulis dan mitra bestari saling dirahasiakan selama proses evaluasi.'),
+            'license' => (string) ($journal?->license ?? 'Creative Commons Attribution 4.0 International'),
         ];
     }
 

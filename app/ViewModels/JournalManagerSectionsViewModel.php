@@ -38,7 +38,7 @@ class JournalManagerSectionsViewModel
     /**
      * Ringkasan metrik seksi bidang naskah.
      *
-     * @return array<int, array{title: string, value: int, badge_text: string, color_class: string}>
+     * @return array<int, array{title: string, value: int}>
      */
     public function summaryMetrics(): array
     {
@@ -51,20 +51,14 @@ class JournalManagerSectionsViewModel
             [
                 'title' => 'Total Bidang Naskah',
                 'value' => $total,
-                'badge_text' => 'Semua Seksi',
-                'color_class' => 'text-gray-900 bg-gray-50 border-gray-200',
             ],
             [
                 'title' => 'Aktif Menerima Naskah',
                 'value' => $active,
-                'badge_text' => 'Buka Submission',
-                'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
             [
                 'title' => 'Seksi Dinonaktifkan',
                 'value' => $closed,
-                'badge_text' => 'Tutup Submission',
-                'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
             ],
         ];
     }
@@ -107,7 +101,7 @@ class JournalManagerSectionsViewModel
                         'slug' => (string) $sec->slug,
                         'description' => (string) ($sec->description ?? ''),
                         'accepting_submissions' => $accepting,
-                        'status_label' => $accepting ? 'Buka Submission' : 'Tutup Submission',
+                        'status_label' => $accepting ? 'Menerima Naskah' : 'Pengajuan Ditutup',
                         'status_badge_class' => $accepting
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : 'bg-amber-50 text-amber-800 border-amber-200',

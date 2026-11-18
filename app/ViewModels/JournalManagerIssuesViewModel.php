@@ -72,7 +72,7 @@ class JournalManagerIssuesViewModel
     /**
      * 4 Ringkasan metrik statistik operasional terbitan jurnal.
      *
-     * @return array<int, array{title: string, value: int, description: string, badge_text: string, color_class: string}>
+     * @return array<int, array{title: string, value: int, description: string}>
      */
     public function summaryMetrics(): array
     {
@@ -117,29 +117,21 @@ class JournalManagerIssuesViewModel
                     'title' => 'Edisi Terbit Resmi',
                     'value' => $publishedCount,
                     'description' => 'Tersedia di katalog publik & terindeks',
-                    'badge_text' => 'Publik',
-                    'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
                 ],
                 [
                     'title' => 'Draf & Terjadwal',
                     'value' => $futureCount,
                     'description' => 'Dalam proses kurasi daftar isi',
-                    'badge_text' => 'Produksi',
-                    'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
                 ],
                 [
                     'title' => 'Artikel Siap Terbit',
                     'value' => $readyCount,
                     'description' => 'Galai disetujui Pemimpin Redaksi siap masuk edisi',
-                    'badge_text' => 'Antrean Redaksi',
-                    'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
                 ],
                 [
                     'title' => 'Total Artikel Terbit',
                     'value' => $totalPublishedArticles,
                     'description' => 'Akumulasi publikasi naskah resmi jurnal',
-                    'badge_text' => 'Publikasi',
-                    'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
                 ],
             ];
         }
@@ -149,29 +141,21 @@ class JournalManagerIssuesViewModel
                 'title' => 'Edisi Terbit Resmi',
                 'value' => 0,
                 'description' => 'Tersedia di katalog publik & terindeks',
-                'badge_text' => 'Publik',
-                'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
             [
                 'title' => 'Draf & Terjadwal',
                 'value' => 0,
                 'description' => 'Dalam proses kurasi daftar isi',
-                'badge_text' => 'Produksi',
-                'color_class' => 'text-amber-700 bg-amber-50 border-amber-200',
             ],
             [
                 'title' => 'Artikel Siap Terbit',
                 'value' => 0,
                 'description' => 'Galai disetujui Pemimpin Redaksi siap masuk edisi',
-                'badge_text' => 'Antrean Redaksi',
-                'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Total Artikel Terbit',
                 'value' => 0,
                 'description' => 'Akumulasi publikasi naskah resmi jurnal',
-                'badge_text' => 'Publikasi',
-                'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
         ];
     }

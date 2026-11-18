@@ -98,36 +98,107 @@
                                                 Penulis: <span class="text-gray-700 font-normal">{{ $art['authors_string'] }}</span>
                                             </p>
 
-                                            <!-- Baris Bawah: Halaman, DOI, Status Pembayaran & Unduh Galai -->
-                                            <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 mt-2 border-t border-gray-100 text-xs">
-                                                <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="font-medium text-gray-700 tabular-nums">Halaman: {{ $art['pages'] }}</span>
-                                                    <span class="text-gray-300">•</span>
-                                                    <span class="text-gray-500 tabular-nums">DOI: {{ $art['doi'] }}</span>
-                                                    <span class="text-gray-300">•</span>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0 whitespace-nowrap {{ $art['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
-                                                        {{ $art['payment_label'] ?? 'Bebas Biaya' }}
-                                                    </span>
+                                            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 tabular-nums pt-0.5">
+                                                <span class="font-medium text-gray-700">Halaman: {{ $art['pages'] }}</span>
+                                                <span class="text-gray-300">•</span>
+                                                <span class="text-gray-500">DOI: {{ $art['doi'] }}</span>
+                                            </div>
+
+                                            <!-- Baris Status Bayar, Verifikasi Pembayaran & Unduh Galai (1 Baris Terpadu) -->
+                                            <div class="pt-2.5 mt-2.5 border-t border-gray-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 text-xs">
+                                                <!-- Kiri: Status Pembayaran & Tombol Verifikasi -->
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <!-- Badge Status Pembayaran -->
+                                                    <div class="relative group inline-flex">
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-help transition-colors {{ $art['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                            @if(($art['payment_status'] ?? '') === 'verified')
+                                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            @elseif(($art['payment_status'] ?? '') === 'pending_verification')
+                                                                <svg class="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            @elseif(($art['payment_status'] ?? '') === 'free')
+                                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            @elseif(($art['payment_status'] ?? '') === 'rejected')
+                                                                <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            @else
+                                                                <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                </svg>
+                                                            @endif
+                                                            <span>{{ $art['payment_label'] ?? 'Bebas Biaya' }}</span>
+                                                        </span>
+
+                                                        <!-- Tooltip Status Bayar -->
+                                                        <div class="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col items-start z-30 w-44">
+                                                            <div class="bg-gray-900 text-white text-[11px] font-normal leading-snug px-2.5 py-1.5 rounded-md shadow-lg border border-gray-800">
+                                                                @if(($art['payment_status'] ?? '') === 'verified')
+                                                                    Pembayaran APC lunas
+                                                                @elseif(($art['payment_status'] ?? '') === 'pending_verification')
+                                                                    Menunggu verifikasi bukti transfer
+                                                                @elseif(($art['payment_status'] ?? '') === 'free')
+                                                                    Bebas biaya publikasi (Free APC)
+                                                                @elseif(($art['payment_status'] ?? '') === 'rejected')
+                                                                    Bukti transfer ditolak redaksi
+                                                                @else
+                                                                    Menunggu pembayaran APC dari penulis
+                                                                @endif
+                                                            </div>
+                                                            <div class="w-2 h-2 -mt-1 ml-4 rotate-45 bg-gray-900"></div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Tombol Verifikasi Pembayaran -->
                                                     @if(!empty($art['is_paid_journal']))
-                                                        <button
-                                                            type="button"
-                                                            onclick="document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.add('flex');"
-                                                            class="text-xs text-brand-maroon hover:underline font-semibold cursor-pointer shrink-0 whitespace-nowrap ml-0.5"
-                                                        >
-                                                            Verifikasi Pembayaran
-                                                        </button>
+                                                        <div class="relative group inline-flex">
+                                                            <button
+                                                                type="button"
+                                                                onclick="document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-art-{{ $art['id'] }}').classList.add('flex');"
+                                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-brand-maroon bg-rose-50/80 hover:bg-rose-100 hover:text-rose-950 border border-rose-200/80 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                                                            >
+                                                                <svg class="w-3.5 h-3.5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                                </svg>
+                                                                <span>Verifikasi Pembayaran</span>
+                                                            </button>
+
+                                                            <!-- Tooltip Verifikasi Pembayaran -->
+                                                            <div class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 w-48">
+                                                                <div class="bg-gray-900 text-white text-[11px] font-normal leading-snug px-2.5 py-1.5 rounded-md shadow-lg border border-gray-800 text-center">
+                                                                    Verifikasi pembayaran & bukti transfer APC
+                                                                </div>
+                                                                <div class="w-2 h-2 -mt-1 rotate-45 bg-gray-900"></div>
+                                                            </div>
+                                                        </div>
                                                     @endif
                                                 </div>
 
-                                                <a
-                                                    href="{{ $art['galley_pdf_url'] }}"
-                                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-maroon hover:underline shrink-0 whitespace-nowrap"
-                                                >
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    <span>Unduh Galai PDF</span>
-                                                </a>
+                                                <!-- Kanan: Unduh Galai PDF -->
+                                                <div class="relative group inline-flex shrink-0">
+                                                    <a
+                                                        href="{{ $art['galley_pdf_url'] }}"
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-brand-maroon border border-gray-200/90 transition-colors shrink-0 whitespace-nowrap"
+                                                    >
+                                                        <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        <span>Unduh Galai PDF</span>
+                                                    </a>
+
+                                                    <!-- Tooltip Unduh Galai PDF -->
+                                                    <div class="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover:flex flex-col items-end z-30 w-44">
+                                                        <div class="bg-gray-900 text-white text-[11px] font-normal leading-snug px-2.5 py-1.5 rounded-md shadow-lg border border-gray-800 text-right">
+                                                            Unduh galai PDF naskah final
+                                                        </div>
+                                                        <div class="w-2 h-2 -mt-1 mr-4 rotate-45 bg-gray-900"></div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -171,6 +242,15 @@
                         </span>
                     </div>
 
+                    @if($issue['status'] === 'published')
+                        <div class="px-4 py-2.5 bg-amber-50/80 border-b border-amber-200/80 text-amber-900 text-xs flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Edisi ini telah resmi terbit. Penambahan naskah baru ke daftar isi hanya dapat dilakukan pada edisi berstatus Draf atau Terjadwal.</span>
+                        </div>
+                    @endif
+
                     <div class="p-4 sm:p-5 space-y-3.5">
                         @foreach($issue['ready_articles'] as $ready)
                             <div class="p-4 rounded-xl border border-gray-200 hover:border-gray-300 bg-white shadow-2xs transition duration-150 space-y-3">
@@ -192,40 +272,125 @@
                                         </p>
                                     </div>
 
-                                    <form action="{{ route('journalmanager.issues.add-article', $issue['id']) }}" method="POST" class="shrink-0 self-start">
-                                        @csrf
-                                        <input type="hidden" name="article_id" value="{{ $ready['id'] }}">
-                                        <input type="hidden" name="article_title" value="{{ $ready['title'] }}">
-                                        <button
-                                            type="submit"
-                                            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 rounded-lg border border-blue-200 transition duration-150 shrink-0 cursor-pointer whitespace-nowrap"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            <span>Masukkan ke Edisi</span>
-                                        </button>
-                                    </form>
+                                    <!-- Tombol Icon Tambah Masukkan ke Edisi -->
+                                    <div class="shrink-0 self-start">
+                                        @if($ready['can_add_to_issue'])
+                                            <form action="{{ route('journalmanager.issues.add-article', $issue['id']) }}" method="POST" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="article_id" value="{{ $ready['id'] }}">
+                                                <input type="hidden" name="article_title" value="{{ $ready['title'] }}">
+                                                <div class="relative group/tooltip inline-block">
+                                                    <button
+                                                        type="submit"
+                                                        class="w-8 h-8 inline-flex items-center justify-center rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 shadow-2xs transition duration-150 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-blue-400"
+                                                        aria-label="Masukkan ke Edisi"
+                                                    >
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                    </button>
+                                                    <!-- Tooltip -->
+                                                    <div class="absolute bottom-full right-0 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
+                                                        <div class="px-2.5 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md shadow-md">
+                                                            Masukkan ke Edisi
+                                                        </div>
+                                                        <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45 mr-3"></div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        @else
+                                            <div class="relative group/tooltip inline-block">
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed select-none"
+                                                    aria-label="{{ $ready['cant_add_reason'] }}"
+                                                >
+                                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                </button>
+                                                <!-- Tooltip Alasan Belum Bisa Ditambahkan -->
+                                                <div class="absolute bottom-full right-0 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-end pointer-events-none z-30 max-w-xs">
+                                                    <div class="px-2.5 py-1.5 text-[11px] font-normal leading-tight text-white bg-gray-900 rounded-md shadow-md text-right">
+                                                        {{ $ready['cant_add_reason'] }}
+                                                    </div>
+                                                    <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45 mr-3"></div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
 
-                                <!-- Baris Bawah: Galai, Tagihan & Verifikasi -->
+                                <!-- Baris Bawah: Tagihan & Verifikasi Pembayaran -->
                                 <div class="flex flex-wrap items-center gap-2 pt-2.5 border-t border-gray-100 text-xs">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0 whitespace-nowrap">
-                                        {{ $ready['galley_format'] }}
-                                    </span>
+                                    <!-- Badge Status Pembayaran -->
+                                    <div class="relative group inline-flex">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-help shrink-0 whitespace-nowrap {{ $ready['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                            @if(($ready['payment_status'] ?? '') === 'verified')
+                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            @elseif(($ready['payment_status'] ?? '') === 'pending_verification')
+                                                <svg class="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            @elseif(($ready['payment_status'] ?? '') === 'free')
+                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            @elseif(($ready['payment_status'] ?? '') === 'rejected')
+                                                <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                            @endif
+                                            <span>{{ $ready['payment_label'] ?? 'Bebas Biaya' }}</span>
+                                        </span>
 
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border shrink-0 whitespace-nowrap {{ $ready['payment_badge'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
-                                        {{ $ready['payment_label'] ?? 'Bebas Biaya' }}
-                                    </span>
+                                        <!-- Tooltip Status Bayar -->
+                                        <div class="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col items-start z-30 w-44">
+                                            <div class="bg-gray-900 text-white text-[11px] font-normal leading-snug px-2.5 py-1.5 rounded-md shadow-lg border border-gray-800">
+                                                @if(($ready['payment_status'] ?? '') === 'verified')
+                                                    Pembayaran APC lunas
+                                                @elseif(($ready['payment_status'] ?? '') === 'pending_verification')
+                                                    Menunggu verifikasi bukti transfer
+                                                @elseif(($ready['payment_status'] ?? '') === 'free')
+                                                    Bebas biaya publikasi (Free APC)
+                                                @elseif(($ready['payment_status'] ?? '') === 'rejected')
+                                                    Bukti transfer ditolak redaksi
+                                                @else
+                                                    Menunggu pembayaran APC dari penulis
+                                                @endif
+                                            </div>
+                                            <div class="w-2 h-2 -mt-1 ml-4 rotate-45 bg-gray-900"></div>
+                                        </div>
+                                    </div>
 
                                     @if(!empty($ready['is_paid_journal']))
-                                        <button
-                                            type="button"
-                                            onclick="document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.add('flex');"
-                                            class="text-xs text-brand-maroon hover:underline font-semibold cursor-pointer shrink-0 whitespace-nowrap ml-1"
-                                        >
-                                            {{ !empty($ready['has_proof']) ? 'Bukti Bayar & Verifikasi' : 'Status Tagihan' }}
-                                        </button>
+                                        <div class="relative group inline-flex">
+                                            <button
+                                                type="button"
+                                                onclick="document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.remove('hidden'); document.getElementById('modal-pay-ready-{{ $ready['id'] }}').classList.add('flex');"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-brand-maroon bg-rose-50/80 hover:bg-rose-100 hover:text-rose-950 border border-rose-200/80 transition-colors cursor-pointer shrink-0 whitespace-nowrap ml-0.5"
+                                            >
+                                                <svg class="w-3.5 h-3.5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                </svg>
+                                                <span>Verifikasi Pembayaran</span>
+                                            </button>
+
+                                            <!-- Tooltip Verifikasi -->
+                                            <div class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 w-48">
+                                                <div class="bg-gray-900 text-white text-[11px] font-normal leading-snug px-2.5 py-1.5 rounded-md shadow-lg border border-gray-800 text-center">
+                                                    Verifikasi pembayaran & bukti transfer APC
+                                                </div>
+                                                <div class="w-2 h-2 -mt-1 rotate-45 bg-gray-900"></div>
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
@@ -344,18 +509,18 @@
             </div>
 
             <!-- Panel Jejak Aktivitas Linimasa -->
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 shadow-2xs space-y-3">
+            <div class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 shadow-2xs space-y-3.5">
                 <h4 class="text-xs font-semibold uppercase text-gray-500">
                     Linimasa Edisi Terbitan
                 </h4>
 
-                <div class="relative pl-4 space-y-3 border-l-2 border-gray-100 ml-1">
+                <div class="relative pl-4 space-y-3.5 border-l-2 border-gray-100 ml-1">
                     @foreach($issue['activity_timeline'] as $activity)
                         <div class="relative">
-                            <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full {{ $activity['badge_class'] }}"></div>
-                            <span class="text-[11px] font-bold text-gray-900 block leading-tight">{{ $activity['title'] }}</span>
-                            <span class="text-[10px] text-gray-500 block mt-0.5">{{ $activity['actor'] }} • {{ $activity['date'] }}</span>
-                            <p class="text-[11px] text-gray-600 mt-1 leading-snug">{{ $activity['description'] }}</p>
+                            <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full {{ $activity['badge_class'] }} ring-4 ring-white"></div>
+                            <span class="text-xs font-semibold text-gray-900 block leading-tight">{{ $activity['title'] }}</span>
+                            <span class="text-[10px] text-gray-400 block mt-0.5">{{ $activity['actor'] }} • {{ $activity['date'] }}</span>
+                            <p class="text-xs text-gray-600 mt-1 leading-snug">{{ $activity['description'] }}</p>
                         </div>
                     @endforeach
                 </div>

@@ -112,7 +112,7 @@ class ArticlePayment extends Model
             'pending_payment' => 'Menunggu Pembayaran',
             'pending_verification' => 'Menunggu Verifikasi Redaksi',
             'verified' => 'Lunas / Terverifikasi',
-            'rejected' => 'Bukti Ditolak (Perlu Perbaikan)',
+            'rejected' => 'Bukti Ditolak',
             'waived' => 'Bebas Biaya',
             default => 'Status Tidak Diketahui',
         };

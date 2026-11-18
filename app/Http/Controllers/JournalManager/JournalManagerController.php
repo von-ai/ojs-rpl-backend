@@ -7,6 +7,7 @@ namespace App\Http\Controllers\JournalManager;
 use App\Http\Controllers\Controller;
 use App\Models\Issue;
 use App\Models\Journal;
+use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
@@ -190,7 +191,7 @@ class JournalManagerController extends Controller
                 }
             }
 
-            $displayRole = str_contains($rawRole, '_') ? UserRole::roleLabel($roleCode) : $rawRole;
+            $displayRole = UserRole::roleLabel($roleCode);
 
             return redirect()->route('journalmanager.users.index')
                 ->with('status', "Peran '{$displayRole}' berhasil ditetapkan kepada pengguna.");
@@ -249,6 +250,45 @@ class JournalManagerController extends Controller
         } catch (DomainException $e) {
             return redirect()->route('journalmanager.sections.index')
                 ->withErrors(['name' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Memperbarui informasi seksi / bidang naskah.
+     */
+    public function updateSection(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $section = Section::where('journal_id', $journal->id)->where('id', $id)->firstOrFail();
+
+            $this->journalManagerService->updateSection($section, $request->all(), Auth::user());
+
+            return redirect()->route('journalmanager.sections.index')
+                ->with('status', "Bidang naskah '{$section->name}' berhasil diperbarui.");
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.sections.index')
+                ->withErrors(['section' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Mengubah status penerimaan naskah (buka / tutup).
+     */
+    public function toggleSectionStatus(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $section = Section::where('journal_id', $journal->id)->where('id', $id)->firstOrFail();
+
+            $updated = $this->journalManagerService->toggleSectionStatus($section, Auth::user());
+            $statusLabel = $updated->accepting_submissions ? 'dibuka kembali untuk pengajuan naskah baru' : 'resmi ditutup untuk pengajuan naskah';
+
+            return redirect()->route('journalmanager.sections.index')
+                ->with('status', "Status bidang naskah '{$updated->name}' berhasil diubah: saat ini {$statusLabel}.");
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.sections.index')
+                ->withErrors(['section' => $e->getMessage()]);
         }
     }
 

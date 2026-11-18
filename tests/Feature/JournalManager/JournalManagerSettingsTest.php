@@ -54,8 +54,8 @@ class JournalManagerSettingsTest extends TestCase
         $response->assertSee('Inovasi Daerah &amp; Kebijakan Publik', false);
         $response->assertSee('Sosial Humaniora &amp; Tata Kelola', false);
         $response->assertSee('Teknologi &amp; Infrastruktur Berkelanjutan', false);
-        $response->assertSee('Buka Submission');
-        $response->assertSee('Tutup Submission');
+        $response->assertSee('Menerima Naskah');
+        $response->assertSee('Pengajuan Ditutup');
 
         // Modal Form Buat Seksi
         $response->assertSee('Tambah Bidang Naskah Baru');
