@@ -5,6 +5,7 @@
     'iconBg' => null,
     'iconColor' => null,
     'description' => null,
+    'valueClass' => null,
 ])
 
 @php
@@ -149,7 +150,7 @@
             {{ $title }}
         </span>
         <div class="mt-1 flex items-baseline">
-            <span class="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">
+            <span class="{{ $valueClass ?? 'text-2xl font-bold text-gray-900 tabular-nums tracking-tight' }} truncate block" title="{{ $value }}">
                 {{ $value }}
             </span>
         </div>
