@@ -203,6 +203,8 @@ Route::middleware(['auth', 'role.access:manager'])->prefix('journalmanager')->na
     // 3. Bidang Naskah (Sections)
     Route::get('/sections', [JournalManagerController::class, 'sections'])->name('sections.index');
     Route::post('/sections', [JournalManagerController::class, 'storeSection'])->name('sections.store');
+    Route::put('/sections/{id}', [JournalManagerController::class, 'updateSection'])->name('sections.update');
+    Route::post('/sections/{id}/toggle-status', [JournalManagerController::class, 'toggleSectionStatus'])->name('sections.toggle-status');
 
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
@@ -253,6 +255,7 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
     Route::post('/users/revoke-sysadmin', [SysAdminController::class, 'revokeSysAdminRole'])->name('users.revoke-sysadmin');
     Route::post('/users/assign-journal-role', [SysAdminController::class, 'assignJournalRole'])->name('users.assign-journal-role');
     Route::post('/users/revoke-journal-role', [SysAdminController::class, 'revokeJournalRole'])->name('users.revoke-journal-role');
+    Route::post('/users/reset-password', [SysAdminController::class, 'resetPassword'])->name('users.reset-password');
     Route::post('/users/import', [SysAdminController::class, 'importUsers'])->name('users.import');
 
     // 3. Pengaturan Platform & Kesehatan Server

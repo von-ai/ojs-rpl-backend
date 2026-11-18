@@ -283,6 +283,8 @@ class SysAdminService
                 'expertise_keywords' => ['Platform Superadmin', 'Sistem Infrastruktur IT'],
             ]);
 
+            $user->touch();
+
             // Kirim surel notifikasi
             if (! empty($user->email)) {
                 try {
@@ -337,6 +339,7 @@ class SysAdminService
 
             return DB::transaction(function () use ($user, $sysadminRole, $actor) {
                 $sysadminRole->delete();
+                $user->touch();
 
                 // Kirim notifikasi surel pencabutan
                 if (! empty($user->email)) {
@@ -413,6 +416,8 @@ class SysAdminService
                 ]
             );
 
+            $user->touch();
+
             // Catat log audit
             AuditLog::record([
                 'journal_id' => $journal->id,
@@ -460,6 +465,7 @@ class SysAdminService
 
         return DB::transaction(function () use ($user, $journal, $roleCode, $userRole, $actor) {
             $userRole->delete();
+            $user->touch();
 
             // Catat log audit
             AuditLog::record([

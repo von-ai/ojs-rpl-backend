@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -142,10 +143,40 @@ class SysAdminController extends Controller
     {
         $role = (string) $request->query('role', 'all');
         $search = (string) $request->query('q', '');
+        $page = (int) $request->query('page', 1);
 
-        $viewModel = new SysAdminUsersViewModel($role, $search);
+        $viewModel = new SysAdminUsersViewModel($role, $search, $page);
 
         return view('sysadmin.users.index', compact('viewModel'));
+    }
+
+    /**
+     * Memicu pengiriman tautan reset kata sandi ke email pengguna.
+     */
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $this->resolveActor();
+        $email = (string) $request->input('email', '');
+
+        try {
+            $normalizedEmail = strtolower(trim($email));
+            $user = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+
+            if (! $user) {
+                return redirect()->route('sysadmin.users.index')
+                    ->withErrors(['email' => "Pengguna dengan alamat email '{$email}' tidak ditemukan di sistem."]);
+            }
+
+            Password::sendResetLink(['email' => $user->email]);
+
+            return redirect()->route('sysadmin.users.index')
+                ->with('status', "Tautan reset kata sandi berhasil dikirimkan ke alamat email {$user->email}.");
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('sysadmin.users.index')
+                ->withErrors(['email' => 'Gagal mengirim tautan reset sandi: '.$e->getMessage()]);
+        }
     }
 
     /**
