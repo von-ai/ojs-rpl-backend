@@ -19,7 +19,7 @@
         <button
             type="button"
             onclick="openAddJournalModal()"
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition self-start sm:self-center cursor-pointer"
+            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-none transition self-start sm:self-center cursor-pointer"
             title="Daftarkan Instansi Jurnal Baru"
         >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,30 +30,29 @@
     </div>
 
     <!-- 4 Metrik Ringkas Multi-Jurnal -->
+    @php
+        $journalIcons = [
+            0 => 'collection',
+            1 => 'check-circle',
+            2 => 'calendar',
+            3 => 'archive',
+        ];
+    @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 truncate" title="{{ $metric['title'] }}">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums shrink-0 {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-semibold text-gray-900 tabular-nums">
-                        {{ $metric['value'] }}
-                    </span>
-                    <span class="text-[11px] text-gray-400">{{ $metric['unit'] ?? 'jurnal' }}</span>
-                </div>
-            </div>
+        @foreach ($viewModel->summaryMetrics() as $idx => $metric)
+            <x-kpi-card
+                :title="$metric['title']"
+                :value="$metric['value']"
+                :icon="$journalIcons[$idx] ?? 'collection'"
+            />
         @endforeach
     </div>
 
     <!-- Main Container: Filter Tabs, Pencarian, & Tabel Jurnal -->
-    <div class="bg-white rounded-xl border border-gray-200/90 shadow-2xs overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200/90 shadow-none overflow-hidden">
 
         <!-- Filter Tabs & Search Bar Terpadu -->
-        <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
+        <div class="p-3.5 sm:p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Status -->
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none" aria-label="Filter Status Jurnal">
                 @php
@@ -65,7 +64,7 @@
                     @endphp
                     <a
                         href="{{ route('sysadmin.journals.index', ['status' => $tabKey, 'q' => request('q')]) }}"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap {{ $isActive ? 'bg-brand-maroon text-white font-semibold shadow-none' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
                     >
                         <span>{{ $tab['label'] }}</span>
                         <span class="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] rounded-full tabular-nums {{ $isActive ? 'bg-white/20 text-white font-bold' : 'bg-gray-200/70 text-gray-600' }}">
@@ -88,7 +87,7 @@
                     name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari nama jurnal, slug, atau ISSN..."
-                    class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
                 @if(request('q'))
                     <a
@@ -108,56 +107,45 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase">
-                        <th scope="col" class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 min-w-64 max-w-md">INSTANSI JURNAL</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">IDENTITAS &amp; ISSN</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">PENANGGUNG JAWAB</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 min-w-48 max-w-xs">EDISI TERKINI</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-center whitespace-nowrap">STATUS</th>
-                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">AKSI</th>
+                    <tr class="bg-gray-50/80 border-b border-gray-200 text-gray-600">
+                        <th scope="col" class="py-3 px-3 text-center whitespace-nowrap w-12 text-[11px] uppercase tracking-wider font-semibold">NO</th>
+                        <th scope="col" class="py-3 px-4 min-w-56 text-[11px] uppercase tracking-wider font-semibold">INSTANSI JURNAL</th>
+                        <th scope="col" class="py-3 px-4 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">IDENTITAS &amp; ISSN</th>
+                        <th scope="col" class="py-3 px-4 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">PENANGGUNG JAWAB</th>
+                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">TOTAL NASKAH</th>
+                        <th scope="col" class="py-3 px-4 min-w-44 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">EDISI TERKINI</th>
+                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">STATUS</th>
+                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($viewModel->journals() as $journal)
                         <tr class="hover:bg-gray-50/70 transition duration-150">
                             <!-- Kolom NO -->
-                            <td class="py-4 px-3 sm:px-4 align-top text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+                            <td class="py-3.5 px-3 text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
                                 {{ $loop->iteration }}
                             </td>
 
                             <!-- Kolom Instansi Jurnal -->
-                            <td class="py-4 px-4 sm:px-6 align-top min-w-64 max-w-md">
-                                <div class="space-y-1">
+                            <td class="py-3.5 px-4 min-w-56">
+                                <div>
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-sm sm:text-[15px]"
+                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-xs sm:text-sm"
                                         title="Buka website publik {{ $journal['name'] }}"
                                     >
                                         {{ $journal['name'] }}
                                     </a>
-                                    @if (!empty($journal['description']))
-                                        <p class="text-xs text-gray-500 leading-relaxed line-clamp-2" title="{{ $journal['description'] }}">
-                                            {{ $journal['description'] }}
-                                        </p>
-                                    @endif
-                                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-gray-400 pt-0.5">
-                                        <span class="inline-flex items-center gap-1 text-gray-500 bg-gray-100 px-2 py-0.5 rounded text-[11px]">
-                                            <span class="text-gray-400">slug:</span> /{{ $journal['slug'] }}
-                                        </span>
-                                        <span class="text-gray-300">•</span>
-                                        <span class="inline-flex items-center gap-1 text-gray-500 text-[11px]">
-                                            <span>Total Naskah:</span>
-                                            <strong class="font-semibold text-gray-700 tabular-nums">{{ $journal['total_submissions'] }}</strong>
-                                        </span>
-                                    </div>
+                                    <span class="inline-block text-[11px] text-gray-400 font-normal mt-0.5">
+                                        /{{ $journal['slug'] }}
+                                    </span>
                                 </div>
                             </td>
 
                             <!-- Kolom Identitas & ISSN -->
-                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
-                                <div class="space-y-1 text-xs">
+                            <td class="py-3.5 px-4 whitespace-nowrap">
+                                <div class="space-y-0.5 text-xs">
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-gray-400 text-[10px] font-semibold uppercase">P-ISSN</span>
                                         <span class="text-gray-800 font-medium tabular-nums">{{ $journal['issn'] ?? '—' }}</span>
@@ -169,24 +157,28 @@
                                 </div>
                             </td>
 
-                            <!-- Kolom Kontak Utama -->
-                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
-                                <div>
-                                    <span class="font-medium text-gray-800 block text-xs truncate max-w-48" title="{{ $journal['primary_contact'] }}">
-                                        {{ $journal['primary_contact'] }}
-                                    </span>
-                                    <span class="text-[10px] text-gray-400 block mt-0.5">Kontak Utama / PIC</span>
-                                </div>
+                            <!-- Kolom Penanggung Jawab -->
+                            <td class="py-3.5 px-4 whitespace-nowrap">
+                                <span class="font-medium text-gray-800 block text-xs truncate max-w-48" title="{{ $journal['primary_contact'] }}">
+                                    {{ $journal['primary_contact'] }}
+                                </span>
+                            </td>
+
+                            <!-- Kolom Total Naskah -->
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 tabular-nums">
+                                    {{ number_format($journal['total_submissions'], 0, ',', '.') }}
+                                </span>
                             </td>
 
                             <!-- Kolom Edisi Terkini -->
-                            <td class="py-4 px-4 sm:px-6 align-top min-w-48 max-w-xs">
+                            <td class="py-3.5 px-4 min-w-44 max-w-xs">
                                 <div>
                                     @if(!empty($journal['current_issue_title']) && $journal['current_issue_title'] !== 'Belum ada terbitan')
-                                        <span class="text-xs font-normal text-gray-800 block line-clamp-2 leading-relaxed" title="{{ $journal['current_issue_title'] }}">
+                                        <span class="text-xs font-medium text-gray-800 block line-clamp-1 leading-snug" title="{{ $journal['current_issue_title'] }}">
                                             {{ $journal['current_issue_title'] }}
                                         </span>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 mt-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 mt-0.5">
                                             Edisi Aktif Terpublikasi
                                         </span>
                                     @else
@@ -198,61 +190,67 @@
                             </td>
 
                             <!-- Kolom Status -->
-                            <td class="py-4 px-4 sm:px-6 align-top text-center whitespace-nowrap">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border {{ $journal['status_badge_class'] }}">
                                     {{ $journal['status_label'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Aksi -->
-                            <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
-                                <div class="inline-flex items-center gap-1.5 justify-end">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center gap-1.5 justify-center">
                                     <!-- Tombol Edit Metadata Jurnal -->
                                     <button
                                         type="button"
                                         onclick='openEditJournalModal(@json($journal))'
-                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md text-white bg-brand-maroon hover:bg-brand-maroon/90 active:bg-brand-maroon transition shadow-2xs cursor-pointer"
-                                        title="Sunting identitas dan metadata instansi jurnal"
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-brand-maroon bg-red-50 hover:bg-brand-maroon hover:text-white border border-red-200/90 transition shadow-none cursor-pointer"
+                                        data-tooltip="Sunting Identitas Jurnal"
+                                        aria-label="Sunting Identitas Jurnal"
                                     >
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        <span>Edit</span>
                                     </button>
 
                                     <!-- Tombol Lihat Website Publik -->
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition shadow-2xs"
-                                        title="Buka website publik jurnal (tab baru)"
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200/90 transition shadow-none cursor-pointer"
+                                        data-tooltip="Kunjungi Website Publik"
+                                        aria-label="Kunjungi Website Publik"
                                     >
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
-                                        <span>Web</span>
                                     </a>
 
-                                    <!-- Tombol Status -->
+                                    <!-- Tombol Ubah Status Jurnal -->
                                     <form action="{{ route('sysadmin.journals.update-status', $journal['id']) }}" method="POST" class="inline">
                                         @csrf
                                         @if($journal['status'] === 'active')
                                             <input type="hidden" name="status" value="archived">
                                             <button
                                                 type="submit"
-                                                class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition cursor-pointer"
-                                                title="Arsipkan instansi jurnal ini"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white border border-amber-200/90 transition shadow-none cursor-pointer"
+                                                data-tooltip="Arsipkan Publikasi Jurnal"
+                                                aria-label="Arsipkan Publikasi Jurnal"
                                             >
-                                                Arsipkan
+                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                </svg>
                                             </button>
                                         @else
                                             <input type="hidden" name="status" value="active">
                                             <button
                                                 type="submit"
-                                                class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition cursor-pointer"
-                                                title="Aktifkan kembali publikasi jurnal"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200/90 transition shadow-none cursor-pointer"
+                                                data-tooltip="Aktifkan Publikasi Jurnal"
+                                                aria-label="Aktifkan Publikasi Jurnal"
                                             >
-                                                Aktifkan
+                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
                                             </button>
                                         @endif
                                     </form>
@@ -261,7 +259,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 px-4 text-center">
+                            <td colspan="8" class="py-12 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
                                     <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
                                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -353,7 +351,7 @@
                     required
                     placeholder="Contoh: Jurnal Kebijakan Publik Makassar"
                     oninput="handleJournalNameInput(this.value)"
-                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
             </div>
 
@@ -368,7 +366,7 @@
                         name="slug"
                         required
                         placeholder="jkpm-makassar"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                     <p class="text-[11px] text-gray-400 mt-0.5">Akses via: domain/slug</p>
                 </div>
@@ -382,7 +380,7 @@
                         name="primary_contact"
                         required
                         placeholder="Nama Pejabat / Pengelola"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
             </div>
@@ -395,7 +393,7 @@
                     id="manager_user_id"
                     name="manager_user_id"
                     onchange="if(this.options[this.selectedIndex].dataset.name) { document.getElementById('primary_contact').value = this.options[this.selectedIndex].dataset.name; }"
-                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
                     <option value="">-- Pilih Akun Pengguna Terdaftar (Opsional) --</option>
                     @foreach ($viewModel->selectableUsers() as $userOption)
@@ -419,7 +417,7 @@
                         id="issn"
                         name="issn"
                         placeholder="2655-xxxx"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
                 <div>
@@ -431,7 +429,7 @@
                         id="eissn"
                         name="eissn"
                         placeholder="2722-xxxx"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
             </div>
@@ -445,7 +443,7 @@
                     name="description"
                     rows="2"
                     placeholder="Tuliskan fokus, ruang lingkup, dan tujuan penerbitan jurnal ilmiah..."
-                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 ></textarea>
             </div>
 
@@ -459,7 +457,7 @@
                 </button>
                 <button
                     type="submit"
-                    class="px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition cursor-pointer"
+                    class="px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-none transition cursor-pointer"
                 >
                     Simpan &amp; Inisialisasi Jurnal
                 </button>
@@ -513,7 +511,7 @@
                     id="edit_name"
                     name="name"
                     required
-                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
             </div>
 
@@ -527,7 +525,7 @@
                         id="edit_slug"
                         name="slug"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                     <p class="text-[11px] text-gray-400 mt-0.5">Akses via: domain/slug</p>
                 </div>
@@ -540,7 +538,7 @@
                         id="edit_primary_contact"
                         name="primary_contact"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
             </div>
@@ -555,7 +553,7 @@
                         id="edit_issn"
                         name="issn"
                         placeholder="2655-xxxx"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
                 <div>
@@ -567,7 +565,7 @@
                         id="edit_eissn"
                         name="eissn"
                         placeholder="2722-xxxx"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
             </div>
@@ -581,7 +579,7 @@
                     name="description"
                     rows="2"
                     placeholder="Tuliskan fokus, ruang lingkup, dan tujuan penerbitan jurnal ilmiah..."
-                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
+                    class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 ></textarea>
             </div>
 
@@ -595,7 +593,7 @@
                 </button>
                 <button
                     type="submit"
-                    class="px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition cursor-pointer"
+                    class="px-4 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-none transition cursor-pointer"
                 >
                     Simpan Perubahan
                 </button>

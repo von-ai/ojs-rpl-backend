@@ -307,7 +307,7 @@ class SysAdminJournalsViewModel
                         },
                         'total_submissions' => $j->submissions()->count(),
                         'current_issue_title' => $j->currentIssue?->title ?? 'Belum ada terbitan',
-                        'primary_contact' => $j->publisher ?? 'Pengelola Jurnal',
+                        'primary_contact' => trim(str_replace('(SysAdmin)', '', (string) ($j->publisher ?? 'Pengelola Jurnal'))),
                         'url_public' => '/'.$j->slug,
                     ];
                 })->toArray();
