@@ -164,23 +164,18 @@
 
                             <!-- 2. Kolom Nama Pengguna (Klik Nama Membuka Modal Detail) -->
                             <td class="py-3.5 px-4 sm:px-5">
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <div class="w-8 h-8 rounded-full bg-brand-maroon/10 text-brand-maroon font-bold text-xs flex items-center justify-center shrink-0">
-                                        {{ $user['initials'] ?? 'U' }}
-                                    </div>
-                                    <div class="min-w-0">
-                                        <button
-                                            type="button"
-                                            onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                            class="font-semibold text-gray-900 hover:text-brand-maroon transition text-left leading-tight cursor-pointer truncate max-w-xs block"
-                                            title="Klik untuk melihat detail profil pengguna"
-                                        >
-                                            {{ $user['name'] }}
-                                        </button>
-                                        <span class="text-[11px] text-gray-400 block mt-0.5 truncate">
-                                            Terdaftar: {{ $user['created_at'] }}
-                                        </span>
-                                    </div>
+                                <div class="min-w-0">
+                                    <button
+                                        type="button"
+                                        onclick="openUserDetailModal('{{ $user['id'] }}')"
+                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition text-left leading-tight cursor-pointer truncate max-w-xs block"
+                                        title="Klik untuk melihat detail profil pengguna"
+                                    >
+                                        {{ $user['name'] }}
+                                    </button>
+                                    <span class="text-[11px] text-gray-400 block mt-0.5 truncate">
+                                        Terdaftar: {{ $user['created_at'] }}
+                                    </span>
                                 </div>
                             </td>
 
@@ -511,12 +506,12 @@
 <!-- Modal Dialog 1: Detail Profil Pengguna                                     -->
 <!-- ========================================================================= -->
 <div id="modal-user-detail" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-detail-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeUserDetailModal()"></div>
 
         <!-- Panel Konten Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-none transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 my-auto">
             <!-- Header Modal -->
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
@@ -644,12 +639,12 @@
 <!-- Modal Dialog 2: Tetapkan / Kelola Peran Jurnal Pengguna                    -->
 <!-- ========================================================================= -->
 <div id="modal-journal-roles" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-assign-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeAssignRoleModal()"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-none transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
@@ -828,12 +823,12 @@
 <!-- Modal Dialog 3: Kirim Tautan Reset Sandi Pengguna                          -->
 <!-- ========================================================================= -->
 <div id="modal-reset-password" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-reset-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeResetPasswordModal()"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-none transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200 space-y-4">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
@@ -901,12 +896,12 @@
 <!-- Modal Dialog 4: Impor Pengguna CSV Massal                                 -->
 <!-- ========================================================================= -->
 <div id="modal-import-users" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-import-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="document.getElementById('modal-import-users').classList.add('hidden')"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-none transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
