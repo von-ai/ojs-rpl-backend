@@ -16,7 +16,7 @@
         </a>
 
         <!-- Desktop Minimize / Maximize Toggle Button -->
-        <button id="sidebar-collapse-toggle-btn" type="button" class="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-hidden transition shrink-0" title="Kecilkan / Perluas Navigasi">
+        <button id="sidebar-collapse-toggle-btn" type="button" class="sidebar-collapse-btn w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-hidden transition shrink-0" title="Kecilkan / Perluas Navigasi">
             <svg id="collapse-icon-left" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>

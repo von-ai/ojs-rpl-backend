@@ -11,6 +11,7 @@
     'panelClass' => '',
     'containerClass' => '',
     'autoSubmit' => false,
+    'shadow' => true,
 ])
 
 @php
@@ -94,7 +95,7 @@
     <!-- Custom Trigger Button -->
     <button
         type="button"
-        class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-md px-3 py-2.5 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon {{ $buttonClass }}"
+        class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-md px-3 py-2.5 text-gray-700 font-medium flex items-center justify-between gap-2 {{ ($shadow && !str_contains($buttonClass, 'shadow-none')) ? 'shadow-2xs' : 'shadow-none' }} transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon {{ $buttonClass }}"
         id="{{ $id }}-trigger"
         aria-controls="{{ $id }}-listbox"
         aria-haspopup="listbox"

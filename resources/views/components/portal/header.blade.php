@@ -20,7 +20,7 @@
 <header class="h-16 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 shrink-0 sticky top-0 z-20 select-none">
     <!-- Left Section: Mobile Sidebar Trigger & Breadcrumb -->
     <div class="flex items-center gap-3 min-w-0">
-        <!-- Mobile Sidebar Trigger -->
+        <!-- Mobile Sidebar Drawer Trigger -->
         <button
             id="open-sidebar-btn"
             type="button"
@@ -79,8 +79,9 @@
                 @csrf
                 <button
                     type="submit"
-                    title="Keluar dari akun"
-                    aria-label="Keluar dari akun"
+                    data-tooltip="Keluar"
+                    title="Keluar"
+                    aria-label="Keluar"
                     class="min-w-9 min-h-9 p-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

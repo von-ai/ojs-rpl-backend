@@ -179,7 +179,100 @@ document.addEventListener('focusin', event => {
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeAllCustomDropdowns({ restoreFocus: true });
 });
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCustomDropdowns);
-else initCustomDropdowns();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initCustomDropdowns();
+        initSidebarCollapse();
+    });
+} else {
+    initCustomDropdowns();
+    initSidebarCollapse();
+}
 window.initCustomDropdowns = initCustomDropdowns;
 window.closeAllCustomDropdowns = closeAllCustomDropdowns;
+window.initSidebarCollapse = initSidebarCollapse;
+
+function initSidebarCollapse() {
+    if (window.__siridaSidebarInitialized) {
+        return;
+    }
+    const sidebar = document.querySelector('.portal-sidebar') || document.querySelector('aside[id$="-sidebar"]');
+    if (!sidebar) {
+        return;
+    }
+    window.__siridaSidebarInitialized = true;
+
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const openBtn = document.getElementById('open-sidebar-btn');
+    const closeBtn = document.getElementById('close-sidebar-btn');
+    const collapseBtn = document.getElementById('sidebar-collapse-toggle-btn');
+    const bottomCollapseBtn = document.getElementById('sidebar-bottom-collapse-btn');
+    const iconLeft = document.getElementById('collapse-icon-left');
+    const iconRight = document.getElementById('collapse-icon-right');
+    const bottomIconLeft = document.getElementById('bottom-collapse-icon-left');
+    const bottomIconRight = document.getElementById('bottom-collapse-icon-right');
+
+    const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
+
+    function applyCollapseState(collapsed) {
+        if (collapsed) {
+            sidebar.classList.add('sidebar-collapsed');
+            iconLeft?.classList.add('hidden');
+            iconRight?.classList.remove('hidden');
+            bottomIconLeft?.classList.add('hidden');
+            bottomIconRight?.classList.remove('hidden');
+            if (collapseBtn) collapseBtn.setAttribute('title', 'Perluas Navigasi');
+            if (bottomCollapseBtn) {
+                bottomCollapseBtn.setAttribute('title', 'Perluas Sidebar');
+                const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                if (label) label.textContent = 'Perluas Sidebar';
+            }
+        } else {
+            sidebar.classList.remove('sidebar-collapsed');
+            iconLeft?.classList.remove('hidden');
+            iconRight?.classList.add('hidden');
+            bottomIconLeft?.classList.remove('hidden');
+            bottomIconRight?.classList.add('hidden');
+            if (collapseBtn) collapseBtn.setAttribute('title', 'Kecilkan Navigasi');
+            if (bottomCollapseBtn) {
+                bottomCollapseBtn.setAttribute('title', 'Kecilkan Sidebar');
+                const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                if (label) label.textContent = 'Kecilkan Sidebar';
+            }
+        }
+    }
+
+    if (window.innerWidth >= 1024 && localStorage.getItem(STORAGE_KEY) === '1') {
+        applyCollapseState(true);
+    }
+
+    function toggleSidebarDesktop() {
+        const nextState = !sidebar.classList.contains('sidebar-collapsed');
+        applyCollapseState(nextState);
+        localStorage.setItem(STORAGE_KEY, nextState ? '1' : '0');
+    }
+
+    collapseBtn?.addEventListener('click', toggleSidebarDesktop);
+    bottomCollapseBtn?.addEventListener('click', toggleSidebarDesktop);
+
+    function toggleMobileDrawer(open) {
+        if (open) {
+            sidebar.classList.remove('-translate-x-full');
+            backdrop?.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            backdrop?.classList.add('hidden');
+        }
+    }
+
+    // Tombol drawer hanya untuk mobile (<1024px)
+    openBtn?.addEventListener('click', function () {
+        toggleMobileDrawer(true);
+    });
+    closeBtn?.addEventListener('click', function () {
+        toggleMobileDrawer(false);
+    });
+    backdrop?.addEventListener('click', function () {
+        toggleMobileDrawer(false);
+    });
+}

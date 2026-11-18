@@ -72,10 +72,22 @@
 }
 
 /* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) — Berlaku Seragam di Seluruh Portal */
+.sidebar-collapse-btn {
+    display: none !important;
+}
+
 @media (min-width: 1024px) {
+    .sidebar-collapse-btn {
+        display: inline-flex !important;
+    }
+
     .portal-sidebar,
     aside[id$="-sidebar"] {
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar-collapse-toggle-btn {
+        display: inline-flex !important;
     }
 
     .portal-sidebar.sidebar-collapsed,
@@ -110,7 +122,7 @@
 
     .portal-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn,
     aside[id$="-sidebar"].sidebar-collapsed #sidebar-collapse-toggle-btn {
-        display: flex !important;
+        display: inline-flex !important;
         width: 2.25rem !important;
         height: 2.25rem !important;
         margin: auto !important;
@@ -158,4 +170,5 @@
 }
 .custom-dropdown-btn:disabled { opacity: .6; cursor: not-allowed; }
 .custom-dropdown-btn[aria-invalid="true"] { border-color: var(--color-red-500); }
+.custom-dropdown-btn.shadow-none { box-shadow: none !important; }
 .custom-dropdown-item:focus-visible { outline: 2px solid var(--color-brand-maroon); outline-offset: -2px; }

@@ -18,8 +18,9 @@
         data-journal-switcher-trigger
         aria-haspopup="true"
         aria-expanded="false"
-        aria-label="Beralih konteks jurnal aktif (Saat ini: {{ $activeJournal?->name ?? 'Jurnal' }})"
-        title="Jurnal Aktif: {{ $activeJournal?->name ?? 'Pilih Jurnal' }} — Klik untuk beralih jurnal"
+        aria-label="Beralih Jurnal"
+        data-tooltip="Beralih Jurnal"
+        title="Beralih Jurnal"
         class="inline-flex items-center justify-center gap-2 p-2 md:px-3 md:py-1.5 min-w-9 min-h-9 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
     >
         <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

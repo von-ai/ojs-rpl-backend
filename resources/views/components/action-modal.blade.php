@@ -1,7 +1,7 @@
 <!-- Reusable Action Confirmation & Validation Modal (BRIDA Modern Design System) -->
 <div 
     id="action-confirm-modal" 
-    class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-gray-950/45 backdrop-blur-xs transition-opacity duration-200"
+    class="fixed inset-0 z-50 hidden overflow-y-auto items-center justify-center p-3 sm:p-4 bg-gray-950/45 backdrop-blur-xs transition-opacity duration-200"
     role="dialog" 
     aria-modal="true" 
     aria-labelledby="action-modal-title"
@@ -10,7 +10,7 @@
     <!-- Modal Card Container -->
     <div 
         id="action-modal-card" 
-        class="relative w-full max-w-md bg-white rounded-2xl border border-gray-200/90 shadow-2xl overflow-hidden transition-all duration-200 transform scale-95 opacity-0"
+        class="relative w-full max-w-md my-auto bg-white rounded-2xl border border-gray-200/90 shadow-2xl overflow-hidden transition-all duration-200 transform scale-95 opacity-0"
     >
         <!-- Tombol Tutup (X) -->
         <button 
