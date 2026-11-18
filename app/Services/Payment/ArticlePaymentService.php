@@ -19,6 +19,24 @@ use Illuminate\Support\Str;
 
 class ArticlePaymentService
 {
+    /** @return array{can_upload: bool, can_verify: bool, can_reject: bool, can_waive: bool} */
+    public function availableActions(Submission $submission, ?ArticlePayment $payment): array
+    {
+        if (! $submission->journal?->isPaidApc()) {
+            return ['can_upload' => false, 'can_verify' => false, 'can_reject' => false, 'can_waive' => false];
+        }
+
+        $status = $payment?->status;
+
+        return [
+            'can_upload' => in_array($submission->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)
+                && ($payment === null || in_array($status, ['pending_payment', 'rejected'], true)),
+            'can_verify' => $status === 'pending_verification',
+            'can_reject' => $status === 'pending_verification',
+            'can_waive' => $payment === null || in_array($status, ['pending_payment', 'pending_verification', 'rejected'], true),
+        ];
+    }
+
     /**
      * Mengambil atau menginisialisasi catatan pembayaran untuk naskah jika jurnal berbayar.
      */
@@ -76,19 +94,19 @@ class ArticlePaymentService
             if ($submission->status === 'published') {
                 throw new DomainException('Bukti pembayaran tidak dapat diubah setelah naskah terbit.');
             }
-            if (! in_array($submission->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)) {
-                throw new DomainException('Pembayaran hanya dapat dilakukan setelah naskah dinyatakan diterima untuk publikasi oleh dewan redaksi.');
-            }
-
             if (! $submission->journal?->isPaidApc()) {
                 throw new DomainException('Jurnal ini tidak memungut biaya publikasi (Gratis / Diamond Open Access). Anda tidak perlu mengunggah bukti pembayaran.');
+            }
+
+            if (! in_array($submission->status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled'], true)) {
+                throw new DomainException('Pembayaran hanya dapat dilakukan setelah naskah dinyatakan diterima untuk publikasi oleh dewan redaksi.');
             }
 
             $payment = $this->resolveOrCreatePayment($submission, $author);
             if (! $payment) {
                 throw new DomainException('Gagal memproses data tagihan pembayaran naskah.');
             }
-            if (! in_array($payment->status, ['pending_payment', 'rejected'], true)) {
+            if (! $this->availableActions($submission, $payment)['can_upload']) {
                 throw new DomainException('Bukti hanya dapat diunggah untuk tagihan yang menunggu pembayaran atau bukti yang ditolak.');
             }
 
@@ -139,7 +157,7 @@ class ArticlePaymentService
         return DB::transaction(function () use ($payment, $verifier, $role, $notes) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
-            if ($payment->status !== 'pending_verification') {
+            if (! $this->availableActions($payment->submission, $payment)['can_verify']) {
                 throw new DomainException('Pembayaran tidak sedang menunggu verifikasi.');
             }
             if ($payment->fileEntry?->virus_scan_status !== 'clean') {
@@ -171,7 +189,7 @@ class ArticlePaymentService
         return DB::transaction(function () use ($payment, $verifier, $role, $reason) {
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
-            if ($payment->status !== 'pending_verification') {
+            if (! $this->availableActions($payment->submission, $payment)['can_reject']) {
                 throw new DomainException('Pembayaran tidak sedang menunggu verifikasi.');
             }
 
@@ -211,8 +229,8 @@ class ArticlePaymentService
             PortalAccess::lockSubmission($payment->submission, $verifier, $role);
             $payment = ArticlePayment::query()->lockForUpdate()->findOrFail($payment->id);
 
-            if ($payment->isVerified()) {
-                throw new DomainException('Pembayaran yang sudah diverifikasi tidak dapat dibebaskan.');
+            if (! $this->availableActions($payment->submission, $payment)['can_waive']) {
+                throw new DomainException('Tagihan ini tidak dapat dibebaskan dari status pembayaran saat ini.');
             }
 
             if (trim($reason) === '') {

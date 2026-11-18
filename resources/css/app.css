@@ -111,8 +111,8 @@
     .portal-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn,
     aside[id$="-sidebar"].sidebar-collapsed #sidebar-collapse-toggle-btn {
         display: flex !important;
-        width: 2.25rem !important;
-        height: 2.25rem !important;
+        width: 2.75rem !important;
+        height: 2.75rem !important;
         margin: auto !important;
     }
 
@@ -127,8 +127,8 @@
     .portal-sidebar.sidebar-collapsed .sidebar-nav-item,
     aside[id$="-sidebar"].sidebar-collapsed .sidebar-nav-item {
         justify-content: center !important;
-        width: 2.5rem !important; /* 40px icon button */
-        height: 2.5rem !important;
+        width: 2.75rem !important; /* 44px icon button */
+        height: 2.75rem !important;
         padding: 0 !important;
         margin-left: auto !important;
         margin-right: auto !important;
@@ -143,6 +143,10 @@
 
 .sidebar-divider {
     display: block;
+}
+
+.sidebar-nav-item {
+    min-height: 2.75rem;
 }
 
 .sidebar-badge-dot {

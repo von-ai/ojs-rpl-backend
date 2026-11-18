@@ -71,6 +71,9 @@ ojs-rpl-backend/
 │   │   ├── Submission.php                         <-- Model Eloquent naskah utama & relasi
 │   │   ├── SubmissionContributor.php              <-- Model kontributor/penulis naskah
 │   │   └── FileEntry.php / SubmissionFile.php     <-- Model berkas naskah & integritas SHA-256
+│   ├── Services/Author/
+│   │   ├── AuthorSubmissionService.php            <-- Transaksi pengajuan, draf, revisi, dan unduhan
+│   │   └── SubmissionIntakeInput.php               <-- Data pengajuan yang diterima modul
 │   └── ViewModels/
 │       ├── AuthorSubmissionsViewModel.php         <-- Presenter data daftar naskah (tab, filter, pencarian)
 │       └── AuthorSubmissionDetailViewModel.php    <-- Presenter detail naskah (stepper, privasi blind review, sitasi)
@@ -121,9 +124,10 @@ ojs-rpl-backend/
 | Kebutuhan Pengembangan / Perbaikan (*Improvement*) | Berkas Utama yang Perlu Diedit |
 | :--- | :--- |
 | **Menambah / Memodifikasi Aturan Validasi** (misal: format ORCID, ekstensi file yang diizinkan, batasan kata abstrak) | `app/Http/Requests/Author/StoreSubmissionRequest.php` |
+| **Mengubah transaksi pengajuan atau draf** (misal: nomor pengajuan, kontributor, penyimpanan manuskrip) | `app/Services/Author/AuthorSubmissionService.php` |
 | **Mengubah Format Penyajian Data Detail** (misal: logika penentuan tahapan stepper, format sitasi APA/IEEE/BibTeX, penyembunyian reviewer) | `app/ViewModels/AuthorSubmissionDetailViewModel.php` |
 | **Mengubah Logika Filter Tab & Pencarian Daftar Naskah** (misal: tab status baru, logika pencarian judul/kontributor) | `app/ViewModels/AuthorSubmissionsViewModel.php` |
-| **Mengubah Endpoint / Alur Simpan & Penarikan Naskah** (misal: logic withdraw naskah, autosave draf, pengalihan route) | `app/Http/Controllers/Author/AuthorSubmissionController.php` |
+| **Mengubah endpoint atau respons HTTP pengajuan dan penarikan naskah** (misal: pengalihan route, pesan hasil) | `app/Http/Controllers/Author/AuthorSubmissionController.php` |
 | **Memodifikasi Judul Naskah & Tampilan Badge Status Utama** | `resources/views/author/submissions/partials/detail-header.blade.php` |
 | **Memperbaiki / Mempercantik Visualisasi Stepper Alur Naskah** | `resources/views/author/submissions/partials/detail-workflow-tracker.blade.php` |
 | **Menata Ulang Abstrak, Kata Kunci, atau Generator Sitasi Ilmiah** | `resources/views/author/submissions/partials/detail-metadata.blade.php` |
@@ -158,7 +162,7 @@ ojs-rpl-backend/
   * **Clipboard Utility:** Fitur penyalinan nomor submisi, abstrak naskah, daftar pustaka, dan sitasi ilmiah berjalan di sisi klien melalui modern Clipboard API disertai notifikasi Toast visual.
 
 ### 3. Kesiapan REST API (Dual-Transport / BFF Ready)
-* Sesuai ketentuan pada [`docs/architecture.md`](architecture.md), logika bisnis diisolasi pada Form Request ([`StoreSubmissionRequest`](../app/Http/Requests/Author/StoreSubmissionRequest.php)) dan Eloquent Models. Jika di masa depan dibutuhkan aplikasi mobile (Android/iOS) atau integrasi API eksternal, backend siap menyediakan endpoint JSON Bearer Token via `routes/api.php` dengan aturan bisnis yang sama persis.
+* Sesuai ketentuan pada [`docs/architecture.md`](architecture.md), Form Request memvalidasi input dan `AuthorSubmissionService` menjalankan transaksi pengajuan. Transport baru dapat menggunakan modul pengajuan yang sama setelah memvalidasi dan memetakan inputnya.
 
 ---
 

@@ -1040,8 +1040,9 @@
                     </div>
 
                     <!-- Tombol Aksi Verifikasi & Tolak Bukti Transfer -->
-                    @if($paymentInfo['can_verify'])
+                    @if($paymentInfo['can_verify'] || $paymentInfo['can_reject'])
                         <div class="space-y-2 pt-0.5">
+                            @if($paymentInfo['can_verify'])
                             <form action="{{ route('eic.submissions.payment.verify', $submission->id) }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="notes" value="Pembayaran diverifikasi sah oleh Pemimpin Redaksi (EIC).">
@@ -1055,17 +1056,20 @@
                                     <span>Verifikasi Pembayaran (Sah)</span>
                                 </button>
                             </form>
+                            @endif
 
-                            <button 
-                                type="button" 
-                                onclick="openEicRejectPaymentModal()"
-                                class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition duration-150 cursor-pointer"
-                            >
-                                <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                <span>Tolak Bukti Transfer</span>
-                            </button>
+                            @if($paymentInfo['can_reject'])
+                                <button
+                                    type="button"
+                                    onclick="openEicRejectPaymentModal()"
+                                    class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition duration-150 cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    <span>Tolak Bukti Transfer</span>
+                                </button>
+                            @endif
                         </div>
                     @endif
 
@@ -1117,23 +1121,6 @@
                             @endif
                         </div>
 
-                        <!-- Opsi Batalkan Verifikasi / Tolak jika ada kekeliruan -->
-                        <details class="text-xs group border-t border-gray-100 pt-2">
-                            <summary class="text-rose-700 font-semibold cursor-pointer hover:underline flex items-center justify-between">
-                                <span>Batalkan Verifikasi & Tolak Bukti</span>
-                                <span class="text-[10px] text-rose-500 font-normal">Koreksi Redaksi</span>
-                            </summary>
-                            <div class="pt-2">
-                                <button 
-                                    type="button" 
-                                    onclick="openEicRejectPaymentModal()"
-                                    class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition cursor-pointer"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    <span>Tolak Bukti Transfer Ini</span>
-                                </button>
-                            </div>
-                        </details>
                     @endif
 
                     <!-- Status Pembebasan Biaya (Waiver) -->

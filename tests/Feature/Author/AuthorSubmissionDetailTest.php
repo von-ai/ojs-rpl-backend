@@ -474,11 +474,15 @@ class AuthorSubmissionDetailTest extends TestCase
         $response->assertDontSee('Batas Waktu Revisi:');
 
         // Buka halaman katalog naskah author
-        $indexResponse = $this->get(route('author.submissions.index', ['tab' => 'perlu-revisi']));
+        $indexResponse = $this->get(route('author.submissions.index', [
+            'tab' => 'perlu-revisi',
+            'search' => $submission->submission_number,
+        ]));
         $indexResponse->assertStatus(200);
         $indexResponse->assertSee('SUB-2026-00888');
         $indexResponse->assertSee('Perbaikan Format Berkas');
-        $indexResponse->assertDontSee('15 Nov 2026');
+        $indexResponse->assertSee($submission->submitted_at->format('d M Y'));
+        $indexResponse->assertDontSee('Batas Waktu:');
     }
 
     /**
