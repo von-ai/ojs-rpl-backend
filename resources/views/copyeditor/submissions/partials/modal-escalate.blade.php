@@ -6,9 +6,9 @@
     aria-labelledby="escalate-modal-title"
 >
     <div class="min-h-full flex items-center justify-center py-2 sm:py-4 w-full">
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] animate-in fade-in zoom-in-95 duration-150">
+        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-visible flex flex-col my-auto animate-in fade-in zoom-in-95 duration-150">
             <!-- Header Modal -->
-            <div class="px-6 py-4.5 border-b border-gray-200 flex items-center justify-between bg-surface-subtle/50 shrink-0">
+            <div class="px-6 py-4.5 border-b border-gray-200 flex items-center justify-between bg-surface-subtle/50 shrink-0 rounded-t-2xl">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-red-50 text-red-700 flex items-center justify-center">
                     <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

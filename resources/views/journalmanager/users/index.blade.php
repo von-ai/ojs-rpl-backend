@@ -578,12 +578,12 @@
 <!-- Modal Dialog 2: Tetapkan / Ubah Peran Pengguna                             -->
 <!-- ========================================================================= -->
 <div id="modal-assign-role" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-assign-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeAssignRoleModal()"></div>
 
         <!-- Panel Konten Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
@@ -721,12 +721,12 @@
 <!-- Modal Dialog 3: Reset Kata Sandi Pengguna                                 -->
 <!-- ========================================================================= -->
 <div id="modal-reset-password" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-reset-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeResetPasswordModal()"></div>
 
         <!-- Panel Konten -->
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">

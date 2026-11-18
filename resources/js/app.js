@@ -38,6 +38,57 @@ function enhanceNativeSelects() {
     });
 }
 
+function positionDropdownPanel(container, button, panel) {
+    if (!button || !panel) return;
+
+    panel.style.top = '';
+    panel.style.bottom = '';
+    panel.style.maxHeight = '';
+
+    const btnRect = button.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    const modalDialog = button.closest('[role="dialog"], .modal, [id^="modal-"], .modal-dialog');
+    const modalCard = modalDialog ? (modalDialog.querySelector('.relative.bg-white, [class*="rounded-xl"], [class*="rounded-2xl"]') || modalDialog) : null;
+
+    let boundaryTop = 8;
+    let boundaryBottom = viewportHeight - 8;
+
+    if (modalCard) {
+        const cardRect = modalCard.getBoundingClientRect();
+        const cardStyle = window.getComputedStyle(modalCard);
+        if (cardStyle.overflow === 'hidden' || cardStyle.overflowY === 'hidden') {
+            boundaryTop = Math.max(8, cardRect.top + 8);
+            boundaryBottom = Math.min(viewportHeight - 8, cardRect.bottom - 8);
+        }
+    }
+
+    const spaceBelow = boundaryBottom - btnRect.bottom;
+    const spaceAbove = btnRect.top - boundaryTop;
+    const preferredHeight = 240;
+
+    const shouldDropUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+
+    if (shouldDropUp) {
+        panel.classList.add('custom-dropdown-panel-up');
+        panel.classList.remove('custom-dropdown-panel-down');
+        panel.style.top = 'auto';
+        panel.style.bottom = 'calc(100% + 5px)';
+        const maxH = Math.max(120, Math.min(preferredHeight, spaceAbove - 10));
+        panel.style.maxHeight = `${maxH}px`;
+    } else {
+        panel.classList.add('custom-dropdown-panel-down');
+        panel.classList.remove('custom-dropdown-panel-up');
+        panel.style.top = 'calc(100% + 5px)';
+        panel.style.bottom = 'auto';
+        const maxH = Math.max(120, Math.min(preferredHeight, spaceBelow - 10));
+        panel.style.maxHeight = `${maxH}px`;
+    }
+
+    container.classList.add('is-open');
+    container.style.zIndex = '60';
+}
+
 /** Shared dropdown behavior for every portal. Native selects remain usable without JavaScript. */
 function closeAllCustomDropdowns({ restoreFocus = false } = {}) {
     document.querySelectorAll('.custom-dropdown-container').forEach(container => {
@@ -49,6 +100,8 @@ function closeAllCustomDropdowns({ restoreFocus = false } = {}) {
         panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
         button.setAttribute('aria-expanded', 'false');
         container.querySelector('.custom-dropdown-chevron')?.classList.remove('rotate-180');
+        container.classList.remove('is-open');
+        container.style.zIndex = '';
         if (wasOpen && restoreFocus) button.focus();
     });
 }
@@ -92,12 +145,17 @@ function initCustomDropdowns() {
         const open = (last = false) => {
             if (button.disabled) return;
             closeAllCustomDropdowns();
+            positionDropdownPanel(container, button, panel);
             panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
             panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
             button.setAttribute('aria-expanded', 'true');
             container.querySelector('.custom-dropdown-chevron')?.classList.add('rotate-180');
             const candidates = enabledItems();
-            (last ? candidates.at(-1) : candidates.find(item => item.getAttribute('aria-selected') === 'true') || candidates[0])?.focus();
+            const activeItem = (last ? candidates.at(-1) : candidates.find(item => item.getAttribute('aria-selected') === 'true') || candidates[0]);
+            if (activeItem) {
+                activeItem.focus();
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
         };
         const choose = item => {
             if (item.getAttribute('aria-disabled') === 'true') return;
@@ -178,6 +236,21 @@ document.addEventListener('focusin', event => {
 });
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeAllCustomDropdowns({ restoreFocus: true });
+});
+document.addEventListener('scroll', event => {
+    const openContainer = document.querySelector('.custom-dropdown-container.is-open');
+    if (!openContainer) return;
+    const panel = openContainer.querySelector('.custom-dropdown-panel');
+    if (panel && (event.target === panel || panel.contains(event.target))) return;
+    const btn = openContainer.querySelector('.custom-dropdown-btn');
+    if (btn && panel) positionDropdownPanel(openContainer, btn, panel);
+}, true);
+window.addEventListener('resize', () => {
+    const openContainer = document.querySelector('.custom-dropdown-container.is-open');
+    if (!openContainer) return;
+    const btn = openContainer.querySelector('.custom-dropdown-btn');
+    const panel = openContainer.querySelector('.custom-dropdown-panel');
+    if (btn && panel) positionDropdownPanel(openContainer, btn, panel);
 });
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

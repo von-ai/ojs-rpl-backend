@@ -172,3 +172,37 @@
 .custom-dropdown-btn[aria-invalid="true"] { border-color: var(--color-red-500); }
 .custom-dropdown-btn.shadow-none { box-shadow: none !important; }
 .custom-dropdown-item:focus-visible { outline: 2px solid var(--color-brand-maroon); outline-offset: -2px; }
+
+/* Custom Dropdown Optimization: Smooth scrolling, contained overscroll & dropup support */
+.custom-dropdown-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+.custom-dropdown-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-dropdown-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-dropdown-panel::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.4);
+    border-radius: 9999px;
+}
+.custom-dropdown-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.65);
+}
+.custom-dropdown-panel.custom-dropdown-panel-up {
+    top: auto !important;
+    bottom: calc(100% + 5px) !important;
+    transform-origin: bottom left !important;
+}
+.custom-dropdown-panel.custom-dropdown-panel-down {
+    top: calc(100% + 5px) !important;
+    bottom: auto !important;
+    transform-origin: top left !important;
+}
+.custom-dropdown-container.is-open {
+    z-index: 60 !important;
+}
