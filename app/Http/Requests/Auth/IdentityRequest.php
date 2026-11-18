@@ -31,10 +31,19 @@ class IdentityRequest extends FormRequest
                 'password' => ['required', 'string', 'min:12', 'max:128'],
                 'password_confirmation' => ['required', 'string'],
                 'affiliation' => ['required', 'string', 'min:2', 'max:255'],
+                'consent_terms' => ['required', 'accepted'],
             ],
             'verify' => ['token' => ['required', 'string', 'min:20', 'max:512']],
             'resend' => ['email' => ['required', 'string', 'email', 'max:255']],
         };
+    }
+
+    public function messages(): array
+    {
+        return [
+            'consent_terms.required' => 'Anda wajib menyetujui Ketentuan Layanan dan Kebijakan Privasi untuk mendaftar.',
+            'consent_terms.accepted' => 'Anda wajib menyetujui Ketentuan Layanan dan Kebijakan Privasi untuk mendaftar.',
+        ];
     }
 
     public function withValidator(Validator $validator): void
