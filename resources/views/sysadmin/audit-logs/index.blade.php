@@ -18,21 +18,21 @@
     </div>
 
     <!-- 4 Metrik Ringkas Audit Logs -->
+    @php
+        $auditIcons = [
+            0 => 'clipboard',
+            1 => 'users',
+            2 => 'cog',
+            3 => 'shield-check',
+        ];
+    @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-xl font-bold text-gray-900 tracking-tight">
-                        {{ $metric['value'] }}
-                    </span>
-                </div>
-            </div>
+        @foreach ($viewModel->summaryMetrics() as $idx => $metric)
+            <x-kpi-card
+                :title="$metric['title']"
+                :value="$metric['value']"
+                :icon="$auditIcons[$idx] ?? 'clipboard'"
+            />
         @endforeach
     </div>
 

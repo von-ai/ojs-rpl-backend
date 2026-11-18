@@ -18,22 +18,21 @@
     </div>
 
     <!-- 4 Metrik Ringkas Penugasan Proofread -->
+    @php
+        $proofreaderIcons = [
+            0 => 'document-search',
+            1 => 'eye',
+            2 => 'chat',
+            3 => 'check-circle',
+        ];
+    @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-start justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 leading-tight">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums shrink-0 {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-3 flex items-baseline justify-between">
-                    <span class="text-2xl font-semibold text-gray-900 tabular-nums">
-                        {{ $metric['value'] }}
-                    </span>
-                    <span class="text-[11px] text-gray-400">naskah</span>
-                </div>
-            </div>
+        @foreach ($viewModel->summaryMetrics() as $idx => $metric)
+            <x-kpi-card
+                :title="$metric['title']"
+                :value="$metric['value']"
+                :icon="$proofreaderIcons[$idx] ?? 'document-search'"
+            />
         @endforeach
     </div>
 
