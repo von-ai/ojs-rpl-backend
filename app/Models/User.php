@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable([
     'name',
@@ -232,6 +233,147 @@ class User extends Authenticatable
             fn (string $code): array => UserRole::roleMeta($code),
             $this->availableRoleCodes()
         );
+    }
+
+    /**
+     * Mengambil daftar metadata seluruh jurnal yang dapat diakses pengguna.
+     * Sesuai standar OJS: Pengguna dapat berpindah konteks jurnal aktif untuk seluruh peran.
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     name: string,
+     *     initials: string,
+     *     slug: string,
+     *     roles: array<int, string>,
+     *     roles_summary: string,
+     *     has_current_role: bool
+     * }>
+     */
+    public function availableJournalsMeta(?string $currentRole = null): array
+    {
+        try {
+            if (! class_exists(Journal::class) || ! Schema::hasTable('journals')) {
+                return [];
+            }
+
+            $allJournals = Journal::query()
+                ->where('status', '!=', 'archived')
+                ->orderBy('name')
+                ->get();
+
+            if ($allJournals->isEmpty()) {
+                return [];
+            }
+
+            $userRolesByJournal = $this->userRoles()
+                ->whereNotNull('journal_id')
+                ->get()
+                ->groupBy('journal_id');
+
+            $isSysAdmin = $this->isSysAdmin();
+
+            return $allJournals->map(function (Journal $journal) use ($userRolesByJournal, $isSysAdmin, $currentRole) {
+                $roles = $userRolesByJournal->get($journal->id, collect());
+                $roleCodes = $roles->pluck('role_code')->unique()->all();
+
+                $labels = array_map(fn ($c) => UserRole::roleLabel($c), $roleCodes);
+                if ($isSysAdmin && ! in_array('System Administrator', $labels, true)) {
+                    array_unshift($labels, 'System Administrator');
+                }
+
+                if (empty($labels)) {
+                    $labels[] = 'Penulis';
+                }
+
+                $hasCurrentRole = $currentRole ? (
+                    $isSysAdmin
+                    || $currentRole === 'author'
+                    || in_array($currentRole, $roleCodes, true)
+                ) : false;
+
+                return [
+                    'id' => (string) $journal->id,
+                    'name' => (string) $journal->name,
+                    'initials' => (string) ($journal->initials ?: strtoupper(substr($journal->slug, 0, 6))),
+                    'slug' => (string) $journal->slug,
+                    'roles' => $labels,
+                    'roles_summary' => implode(', ', array_unique($labels)),
+                    'has_current_role' => $hasCurrentRole,
+                ];
+            })->all();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Menentukan model Jurnal yang sedang aktif berdasarkan sesi atau peran pengguna saat ini.
+     */
+    public function activeJournal(?string $roleCode = null): ?Journal
+    {
+        try {
+            if (! class_exists(Journal::class) || ! Schema::hasTable('journals')) {
+                return null;
+            }
+
+            $activeId = null;
+            try {
+                if (session()->has('active_journal_id')) {
+                    $activeId = session('active_journal_id');
+                }
+            } catch (\Throwable) {
+                // Sesi belum terinisialisasi
+            }
+
+            if (is_string($activeId) && $activeId !== '') {
+                $journal = Journal::find($activeId);
+                if ($journal) {
+                    // Sysadmin atau peran author selalu valid pada setiap jurnal aktif
+                    if ($this->isSysAdmin() || $roleCode === 'author' || $roleCode === null) {
+                        return $journal;
+                    }
+
+                    // Periksa apakah pengguna memiliki peran terkait di jurnal ini
+                    if ($this->userRoles()->where('journal_id', $journal->id)->where('role_code', $roleCode)->exists()) {
+                        return $journal;
+                    }
+                }
+            }
+
+            // Fallback 1: Cari jurnal pertama tempat user memegang peran ini
+            if ($roleCode !== null && $roleCode !== 'author' && ! $this->isSysAdmin()) {
+                $firstJournalId = $this->userRoles()
+                    ->where('role_code', $roleCode)
+                    ->whereNotNull('journal_id')
+                    ->orderBy('journal_id')
+                    ->value('journal_id');
+
+                if ($firstJournalId) {
+                    $found = Journal::find($firstJournalId);
+                    if ($found) {
+                        return $found;
+                    }
+                }
+            }
+
+            // Fallback 2: Cari jurnal pertama tempat user memegang peran apa pun
+            $userFirstJournalId = $this->userRoles()
+                ->whereNotNull('journal_id')
+                ->orderBy('journal_id')
+                ->value('journal_id');
+
+            if ($userFirstJournalId) {
+                $found = Journal::find($userFirstJournalId);
+                if ($found) {
+                    return $found;
+                }
+            }
+
+            // Fallback 3: Jurnal pertama sistem
+            return Journal::first();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Masuk | Portal Jurnal BRIDA Makassar')</title>
 
-    <!-- Google Fonts: Instrument Sans -->
+    <x-fonts />
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

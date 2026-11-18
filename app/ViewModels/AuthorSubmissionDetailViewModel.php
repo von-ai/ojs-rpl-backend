@@ -67,6 +67,20 @@ class AuthorSubmissionDetailViewModel
                                 }
                             });
                     });
+
+                    // Batasan Per Jurnal (Multi-Journal Workspace)
+                    $selectedJournalId = null;
+                    try {
+                        if (session()->has('active_journal_id')) {
+                            $sessionJid = session('active_journal_id');
+                            $selectedJournalId = is_string($sessionJid) && $sessionJid !== '' ? $sessionJid : null;
+                        }
+                    } catch (\Throwable) {
+                    }
+
+                    if ($selectedJournalId) {
+                        $query->where('submissions.journal_id', $selectedJournalId);
+                    }
                 } elseif (! app()->environment('testing')) {
                     return null;
                 }
@@ -338,6 +352,7 @@ class AuthorSubmissionDetailViewModel
     protected function buildTimelineForSubmission(Submission $sub, ?int $stage = null): array
     {
         $events = [];
+        $journalName = $sub->journal?->name ?? 'sistem jurnal ilmiah';
 
         // 1. Draf Naskah Diinisialisasi (Jika berstatus draft)
         if ($sub->status === 'draft') {
@@ -346,7 +361,7 @@ class AuthorSubmissionDetailViewModel
                 'date' => $sub->created_at ? $sub->created_at->format('d M Y, H:i').' WITA' : now()->format('d M Y, H:i').' WITA',
                 'title' => 'Draf Naskah Diinisialisasi',
                 'actor' => $sub->author?->name ?? 'Penulis (Author)',
-                'description' => 'Penulis memulai inisialisasi pengisian formulir pengajuan naskah baru melalui sistem SIRIDA BRIDA.',
+                'description' => "Penulis memulai inisialisasi pengisian formulir pengajuan naskah baru melalui sistem {$journalName}.",
                 'badge_class' => 'bg-gray-100 text-gray-700',
             ];
 
@@ -360,7 +375,7 @@ class AuthorSubmissionDetailViewModel
             'date' => $submittedAt->format('d M Y, H:i').' WITA',
             'title' => 'Naskah Diajukan Resmi',
             'actor' => $sub->author?->name ?? 'Penulis (Author)',
-            'description' => 'Penulis berhasil menyerahkan naskah ilmiah ke sistem SIRIDA BRIDA Makassar.',
+            'description' => "Penulis berhasil menyerahkan naskah ilmiah ke sistem {$journalName}.",
             'badge_class' => 'bg-blue-50 text-blue-700',
         ];
 
@@ -625,8 +640,11 @@ class AuthorSubmissionDetailViewModel
                 ? number_format((float) $deskReview->similarity_score, 1).'% '.($deskReview->similarity_score <= 20 ? '(Lolos Ambang Batas Maks. 20%)' : '(Melebihi Ambang Batas Maks. 20%)')
                 : 'Uji Kesamaan Selesai';
 
+            $journalShortName = $sub->journal?->initials ?? $sub->journal?->name ?? 'Jurnal';
+            $editorialLabel = $sub->journal?->initials ? 'Dewan Redaksi '.$sub->journal->initials : ($sub->journal?->name ?? 'Dewan Redaksi BRIDA');
+
             $scopeText = $deskReview->scope_fit
-                ? 'Sesuai dengan Fokus & Ruang Lingkup Jurnal SIRIDA'
+                ? "Sesuai dengan Fokus & Ruang Lingkup {$journalShortName}"
                 : 'Perlu Penyesuaian Ruang Lingkup Jurnal';
 
             // Jika sebelumnya diminta revisi format dan penulis sudah mengunggah naskah perbaikan format
@@ -636,7 +654,7 @@ class AuthorSubmissionDetailViewModel
                     'stage_title' => 'Verifikasi Perbaikan Format Sedang Berlangsung',
                     'similarity_score' => $similarityText,
                     'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
-                    'editorial_officer' => $deskReview->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                    'editorial_officer' => $deskReview->assessor?->name ?? $editorialLabel,
                     'scope_status' => $scopeText,
                     'estimated_days' => '1 - 2 Hari Kerja',
                     'notes' => 'Naskah perbaikan format telah berhasil Anda kirimkan. Dewan redaksi sedang memverifikasi ulang kesesuaian berkas sebelum melanjutkan ke tahapan penelaahan.',
@@ -649,7 +667,7 @@ class AuthorSubmissionDetailViewModel
                 'stage_title' => 'Pemeriksaan Awal Selesai',
                 'similarity_score' => $similarityText,
                 'similarity_tool' => 'Turnitin / iThenticate Integrity Check',
-                'editorial_officer' => $deskReview->assessor?->name ?? 'Dewan Redaksi BRIDA',
+                'editorial_officer' => $deskReview->assessor?->name ?? $editorialLabel,
                 'scope_status' => $scopeText,
                 'estimated_days' => 'Pemeriksaan Selesai',
                 'notes' => $deskReview->notes ?: 'Pemeriksaan kelengkapan struktur naskah dan uji kesamaan teks telah diselesaikan oleh dewan redaksi.',
@@ -750,8 +768,9 @@ class AuthorSubmissionDetailViewModel
             ->whereIn('decision', ['decline', 'declined'])
             ->sortByDesc('sent_at')
             ->first();
+        $journalName = $sub->journal?->name ?? 'jurnal ini';
         $reason = $decision?->note_for_author
-            ?: ($sub->comments_for_editor ?: 'Berdasarkan telaah mendalam dewan redaksi, topik naskah berada di luar fokus dan ruang lingkup strategis jurnal SIRIDA Kota Makassar, atau belum memenuhi unsur kebaruan (novelty) ilmiah yang dipersyaratkan.');
+            ?: ($sub->comments_for_editor ?: "Berdasarkan telaah mendalam dewan redaksi, topik naskah berada di luar fokus dan ruang lingkup strategis {$journalName}, atau belum memenuhi unsur kebaruan (novelty) ilmiah yang dipersyaratkan.");
 
         return [
             'stage_title' => 'Keputusan Editorial: Naskah Tidak Diterima',
@@ -857,6 +876,11 @@ class AuthorSubmissionDetailViewModel
         $firstAuthor = $sub->contributors->first();
         $authorName = $firstAuthor ? trim(($firstAuthor->given_name ?? '').' '.($firstAuthor->family_name ?? '')) : ($sub->author?->name ?? 'Penulis');
 
+        $journalName = $sub->journal?->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)';
+        $journalInitials = $sub->journal?->initials ?? 'SIRIDA';
+        $firstAuthorLastName = $firstAuthor?->family_name ?: ($firstAuthor?->given_name ?: ($sub->author?->name ?: 'Penulis'));
+        $bibKey = preg_replace('/[^a-zA-Z0-9]/', '', $firstAuthorLastName).$year;
+
         return [
             'doi' => $doi,
             'doi_url' => $doiUrl,
@@ -865,9 +889,9 @@ class AuthorSubmissionDetailViewModel
             'pages' => $pages,
             'published_at' => $publishedAt,
             'citations' => [
-                'apa' => "{$authorName} ({$year}). {$sub->title}. Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA), {$volume}, {$pages}. {$doiUrl}",
-                'ieee' => "{$authorName}, \"{$sub->title},\" SIRIDA, {$volume}, pp. 104-118, {$year}, doi: {$doi}.",
-                'bibtex' => "@article{Ilyas{$year},\n  title={".addslashes($sub->title)."},\n  volume={2},\n  DOI={".$doi."},\n  number={2},\n  journal={Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)},\n  author={".addslashes($authorName)."},\n  year={".$year."},\n  pages={104-118}\n}",
+                'apa' => "{$authorName} ({$year}). {$sub->title}. {$journalName}, {$volume}, {$pages}. {$doiUrl}",
+                'ieee' => "{$authorName}, \"{$sub->title},\" {$journalInitials}, {$volume}, pp. 104-118, {$year}, doi: {$doi}.",
+                'bibtex' => "@article{{$bibKey},\n  title={".addslashes($sub->title)."},\n  volume={2},\n  DOI={".$doi."},\n  number={2},\n  journal={".addslashes($journalName)."},\n  author={".addslashes($authorName)."},\n  year={".$year."},\n  pages={104-118}\n}",
             ],
             'galley' => [
                 'label' => 'PDF (Naskah Lengkap Terbit)',

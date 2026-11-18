@@ -443,7 +443,7 @@ class AuthorSubmissionDetailTest extends TestCase
             'title' => 'Naskah Evaluasi Perbaikan Format Skrining Awal',
             'abstract' => 'Abstrak naskah dengan perbaikan format.',
             'status' => 'revisions_requested',
-            'submitted_at' => now()->subDays(2),
+            'submitted_at' => now()->subDays(5),
             'version' => 2,
         ]);
 

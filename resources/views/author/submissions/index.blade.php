@@ -12,7 +12,7 @@
                 Naskah Saya
             </h1>
             <p class="mt-1 text-sm text-gray-500">
-                Kelola dan pantau seluruh pengajuan naskah ilmiah Anda.
+                Kelola dan pantau seluruh pengajuan naskah ilmiah Anda{{ $viewModel->activeJournal() ? ' pada '.$viewModel->activeJournal()->name : '' }}.
             </p>
         </div>
 

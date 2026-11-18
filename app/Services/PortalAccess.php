@@ -27,6 +27,11 @@ class PortalAccess
         } elseif (in_array($table, ['journals', 'sections', 'issues'], true)) {
             if (in_array($role, ['manager', 'editor_in_chief', 'section_editor'], true)) {
                 $query->whereIn($table.'.'.($table === 'journals' ? 'id' : 'journal_id'), self::journalIds($user, $role));
+            } elseif ($role === 'author' && in_array($table, ['sections', 'issues'], true)) {
+                $selectedJournalId = self::selectedJournalId();
+                if ($selectedJournalId) {
+                    $query->where($table.'.journal_id', $selectedJournalId);
+                }
             }
         } elseif (in_array($table, ['copyedits', 'galleys', 'layout_assignments', 'review_rounds', 'editor_assignments', 'revisions', 'article_payments', 'production_escalations'], true)) {
             $query->whereIn($table.'.submission_id', self::visibleSubmissions($user, $role));
@@ -74,7 +79,28 @@ class PortalAccess
 
     public static function journalIds(User $user, string $role): \Illuminate\Database\Query\Builder
     {
-        return DB::table('user_roles')->select('journal_id')->where('user_id', $user->id)->where('role_code', $role)->whereNotNull('journal_id');
+        $query = DB::table('user_roles')->select('journal_id')->where('user_id', $user->id)->where('role_code', $role)->whereNotNull('journal_id');
+
+        try {
+            if (session()->has('active_journal_id')) {
+                $activeJournalId = session('active_journal_id');
+                if (is_string($activeJournalId) && $activeJournalId !== '') {
+                    $hasRoleInActive = DB::table('user_roles')
+                        ->where('user_id', $user->id)
+                        ->where('role_code', $role)
+                        ->where('journal_id', $activeJournalId)
+                        ->exists();
+
+                    if ($hasRoleInActive) {
+                        $query->where('journal_id', $activeJournalId);
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Sesi belum terinisialisasi
+        }
+
+        return $query;
     }
 
     public static function visibleSubmissions(User $user, string $role): Builder
@@ -89,6 +115,13 @@ class PortalAccess
     {
         if (in_array($role, ['manager', 'editor_in_chief', 'section_editor', 'reviewer', 'copyeditor', 'layout_editor', 'proofreader'], true)) {
             $query->whereIn('submissions.journal_id', self::journalIds($user, $role));
+        }
+
+        if ($role === 'author') {
+            $selectedJournalId = self::selectedJournalId();
+            if ($selectedJournalId) {
+                $query->where('submissions.journal_id', $selectedJournalId);
+            }
         }
 
         if (in_array($role, ['editor_in_chief', 'section_editor'], true)) {
@@ -108,5 +141,19 @@ class PortalAccess
             'editor_in_chief', 'manager', 'sysadmin' => null,
             default => $query->whereRaw('1 = 0'),
         };
+    }
+
+    public static function selectedJournalId(): ?string
+    {
+        try {
+            if (session()->has('active_journal_id')) {
+                $id = session('active_journal_id');
+
+                return is_string($id) && $id !== '' ? $id : null;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 }
