@@ -206,7 +206,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $this->grantRole($otherAuthor, 'author', $journal->id);
         $this->actingAs($otherAuthor)->post("/author/submissions/{$sub->id}/publication-permission", [
             'confirmed' => '1', 'license' => 'CC BY 4.0',
-        ])->assertForbidden();
+        ])->assertNotFound();
         $this->assertDatabaseMissing('publication_permissions', ['submission_id' => $sub->id]);
         $this->actingAs($editor)->post($url, ['confirmed' => '1', 'license' => 'CC BY 4.0'])
             ->assertSessionHasErrors('agreement_reference');
