@@ -147,7 +147,12 @@ class JournalManagerService
                 abort_unless($actor->userRoles()->where('journal_id', $issue->journal_id)->where('role_code', 'manager')->exists(), 403);
             }
             $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
-            foreach ($issue->issueArticles()->orderBy('submission_id')->get() as $entry) {
+            $entries = $issue->issueArticles()->orderBy('submission_id')->get();
+            // Permission recording locks the submission before the journal.
+            foreach ($entries as $entry) {
+                Submission::query()->lockForUpdate()->findOrFail($entry->submission_id);
+            }
+            foreach ($entries as $entry) {
                 app(PublicationService::class)->publish($issue, $entry);
             }
 

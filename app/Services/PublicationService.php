@@ -29,7 +29,7 @@ class PublicationService
             throw new DomainException('Tetapkan lisensi jurnal sebelum menerbitkan artikel.');
         }
         $permittedLicense = DB::table('publication_permissions')
-            ->where('submission_id', $submission->id)->latest('id')->value('license');
+            ->where('submission_id', $submission->id)->latest('id')->lockForUpdate()->value('license');
         if ($permittedLicense !== $license) {
             throw new DomainException($submission->submission_number.': Izin penulis atau perjanjian tertulis terverifikasi untuk lisensi ini diperlukan.');
         }
