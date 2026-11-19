@@ -56,7 +56,7 @@ Artisan::command('files:scan-pending', function () {
 Artisan::command('metrics:forget-visitors', function () {
     DB::table('article_metrics')
         ->where('window_start', '<', now('UTC')->startOfHour())
-        ->where('visit_hash', '!=', '')
+        ->where('visit_hash', '>', '')
         ->update(['visit_hash' => '']);
 })->purpose('Hapus pengenal kunjungan setelah jendela statistik satu jam berakhir');
 
