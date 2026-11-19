@@ -24,7 +24,7 @@
         <button
             id="open-sidebar-btn"
             type="button"
-            class="lg:hidden min-w-9 min-h-9 -ml-1.5 p-2 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer"
+            class="lg:hidden min-w-11 min-h-11 -ml-1.5 p-2 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer"
             aria-label="Buka menu navigasi"
         >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

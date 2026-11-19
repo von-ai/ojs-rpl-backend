@@ -13,13 +13,15 @@ use App\Models\ReviewRound;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\Eic\EditorInChiefService;
+use App\Services\Payment\ArticlePaymentService;
 use Illuminate\Database\Eloquent\Collection;
 
 class EicSubmissionDetailViewModel
 {
     public function __construct(
         public readonly Submission $submission,
-        private readonly EditorInChiefService $eicService
+        private readonly EditorInChiefService $eicService,
+        private readonly ArticlePaymentService $paymentService
     ) {}
 
     /**
@@ -431,6 +433,7 @@ class EicSubmissionDetailViewModel
         }
 
         $hasProof = (bool) ($payment && $payment->file_entry_id);
+        $actions = $this->paymentService->availableActions($sub, $payment);
 
         return [
             'is_free' => false,
@@ -448,9 +451,9 @@ class EicSubmissionDetailViewModel
             'verified_at' => $payment?->verified_at?->format('d M Y H:i'),
             'has_proof' => $hasProof,
             'proof_url' => $hasProof ? route('eic.submissions.payment.proof', $sub->id) : null,
-            'can_verify' => (bool) ($payment && $payment->isPendingVerification()),
-            'can_reject' => (bool) ($payment && in_array($payment->status, ['pending_verification', 'verified'], true)),
-            'can_waive' => (bool) (! $payment || (! $payment->isVerified() && ! $payment->isWaived())),
+            'can_verify' => $actions['can_verify'],
+            'can_reject' => $actions['can_reject'],
+            'can_waive' => $actions['can_waive'],
         ];
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ViewModels;
 
+use App\Models\Journal;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -24,6 +25,33 @@ class AuthorSubmissionsViewModel
     public function __construct(?User $user = null)
     {
         $this->user = $user ?? Auth::user();
+    }
+
+    /**
+     * Mendapatkan model Jurnal yang sedang aktif untuk konteks ruang kerja penulis.
+     */
+    public function activeJournal(): ?Journal
+    {
+        $u = $this->user ?? Auth::user();
+
+        return $u?->activeJournal('author');
+    }
+
+    /**
+     * Mendapatkan ID jurnal terpilih dari sesi (jika ada jurnal yang dipilih aktif).
+     */
+    public function selectedJournalId(): ?string
+    {
+        try {
+            if (session()->has('active_journal_id')) {
+                $id = session('active_journal_id');
+
+                return is_string($id) && $id !== '' ? $id : null;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 
     /**
@@ -297,7 +325,13 @@ class AuthorSubmissionsViewModel
                     return $this->cachedRawSubmissions = [];
                 }
 
+                $selectedJournalId = $this->selectedJournalId();
+
                 $query = Submission::with(['section', 'contributors', 'journal', 'latestPayment', 'editorialDecisions', 'deskReviews']);
+
+                if ($selectedJournalId) {
+                    $query->where('submissions.journal_id', $selectedJournalId);
+                }
 
                 // Isolasi Akses Data Peran Penulis:
                 // Penulis hanya dapat melihat naskah miliknya (author_id)
@@ -501,7 +535,15 @@ class AuthorSubmissionsViewModel
      */
     public function wizardJournalSections(): array
     {
-        return Section::where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'))->orderBy('position')->orderBy('id')->get()->map(fn ($s) => [
+        $selectedJournalId = $this->selectedJournalId();
+        $query = Section::where('accepting_submissions', true)
+            ->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+
+        if ($selectedJournalId) {
+            $query->where('journal_id', $selectedJournalId);
+        }
+
+        return $query->orderBy('position')->orderBy('id')->get()->map(fn ($s) => [
             'id' => $s->id, 'raw_id' => $s->id, 'name' => $s->name, 'description' => $s->description ?? '', 'policy' => $s->policy ?? '',
         ])->all();
     }

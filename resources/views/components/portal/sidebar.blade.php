@@ -30,7 +30,7 @@
         </button>
 
         <!-- Mobile Close Button -->
-        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-9 min-h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
+        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>

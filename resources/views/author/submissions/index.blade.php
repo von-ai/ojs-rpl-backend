@@ -12,7 +12,7 @@
                 Naskah Saya
             </h1>
             <p class="mt-1 text-sm text-gray-500">
-                Kelola dan pantau seluruh pengajuan naskah ilmiah Anda.
+                Kelola dan pantau seluruh pengajuan naskah ilmiah Anda{{ $viewModel->activeJournal() ? ' pada '.$viewModel->activeJournal()->name : '' }}.
             </p>
         </div>
 
@@ -83,7 +83,8 @@
 
         <!-- Kolom Input Pencarian dengan Debounce Live Search & Tombol Clear -->
         <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <label for="filter_search" class="block mb-1 text-xs font-medium text-gray-700">Cari naskah</label>
+            <div class="absolute top-6 bottom-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <svg id="search-icon" class="w-4 h-4 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -104,7 +105,7 @@
             <button
                 type="button"
                 id="search-clear-btn"
-                class="{{ empty($filters['search']) ? 'hidden' : '' }} absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden cursor-pointer transition"
+                class="{{ empty($filters['search']) ? 'hidden' : '' }} absolute top-6 bottom-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden cursor-pointer transition"
                 title="Hapus pencarian"
                 aria-label="Hapus kata kunci pencarian"
             >
@@ -116,8 +117,9 @@
 
         <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5">
             <!-- Custom Dropdown Filter Tahun -->
-            <div class="relative custom-dropdown-container" data-filter="year">
-                <select name="year" id="filter_year" class="sr-only" tabindex="-1">
+            <div class="relative custom-dropdown-container" data-filter="year" data-native-dropdown data-dropdown="Tahun">
+                <label for="filter_year" class="block mb-1 text-xs font-medium text-gray-700">Tahun</label>
+                <select name="year" id="filter_year" class="custom-dropdown-native w-full min-h-11 px-3 rounded-lg border border-gray-300 bg-white text-sm">
                     <option value="semua">Semua Tahun</option>
                     @foreach($viewModel->availableYears() as $year)
                         <option value="{{ $year }}" {{ ($filters['year'] ?? '') === $year ? 'selected' : '' }}>
@@ -127,7 +129,7 @@
                 </select>
                 <button
                     type="button"
-                    class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+                    class="custom-dropdown-btn w-full min-h-11 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-maroon"
                     aria-haspopup="listbox"
                     aria-expanded="false"
                 >
@@ -138,11 +140,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-35 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
+                <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-35 w-full sm:w-auto bg-white rounded-lg border border-gray-200 shadow-lg p-1.5 z-30 space-y-0.5">
                     <div
                         class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['year'] ?? 'semua') === 'semua' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                         data-value="semua"
                         data-label="Semua Tahun"
+                        role="option"
                     >
                         <span>Semua Tahun</span>
                         <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon {{ ($filters['year'] ?? 'semua') === 'semua' ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,6 +157,7 @@
                             class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['year'] ?? '') === $year ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                             data-value="{{ $year }}"
                             data-label="Tahun {{ $year }}"
+                            role="option"
                         >
                             <span>Tahun {{ $year }}</span>
                             <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon {{ ($filters['year'] ?? '') === $year ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,8 +169,9 @@
             </div>
 
             <!-- Custom Dropdown Filter Seksi Jurnal -->
-            <div class="relative custom-dropdown-container" data-filter="type">
-                <select name="type" id="filter_type" class="sr-only" tabindex="-1">
+            <div class="relative custom-dropdown-container" data-filter="type" data-native-dropdown data-dropdown="Seksi jurnal">
+                <label for="filter_type" class="block mb-1 text-xs font-medium text-gray-700">Seksi jurnal</label>
+                <select name="type" id="filter_type" class="custom-dropdown-native w-full min-h-11 px-3 rounded-lg border border-gray-300 bg-white text-sm">
                     <option value="semua">Semua Seksi</option>
                     @foreach($viewModel->articleTypes() as $type)
                         <option value="{{ $type }}" {{ ($filters['type'] ?? '') === $type ? 'selected' : '' }}>
@@ -176,7 +181,7 @@
                 </select>
                 <button
                     type="button"
-                    class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+                    class="custom-dropdown-btn w-full min-h-11 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-maroon"
                     aria-haspopup="listbox"
                     aria-expanded="false"
                 >
@@ -187,11 +192,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-42.5 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
+                <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-left absolute left-0 top-full mt-1.5 min-w-42.5 w-full sm:w-auto bg-white rounded-lg border border-gray-200 shadow-lg p-1.5 z-30 space-y-0.5">
                     <div
                         class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['type'] ?? 'semua') === 'semua' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                         data-value="semua"
                         data-label="Semua Seksi"
+                        role="option"
                     >
                         <span>Semua Seksi</span>
                         <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon {{ ($filters['type'] ?? 'semua') === 'semua' ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,6 +209,7 @@
                             class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['type'] ?? '') === $type ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                             data-value="{{ $type }}"
                             data-label="{{ $type }}"
+                            role="option"
                         >
                             <span>{{ $type }}</span>
                             <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon {{ ($filters['type'] ?? '') === $type ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,15 +222,16 @@
 
             <!-- Custom Dropdown Pengurutan & Reset -->
             <div class="col-span-2 sm:col-auto flex items-center gap-2">
-                <div class="relative custom-dropdown-container flex-1 sm:flex-none" data-filter="sort">
-                    <select name="sort" id="filter_sort" class="sr-only" tabindex="-1">
+                <div class="relative custom-dropdown-container flex-1 sm:flex-none" data-filter="sort" data-native-dropdown data-dropdown="Urutkan">
+                    <label for="filter_sort" class="block mb-1 text-xs font-medium text-gray-700">Urutkan</label>
+                    <select name="sort" id="filter_sort" class="custom-dropdown-native w-full min-h-11 px-3 rounded-lg border border-gray-300 bg-white text-sm">
                         <option value="-updated_at" {{ ($filters['sort'] ?? '') === '-updated_at' ? 'selected' : '' }}>Pembaruan Terkini</option>
                         <option value="updated_at" {{ ($filters['sort'] ?? '') === 'updated_at' ? 'selected' : '' }}>Terlama</option>
                         <option value="title" {{ ($filters['sort'] ?? '') === 'title' ? 'selected' : '' }}>Judul (A-Z)</option>
                     </select>
                     <button
                         type="button"
-                        class="custom-dropdown-btn w-full text-xs sm:text-sm bg-gray-50/90 hover:bg-gray-100/80 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+                        class="custom-dropdown-btn w-full min-h-11 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 sm:px-3 py-2 text-gray-700 font-medium flex items-center justify-between gap-2 transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-maroon"
                         aria-haspopup="listbox"
                         aria-expanded="false"
                     >
@@ -242,12 +250,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-right absolute right-0 top-full mt-1.5 min-w-40 w-full sm:w-auto bg-white rounded-xl border border-gray-200 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.06),0px_1px_1px_-0.5px_rgba(0,0,0,0.06),0px_3px_3px_-1.5px_rgba(0,0,0,0.06),0px_6px_6px_-3px_rgba(0,0,0,0.06),0px_12px_12px_-6px_rgba(0,0,0,0.06),0px_24px_24px_-12px_rgba(0,0,0,0.06)] p-1.5 z-30 space-y-0.5">
+                    <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top-right absolute right-0 top-full mt-1.5 min-w-40 w-full sm:w-auto bg-white rounded-lg border border-gray-200 shadow-lg p-1.5 z-30 space-y-0.5">
                         @foreach(['-updated_at' => 'Pembaruan Terkini', 'updated_at' => 'Terlama', 'title' => 'Judul (A-Z)'] as $sVal => $sLabel)
                             <div
                                 class="custom-dropdown-item flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg cursor-pointer transition {{ ($filters['sort'] ?? '-updated_at') === $sVal ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                 data-value="{{ $sVal }}"
                                 data-label="{{ $sLabel }}"
+                                role="option"
                             >
                                 <span>{{ $sLabel }}</span>
                                 <svg class="custom-dropdown-check w-3.5 h-3.5 text-brand-maroon {{ ($filters['sort'] ?? '-updated_at') === $sVal ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -263,7 +272,7 @@
                     <a
                         href="{{ route('author.submissions.index', ['tab' => $filters['tab'] ?? 'semua']) }}"
                         id="btn-reset-filter"
-                        class="p-2 min-w-9 min-h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition shrink-0 cursor-pointer"
+                        class="p-2 min-w-11 min-h-11 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition shrink-0 cursor-pointer"
                         title="Reset Filter"
                         aria-label="Reset Filter"
                     >
@@ -277,7 +286,7 @@
     </form>
 
     <!-- Kontainer Tabel & Kartu Responsif Naskah Penulis -->
-    <div id="submissions-table-container" class="relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-2xs">
+    <div id="submissions-table-container" class="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
         <!-- Top Loading Indicator Bar -->
         <div id="table-loading-bar" class="hidden absolute top-0 left-0 right-0 h-0.5 bg-brand-maroon/20 overflow-hidden z-20">
             <div class="h-full bg-brand-maroon w-full animate-pulse"></div>

@@ -114,7 +114,11 @@
                             </div>
                             <h3 class="text-sm font-bold text-gray-900">Belum Ada Naskah Ditemukan</h3>
                             <p class="text-xs text-gray-500">
-                                Tidak ada naskah yang cocok dengan filter atau kata kunci pencarian yang Anda pilih.
+                                @if($viewModel->activeJournal())
+                                    Tidak ada naskah yang cocok dengan filter atau kata kunci pencarian pada jurnal {{ $viewModel->activeJournal()->name }}.
+                                @else
+                                    Tidak ada naskah yang cocok dengan filter atau kata kunci pencarian yang Anda pilih.
+                                @endif
                             </p>
                             <div class="pt-1 flex items-center justify-center gap-2">
                                 <a 
