@@ -229,9 +229,7 @@
                     </div>
                 @endif
 
-                <p class="text-[11px] text-gray-500 text-center leading-tight">
-                    Lisensi artikel terbuka untuk disitasi, disebarluaskan, dan dimanfaatkan secara bebas untuk kemaslahatan publik.
-                </p>
+
             </div>
 
             <!-- Card Statistik Metrik COUNTER -->
