@@ -138,6 +138,11 @@ class EditorialPipelineTest extends TestCase
         $this->post(route('journalmanager.issues.publish', $issue->id))->assertSessionHasNoErrors();
         $article = Article::where('submission_id', $id)->firstOrFail();
         $this->assertSame('published', $article->status);
+        $this->artisan('publications:audit-licenses')
+            ->expectsOutput('matched: 1')
+            ->expectsOutput('missing_evidence: 0')
+            ->expectsOutput('license_mismatch: 0')
+            ->assertSuccessful();
         $this->assertDatabaseHas('issue_articles', ['issue_id' => $issue->id, 'article_id' => $article->id]);
         Auth::logout();
         $this->get(route('journal.issues.show', $issue->id))->assertOk()->assertSee($submission->title);

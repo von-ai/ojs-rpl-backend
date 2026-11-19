@@ -79,3 +79,13 @@ Status operasional kedua prosedur memerlukan SOP yang disahkan dan bukti pelaksa
 4. Setelah pemulihan, periksa kembali akses dan layanan terdampak. Catat penyebab, tindakan korektif, pemilik tindakan, dan bukti penyelesaiannya.
 
 Sebelum prosedur diberlakukan, pengelola perlu mengisi kanal resmi, nama serta pengganti petugas, kontak eskalasi, lokasi register terbatas, dan tanggal pengesahan. Simulasikan satu permintaan koreksi profil dan satu insiden menggunakan data fiktif. Simpan hasil simulasi beserta waktu respons aktual.
+
+### Audit lisensi artikel terbit
+
+Jalankan `php artisan publications:audit-licenses` pada database yang akan diperiksa. Keluaran merinci ID jurnal, artikel, dan naskah untuk kasus yang perlu ditinjau. Simpan hasil dalam register terbatas.
+
+- `matched` berarti lisensi artikel cocok dengan bukti terakhir yang tercatat saat terbit. Untuk perjanjian tertulis, pengelola mencocokkan referensi dengan dokumen asli.
+- `missing_evidence` mencakup artikel yang belum memiliki bukti digital sebelum atau saat terbit. Jika tabel bukti belum tersedia, semua artikel bertanggal terbit masuk kategori ini. Cocokkan dengan arsip penulis, termasuk artikel yang dilabeli CC BY 4.0.
+- `license_mismatch` dan `missing_publication_date` perlu diperiksa oleh pengelola bersama redaksi sebelum memutuskan koreksi.
+
+Pemeriksaan baca-saja pada MySQL Docker lokal pada 19 November 2026 menghasilkan nol artikel berstatus `published`. Tes alur editorial dengan data sintetis menghasilkan satu artikel dengan bukti cocok. Pemeriksaan katalog produksi dan perjanjian aslinya menunggu akses pengelola.
