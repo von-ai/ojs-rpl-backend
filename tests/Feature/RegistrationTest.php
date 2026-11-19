@@ -34,6 +34,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'StrongPassword123!',
             'affiliation' => 'Universitas Hasanuddin',
             'consent_terms' => '1',
+            'notice_version' => config('registration.version'),
         ], $overrides);
     }
 
@@ -69,6 +70,9 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('identity_challenges', ['token_hash' => hash('sha256', $token)]);
         $this->assertStringNotContainsString($token, DB::table('jobs')->value('payload'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'account_registered']);
+        $details = json_decode(DB::table('audit_logs')->where('action', 'account_registered')->value('details') ?? '{}', true);
+        $this->assertSame(config('registration.version'), $details['version']);
+        $this->get('/register')->assertSee($details['purpose'])->assertSee($details['terms'])->assertSee($details['privacy']);
         $this->assertGuest();
     }
 

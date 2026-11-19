@@ -464,6 +464,6 @@ class SysAdminEndToEndIntegrationTest extends TestCase
 
         $metrics = $vm->summaryMetrics();
         $this->assertCount(4, $metrics);
-        $this->assertStringContainsString('Terpakai', $metrics[2]['value']);
+        $this->assertSame("{$health['disk_percentage']}%", $metrics[2]['value']);
     }
 }

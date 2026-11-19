@@ -69,7 +69,7 @@ class PublicArticleService
                 'apc_fee' => 'Rp 0',
                 'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
                 'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
-                'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                'license' => null,
                 'status' => 'active',
             ]);
     }
@@ -228,11 +228,8 @@ class PublicArticleService
         try {
             $ip = $request->ip() ?? '127.0.0.1';
             $userAgent = $request->userAgent() ?? 'Unknown-Agent';
-            $date = Carbon::now('UTC')->toDateString();
-
-            // Salt anonim per tanggal untuk privasi pengunjung sesuai pedoman COUNTER
-            $visitHash = hash('sha256', "{$ip}|{$userAgent}|{$date}");
             $windowStart = Carbon::now('UTC')->startOfHour();
+            $visitHash = hash_hmac('sha256', serialize([$ip, $userAgent, $windowStart->timestamp]), app('encrypter')->getKey());
 
             DB::transaction(function () use ($article, $galleyId, $eventType, $visitHash, $windowStart): void {
                 $metric = ArticleMetric::where('article_id', $article->id)

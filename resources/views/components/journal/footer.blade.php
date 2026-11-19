@@ -39,7 +39,7 @@
                     Artikel dalam jurnal ini diindeks oleh: SINTA (Akreditasi Peringkat 2), Garuda, CrossRef (DOI), Google Scholar, dan Directory of Open Access Journals (DOAJ).
                 </p>
                 <p class="text-[11px] text-gray-400 leading-relaxed pt-1 font-normal">
-                    Jurnal Riset dan Inovasi BRIDA Makassar didistribusikan di bawah lisensi <strong class="text-gray-600 font-medium">{{ $footerData['license_info'] ?? 'Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)' }}</strong>.
+                    Lisensi jurnal: <strong class="text-gray-600 font-medium">{{ $footerData['license_info'] ?? 'Lisensi belum ditetapkan' }}</strong>.
                 </p>
             </div>
         </div>

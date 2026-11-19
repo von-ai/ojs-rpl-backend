@@ -3,6 +3,9 @@
 @section('title', 'Ruang Kerja Naskah ' . $submission->submission_number . ' — Portal Pemimpin Redaksi')
 
 @section('content')
+@if($submission['status'] !== 'published')
+    @include('components.publication-permission', ['license' => $submission->journal?->license, 'id' => $submission->id, 'editor' => true])
+@endif
 <x-editorial-escalations :submission="$submission" />
 <div class="max-w-7xl mx-auto space-y-6 pb-12">
 

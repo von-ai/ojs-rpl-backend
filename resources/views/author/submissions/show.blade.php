@@ -3,6 +3,9 @@
 @section('title', $submission['submission_number'] . ' — ' . $submission['title'] . ' — Portal Penulis BRIDA')
 
 @section('content')
+@if($submission['status'] !== 'published')
+    @include('components.publication-permission', ['license' => $submission['permission_license'] ?? null, 'id' => $submission['id'], 'editor' => false])
+@endif
 <div class="space-y-6 max-w-7xl mx-auto pb-12 transition-all duration-150">
 
     @if(session('success'))

@@ -14,6 +14,7 @@ use App\Http\Controllers\Eic\EditorInChiefController;
 use App\Http\Controllers\JournalManager\JournalManagerController;
 use App\Http\Controllers\LayoutEditor\LayoutEditorSubmissionController;
 use App\Http\Controllers\Proofreader\ProofreaderSubmissionController;
+use App\Http\Controllers\PublicationPermissionController;
 use App\Http\Controllers\PublicJournalController;
 use App\Http\Controllers\Reviewer\ReviewerController;
 use App\Http\Controllers\SectionEditor\SectionEditorController;
@@ -83,6 +84,7 @@ Route::middleware(['auth', 'role.access:author'])->prefix('author')->name('autho
     Route::post('/submissions/upload-session', [AuthorSubmissionController::class, 'createUploadSession'])->middleware('throttle:10,1')->name('submissions.upload-session');
     Route::post('/submissions', [AuthorSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/export-csv', [AuthorSubmissionController::class, 'exportCsv'])->name('submissions.export');
+    Route::post('/submissions/{id}/publication-permission', PublicationPermissionController::class)->name('submissions.permission');
     Route::get('/submissions/{id}', [AuthorSubmissionController::class, 'show'])->name('submissions.show');
     Route::post('/submissions/{id}/withdraw', [AuthorSubmissionController::class, 'withdraw'])->name('submissions.withdraw');
     Route::post('/submissions/{id}/revisions', [AuthorSubmissionController::class, 'storeRevision'])->name('submissions.revisions.store');
@@ -99,6 +101,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::get('/', [EditorInChiefController::class, 'dashboard'])->name('dashboard');
     Route::get('/guidelines', [EditorInChiefController::class, 'guidelines'])->name('guidelines');
     Route::get('/submissions', [EditorInChiefController::class, 'index'])->name('submissions.index');
+    Route::post('/submissions/{id}/publication-permission', PublicationPermissionController::class)->name('submissions.permission');
     Route::get('/submissions/{id}', [EditorInChiefController::class, 'show'])->name('submissions.show');
     Route::get('/submissions/{id}/editors/search', [EditorInChiefController::class, 'searchEditors'])->name('submissions.editors.search');
     Route::post('/submissions/{id}/escalations/{escalationId}/resolve', [EditorialMediationController::class, 'resolve'])->name('submissions.escalations.resolve');

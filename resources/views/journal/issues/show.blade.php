@@ -84,7 +84,7 @@
                     </div>
                     <span class="text-gray-300">•</span>
                     <div>
-                        Akses: <strong class="text-emerald-700">{{ $journal->license ?? 'Open Access (CC BY 4.0)' }}</strong>
+                        Akses: <strong class="text-emerald-700">{{ $viewModel->licenseLabel() }}</strong>
                     </div>
                 </div>
             </div>

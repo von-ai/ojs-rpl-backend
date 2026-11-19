@@ -113,7 +113,7 @@ class JournalManagerSettingsViewModel
             'payment_instructions' => (string) ($journal?->payment_instructions ?? 'Sertakan ID Naskah pada berita transfer. Setelah melakukan transfer, unggah berkas bukti pembayaran melalui formulir di portal naskah.'),
             'is_paid' => (bool) ($journal?->isPaidApc() ?? false),
             'peer_review_policy' => (string) ($journal?->peer_review_policy ?? 'Penelaahan sejawat berpasangan tertutup dengan identitas penulis dan mitra bestari saling dirahasiakan selama proses evaluasi.'),
-            'license' => (string) ($journal?->license ?? 'Creative Commons Attribution 4.0 International'),
+            'license' => (string) ($journal?->license ?? ''),
         ];
     }
 

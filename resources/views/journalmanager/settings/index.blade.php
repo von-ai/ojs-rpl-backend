@@ -179,7 +179,7 @@
                     <div class="p-3.5 bg-gray-50/60 rounded-xl border border-gray-200/70">
                         <span class="text-gray-500 font-medium block">Lisensi Publikasi</span>
                         <span class="text-xs font-semibold text-gray-900 block mt-1 leading-snug">
-                            {{ $policies['license'] ?: 'Creative Commons Attribution' }}
+                            {{ $policies['license'] ?: 'Lisensi belum ditetapkan' }}
                         </span>
                     </div>
                 </div>

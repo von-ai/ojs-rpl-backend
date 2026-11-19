@@ -16,6 +16,7 @@ use App\Models\UserRole;
 use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\Reviewer\ReviewerService;
 use App\Services\Security\MalwareScannerInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -53,11 +54,18 @@ trait CreatesWorkflowFixtures
     }
 
     /** Construct an editorially approved fixture for issue-management tests. */
-    protected function preparePublication(Submission $submission): Galley
+    protected function preparePublication(Submission $submission, bool $withPermission = true): Galley
     {
         $submission->update(['status' => 'ready_for_issue']);
         $editor = User::factory()->create();
         $this->grantRole($editor, 'editor_in_chief', $submission->journal_id);
+        if ($withPermission && filled($submission->journal->license)) {
+            DB::table('publication_permissions')->insert([
+                'submission_id' => $submission->id, 'actor_id' => $editor->id,
+                'source' => 'written_agreement', 'agreement_reference' => 'ARSIP-UJI',
+                'license' => $submission->journal->license, 'recorded_at' => now(),
+            ]);
+        }
         $file = $this->cleanTestFile();
         $submission->galleys()->where('status', 'active')->update(['status' => 'superseded']);
         $galley = Galley::create(['submission_id' => $submission->id, 'file_id' => $file->id, 'format' => 'pdf', 'label' => 'PDF uji siap terbit', 'stage' => 'approved', 'status' => 'active', 'checksum_sha256' => $file->checksum_sha256, 'approved_checksum' => $file->checksum_sha256, 'version' => (int) $submission->galleys()->max('version') + 1]);

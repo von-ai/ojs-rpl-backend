@@ -74,7 +74,7 @@
                     <div class="sm:col-span-2">
                         <span class="text-gray-500 block text-[11px]">Lisensi Publikasi:</span>
                         <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-emerald-200 inline-block">
-                            {{ $journal->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)' }}
+                            {{ $viewModel->licenseLabel() }}
                         </strong>
                     </div>
                 </div>

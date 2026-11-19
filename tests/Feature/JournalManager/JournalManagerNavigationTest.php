@@ -79,7 +79,7 @@ class JournalManagerNavigationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pengguna');
         $response->assertSee('Tim Redaksi');
-        $response->assertSee('Direktori Penelaah');
+        $response->assertSee('Mitra Bestari');
     }
 
     /**

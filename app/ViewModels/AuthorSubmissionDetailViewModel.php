@@ -225,6 +225,7 @@ class AuthorSubmissionDetailViewModel
             'references' => $sub->references,
             'comments_for_editor' => $sub->comments_for_editor,
             'section' => $sectionName,
+            'permission_license' => $user && $sub->author_id === $user->id ? $sub->journal?->license : null,
             'journal_name' => $sub->journal?->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)',
             'journal_issn' => $sub->journal?->eissn ?? '2985-7821',
             'status' => $sub->status,

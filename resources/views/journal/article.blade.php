@@ -229,9 +229,7 @@
                     </div>
                 @endif
 
-                <p class="text-[11px] text-gray-500 text-center leading-tight">
-                    Lisensi artikel terbuka untuk disitasi, disebarluaskan, dan dimanfaatkan secara bebas untuk kemaslahatan publik.
-                </p>
+
             </div>
 
             <!-- Card Statistik Metrik COUNTER -->
@@ -257,11 +255,8 @@
             <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-3 text-xs text-gray-600">
                 <h3 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Lisensi Publikasi</h3>
                 <div class="flex items-start gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
-                        <span class="font-bold text-[10px]">CC</span>
-                    </div>
                     <p class="text-[11px] leading-relaxed">
-                        Artikel ini dilisensikan di bawah <strong>{{ $journal->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)' }}</strong>. Hak cipta naskah tetap dipegang oleh penulis.
+                        Artikel ini dilisensikan di bawah <strong>{{ $article->license }}</strong>. Hak cipta naskah tetap dipegang oleh penulis.
                     </p>
                 </div>
             </div>

@@ -402,6 +402,11 @@ class PublicJournalViewModel
         return [];
     }
 
+    public function licenseLabel(): string
+    {
+        return trim((string) $this->journal?->license) ?: 'Lisensi belum ditetapkan';
+    }
+
     /**
      * Get Footer details.
      *
@@ -417,7 +422,7 @@ class PublicJournalViewModel
             'address' => "Gedung Balai Kota Makassar, Lantai 3\nJl. Ahmad Yani No. 2, Kel. Baru, Kec. Ujung Pandang\nKota Makassar, Sulawesi Selatan 90111",
             'email' => $this->journal?->editorial_email ?: 'jurnal.brida@makassar.go.id',
             'phone' => $this->journal?->contact_phone ?: '(0411) 3622455',
-            'license_info' => $this->journal?->license ?: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+            'license_info' => $this->licenseLabel(),
             'copyright' => 'Badan Riset dan Inovasi Daerah Kota Makassar. Seluruh hak cipta dilindungi undang-undang.',
         ];
     }

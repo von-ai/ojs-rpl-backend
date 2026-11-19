@@ -28,7 +28,7 @@ class EditorialPipelineTest extends TestCase
         Storage::fake('azure');
         Mail::fake();
         Notification::fake();
-        $journal = Journal::create(['name' => 'Jurnal Uji Integrasi', 'slug' => 'sirida-makassar', 'status' => 'active', 'apc_enabled' => false, 'apc_fee' => 'Gratis']);
+        $journal = Journal::create(['name' => 'Jurnal Uji Integrasi', 'license' => 'CC BY 4.0', 'slug' => 'sirida-makassar', 'status' => 'active', 'apc_enabled' => false, 'apc_fee' => 'Gratis']);
         $section = Section::create(['journal_id' => $journal->id, 'name' => 'Riset', 'slug' => 'riset', 'accepting_submissions' => true]);
         $people = [];
         foreach (['author', 'editor_in_chief', 'section_editor', 'reviewer', 'copyeditor', 'layout_editor', 'proofreader', 'manager'] as $role) {
@@ -129,9 +129,20 @@ class EditorialPipelineTest extends TestCase
         $this->post('/journalmanager/issues', ['volume' => '1', 'number' => '1', 'year' => 2026, 'title' => 'Edisi integrasi'])->assertSessionHasNoErrors();
         $issue = Issue::firstOrFail();
         $this->post(route('journalmanager.issues.add-article', $issue->id), ['article_id' => $id, 'pages' => '1-10'])->assertSessionHasNoErrors();
+        $this->post(route('journalmanager.issues.publish', $issue->id))->assertSessionHasErrors('publish');
+        $this->actingAs($author)->post("/author/submissions/{$id}/publication-permission", [
+            'license' => 'CC BY 4.0', 'confirmed' => '1',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('publication_permissions', ['submission_id' => $id, 'actor_id' => $author->id, 'source' => 'author']);
+        $this->actingAs($people['manager']);
         $this->post(route('journalmanager.issues.publish', $issue->id))->assertSessionHasNoErrors();
         $article = Article::where('submission_id', $id)->firstOrFail();
         $this->assertSame('published', $article->status);
+        $this->artisan('publications:audit-licenses')
+            ->expectsOutput('matched: 1')
+            ->expectsOutput('missing_evidence: 0')
+            ->expectsOutput('license_mismatch: 0')
+            ->assertSuccessful();
         $this->assertDatabaseHas('issue_articles', ['issue_id' => $issue->id, 'article_id' => $article->id]);
         Auth::logout();
         $this->get(route('journal.issues.show', $issue->id))->assertOk()->assertSee($submission->title);
