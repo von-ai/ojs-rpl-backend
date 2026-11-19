@@ -84,7 +84,7 @@
                     </div>
                     <span class="text-gray-300">•</span>
                     <div>
-                        Akses: <strong class="text-emerald-700">{{ trim((string) $journal->license) ?: 'Lisensi belum ditetapkan' }}</strong>
+                        Akses: <strong class="text-emerald-700">{{ $viewModel->licenseLabel() }}</strong>
                     </div>
                 </div>
             </div>
