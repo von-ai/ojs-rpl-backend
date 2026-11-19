@@ -742,7 +742,7 @@
                         class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                         <option value="">-- Pilih Pengguna Terdaftar --</option>
-                        @foreach ($viewModel->allRegisteredUsers() as $u)
+                        @foreach ($viewModel->filteredUsers() as $u)
                             <option value="{{ $u['id'] }}">{{ $u['name'] }} ({{ $u['email'] }})</option>
                         @endforeach
                     </select>
@@ -1002,7 +1002,7 @@
 
 <script>
     // Inisialisasi Cache Pengguna
-    const USERS_CACHE = @js(collect($viewModel->allRegisteredUsers())->keyBy('id'));
+    const USERS_CACHE = @js(collect($viewModel->users())->keyBy('id'));
     let activeDetailUser = null;
 
     /**

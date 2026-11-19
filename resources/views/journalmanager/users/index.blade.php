@@ -649,7 +649,7 @@
                         value=""
                     >
                     <datalist id="registered_users_email_list">
-                        @foreach ($viewModel->allRegisteredUsers() as $registeredUser)
+                        @foreach ($viewModel->filteredUsers() as $registeredUser)
                             <option value="{{ $registeredUser['email'] }}">{{ $registeredUser['name'] }}</option>
                         @endforeach
                     </datalist>
