@@ -81,9 +81,14 @@
         display: inline-flex !important;
     }
 
-    .portal-sidebar,
-    aside[id$="-sidebar"] {
-        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    .portal-sidebar:not(.sidebar-ready),
+    aside[id$="-sidebar"]:not(.sidebar-ready) {
+        transition: none !important;
+    }
+
+    .portal-sidebar.sidebar-ready,
+    aside[id$="-sidebar"].sidebar-ready {
+        transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     #sidebar-collapse-toggle-btn {
@@ -91,7 +96,9 @@
     }
 
     .portal-sidebar.sidebar-collapsed,
-    aside[id$="-sidebar"].sidebar-collapsed {
+    aside[id$="-sidebar"].sidebar-collapsed,
+    html.sidebar-is-collapsed .portal-sidebar,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] {
         width: 4.25rem !important; /* 68px */
     }
 
@@ -104,32 +111,72 @@
     aside[id$="-sidebar"].sidebar-collapsed .sidebar-heading,
     aside[id$="-sidebar"].sidebar-collapsed .sidebar-brand-text,
     aside[id$="-sidebar"].sidebar-collapsed .sidebar-badge-full,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-user-info {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-user-info,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-label,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-heading,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-brand-text,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-badge-full,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-user-info,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-label,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-heading,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-brand-text,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-badge-full,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-user-info {
         display: none !important;
     }
 
     .portal-sidebar.sidebar-collapsed .sidebar-header,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-header {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-header,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-header,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-header {
         justify-content: center !important;
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
 
     .portal-sidebar.sidebar-collapsed .sidebar-brand-link,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-brand-link {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-brand-link,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-brand-link,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-brand-link {
         display: none !important;
     }
 
     .portal-sidebar.sidebar-collapsed #sidebar-collapse-toggle-btn,
-    aside[id$="-sidebar"].sidebar-collapsed #sidebar-collapse-toggle-btn {
+    aside[id$="-sidebar"].sidebar-collapsed #sidebar-collapse-toggle-btn,
+    html.sidebar-is-collapsed .portal-sidebar #sidebar-collapse-toggle-btn,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #sidebar-collapse-toggle-btn {
         display: inline-flex !important;
         width: 2.25rem !important;
         height: 2.25rem !important;
         margin: auto !important;
     }
 
+    .portal-sidebar.sidebar-collapsed #collapse-icon-left,
+    .portal-sidebar.sidebar-collapsed #bottom-collapse-icon-left,
+    aside[id$="-sidebar"].sidebar-collapsed #collapse-icon-left,
+    aside[id$="-sidebar"].sidebar-collapsed #bottom-collapse-icon-left,
+    html.sidebar-is-collapsed .portal-sidebar #collapse-icon-left,
+    html.sidebar-is-collapsed .portal-sidebar #bottom-collapse-icon-left,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-left,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #bottom-collapse-icon-left {
+        display: none !important;
+    }
+
+    .portal-sidebar.sidebar-collapsed #collapse-icon-right,
+    .portal-sidebar.sidebar-collapsed #bottom-collapse-icon-right,
+    aside[id$="-sidebar"].sidebar-collapsed #collapse-icon-right,
+    aside[id$="-sidebar"].sidebar-collapsed #bottom-collapse-icon-right,
+    html.sidebar-is-collapsed .portal-sidebar #collapse-icon-right,
+    html.sidebar-is-collapsed .portal-sidebar #bottom-collapse-icon-right,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-right,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #bottom-collapse-icon-right {
+        display: block !important;
+    }
+
     .portal-sidebar.sidebar-collapsed .sidebar-divider,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-divider {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-divider,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-divider,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-divider {
         display: block !important;
         width: 1.75rem;
         margin-left: auto;
@@ -137,7 +184,9 @@
     }
 
     .portal-sidebar.sidebar-collapsed .sidebar-nav-item,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-nav-item {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-nav-item,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-nav-item,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-nav-item {
         justify-content: center !important;
         width: 2.75rem !important; /* 44px icon button */
         height: 2.75rem !important;
@@ -147,8 +196,18 @@
         border-radius: 0.5rem !important;
     }
 
+    .portal-sidebar.sidebar-collapsed .sidebar-footer > div,
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-footer > div,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-footer > div,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-footer > div {
+        justify-content: center !important;
+        padding: 0.25rem !important;
+    }
+
     .portal-sidebar.sidebar-collapsed .sidebar-badge-dot,
-    aside[id$="-sidebar"].sidebar-collapsed .sidebar-badge-dot {
+    aside[id$="-sidebar"].sidebar-collapsed .sidebar-badge-dot,
+    html.sidebar-is-collapsed .portal-sidebar .sidebar-badge-dot,
+    html.sidebar-is-collapsed aside[id$="-sidebar"] .sidebar-badge-dot {
         display: block !important;
     }
 }

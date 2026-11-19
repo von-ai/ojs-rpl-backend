@@ -20,7 +20,7 @@
     <!-- Featured Issue Box (Grid 2-Column: Cover + Content) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
         <!-- Left Book Cover Card Mockup -->
-        <div class="md:col-span-1 bg-brand-maroon text-white p-4 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-brand-maroon-hover shadow-xs">
+        <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-brand-maroon text-white p-4 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-brand-maroon-hover shadow-xs">
             <div class="text-[10px] font-medium text-white/90 uppercase tracking-normal border-b border-white/20 pb-1.5">
                 BRIDA MAKASSAR
             </div>

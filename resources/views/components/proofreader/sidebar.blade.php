@@ -1,6 +1,24 @@
 @props(['assignedCount' => null])
 
-<aside id="proofreader-sidebar" class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
+<script>
+    (function() {
+        try {
+            if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        } catch (e) {}
+    })();
+</script>
+<aside id="proofreader-sidebar" class="portal-sidebar fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
+    <script>
+        (function() {
+            try {
+                if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                    document.getElementById('proofreader-sidebar')?.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <!-- Header Brand & Tombol Kontrol -->
     <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
@@ -80,7 +98,7 @@
             </div>
 
             <!-- Tombol Keluar (Logout) -->
-            <form action="{{ route('logout') }}" method="POST" class="shrink-0">
+            <form action="{{ route('logout') }}" method="POST" class="shrink-0 sidebar-user-info">
                 @csrf
                 <button 
                     type="submit" 

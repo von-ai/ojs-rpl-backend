@@ -6,8 +6,8 @@
 <div class="max-w-7xl mx-auto space-y-5">
 
     <!-- Header Halaman & Tombol Aksi Utama -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="min-w-0 flex-1">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                 Direktori Pengguna &amp; Hak Akses Global
             </h1>
@@ -16,29 +16,29 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-2 self-start sm:self-center flex-wrap">
+        <div class="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
             <button
                 type="button"
                 onclick="document.getElementById('modal-import-users').classList.remove('hidden')"
-                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition shadow-2xs cursor-pointer"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-300 rounded-lg transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
                 data-tooltip="Impor data pengguna secara massal via berkas CSV"
             >
-                <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                <span>Impor Pengguna CSV</span>
+                <span>Impor CSV</span>
             </button>
 
             <button
                 type="button"
                 onclick="openAssignRoleModal()"
-                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-2xs transition cursor-pointer"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-2xs transition cursor-pointer whitespace-nowrap shrink-0"
                 data-tooltip="Tetapkan peran jurnal baru untuk pengguna sistem"
             >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
-                <span>Tetapkan Peran Pengguna</span>
+                <span>Tetapkan Peran</span>
             </button>
         </div>
     </div>

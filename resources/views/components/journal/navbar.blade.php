@@ -16,15 +16,15 @@
         </a>
 
         <!-- Header Actions: Search, Kirim Naskah, Profile -->
-        <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        <div class="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end">
             <!-- Quick Search Input -->
-            <form action="{{ route('journal.index') }}" method="GET" class="relative max-w-xs shrink">
+            <form action="{{ route('journal.index') }}" method="GET" class="relative flex-1 min-w-0 md:flex-none max-w-xs">
                 <input
                     type="text"
                     name="q"
                     placeholder="Cari Cepat..."
                     value="{{ request('q') }}"
-                    class="w-36 sm:w-48 pl-8 pr-3 py-1.5 text-xs bg-gray-100/80 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
+                    class="w-full md:w-48 pl-8 pr-3 py-1.5 text-xs bg-gray-100/80 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
                 >
                 <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

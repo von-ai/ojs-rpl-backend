@@ -288,6 +288,7 @@ function initSidebarCollapse() {
     const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
 
     function applyCollapseState(collapsed) {
+        document.documentElement.classList.toggle('sidebar-is-collapsed', collapsed);
         if (collapsed) {
             sidebar.classList.add('sidebar-collapsed');
             iconLeft?.classList.add('hidden');
@@ -318,6 +319,12 @@ function initSidebarCollapse() {
     if (window.innerWidth >= 1024 && localStorage.getItem(STORAGE_KEY) === '1') {
         applyCollapseState(true);
     }
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            sidebar.classList.add('sidebar-ready');
+        });
+    });
 
     function toggleSidebarDesktop() {
         const nextState = !sidebar.classList.contains('sidebar-collapsed');

@@ -11,7 +11,7 @@
         <span>/</span>
         <a href="{{ route('journal.archives') }}" class="hover:text-brand-maroon">Arsip Edisi</a>
         <span>/</span>
-        <span class="text-gray-900 font-medium truncate max-w-md">Vol. {{ $issue->volume }} No. {{ $issue->number }} ({{ $issue->year }})</span>
+        <span class="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-md">Vol. {{ $issue->volume }} No. {{ $issue->number }} ({{ $issue->year }})</span>
     </nav>
 
     <!-- Header Edisi Terbitan -->
@@ -19,7 +19,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
 
             <!-- Book Cover Badge Mockup -->
-            <div class="md:col-span-1 bg-gradient-to-b from-[#ED1C24] via-[#DE131B] to-[#BA0E16] text-white p-5 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-[#A80B12] shadow-sm">
+            <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-gradient-to-b from-[#ED1C24] via-[#DE131B] to-[#BA0E16] text-white p-5 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-[#A80B12] shadow-sm">
                 <div class="text-[10px] font-medium text-white/85 uppercase tracking-normal border-b border-white/20 pb-1.5">
                     Publikasi Ilmiah Resmi
                 </div>
@@ -96,7 +96,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
         <!-- Daftar Artikel (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 min-w-0 space-y-6">
             <div class="flex items-center justify-between border-b border-gray-200 pb-3">
                 <h2 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +184,7 @@
         </div>
 
         <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
             <x-journal.sidebar
                 :publisherInfo="$viewModel->publisherInfo()"
                 :indexingData="$viewModel->indexingData()"

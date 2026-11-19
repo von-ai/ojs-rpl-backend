@@ -38,7 +38,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Kolom Arsip (2/3 Kiri) -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 min-w-0 space-y-6">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @forelse($issues as $arc)
@@ -103,7 +103,7 @@
     </div>
 
     <!-- Kolom Samping (1 Kolom Kanan) -->
-    <aside class="lg:col-span-1 space-y-6">
+    <aside class="lg:col-span-1 min-w-0 space-y-6">
         <x-journal.sidebar
             :publisherInfo="$viewModel->publisherInfo()"
             :indexingData="$viewModel->indexingData()"

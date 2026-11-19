@@ -31,7 +31,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
+        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
             
             <x-journal.about-subnav />
 
@@ -106,7 +106,7 @@
         </div>
 
         <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
             <x-journal.sidebar
                 :publisherInfo="$viewModel->publisherInfo()"
                 :indexingData="$viewModel->indexingData()"

@@ -46,14 +46,14 @@
         <span>/</span>
         <a href="{{ route('journal.articles.search') }}" class="hover:text-brand-maroon">Katalog Artikel</a>
         <span>/</span>
-        <span class="text-gray-900 font-medium truncate max-w-md">{{ $article->title }}</span>
+        <span class="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-md">{{ $article->title }}</span>
     </nav>
 
     <!-- Grid 2 Kolom (Konten Artikel & Sidebar Info) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
         <!-- Kolom Konten Utama (2/3) -->
-        <article class="lg:col-span-2 space-y-8 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+        <article class="lg:col-span-2 min-w-0 space-y-8 bg-white rounded-xl border border-gray-200 p-5 sm:p-8">
 
             <!-- Metadata Edisi & Kategori -->
             <div class="space-y-3 border-b border-gray-100 pb-6">
@@ -82,7 +82,7 @@
                 <div class="flex items-center gap-4 text-xs text-gray-500 flex-wrap pt-1">
                     <div class="flex items-center gap-1.5">
                         <span class="font-medium text-gray-700">DOI:</span>
-                        <a href="https://doi.org/10.55981/sirida.{{ $article->slug }}" target="_blank" class="text-brand-maroon hover:underline">
+                        <a href="https://doi.org/10.55981/sirida.{{ $article->slug }}" target="_blank" class="text-brand-maroon hover:underline break-all">
                             https://doi.org/10.55981/sirida.{{ $article->slug }}
                         </a>
                     </div>
@@ -149,7 +149,7 @@
             @if(!empty($article->references))
                 <div class="space-y-3 pt-4 border-t border-gray-100">
                     <h2 class="text-sm sm:text-base font-bold text-gray-900">Daftar Pustaka</h2>
-                    <div class="text-xs text-gray-600 leading-relaxed space-y-1.5 font-mono whitespace-pre-line bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="text-xs text-gray-600 leading-relaxed space-y-1.5 font-mono whitespace-pre-line break-words overflow-x-auto bg-gray-50 p-4 rounded-xl border border-gray-100">
                         {{ $article->references }}
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                 </div>
 
                 <!-- Box Teks Sitasi APA -->
-                <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-mono text-gray-800 leading-relaxed select-all">
+                <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-mono text-gray-800 leading-relaxed select-all break-words overflow-x-auto">
                     {{ $citations['apa'] ?? '' }}
                 </div>
             </div>
@@ -183,7 +183,7 @@
         </article>
 
         <!-- Kolom Samping (Sidebar Aksi & Metrik) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
 
             <!-- Card Unduh Galai PDF Utama -->
             <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">

@@ -42,13 +42,14 @@
                         name="category"
                         :value="request('category')"
                         :options="$categoryOptions"
-                        button-class="py-2.5 px-3 text-xs bg-white border-gray-300 text-gray-700 rounded-md"
-                        panel-class="rounded-md min-w-56"
+                        container-class="flex-1 min-w-0 sm:flex-none"
+                        button-class="w-full py-2.5 px-3 text-xs bg-white border-gray-300 text-gray-700 rounded-md min-w-0 sm:min-w-48"
+                        panel-class="rounded-md w-full sm:min-w-56"
                     />
 
                     <button 
                         type="submit" 
-                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-md transition duration-150 flex items-center gap-2 cursor-pointer border border-brand-maroon"
+                        class="px-5 py-2.5 bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white text-xs font-bold rounded-md transition duration-150 flex items-center gap-2 cursor-pointer border border-brand-maroon shrink-0"
                     >
                         <span>Cari</span>
                     </button>
@@ -134,7 +135,7 @@
                                 @endif
                             </div>
 
-                            <span class="text-[11px] font-mono text-gray-400">
+                            <span class="text-[11px] font-mono text-gray-400 break-all">
                                 https://doi.org/10.55981/sirida.{{ $article->slug }}
                             </span>
                         </div>

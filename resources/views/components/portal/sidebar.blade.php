@@ -5,9 +5,28 @@
     'guidelineUrl' => null,
     'guidelineLabel' => 'Pedoman Peran',
     'guidelineActive' => false,
+    'guidelineTarget' => null,
 ])
 
+<script>
+    (function() {
+        try {
+            if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        } catch (e) {}
+    })();
+</script>
 <aside id="{{ $id }}" class="portal-sidebar fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
+    <script>
+        (function() {
+            try {
+                if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                    document.getElementById('{{ $id }}')?.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <!-- Header Brand & Tombol Kontrol -->
     <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
@@ -51,6 +70,7 @@
         @if($guidelineUrl)
             <a
                 href="{{ $guidelineUrl }}"
+                @if($guidelineTarget) target="{{ $guidelineTarget }}" rel="noopener noreferrer" @endif
                 title="{{ $guidelineLabel }}"
                 class="group flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-lg transition duration-150 sidebar-nav-item {{ $guidelineActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
             >
@@ -108,15 +128,6 @@
             </button>
         </form>
     </div>
-    <script>
-        (function() {
-            try {
-                if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
-                    document.getElementById('{{ $id }}')?.classList.add('sidebar-collapsed');
-                }
-            } catch (e) {}
-        })();
-    </script>
 </aside>
 
 <!-- Mobile Overlay Backdrop -->
@@ -148,6 +159,7 @@
         const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
 
         function applyCollapseState(collapsed) {
+            document.documentElement.classList.toggle('sidebar-is-collapsed', collapsed);
             if (collapsed) {
                 sidebar.classList.add('sidebar-collapsed');
                 iconLeft?.classList.add('hidden');
@@ -178,6 +190,12 @@
         if (window.innerWidth >= 1024 && localStorage.getItem(STORAGE_KEY) === '1') {
             applyCollapseState(true);
         }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                sidebar.classList.add('sidebar-ready');
+            });
+        });
 
         function toggleSidebarDesktop() {
             const nextState = !sidebar.classList.contains('sidebar-collapsed');
