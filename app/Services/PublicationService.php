@@ -31,7 +31,7 @@ class PublicationService
         $permittedLicense = DB::table('publication_permissions')
             ->where('submission_id', $submission->id)->latest('id')->value('license');
         if ($permittedLicense !== $license) {
-            throw new DomainException('Izin penulis atau perjanjian tertulis terverifikasi untuk lisensi ini diperlukan.');
+            throw new DomainException($submission->submission_number.': Izin penulis atau perjanjian tertulis terverifikasi untuk lisensi ini diperlukan.');
         }
         $article = Article::firstOrCreate(['submission_id' => $submission->id], [
             'journal_id' => $submission->journal_id, 'section_id' => $submission->section_id,
