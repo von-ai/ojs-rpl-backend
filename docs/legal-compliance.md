@@ -62,3 +62,20 @@ Pengelola perlu menetapkan kanal permintaan, petugas, dan cara memverifikasi ide
 Untuk kegagalan pelindungan data pribadi, Pasal 46 mengatur pemberitahuan tertulis kepada subjek data dan lembaga paling lambat 3 × 24 jam. Pengelola perlu menunjuk penanggung jawab dan menguji prosedur pencatatan waktu, identifikasi data terdampak, penjelasan kejadian, penanganan dan pemulihan, serta penyimpanan bukti pengiriman. [UU Nomor 27 Tahun 2022](https://peraturan.bpk.go.id/Download/224884/UU%20Nomor%2027%20Tahun%202022.pdf)
 
 Status operasional kedua prosedur memerlukan SOP yang disahkan dan bukti pelaksanaan atau simulasi.
+
+### Draf prosedur layanan hak pengguna
+
+1. Petugas penerima membuat nomor kasus dan mencatat waktu, jenis permintaan, serta kanal balasan. Simpan rincian pribadi dalam register terbatas. Gunakan nomor kasus ketika membahasnya dengan tim teknis.
+2. Verifikasi identitas melalui kanal akun yang sudah terdaftar. Untuk perwakilan, periksa kewenangannya. Catat hasil verifikasi dan batasi pengumpulan dokumen identitas pada kebutuhan kasus.
+3. Penanggung jawab menelusuri data akun, profil, naskah, artikel, dan salinan terkait. Untuk artikel terbit, libatkan editor dan petugas arsip sebelum memutuskan koreksi metadata atau tindakan terhadap rekam publikasi.
+4. Catat keputusan, dasar, tenggat yang berlaku untuk jenis permintaan, dan pihak yang menyetujui. Pelaksana mencatat perubahan dan pemeriksa memverifikasi hasil sebelum balasan dikirim.
+5. Simpan waktu penyelesaian, bukti pengiriman jawaban, serta tindak lanjut terhadap salinan cadangan bila data dipulihkan. Pengelola menetapkan masa simpan register.
+
+### Draf prosedur kegagalan pelindungan data
+
+1. Petugas mencatat waktu kejadian bila diketahui, waktu deteksi, sistem terdampak, dan nomor insiden. Eskalasikan segera kepada penanggung jawab pengendali data.
+2. Tim teknis membatasi akses yang terdampak, mengamankan bukti dalam penyimpanan terbatas, dan mencatat tindakan pemulihan. Penanggung jawab mengidentifikasi subjek, jenis data dan dampak, serta mencatat dasar penilaian insiden.
+3. Untuk kejadian yang memenuhi Pasal 46, penanggung jawab mengoordinasikan pemberitahuan tertulis sesuai tenggat. Catat data yang terungkap, kapan dan bagaimana pengungkapan terjadi, serta upaya penanganan dan pemulihan. Simpan waktu pengiriman dan tanda terima dari setiap tujuan. Nilai juga kebutuhan pemberitahuan kepada masyarakat sesuai ketentuan yang berlaku.
+4. Setelah pemulihan, periksa kembali akses dan layanan terdampak. Catat penyebab, tindakan korektif, pemilik tindakan, dan bukti penyelesaiannya.
+
+Sebelum prosedur diberlakukan, pengelola perlu mengisi kanal resmi, nama serta pengganti petugas, kontak eskalasi, lokasi register terbatas, dan tanggal pengesahan. Simulasikan satu permintaan koreksi profil dan satu insiden menggunakan data fiktif. Simpan hasil simulasi beserta waktu respons aktual.
