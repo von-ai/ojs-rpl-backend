@@ -89,3 +89,19 @@ Jalankan `php artisan publications:audit-licenses` pada database yang akan diper
 - `license_mismatch` dan `missing_publication_date` perlu diperiksa oleh pengelola bersama redaksi sebelum memutuskan koreksi.
 
 Pemeriksaan baca-saja pada MySQL Docker lokal pada 19 November 2026 menghasilkan nol artikel berstatus `published`. Tes alur editorial dengan data sintetis menghasilkan satu artikel dengan bukti cocok. Pemeriksaan katalog produksi dan perjanjian aslinya menunggu akses pengelola.
+
+### Hasil simulasi meja insiden SIM-2026-01
+
+Simulasi meja 19 November 2026 memakai skenario fiktif tentang tautan lampiran editorial yang sempat terbuka. Dua profil sintetis terdampak. Peran petugas penerima, tim teknis, dan penanggung jawab dimainkan dalam skenario. Waktu berikut adalah waktu latihan yang dimodelkan dalam WITA.
+
+| Waktu simulasi | Tindakan dan hasil latihan |
+|---|---|
+| 19 November 09.00 | Petugas menerima laporan dan membuka kasus SIM-2026-01. Untuk latihan, kejadian dan deteksi dianggap bertepatan. Batas 72 jam jatuh pada 22 November pukul 09.00 WITA. |
+| 19 November 09.15 | Tim teknis menandai tautan untuk ditutup, membatasi akses, dan mencatat lokasi log serta pengaturan akses yang perlu disimpan di arsip insiden. |
+| 19 November 10.00 | Penanggung jawab menetapkan dua subjek fiktif dan data terdampak berupa nama dan email. Dalam skenario, ia memutuskan menyiapkan pemberitahuan kepada subjek dan lembaga serta mencatat penilaian terpisah untuk pemberitahuan publik. |
+| 19 November 11.00 | Latihan mensimulasikan dua pengiriman kepada subjek dan satu kepada lembaga. Waktu simulasi 2 jam sejak deteksi, dengan sisa 70 jam. Referensi simulasi dicatat sebagai SIM-N01, SIM-N02, dan SIM-N03. |
+| 19 November 11.30 | Tim menutup skenario setelah mencatat pemeriksaan ulang akses dan menetapkan perbaikan uji akses lampiran sebagai tindak lanjut. |
+
+Contoh inti pemberitahuan dalam latihan. “Pada 19 November pukul 09.00 WITA, pengaturan tautan lampiran memungkinkan akses tanpa autentikasi terhadap nama dan email. Dalam skenario ini akses ditutup pada pukul 09.15 WITA. Tim memeriksa log dan konfigurasi untuk menilai cakupan kejadian. Hubungi petugas pelindungan data melalui kanal resmi pengelola untuk informasi dan tindak lanjut.”
+
+Latihan selesai pada tingkat simulasi meja. Waktu respons aktual, pengiriman, tanda terima, dan pemulihan sistem perlu dibuktikan dalam latihan bersama petugas yang ditunjuk. Pengelola mengisi kanal, pemilik tindakan, dan lokasi arsip sebelum menjalankannya.
