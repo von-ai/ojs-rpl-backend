@@ -58,9 +58,9 @@
     <!-- Bottom Footer Row: DOI, Metrics, Buttons -->
     <div class="pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <!-- Left: DOI & Metrics -->
-        <div class="flex items-center flex-wrap gap-3 text-gray-500">
+        <div class="flex items-center flex-wrap gap-2.5 sm:gap-3 text-gray-500 min-w-0">
             @if(!empty($article['doi']))
-                <a href="https://doi.org/{{ $article['doi'] }}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-gray-600 hover:text-brand-maroon underline">
+                <a href="https://doi.org/{{ $article['doi'] }}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-gray-600 hover:text-brand-maroon underline break-all">
                     doi:{{ $article['doi'] }}
                 </a>
                 @if(($article['views_count'] ?? $article['views'] ?? null) !== null || ($article['downloads_count'] ?? $article['downloads'] ?? null) !== null)

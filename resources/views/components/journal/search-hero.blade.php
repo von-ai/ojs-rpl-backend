@@ -39,12 +39,12 @@
                             'penulis' => 'Nama Penulis',
                             'abstrak' => 'Abstrak & Kata Kunci',
                         ]"
-                        container-class="w-full sm:w-auto shrink-0"
-                        button-class="py-2 px-3 text-xs sm:text-sm bg-gray-50 border-gray-300 text-gray-700 rounded-md min-w-44"
+                        container-class="w-full sm:w-auto shrink-0 min-w-0"
+                        button-class="py-2 px-3 text-xs sm:text-sm bg-gray-50 border-gray-300 text-gray-700 rounded-md w-full sm:w-auto sm:min-w-44"
                         panel-class="min-w-48 rounded-md"
                     />
 
-                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-medium text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-md border border-brand-maroon transition-all shrink-0">
+                    <button type="submit" class="w-full sm:w-auto px-5 py-2 text-xs sm:text-sm font-medium text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-md border border-brand-maroon transition-all shrink-0">
                         Telusuri
                     </button>
                 </div>

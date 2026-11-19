@@ -33,9 +33,9 @@
     </div>
 
     <!-- Card Footer Info -->
-    <div class="pt-2.5 border-t border-white/20 flex items-center justify-between text-xs text-white/90 font-normal">
+    <div class="pt-2.5 border-t border-white/20 flex flex-wrap items-center justify-between gap-1 text-[11px] sm:text-xs text-white/90 font-normal">
         <span>Proses Review: <strong class="text-white font-medium">3-4 Minggu</strong></span>
-        <span class="text-white/40">•</span>
+        <span class="text-white/40 hidden sm:inline">•</span>
         <span class="text-white font-medium">Bebas Biaya Publikasi</span>
     </div>
 </div>

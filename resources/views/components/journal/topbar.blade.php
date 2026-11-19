@@ -1,21 +1,21 @@
 @props(['topbarData' => null, 'journal' => null])
 
-<div class="bg-gray-50 border-b border-gray-200 text-xs py-1.5 px-4 sm:px-8">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600">
+<div class="bg-gray-50 border-b border-gray-200 text-xs py-1.5 px-4 sm:px-8 w-full max-w-full overflow-hidden">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 text-center sm:text-left text-gray-600 text-[11px] sm:text-xs">
         <!-- Left Metadata -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center flex-wrap justify-center sm:justify-start gap-1.5 sm:gap-2">
             <span><strong class="font-medium text-gray-700">p-ISSN:</strong> {{ $topbarData['p_issn'] ?? '2985-789X' }}</span>
             <span class="text-gray-300">•</span>
             <span><strong class="font-medium text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
             @if($journal && $journal->status !== 'active' && auth()->user()?->isSysAdmin())
-                <span class="ml-2 inline-flex items-center px-2 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                <span class="ml-1 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                     Pratinjau SysAdmin: Status {{ ucfirst($journal->status) }}
                 </span>
             @endif
         </div>
 
         <!-- Right Quick Actions & Language -->
-        <div class="flex items-center gap-4 text-xs">
+        <div class="flex items-center justify-center sm:justify-end gap-2.5 sm:gap-4 text-[11px] sm:text-xs">
             <span class="font-normal text-gray-500" lang="id">Bahasa Indonesia</span>
 
             <span class="text-gray-300">|</span>
@@ -39,7 +39,7 @@
                     Masuk
                 </a>
                 <span class="text-gray-300">•</span>
-                <a href="{{ route('login') }}" class="font-medium text-gray-600 hover:text-brand-maroon transition-colors">
+                <a href="{{ route('register') }}" class="font-medium text-gray-600 hover:text-brand-maroon transition-colors">
                     Daftar
                 </a>
             @endauth
