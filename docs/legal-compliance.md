@@ -4,7 +4,7 @@
 
 ---
 
-> **Status Dokumen**: Laporan Resmi Evaluasi Aspek Legal & Regulasi Sistem Informasi  
+> **Status Dokumen**: Pemetaan teknis awal untuk validasi pengelola
 > **Klasifikasi Sistem**: Penyelenggara Sistem Elektronik (PSE) Lingkup Publik / Sistem Publikasi Ilmiah  
 > **Penyusun**: Tim Rekayasa Perangkat Lunak SIRIDA  
 > **Tujuan**: Memenuhi Standar Evaluasi Kelaikan Hukum Perangkat Lunak & Menjawab Kerangka Acuan Dosen Penguji
@@ -45,4 +45,20 @@
 
 ---
 
-*(Konten lengkap sama dengan dokumen master pada root `LEGAL_COMPLIANCE_SIRIDA.md`)*
+## Bukti implementasi dan keputusan pengelola
+
+Daftar topik di atas merupakan ruang lingkup evaluasi. Pengesahan regulasi yang berlaku dan keputusan operasional berada pada pengelola.
+
+| Alur | Kontrol dan bukti | Verifikasi pengelola |
+|---|---|---|
+| Pendaftaran | Formulir menampilkan pemberitahuan dari `config/registration.php`. Transaksi registrasi menyimpan teks, tujuan, versi, waktu, dan pengguna di audit `account_registered`. Lihat `tests/Feature/RegistrationTest.php`. | Sahkan isi pemberitahuan dan dasar pemrosesan per tujuan, naikkan versi setiap kali teks berubah, tetapkan akses serta retensi audit. Bukti historis sebelum perubahan perlu dinilai tersendiri. |
+| Penerbitan | `PublicationService` memeriksa lisensi jurnal saat publikasi. Artikel menyimpan dan menampilkan lisensi saat terbit. Lihat `tests/Feature/JournalManager/JournalManagerEndToEndIntegrationTest.php` dan `tests/Feature/Public/PublicJournalPortalTest.php`. | Cocokkan lisensi dengan perjanjian penulis dan periksa artikel lama yang pernah menerima nilai bawaan. |
+| Statistik publik | Pengenal berkunci berlaku untuk satu jam UTC. Scheduler menjalankan `metrics:forget-visitors` tiap jam untuk mengosongkan pengenal dari jendela tertutup dengan mempertahankan jumlah. Lihat `routes/console.php` dan tes portal publik. | Pantau eksekusi scheduler dan tetapkan retensi terpisah untuk access log, cadangan, dan data statistik. |
+
+### Hak pengguna dan insiden
+
+Pengelola perlu menetapkan kanal permintaan, petugas, dan cara memverifikasi identitas pemohon. Untuk tiap permintaan, catat waktu penerimaan, cakupan data, dasar keputusan (termasuk kewajiban arsip), tindakan, waktu penyelesaian dan pemberitahuan kepada pemohon.
+
+Untuk kegagalan pelindungan data pribadi, Pasal 46 mengatur pemberitahuan tertulis kepada subjek data dan lembaga paling lambat 3 × 24 jam. Pengelola perlu menunjuk penanggung jawab dan menguji prosedur pencatatan waktu, identifikasi data terdampak, penjelasan kejadian, penanganan dan pemulihan, serta penyimpanan bukti pengiriman. [UU Nomor 27 Tahun 2022](https://peraturan.bpk.go.id/Download/224884/UU%20Nomor%2027%20Tahun%202022.pdf)
+
+Status operasional kedua prosedur memerlukan SOP yang disahkan dan bukti pelaksanaan atau simulasi.
