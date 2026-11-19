@@ -221,6 +221,18 @@ class PublicJournalPortalTest extends TestCase
     /**
      * Pembaca dapat melihat halaman artikel dan tercatat metrik COUNTER abstract view (UC-03).
      */
+    public function test_expired_reader_identifier_is_removed_without_losing_view_counts(): void
+    {
+        $url = route('journal.articles.show', $this->publishedArticle->slug);
+        $this->get($url)->assertOk();
+        $this->get($url)->assertOk();
+        $this->travel(2)->hours();
+        $this->get($url)->assertOk();
+        $this->artisan('metrics:forget-visitors')->assertSuccessful();
+        $this->assertDatabaseHas('article_metrics', ['visit_hash' => '', 'count' => 2]);
+        $this->assertSame(1, \App\Models\ArticleMetric::where('visit_hash', '!=', '')->count());
+    }
+
     public function test_pembaca_dapat_melihat_detail_artikel_dan_tercatat_metrik_view(): void
     {
         $this->journal->update(['license' => 'Lisensi baru']);

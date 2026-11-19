@@ -228,11 +228,8 @@ class PublicArticleService
         try {
             $ip = $request->ip() ?? '127.0.0.1';
             $userAgent = $request->userAgent() ?? 'Unknown-Agent';
-            $date = Carbon::now('UTC')->toDateString();
-
-            // Salt anonim per tanggal untuk privasi pengunjung sesuai pedoman COUNTER
-            $visitHash = hash('sha256', "{$ip}|{$userAgent}|{$date}");
             $windowStart = Carbon::now('UTC')->startOfHour();
+            $visitHash = hash_hmac('sha256', serialize([$ip, $userAgent, $windowStart->timestamp]), app('encrypter')->getKey());
 
             DB::transaction(function () use ($article, $galleyId, $eventType, $visitHash, $windowStart): void {
                 $metric = ArticleMetric::where('article_id', $article->id)
