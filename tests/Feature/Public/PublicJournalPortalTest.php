@@ -6,6 +6,7 @@ namespace Tests\Feature\Public;
 
 use App\Models\Article;
 use App\Models\ArticleContributor;
+use App\Models\ArticleMetric;
 use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\Issue;
@@ -230,7 +231,7 @@ class PublicJournalPortalTest extends TestCase
         $this->get($url)->assertOk();
         $this->artisan('metrics:forget-visitors')->assertSuccessful();
         $this->assertDatabaseHas('article_metrics', ['visit_hash' => '', 'count' => 2]);
-        $this->assertSame(1, \App\Models\ArticleMetric::where('visit_hash', '!=', '')->count());
+        $this->assertSame(1, ArticleMetric::where('visit_hash', '!=', '')->count());
     }
 
     public function test_pembaca_dapat_melihat_detail_artikel_dan_tercatat_metrik_view(): void

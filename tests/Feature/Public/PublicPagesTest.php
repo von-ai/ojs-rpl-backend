@@ -242,7 +242,7 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Kebijakan Redaksi & Etika Publikasi Ilmiah', false);
         $response->assertSee('Double-Blind Peer Review');
-        $response->assertSee('CC BY-SA 4.0');
+        $response->assertSee('Lisensi belum ditetapkan');
     }
 
     public function test_halaman_panduan_penulis_menampilkan_struktur_imrad(): void

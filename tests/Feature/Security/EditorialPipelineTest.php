@@ -28,7 +28,7 @@ class EditorialPipelineTest extends TestCase
         Storage::fake('azure');
         Mail::fake();
         Notification::fake();
-        $journal = Journal::create(['name' => 'Jurnal Uji Integrasi', 'slug' => 'sirida-makassar', 'status' => 'active', 'apc_enabled' => false, 'apc_fee' => 'Gratis']);
+        $journal = Journal::create(['name' => 'Jurnal Uji Integrasi', 'license' => 'CC BY 4.0', 'slug' => 'sirida-makassar', 'status' => 'active', 'apc_enabled' => false, 'apc_fee' => 'Gratis']);
         $section = Section::create(['journal_id' => $journal->id, 'name' => 'Riset', 'slug' => 'riset', 'accepting_submissions' => true]);
         $people = [];
         foreach (['author', 'editor_in_chief', 'section_editor', 'reviewer', 'copyeditor', 'layout_editor', 'proofreader', 'manager'] as $role) {

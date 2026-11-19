@@ -69,7 +69,7 @@ class PublicArticleService
                 'apc_fee' => 'Rp 0',
                 'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
                 'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
-                'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                'license' => null,
                 'status' => 'active',
             ]);
     }

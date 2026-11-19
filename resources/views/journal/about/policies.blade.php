@@ -130,7 +130,7 @@
                 </p>
 
                 <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <strong>{{ $journal->license ?: 'Lisensi belum ditetapkan' }}</strong>
+                    <strong>{{ trim((string) $journal->license) ?: 'Lisensi belum ditetapkan' }}</strong>
                 </div>
             </section>
 
