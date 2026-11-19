@@ -98,9 +98,9 @@ Simulasi meja 19 November 2026 memakai skenario fiktif tentang tautan lampiran e
 |---|---|
 | 19 November 09.00 | Petugas menerima laporan dan membuka kasus SIM-2026-01. Untuk latihan, kejadian dan deteksi dianggap bertepatan. Batas 72 jam jatuh pada 22 November pukul 09.00 WITA. |
 | 19 November 09.15 | Tim teknis menandai tautan untuk ditutup, membatasi akses, dan mencatat lokasi log serta pengaturan akses yang perlu disimpan di arsip insiden. |
-| 19 November 10.00 | Penanggung jawab menetapkan dua subjek fiktif dan data terdampak berupa nama dan email. Dalam skenario, ia memutuskan menyiapkan pemberitahuan kepada subjek dan lembaga serta mencatat penilaian terpisah untuk pemberitahuan publik. |
+| 19 November 10.00 | Penanggung jawab menetapkan dua subjek fiktif dan data terdampak berupa nama dan email. Dalam skenario, ia memutuskan menyiapkan pemberitahuan kepada subjek dan lembaga dan menandai keputusan pemberitahuan publik sebagai menunggu hasil penelusuran log karena jangkauan akses belum diketahui. |
 | 19 November 11.00 | Latihan mensimulasikan dua pengiriman kepada subjek dan satu kepada lembaga. Waktu simulasi 2 jam sejak deteksi, dengan sisa 70 jam. Referensi simulasi dicatat sebagai SIM-N01, SIM-N02, dan SIM-N03. |
-| 19 November 11.30 | Tim menutup skenario setelah mencatat pemeriksaan ulang akses dan menetapkan perbaikan uji akses lampiran sebagai tindak lanjut. |
+| 19 November 11.30 | Tim menutup skenario setelah mencatat pemeriksaan ulang akses dan menugaskan peran teknis sebagai pemilik perbaikan uji akses lampiran. |
 
 Contoh inti pemberitahuan dalam latihan. “Pada 19 November pukul 09.00 WITA, pengaturan tautan lampiran memungkinkan akses tanpa autentikasi terhadap nama dan email. Dalam skenario ini akses ditutup pada pukul 09.15 WITA. Tim memeriksa log dan konfigurasi untuk menilai cakupan kejadian. Hubungi petugas pelindungan data melalui kanal resmi pengelola untuk informasi dan tindak lanjut.”
 
