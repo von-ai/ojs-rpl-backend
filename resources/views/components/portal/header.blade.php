@@ -65,24 +65,23 @@
 
         <div class="h-6 w-px bg-gray-200 hidden sm:block" aria-hidden="true"></div>
 
-        <!-- User Profile Pill & Tombol Keluar -->
-        <div class="flex items-center gap-2.5 pl-0.5">
-            <div class="w-8 h-8 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0 shadow-2xs" aria-hidden="true">
+        <!-- User Profile Avatar & Tombol Keluar (Icon-only) -->
+        <div class="flex items-center gap-2 pl-0.5">
+            <div
+                class="w-9 h-9 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0 shadow-2xs select-none cursor-default"
+                title="{{ $displayName }} ({{ $displaySub }})"
+                aria-label="{{ $displayName }}"
+            >
                 {{ $initials }}
             </div>
-            <div class="hidden md:flex flex-col min-w-0 max-w-44 text-left leading-tight">
-                <span class="text-xs font-bold text-gray-900 truncate" title="{{ $displayName }}">{{ $displayName }}</span>
-                <span class="text-[11px] text-gray-500 truncate" title="{{ $displaySub }}">{{ $displaySub }}</span>
-            </div>
 
-            <form action="{{ route('logout') }}" method="POST" class="m-0 ml-0.5">
+            <form action="{{ route('logout') }}" method="POST" class="m-0">
                 @csrf
                 <button
                     type="submit"
-                    data-tooltip="Keluar"
-                    title="Keluar"
-                    aria-label="Keluar"
-                    class="min-w-9 min-h-9 p-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                    title="Keluar dari akun"
+                    aria-label="Keluar dari akun"
+                    class="w-9 h-9 p-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

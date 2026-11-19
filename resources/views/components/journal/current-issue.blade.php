@@ -20,8 +20,8 @@
     <!-- Featured Issue Box (Grid 2-Column: Cover + Content) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
         <!-- Left Book Cover Card Mockup -->
-        <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-brand-maroon text-white p-4 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-brand-maroon-hover shadow-xs">
-            <div class="text-[10px] font-medium text-white/90 uppercase tracking-normal border-b border-white/20 pb-1.5">
+        <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-brand-maroon text-white p-4 rounded-md flex flex-col justify-between min-h-[270px] h-full relative overflow-hidden border border-brand-maroon-hover shadow-xs">
+            <div class="text-[10px] font-medium text-white/90 uppercase tracking-normal border-b border-white/20 pb-1.5 shrink-0">
                 BRIDA MAKASSAR
             </div>
             <div class="my-auto py-2">
@@ -29,17 +29,17 @@
                     Jurnal Riset & Inovasi
                 </h3>
 
-                <div class="mt-3 p-2 bg-black/15 rounded border border-white/20">
+                <div class="mt-2.5 p-2 bg-black/15 rounded border border-white/20">
                     <span class="text-xs font-medium text-white block">
                         {{ $issue['volume_label'] ?? 'Vol. 3 No. 2 (2025)' }}
                     </span>
-                    <span class="text-[10px] text-white/90 block">
+                    <span class="text-[10px] text-white/90 block mt-0.5 line-clamp-3 leading-tight" title="{{ $issue['edition_label'] ?? 'Edisi Desember' }}">
                         {{ $issue['edition_label'] ?? 'Edisi Desember' }}
                     </span>
                 </div>
             </div>
 
-            <div class="pt-2 border-t border-white/20 flex items-center justify-between text-[9px] text-white/80">
+            <div class="pt-2 border-t border-white/20 flex items-center justify-between text-[9px] text-white/80 shrink-0">
                 <span>p-ISSN {{ $issue['p_issn'] ?? '2746-8194' }}</span>
                 <span>e-ISSN {{ $issue['e_issn'] ?? '2746-8208' }}</span>
             </div>

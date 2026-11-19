@@ -17,7 +17,7 @@
             <!-- Search Form -->
             <form action="{{ route('journal.index') }}" method="GET" class="mb-3">
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <div class="relative flex-1">
+                    <div class="relative flex-1 min-w-0">
                         <input
                             type="text"
                             name="q"

@@ -19,8 +19,8 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
 
             <!-- Book Cover Badge Mockup -->
-            <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-gradient-to-b from-[#ED1C24] via-[#DE131B] to-[#BA0E16] text-white p-5 rounded-md flex flex-col justify-between aspect-3/4 relative overflow-hidden border border-[#A80B12] shadow-sm">
-                <div class="text-[10px] font-medium text-white/85 uppercase tracking-normal border-b border-white/20 pb-1.5">
+            <div class="md:col-span-1 w-full max-w-48 sm:max-w-56 mx-auto md:max-w-none bg-gradient-to-b from-[#ED1C24] via-[#DE131B] to-[#BA0E16] text-white p-5 rounded-md flex flex-col justify-between min-h-[270px] h-full relative overflow-hidden border border-[#A80B12] shadow-sm">
+                <div class="text-[10px] font-medium text-white/85 uppercase tracking-normal border-b border-white/20 pb-1.5 shrink-0">
                     Publikasi Ilmiah Resmi
                 </div>
                 <div class="my-auto py-2">
@@ -29,17 +29,17 @@
                     </h3>
                     <p class="text-[10px] font-medium text-white/85">{{ $journal->publisher ?? 'BRIDA Kota Makassar' }}</p>
 
-                    <div class="mt-3 p-2 bg-black/15 rounded border border-white/20">
+                    <div class="mt-2.5 p-2 bg-black/15 rounded border border-white/20">
                         <span class="text-xs font-medium text-white block">
                             Vol. {{ $issue->volume }} No. {{ $issue->number }} ({{ $issue->year }})
                         </span>
-                        <span class="text-[10px] text-white/80 block">
+                        <span class="text-[10px] text-white/80 block mt-0.5 line-clamp-3 leading-tight" title="{{ $issue->title }}">
                             {{ $issue->title }}
                         </span>
                     </div>
                 </div>
 
-                <div class="pt-2 border-t border-white/20 flex items-center justify-between text-[8px] text-white/80">
+                <div class="pt-2 border-t border-white/20 flex items-center justify-between text-[8px] text-white/80 shrink-0">
                     <span>p-ISSN {{ $journal->issn ?? '2746-8194' }}</span>
                     <span>e-ISSN {{ $journal->eissn ?? '2746-8208' }}</span>
                 </div>
@@ -84,7 +84,7 @@
                     </div>
                     <span class="text-gray-300">•</span>
                     <div>
-                        Akses: <strong class="text-emerald-700">{{ $viewModel->licenseLabel() }}</strong>
+                        Akses: <strong class="text-emerald-700">{{ $journal->license ?? 'Open Access (CC BY 4.0)' }}</strong>
                     </div>
                 </div>
             </div>

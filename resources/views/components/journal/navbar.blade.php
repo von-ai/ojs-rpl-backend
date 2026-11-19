@@ -3,7 +3,7 @@
 <div class="px-4 sm:px-8 py-3.5 bg-white w-full max-w-full overflow-hidden">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
         <!-- Logo & Journal Brand Info -->
-        <a href="{{ $journal && request()->route('journalSlug') ? url('/' . $journal->slug) : url('/') }}" class="flex items-center gap-3.5 group min-w-0 max-w-full">
+        <a href="{{ $journal && request()->route()?->parameter('journalSlug') ? url('/' . $journal->slug) : url('/') }}" class="flex items-center gap-3.5 group min-w-0 max-w-full">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-10 h-10 object-contain shrink-0 transition-transform group-hover:scale-105">
             <div class="flex flex-col min-w-0 flex-1">
                 <span class="text-base sm:text-lg font-semibold text-brand-maroon leading-tight break-words">
