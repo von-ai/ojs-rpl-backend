@@ -23,12 +23,16 @@ class PublicationService
         if (! $readiness['is_ready']) {
             throw new DomainException($submission->submission_number.': '.implode(' ', $readiness['reasons']));
         }
+        $license = trim((string) $submission->journal->license);
+        if ($license === '') {
+            throw new DomainException('Tetapkan lisensi jurnal sebelum menerbitkan artikel.');
+        }
         $article = Article::firstOrCreate(['submission_id' => $submission->id], [
             'journal_id' => $submission->journal_id, 'section_id' => $submission->section_id,
             'slug' => Str::limit(Str::slug($submission->title), 140, '').'-'.strtolower($submission->id),
             'title' => $submission->title, 'abstract' => $submission->abstract,
             'keywords' => $submission->keywords ?? [], 'references' => $submission->references,
-            'license' => $submission->journal->license ?: 'CC BY 4.0',
+            'license' => $license,
             'status' => 'published', 'published_at' => now(), 'version' => 1,
         ]);
         if ($article->wasRecentlyCreated) {

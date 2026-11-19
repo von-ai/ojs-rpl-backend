@@ -261,7 +261,7 @@
                         <span class="font-bold text-[10px]">CC</span>
                     </div>
                     <p class="text-[11px] leading-relaxed">
-                        Artikel ini dilisensikan di bawah <strong>{{ $journal->license ?? 'Creative Commons Attribution 4.0 International (CC BY 4.0)' }}</strong>. Hak cipta naskah tetap dipegang oleh penulis.
+                        Artikel ini dilisensikan di bawah <strong>{{ $article->license }}</strong>. Hak cipta naskah tetap dipegang oleh penulis.
                     </p>
                 </div>
             </div>

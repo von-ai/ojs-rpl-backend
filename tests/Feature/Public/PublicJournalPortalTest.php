@@ -223,7 +223,9 @@ class PublicJournalPortalTest extends TestCase
      */
     public function test_pembaca_dapat_melihat_detail_artikel_dan_tercatat_metrik_view(): void
     {
+        $this->journal->update(['license' => 'Lisensi baru']);
         $response = $this->get(route('journal.articles.show', $this->publishedArticle->slug));
+        $response->assertSee($this->publishedArticle->license);
 
         $response->assertStatus(200);
         $response->assertSee($this->publishedArticle->title);

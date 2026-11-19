@@ -130,13 +130,7 @@
                 </p>
 
                 <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <img src="https://licensebuttons.net/l/by-sa/4.0/88x31.png" alt="CC License" class="h-8 object-contain shrink-0 mt-0.5">
-                    <div class="text-xs text-gray-700 space-y-1">
-                        <strong class="text-gray-900 block">{{ $journal->license ?: 'Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)' }} (CC BY-SA 4.0)</strong>
-                        <p class="text-[11px] text-gray-500 leading-relaxed">
-                            Karya ini dilisensikan di bawah lisensi resmi Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) yang mengizinkan siapa saja untuk menyalin, menyebarluaskan, dan mengadaptasi materi untuk kepentingan apapun, dengan syarat memberikan atribusi kredit yang sesuai kepada penulis dan penerbit.
-                        </p>
-                    </div>
+                    <strong>{{ $journal->license ?: 'Lisensi belum ditetapkan' }}</strong>
                 </div>
             </section>
 

@@ -194,6 +194,11 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
             ['position' => 1, 'pages' => '1-12', 'doi' => '10.61234/sirida.v9i1.01']
         );
 
+        $journal->update(['license' => null]);
+        $this->post("/journalmanager/issues/{$emptyIssue->id}/publish")->assertSessionHasErrors('publish');
+        $this->assertSame('draft', $emptyIssue->fresh()->status);
+        $journal->update(['license' => 'CC BY 4.0']);
+
         // 3. Publikasikan edisi setelah berisi naskah
         $resValidPublish = $this->post("/journalmanager/issues/{$emptyIssue->id}/publish");
         $resValidPublish->assertRedirect("/journalmanager/issues/{$emptyIssue->id}");
