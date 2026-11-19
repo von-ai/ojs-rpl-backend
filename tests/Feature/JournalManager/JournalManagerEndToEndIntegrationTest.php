@@ -188,7 +188,7 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
 
         // 2. Tambahkan 1 naskah ke edisi
         $sub = Submission::where('journal_id', $journal->id)->whereDoesntHave('issueArticle')->firstOrFail();
-        $this->preparePublication($sub);
+        $this->preparePublication($sub, withPermission: false);
         IssueArticle::firstOrCreate(
             ['issue_id' => $emptyIssue->id, 'submission_id' => $sub->id],
             ['position' => 1, 'pages' => '1-12', 'doi' => '10.61234/sirida.v9i1.01']
@@ -198,6 +198,20 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $this->post("/journalmanager/issues/{$emptyIssue->id}/publish")->assertSessionHasErrors('publish');
         $this->assertSame('draft', $emptyIssue->fresh()->status);
         $journal->update(['license' => 'CC BY 4.0']);
+
+        $editor = User::factory()->create();
+        $this->grantRole($editor, 'editor_in_chief', $journal->id);
+        $url = "/eic/submissions/{$sub->id}/publication-permission";
+        $this->actingAs($editor)->post($url, ['confirmed' => '1', 'license' => 'CC BY 4.0'])
+            ->assertSessionHasErrors('agreement_reference');
+        $this->post($url, ['confirmed' => '1', 'license' => 'CC BY 4.0', 'agreement_reference' => 'ARSIP-23'])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('publication_permissions', ['actor_id' => $editor->id, 'source' => 'written_agreement', 'agreement_reference' => 'ARSIP-23']);
+        $journal->update(['license' => 'CC BY-SA 4.0']);
+        $this->actingAs($manager)->post("/journalmanager/issues/{$emptyIssue->id}/publish")->assertSessionHasErrors('publish');
+        $this->actingAs($editor)->post($url, ['confirmed' => '1', 'license' => 'CC BY-SA 4.0', 'agreement_reference' => 'ARSIP-24'])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($manager);
 
         // 3. Publikasikan edisi setelah berisi naskah
         $resValidPublish = $this->post("/journalmanager/issues/{$emptyIssue->id}/publish");

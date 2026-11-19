@@ -9,6 +9,7 @@ use App\Models\IssueArticle;
 use App\Models\Submission;
 use App\Services\LayoutEditor\LayoutEditorService;
 use DomainException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PublicationService
@@ -23,9 +24,14 @@ class PublicationService
         if (! $readiness['is_ready']) {
             throw new DomainException($submission->submission_number.': '.implode(' ', $readiness['reasons']));
         }
-        $license = trim((string) $submission->journal->license);
+        $license = trim((string) $submission->journal()->lockForUpdate()->value('license'));
         if ($license === '') {
             throw new DomainException('Tetapkan lisensi jurnal sebelum menerbitkan artikel.');
+        }
+        $permittedLicense = DB::table('publication_permissions')
+            ->where('submission_id', $submission->id)->latest('id')->value('license');
+        if ($permittedLicense !== $license) {
+            throw new DomainException('Izin penulis atau perjanjian tertulis terverifikasi untuk lisensi ini diperlukan.');
         }
         $article = Article::firstOrCreate(['submission_id' => $submission->id], [
             'journal_id' => $submission->journal_id, 'section_id' => $submission->section_id,

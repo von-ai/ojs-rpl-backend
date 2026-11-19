@@ -129,6 +129,12 @@ class EditorialPipelineTest extends TestCase
         $this->post('/journalmanager/issues', ['volume' => '1', 'number' => '1', 'year' => 2026, 'title' => 'Edisi integrasi'])->assertSessionHasNoErrors();
         $issue = Issue::firstOrFail();
         $this->post(route('journalmanager.issues.add-article', $issue->id), ['article_id' => $id, 'pages' => '1-10'])->assertSessionHasNoErrors();
+        $this->post(route('journalmanager.issues.publish', $issue->id))->assertSessionHasErrors('publish');
+        $this->actingAs($author)->post("/author/submissions/{$id}/publication-permission", [
+            'license' => 'CC BY 4.0', 'confirmed' => '1',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('publication_permissions', ['submission_id' => $id, 'actor_id' => $author->id, 'source' => 'author']);
+        $this->actingAs($people['manager']);
         $this->post(route('journalmanager.issues.publish', $issue->id))->assertSessionHasNoErrors();
         $article = Article::where('submission_id', $id)->firstOrFail();
         $this->assertSame('published', $article->status);
