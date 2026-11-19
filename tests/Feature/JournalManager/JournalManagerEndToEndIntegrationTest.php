@@ -202,6 +202,12 @@ class JournalManagerEndToEndIntegrationTest extends TestCase
         $editor = User::factory()->create();
         $this->grantRole($editor, 'editor_in_chief', $journal->id);
         $url = "/eic/submissions/{$sub->id}/publication-permission";
+        $otherAuthor = User::factory()->create();
+        $this->grantRole($otherAuthor, 'author', $journal->id);
+        $this->actingAs($otherAuthor)->post("/author/submissions/{$sub->id}/publication-permission", [
+            'confirmed' => '1', 'license' => 'CC BY 4.0',
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('publication_permissions', ['submission_id' => $sub->id]);
         $this->actingAs($editor)->post($url, ['confirmed' => '1', 'license' => 'CC BY 4.0'])
             ->assertSessionHasErrors('agreement_reference');
         $this->post($url, ['confirmed' => '1', 'license' => 'CC BY 4.0', 'agreement_reference' => 'ARSIP-23'])
