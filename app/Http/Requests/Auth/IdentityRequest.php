@@ -31,6 +31,7 @@ class IdentityRequest extends FormRequest
                 'password' => ['required', 'string', 'min:12', 'max:128'],
                 'password_confirmation' => ['required', 'string'],
                 'affiliation' => ['required', 'string', 'min:2', 'max:255'],
+                'notice_version' => ['required', 'string', \Illuminate\Validation\Rule::in([config('registration.version')])],
                 'consent_terms' => ['required', 'accepted'],
             ],
             'verify' => ['token' => ['required', 'string', 'min:20', 'max:512']],

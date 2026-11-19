@@ -34,7 +34,7 @@ class RegistrationService
                     'created_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->issueChallenge($user);
-                $this->audit($user, 'account_registered');
+                $this->audit($user, 'account_registered', config('registration'));
 
                 return $user;
             });
@@ -108,7 +108,7 @@ class RegistrationService
         return DB::selectOne($sql)->instant;
     }
 
-    private function audit(User $user, string $action): void
+    private function audit(User $user, string $action, ?array $details = null): void
     {
         $now = $this->databaseNow();
         DB::table('audit_logs')->insert([
@@ -119,6 +119,7 @@ class RegistrationService
             'resource_type' => 'user',
             'resource_id' => $user->id,
             'action' => $action,
+            'details' => $details === null ? null : json_encode($details, JSON_THROW_ON_ERROR),
             'occurred_at' => $now,
             'request_id' => request()->attributes->get('request_id'),
             'created_at' => $now,

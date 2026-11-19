@@ -216,7 +216,16 @@
                         </div>
                     </div>
 
-                    <!-- Row 5: Checkbox Persetujuan Layanan & Privasi (UU PDP) -->
+                    <details>
+                        <summary>Ketentuan Layanan dan Kebijakan Privasi pendaftaran</summary>
+                        <p>{{ config('registration.purpose') }}</p>
+                        <p>{{ config('registration.terms') }}</p>
+                        <p>{{ config('registration.privacy') }}</p>
+                    </details>
+                    <input type="hidden" name="notice_version" value="{{ config('registration.version') }}">
+                    @error('notice_version')
+                        <p>Ketentuan telah diperbarui. Baca kembali sebelum mendaftar.</p>
+                    @enderror
                     <div class="pt-2">
                         <div class="flex items-start gap-3">
                             <input
@@ -226,10 +235,10 @@
                                 value="1"
                                 required
                                 class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon focus:ring-offset-0 cursor-pointer"
-                                {{ old('consent_terms') ? 'checked' : '' }}
+                                {{ old('notice_version') === config('registration.version') && old('consent_terms') ? 'checked' : '' }}
                             />
                             <label for="consent_terms" class="text-xs text-gray-600 leading-snug cursor-pointer select-none">
-                                Saya menyetujui <span class="font-semibold text-gray-900">Ketentuan Layanan</span> dan <span class="font-semibold text-gray-900">Kebijakan Privasi</span> SIRIDA serta memberikan persetujuan pemrosesan data pribadi untuk publikasi ilmiah sesuai ketentuan UU PDP No. 27/2022. <span class="text-red-600 font-bold">*</span>
+                                Saya menyetujui <span class="font-semibold text-gray-900">Ketentuan Layanan</span> dan <span class="font-semibold text-gray-900">Kebijakan Privasi</span> SIRIDA serta memberikan persetujuan pemrosesan data pribadi untuk pembuatan dan verifikasi akun. <span class="text-red-600 font-bold">*</span>
                             </label>
                         </div>
                         <p id="consentError" class="mt-1.5 text-xs text-red-600 font-medium hidden">
