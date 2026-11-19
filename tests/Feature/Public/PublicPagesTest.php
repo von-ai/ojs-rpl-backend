@@ -250,8 +250,8 @@ class PublicPagesTest extends TestCase
         $response = $this->get(route('journal.about.submissions'));
 
         $response->assertOk();
-        $response->assertSee('Panduan Penulis (Author Guidelines)');
-        $response->assertSee('IMRAD Structure');
+        $response->assertSee('Panduan Penulis');
+        $response->assertSee('Sistematika Penulisan Naskah');
         $response->assertSee('Template Resmi Naskah SIRIDA');
     }
 
