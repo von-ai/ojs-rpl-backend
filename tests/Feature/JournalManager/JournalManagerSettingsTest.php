@@ -54,8 +54,8 @@ class JournalManagerSettingsTest extends TestCase
         $response->assertSee('Inovasi Daerah &amp; Kebijakan Publik', false);
         $response->assertSee('Sosial Humaniora &amp; Tata Kelola', false);
         $response->assertSee('Teknologi &amp; Infrastruktur Berkelanjutan', false);
-        $response->assertSee('Buka Submission');
-        $response->assertSee('Tutup Submission');
+        $response->assertSee('Menerima Naskah');
+        $response->assertSee('Pengajuan Ditutup');
 
         // Modal Form Buat Seksi
         $response->assertSee('Tambah Bidang Naskah Baru');
@@ -85,8 +85,7 @@ class JournalManagerSettingsTest extends TestCase
         $response->assertSee('Double-Blind Peer Review');
 
         // Pengumuman Warta Publik
-        $response->assertSee('Call for Papers');
-        $response->assertSee('Pembaruan Panduan Gaya Selingkung');
+        $response->assertSee('Panggilan Pengajuan Naskah');
         $response->assertSee('Simpan Perubahan Pengaturan');
     }
 

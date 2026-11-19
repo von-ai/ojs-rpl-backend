@@ -40,7 +40,7 @@ class JournalManagerSeeder extends Seeder
                 'contact_phone' => '+62 411 873-456',
                 'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
                 'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-                'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+                'apc_fee' => 'Rp 0',
                 'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
                 'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
                 'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
@@ -58,7 +58,7 @@ class JournalManagerSeeder extends Seeder
             'contact_phone' => '+62 411 873-456',
             'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
             'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-            'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+            'apc_fee' => 'Rp 0',
             'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
             'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
             'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
@@ -620,7 +620,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Panggilan Pengajuan Naskah (Call for Papers) Vol. 6 No. 2 Tahun 2026',
+                'title' => 'Panggilan Pengajuan Naskah Vol. 6 No. 2 Tahun 2026',
             ],
             [
                 'body' => 'Redaksi mengundang para akademisi, peneliti, dan praktisi kebijakan daerah untuk mengirimkan naskah hasil riset terbaik bertema Inovasi Kebijakan Publik dan Ketahanan Perkotaan. Batas akhir pengiriman naskah adalah 15 November 2026.',
@@ -644,7 +644,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Pembaruan Panduan Gaya Selingkung (Author Guidelines) Tahun 2026',
+                'title' => 'Pembaruan Panduan Gaya Selingkung Tahun 2026',
             ],
             [
                 'body' => 'Mulai Volume 6, seluruh rujukan wajib menggunakan standar sitasi APA Edisi ke-7 dengan minimal 80% rujukan bersumber dari artikel jurnal terindeks bereputasi 5 tahun terakhir.',

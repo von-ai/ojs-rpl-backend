@@ -130,4 +130,32 @@ class SysAdminJournalsTest extends TestCase
             'role_code' => 'manager',
         ]);
     }
+
+    /**
+     * SysAdmin dapat memperbarui metadata nama, slug, dan ISSN jurnal.
+     */
+    public function test_sysadmin_dapat_memperbarui_metadata_jurnal(): void
+    {
+        $journal = Journal::where('slug', 'jtiik-makassar')->firstOrFail();
+
+        $response = $this->post("/sysadmin/journals/{$journal->id}", [
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Makassar Terkini',
+            'slug' => 'jtiik-makassar-updated',
+            'primary_contact' => 'Prof. Ir. Hendra Gunawan, Ph.D.',
+            'issn' => '2746-1111',
+            'eissn' => '2746-2222',
+            'description' => 'Fokus dan ruang lingkup yang diperbarui.',
+        ]);
+
+        $response->assertRedirect(route('sysadmin.journals.index'));
+        $response->assertSessionHas('status');
+
+        $this->assertDatabaseHas('journals', [
+            'id' => $journal->id,
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Makassar Terkini',
+            'slug' => 'jtiik-makassar-updated',
+            'issn' => '2746-1111',
+            'eissn' => '2746-2222',
+        ]);
+    }
 }

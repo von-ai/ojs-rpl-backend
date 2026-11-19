@@ -98,7 +98,7 @@ class CopyeditorSubmissionsViewModel
                     'icon' => 'document-text',
                 ],
                 [
-                    'title' => 'Menunggu Persetujuan',
+                    'title' => 'Menunggu Penulis',
                     'value' => $awaitingApproval,
                     'description' => 'Output set dikirim ke penulis',
                     'badge_text' => 'Perlu Pantauan',
@@ -134,7 +134,7 @@ class CopyeditorSubmissionsViewModel
                 'icon' => 'document-text',
             ],
             [
-                'title' => 'Menunggu Persetujuan',
+                'title' => 'Menunggu Penulis',
                 'value' => 0,
                 'description' => 'Output set dikirim ke penulis',
                 'badge_text' => 'Perlu Pantauan',
@@ -218,7 +218,7 @@ class CopyeditorSubmissionsViewModel
                     ],
                     'completed' => [
                         'key' => 'completed',
-                        'label' => 'Selesai Serah Terima',
+                        'label' => 'Selesai',
                         'count' => $completedCount,
                     ],
                 ],
@@ -250,7 +250,7 @@ class CopyeditorSubmissionsViewModel
                 ],
                 'completed' => [
                     'key' => 'completed',
-                    'label' => 'Selesai Serah Terima',
+                    'label' => 'Selesai',
                     'count' => 0,
                 ],
             ],

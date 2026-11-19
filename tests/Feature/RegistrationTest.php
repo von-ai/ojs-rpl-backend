@@ -33,6 +33,7 @@ class RegistrationTest extends TestCase
             'password' => 'StrongPassword123!',
             'password_confirmation' => 'StrongPassword123!',
             'affiliation' => 'Universitas Hasanuddin',
+            'consent_terms' => '1',
         ], $overrides);
     }
 
@@ -129,6 +130,20 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseCount('jobs', 0);
     }
 
+    public function test_registration_fails_when_consent_terms_not_accepted(): void
+    {
+        $payloadWithoutConsent = $this->payload();
+        unset($payloadWithoutConsent['consent_terms']);
+
+        $this->post('/register', $payloadWithoutConsent)
+            ->assertSessionHasErrors(['consent_terms']);
+
+        $this->post('/register', $this->payload(['consent_terms' => '0']))
+            ->assertSessionHasErrors(['consent_terms']);
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
     public function test_long_unicode_passwords_follow_the_contract_without_bcrypt_truncation(): void
     {
         $password = str_repeat('密', 128);
@@ -214,7 +229,11 @@ class RegistrationTest extends TestCase
 
     public function test_web_mvp_keeps_safe_input_and_supports_register_verify_and_resend(): void
     {
-        $this->get('/register')->assertOk()->assertSee('name="full_name"', false)->assertSee('name="_token"', false);
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('name="full_name"', false)
+            ->assertSee('name="consent_terms"', false)
+            ->assertSee('name="_token"', false);
         $this->post('/register', $this->payload(['password_confirmation' => 'mismatch']))
             ->assertSessionHasErrors('password')->assertSessionMissing('_old_input.password');
         $this->post('/register', $this->payload(['password_confirmation' => 'StrongPassword123!']))

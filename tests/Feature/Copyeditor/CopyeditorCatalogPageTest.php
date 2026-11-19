@@ -65,7 +65,7 @@ class CopyeditorCatalogPageTest extends TestCase
         $response->assertSee('Penugasan Naskah Copyediting');
         $response->assertSee('SUB-2026-00106');
         $response->assertSee('Dr. Andi Muhammad Ilyas');
-        $response->assertSee('Buka Naskah');
+        $response->assertSee('Detail');
 
         // Memastikan sidebar ringkas hanya memuat menu penting
         $response->assertSee('Penugasan Naskah');

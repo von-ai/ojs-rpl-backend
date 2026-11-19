@@ -7,8 +7,10 @@
     id="author-sidebar"
     role-label="Portal Penulis"
     :home-route="route('author.submissions.index')"
-    guideline-url="#bantuan"
+    :guideline-url="route('journal.about.submissions')"
     guideline-label="Panduan Penulis"
+    guideline-target="_blank"
+    :guideline-active="request()->routeIs('journal.about.submissions')"
 >
     <!-- 1. Naskah Saya -->
     <a

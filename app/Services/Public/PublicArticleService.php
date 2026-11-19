@@ -26,6 +26,30 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PublicArticleService
 {
     /**
+     * Mengambil entitas jurnal berdasarkan slug unik (Multi-Tenancy).
+     */
+    public function findJournalBySlug(string $slug): ?Journal
+    {
+        try {
+            if (! Schema::hasTable('journals')) {
+                return null;
+            }
+
+            $query = Journal::where('slug', $slug)
+                ->with(['sections' => fn ($q) => $q->orderBy('position')]);
+
+            // Jika bukan sysadmin, hanya jurnal berstatus active yang bisa diakses publik
+            if (! auth()->user()?->isSysAdmin()) {
+                $query->where('status', 'active');
+            }
+
+            return $query->first();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Mengambil profil entitas jurnal aktif dari basis data.
      */
     public function getJournal(): Journal
@@ -42,7 +66,7 @@ class PublicArticleService
                 'contact_phone' => '+62 411 873-456',
                 'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
                 'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-                'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+                'apc_fee' => 'Rp 0',
                 'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
                 'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
                 'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
@@ -115,7 +139,7 @@ class PublicArticleService
      *     section_id?: ?string
      * } $filters
      */
-    public function searchArticles(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function searchArticles(array $filters = [], int $perPage = 10, ?Journal $journal = null): LengthAwarePaginator
     {
         try {
             if (! Schema::hasTable('articles')) {
@@ -123,7 +147,13 @@ class PublicArticleService
             }
 
             $query = Article::with(['contributors', 'section', 'galleys', 'issues'])
-                ->where('status', 'published')->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+                ->where('status', 'published');
+
+            if ($journal !== null) {
+                $query->where('journal_id', $journal->id);
+            } else {
+                $query->whereHas('journal', fn ($q) => $q->where('status', 'active'));
+            }
 
             // Filter kata kunci (judul, abstrak, referensi)
             if (! empty($filters['q'])) {

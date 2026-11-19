@@ -391,8 +391,8 @@ class LayoutEditorDetailViewModel
 
         if ($editorFinal['approved']) {
             $timeline[] = [
-                'title' => 'Galai Disetujui Editor in Chief (EIC)',
-                'actor' => 'Editor in Chief (EIC)',
+                'title' => 'Galai Disetujui Pemimpin Redaksi',
+                'actor' => 'Pemimpin Redaksi',
                 'date' => $editorFinal['approved_at'] ?? now()->translatedFormat('d M Y H:i').' WITA',
                 'description' => 'Persetujuan akhir penerbitan galai telah diberikan.',
                 'badge_class' => 'bg-emerald-500',
@@ -402,7 +402,7 @@ class LayoutEditorDetailViewModel
         if ($activeEsc) {
             $timeline[] = [
                 'title' => 'Tiket Eskalasi Tata Letak Dibuka',
-                'actor' => 'Layout Editor',
+                'actor' => 'Penata Letak',
                 'date' => $activeEsc->created_at ? $activeEsc->created_at->translatedFormat('d M Y H:i').' WITA' : 'Baru saja',
                 'description' => $activeEsc->reason ?? 'Kendala format tata letak dilaporkan ke Section Editor.',
                 'badge_class' => 'bg-rose-500',
@@ -412,7 +412,7 @@ class LayoutEditorDetailViewModel
         foreach ($galleys as $galley) {
             $timeline[] = [
                 'title' => "Draf Galai Diunggah (v{$galley->version})",
-                'actor' => 'Layout Editor',
+                'actor' => 'Penata Letak',
                 'date' => $galley->created_at ? $galley->created_at->translatedFormat('d M Y H:i').' WITA' : 'TBD',
                 'description' => "Berkas galai versi {$galley->version} ({$galley->label}) berhasil dimuat.",
                 'badge_class' => 'bg-blue-500',
@@ -421,7 +421,7 @@ class LayoutEditorDetailViewModel
 
         if ($assignment) {
             $timeline[] = [
-                'title' => 'Penugasan Layout Editor',
+                'title' => 'Penugasan Penata Letak',
                 'actor' => $assignment->assignedBy?->name ?? 'Prof. Hamka, Ph.D. (Section Editor)',
                 'date' => $assignment->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : ($sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i').' WITA' : '-'),
                 'description' => $assignment->reason ?? 'Penugasan penataan letak naskah ke format PDF 2-kolom standar.',
@@ -430,10 +430,10 @@ class LayoutEditorDetailViewModel
         }
 
         $timeline[] = [
-            'title' => 'Naskah Diterima dari Copyeditor',
-            'actor' => 'Sistem OJS (Serah Terima Copyeditor)',
+            'title' => 'Naskah Diterima dari Penyunting Naskah',
+            'actor' => 'Sistem OJS (Serah Terima Penyunting Naskah)',
             'date' => $assignment?->assigned_at ? $assignment->assigned_at->translatedFormat('d M Y H:i').' WITA' : ($sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i').' WITA' : '-'),
-            'description' => 'Naskah final copyediting selesai disetujui penulis dan dialihkan ke tahap produksi tata letak.',
+            'description' => 'Naskah final penyuntingan selesai disetujui penulis dan dialihkan ke tahap produksi tata letak.',
             'badge_class' => 'bg-emerald-500',
         ];
 

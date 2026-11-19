@@ -7,6 +7,7 @@ namespace App\Http\Controllers\JournalManager;
 use App\Http\Controllers\Controller;
 use App\Models\Issue;
 use App\Models\Journal;
+use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\UserRole;
@@ -42,10 +43,11 @@ class JournalManagerController extends Controller
     {
         $tab = (string) $request->query('tab', 'all');
         $search = (string) $request->query('q', '');
+        $journal = $this->resolveJournal();
 
-        $viewModel = new JournalManagerIssuesViewModel($tab, $search);
+        $viewModel = new JournalManagerIssuesViewModel($tab, $search, $journal);
 
-        return view('journalmanager.issues.index', compact('viewModel'));
+        return view('journalmanager.issues.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -131,7 +133,7 @@ class JournalManagerController extends Controller
             return redirect()->route('journalmanager.issues.index')->withErrors(['current' => $e->getMessage()]);
         }
 
-        return redirect()->route('journalmanager.issues.index')->with('status', 'Edisi berhasil ditetapkan sebagai Terbitan Berjalan (Current Issue) jurnal.');
+        return redirect()->route('journalmanager.issues.index')->with('status', 'Edisi berhasil ditetapkan sebagai Edisi Terkini jurnal.');
     }
 
     /**
@@ -142,10 +144,11 @@ class JournalManagerController extends Controller
         $role = (string) $request->query('role', 'all');
         $search = (string) $request->query('q', '');
         $page = max(1, (int) $request->query('page', 1));
+        $journal = $this->resolveJournal();
 
-        $viewModel = new JournalManagerUsersViewModel($role, $search, $page);
+        $viewModel = new JournalManagerUsersViewModel($role, $search, $page, 10, $journal);
 
-        return view('journalmanager.users.index', compact('viewModel'));
+        return view('journalmanager.users.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -188,7 +191,7 @@ class JournalManagerController extends Controller
                 }
             }
 
-            $displayRole = str_contains($rawRole, '_') ? UserRole::roleLabel($roleCode) : $rawRole;
+            $displayRole = UserRole::roleLabel($roleCode);
 
             return redirect()->route('journalmanager.users.index')
                 ->with('status', "Peran '{$displayRole}' berhasil ditetapkan kepada pengguna.");
@@ -223,9 +226,10 @@ class JournalManagerController extends Controller
      */
     public function sections(Request $request): View
     {
-        $viewModel = new JournalManagerSectionsViewModel;
+        $journal = $this->resolveJournal();
+        $viewModel = new JournalManagerSectionsViewModel($journal);
 
-        return view('journalmanager.sections.index', compact('viewModel'));
+        return view('journalmanager.sections.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -250,13 +254,53 @@ class JournalManagerController extends Controller
     }
 
     /**
+     * Memperbarui informasi seksi / bidang naskah.
+     */
+    public function updateSection(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $section = Section::where('journal_id', $journal->id)->where('id', $id)->firstOrFail();
+
+            $this->journalManagerService->updateSection($section, $request->all(), Auth::user());
+
+            return redirect()->route('journalmanager.sections.index')
+                ->with('status', "Bidang naskah '{$section->name}' berhasil diperbarui.");
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.sections.index')
+                ->withErrors(['section' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Mengubah status penerimaan naskah (buka / tutup).
+     */
+    public function toggleSectionStatus(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $section = Section::where('journal_id', $journal->id)->where('id', $id)->firstOrFail();
+
+            $updated = $this->journalManagerService->toggleSectionStatus($section, Auth::user());
+            $statusLabel = $updated->accepting_submissions ? 'dibuka kembali untuk pengajuan naskah baru' : 'resmi ditutup untuk pengajuan naskah';
+
+            return redirect()->route('journalmanager.sections.index')
+                ->with('status', "Status bidang naskah '{$updated->name}' berhasil diubah: saat ini {$statusLabel}.");
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.sections.index')
+                ->withErrors(['section' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Menampilkan halaman konfigurasi identitas jurnal dan kebijakan editorial.
      */
     public function settings(Request $request): View
     {
-        $viewModel = new JournalManagerSettingsViewModel;
+        $journal = $this->resolveJournal();
+        $viewModel = new JournalManagerSettingsViewModel($journal);
 
-        return view('journalmanager.settings.index', compact('viewModel'));
+        return view('journalmanager.settings.index', compact('viewModel', 'journal'));
     }
 
     /**
@@ -372,7 +416,7 @@ class JournalManagerController extends Controller
             return back()->withErrors(['payment' => $e->getMessage()]);
         }
 
-        return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan (Waiver).");
+        return back()->with('status', "Biaya pemrosesan naskah '{$submission->title}' berhasil dibebaskan.");
     }
 
     /**
@@ -394,7 +438,7 @@ class JournalManagerController extends Controller
     }
 
     /**
-     * Mengambil entitas jurnal aktif sistem atau inisialisasi default.
+     * Mengambil entitas jurnal aktif sistem atau inisialisasi default berdasarkan sesi tenant.
      */
     private function resolveJournal(): Journal
     {

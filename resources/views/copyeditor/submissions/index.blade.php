@@ -18,22 +18,21 @@
     </div>
 
     <!-- 4 Metrik Ringkas (Kompak & Elegan) -->
+    @php
+        $copyeditorIcons = [
+            0 => 'document-text',
+            1 => 'clock',
+            2 => 'alert-triangle',
+            3 => 'check-circle',
+        ];
+    @endphp
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        @foreach ($viewModel->summaryMetrics() as $metric)
-            <div class="bg-white rounded-xl border border-gray-200/90 p-4 shadow-2xs flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-semibold text-gray-500 truncate">{{ $metric['title'] }}</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums {{ $metric['color_class'] }}">
-                        {{ $metric['badge_text'] }}
-                    </span>
-                </div>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">
-                        {{ $metric['value'] }}
-                    </span>
-                    <span class="text-[11px] text-gray-400">naskah</span>
-                </div>
-            </div>
+        @foreach ($viewModel->summaryMetrics() as $idx => $metric)
+            <x-kpi-card
+                :title="$metric['title']"
+                :value="$metric['value']"
+                :icon="$metric['icon'] ?? $copyeditorIcons[$idx] ?? 'document-text'"
+            />
         @endforeach
     </div>
 
@@ -94,89 +93,125 @@
 
         <!-- Tabel Daftar Naskah -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table class="w-full text-left border-collapse text-sm">
                 <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold text-[11px] uppercase tracking-wider">
-                        <th scope="col" class="py-3 px-4 sm:px-5">Informasi Naskah</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Penulis & Afiliasi</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 whitespace-nowrap">Batas Waktu</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5">Status</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-right">Aksi</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase">
+                        <th scope="col" class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">ID NASKAH</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 min-w-64 max-w-md">JUDUL ARTIKEL</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">SEKSI JURNAL</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">PENULIS</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">AFILIASI</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">BATAS WAKTU</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">STATUS</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($viewModel->submissions() as $item)
-                        <tr class="hover:bg-gray-50/80 transition-colors group">
-                            <!-- Kolom Naskah: Kode & Judul -->
-                            <td class="py-3.5 px-4 sm:px-5 max-w-sm sm:max-w-md">
-                                <span class="text-[10px] font-mono font-bold text-gray-400 block mb-0.5">
-                                    {{ $item['number'] }} • {{ $item['section_title'] }}
-                                </span>
-                                <a
-                                    href="{{ $item['url_workspace'] }}"
-                                    class="font-sans font-bold text-gray-900 group-hover:text-brand-maroon transition leading-snug line-clamp-2"
-                                    title="{{ $item['title'] }}"
-                                >
-                                    {{ $item['title'] }}
-                                </a>
+                        <tr class="hover:bg-gray-50/70 transition duration-150">
+                            <!-- Kolom 0: NO (Nomor Urut) -->
+                            <td class="py-4 px-3 sm:px-4 align-top text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+                                {{ $loop->iteration }}
                             </td>
 
-                            <!-- Kolom Penulis -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                            <!-- Kolom 1: ID Naskah & Tanggal Penugasan -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                <div class="text-sm font-normal text-gray-700 tabular-nums">
+                                    {{ $item['number'] }}
+                                </div>
+                                @if(!empty($item['assigned_at']))
+                                    <div class="text-xs text-gray-400 tabular-nums mt-0.5" title="Tanggal Penugasan">
+                                        {{ $item['assigned_at'] }}
+                                    </div>
+                                @endif
+                            </td>
+
+                            <!-- Kolom 2: Judul Artikel (Dengan Tooltip Lengkap saat Hover) -->
+                            <td class="py-4 px-4 sm:px-6 align-top min-w-64 max-w-md">
+                                <div class="relative group block max-w-full">
+                                    <a
+                                        href="{{ $item['url_workspace'] }}"
+                                        aria-describedby="tooltip-sub-{{ $item['id'] }}"
+                                        class="block font-normal text-gray-900 leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon hover:underline decoration-brand-maroon/40 underline-offset-2 transition duration-150 cursor-pointer"
+                                    >
+                                        {{ $item['title'] }}
+                                    </a>
+
+                                    <!-- Tooltip Judul Lengkap saat Hover -->
+                                    <div
+                                        id="tooltip-sub-{{ $item['id'] }}"
+                                        role="tooltip"
+                                        class="absolute left-0 top-full mt-1.5 z-30 hidden group-hover:block w-72 sm:w-80 p-2.5 bg-gray-900 text-white text-xs font-normal rounded-md pointer-events-none border border-gray-700 leading-relaxed whitespace-normal wrap-break-word shadow-lg"
+                                    >
+                                        {{ $item['title'] }}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Kolom 3: Seksi Jurnal -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 shrink-0">
+                                    {{ $item['section_title'] }}
+                                </span>
+                            </td>
+
+                            <!-- Kolom 4: Penulis -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
                                 <span class="font-medium text-gray-800 block text-xs truncate max-w-44">
                                     {{ $item['corresponding_author']['name'] }}
                                 </span>
-                                <span class="text-[11px] text-gray-500 block truncate max-w-44">
+                            </td>
+
+                            <!-- Kolom 5: Afiliasi -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                <span class="text-xs text-gray-600 block truncate max-w-48">
                                     {{ $item['corresponding_author']['affiliation'] }}
                                 </span>
                             </td>
 
-                            <!-- Kolom Batas Waktu -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 {{ $item['is_urgent'] ? 'text-amber-500' : 'text-gray-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="text-xs font-medium {{ $item['is_urgent'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
-                                        {{ $item['due_at'] }}
-                                    </span>
+                            <!-- Kolom 5: Batas Waktu (Tanpa Ikon Berlebihan) -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                <div class="text-xs font-medium text-gray-700 tabular-nums">
+                                    {{ $item['due_at'] }}
                                 </div>
                                 @if($item['is_urgent'])
-                                    <span class="text-[10px] font-semibold text-amber-600 block mt-0.5">Mendekati Batas</span>
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                            Mendekati Batas
+                                        </span>
+                                    </div>
                                 @endif
                             </td>
 
-                            <!-- Kolom Status -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border {{ $item['status_badge_class'] }}">
+                            <!-- Kolom 6: Status -->
+                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border {{ $item['status_badge_class'] }}">
                                     {{ $item['status_label'] }}
                                 </span>
                             </td>
 
-                            <!-- Kolom Aksi -->
-                            <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
+                            <!-- Kolom 7: Aksi -->
+                            <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
                                 <a
                                     href="{{ $item['url_workspace'] }}"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-maroon bg-brand-maroon/5 hover:bg-brand-maroon hover:text-white rounded-lg transition duration-150 border border-brand-maroon/20"
-                                    title="Buka Ruang Kerja Naskah"
+                                    class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0 cursor-pointer"
+                                    title="Detail Penugasan Naskah"
                                 >
-                                    <span>Buka Naskah</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                    </svg>
+                                    Detail
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-12 px-4 text-center">
+                            <td colspan="9" class="py-12 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     </div>
-                                    <h3 class="text-sm font-bold text-gray-800">Tidak ada naskah ditemukan</h3>
+                                    <h3 class="text-sm font-semibold text-gray-800">Tidak ada naskah ditemukan</h3>
                                     <p class="text-xs text-gray-500 mt-1">
                                         Tidak ada naskah dengan kriteria filter atau pencarian ini.
                                     </p>
@@ -193,21 +228,26 @@
             </table>
         </div>
 
-        <!-- Pagination Simpel -->
+        <!-- Bagian Bawah Tabel / Paginasi Seperti Role Penulis & Manajer Jurnal -->
         @php
             $pagination = $viewModel->pagination();
         @endphp
-        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between text-xs text-gray-500">
-            <span>
-                Menampilkan <strong class="text-gray-800">{{ $pagination['from'] }}</strong> - <strong class="text-gray-800">{{ $pagination['to'] }}</strong> dari <strong class="text-gray-800">{{ $pagination['total'] }}</strong> naskah
-            </span>
+        <div class="px-4 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+            <div id="copyeditor-pagination-info">
+                Menampilkan <span class="font-bold text-gray-900 tabular-nums">{{ $pagination['from'] }}</span> - <span class="font-bold text-gray-900 tabular-nums">{{ $pagination['to'] }}</span> dari <span class="font-bold text-gray-900 tabular-nums">{{ $pagination['total'] }}</span> naskah terdaftar
+            </div>
 
             <div class="flex items-center gap-1">
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Sebelumnya
+                <button type="button" disabled class="min-w-9 min-h-9 p-1.5 flex items-center justify-center rounded border border-gray-200 bg-white text-gray-300 cursor-not-allowed" aria-label="Halaman sebelumnya">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
                 </button>
-                <button type="button" disabled class="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-400 cursor-not-allowed">
-                    Selanjutnya
+                <span class="min-w-9 min-h-9 flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-brand-maroon rounded tabular-nums">1</span>
+                <button type="button" disabled class="min-w-9 min-h-9 p-1.5 flex items-center justify-center rounded border border-gray-200 bg-white text-gray-300 cursor-not-allowed" aria-label="Halaman selanjutnya">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
                 </button>
             </div>
         </div>

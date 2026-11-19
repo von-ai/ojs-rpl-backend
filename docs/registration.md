@@ -44,12 +44,12 @@ produksi. Log mailer development memuat tautan rahasia; jangan membagikan log.
 ## Rute Web Registrasi & Alur
 
 - `GET /register`: Menampilkan formulir pendaftaran akun penulis.
-- `POST /register`: Mengirim data pendaftaran (`full_name`, `email`, `username`, `password`, `password_confirmation`, `affiliation`). Jika berhasil, dialihkan ke `/register/check-email`.
+- `POST /register`: Mengirim data pendaftaran (`full_name`, `email`, `username`, `password`, `password_confirmation`, `affiliation`, `consent_terms`). Jika berhasil, dialihkan ke `/register/check-email`.
 - `GET /email/verify?token=<token>`: Halaman konfirmasi aktivasi tautan email.
 - `POST /email/verify`: Memproses token aktivasi (`token`). Jika berhasil, mengaktifkan status akun menjadi `active`.
 - `POST /email/resend`: Mengirim ulang tautan verifikasi ke alamat email (`email`).
 
-Form Blade mewajibkan CSRF token dan `password_confirmation`. Password tidak disimpan dalam old input.
+Form Blade mewajibkan CSRF token, `password_confirmation`, serta persetujuan eksplisit `consent_terms` (sesuai mandat Pasal 20 & 22 UU PDP No. 27/2022). Pengguna tidak dapat mendaftar tanpa menyetujui Ketentuan Layanan dan Kebijakan Privasi. Password tidak disimpan dalam old input.
 Email/username dinormalisasi ke huruf kecil; email maksimum 255 karakter sesuai storage.
 Username 3–50 karakter ASCII `[A-Za-z0-9_.-]`; password 12–128 karakter menggunakan Argon2id.
 Duplikasi email/username akan mengembalikan error validasi pada field terkait.

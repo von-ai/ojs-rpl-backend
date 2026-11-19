@@ -14,10 +14,10 @@
 
     <!-- Header Halaman -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-            INFORMASI RESMI PENERBITAN
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+            Informasi Resmi Penerbitan
         </span>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
             Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -29,7 +29,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
         <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
+        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
 
             <x-journal.about-subnav />
 
@@ -181,7 +181,7 @@
         </div>
 
         <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
             <x-journal.sidebar
                 :publisherInfo="$viewModel->publisherInfo()"
                 :indexingData="$viewModel->indexingData()"

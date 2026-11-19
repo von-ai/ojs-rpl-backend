@@ -16,10 +16,10 @@
 
     <!-- Header Halaman -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-            TIM PENGELOLA ILMIAH
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+            Tim Pengelola Ilmiah
         </span>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
             Dewan Redaksi & Mitra Bestari
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -31,18 +31,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8 space-y-8">
+        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
             
             <x-journal.about-subnav />
 
-            <!-- 1. Pemimpin Redaksi (Editor in Chief) -->
+            <!-- 1. Pemimpin Redaksi -->
             <section class="space-y-4">
                 <div class="flex items-center gap-2 border-b border-gray-100 pb-2">
-                    <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-brand-maroon text-white uppercase tracking-wider">
+                    <span class="px-2.5 py-0.5 rounded text-[11px] font-medium bg-brand-maroon text-white tracking-normal uppercase">
                         Dewan Redaksi
                     </span>
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900">
-                        Pemimpin Redaksi (Editor-in-Chief)
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-900">
+                        Pemimpin Redaksi
                     </h2>
                 </div>
 
@@ -70,11 +70,11 @@
                 </div>
             </section>
 
-            <!-- 2. Redaktur Pelaksana (Managing Editor) -->
+            <!-- 2. Redaktur Pelaksana -->
             @if(!empty($team['managing_editor']))
                 <section class="space-y-4">
                     <h2 class="text-base sm:text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">
-                        Redaktur Pelaksana (Managing Editor)
+                        Redaktur Pelaksana
                     </h2>
 
                     <div class="space-y-3">
@@ -100,14 +100,14 @@
                 </section>
             @endif
 
-            <!-- 3. Dewan Editor Bagian (Section Editors) -->
+            <!-- 3. Dewan Editor Bagian -->
             <section class="space-y-4">
                 <div class="flex items-center gap-2 border-b border-gray-100 pb-2">
-                    <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider border border-amber-300">
+                    <span class="px-2.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 tracking-normal border border-amber-300">
                         Editor Bagian
                     </span>
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900">
-                        Editor Bidang Kajian (Section Editors)
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-900">
+                        Editor Bidang Kajian
                     </h2>
                 </div>
 
@@ -138,16 +138,16 @@
             <!-- 4. Mitra Bestari / Reviewer Directory -->
             <section class="space-y-4">
                 <div class="flex items-center gap-2 border-b border-gray-100 pb-2">
-                    <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider border border-emerald-300">
+                    <span class="px-2.5 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800 tracking-normal border border-emerald-300">
                         Mitra Bestari
                     </span>
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900">
-                        Direktori Penelaah Sejawat (Peer Reviewers)
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-900">
+                        Direktori Penelaah Sejawat
                     </h2>
                 </div>
 
                 <p class="text-xs text-gray-600 leading-relaxed">
-                    Penelaah sejawat (Peer Reviewers) bertugas mengevaluasi kelayakan saintifik dan kepatuhan etis setiap naskah secara independen melalui mekanisme Double-Blind Peer Review.
+                    Penelaah sejawat bertugas mengevaluasi kelayakan saintifik dan kepatuhan etis setiap naskah secara independen melalui mekanisme Double-Blind Peer Review.
                 </p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
             <x-journal.sidebar
                 :publisherInfo="$viewModel->publisherInfo()"
                 :indexingData="$viewModel->indexingData()"

@@ -58,15 +58,18 @@ class PublicJournalViewModel
      */
     public function navLinks(): array
     {
+        $scopedSlug = request()->route('journalSlug');
+        $basePrefix = $scopedSlug ? "/{$scopedSlug}" : '';
+
         return [
-            ['label' => 'Beranda', 'url' => $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index')],
-            ['label' => 'Cari Artikel', 'url' => $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search')],
-            ['label' => 'Edisi Terkini', 'url' => $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current')],
-            ['label' => 'Arsip Edisi', 'url' => $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.issues.show')],
-            ['label' => 'Tentang Jurnal', 'url' => $this->safeRoute('journal.about', [], '#tentang-jurnal'), 'active' => request()->routeIs('journal.about') || request()->routeIs('journal.about.policies') || request()->routeIs('journal.about.contact')],
-            ['label' => 'Dewan Redaksi', 'url' => $this->safeRoute('journal.about.editorial-team', [], '#dewan-redaksi'), 'active' => request()->routeIs('journal.about.editorial-team')],
-            ['label' => 'Panduan Penulis', 'url' => $this->safeRoute('journal.about.submissions', [], '#panduan-penulis'), 'active' => request()->routeIs('journal.about.submissions')],
-            ['label' => 'Pengumuman', 'url' => $this->safeRoute('journal.announcements.index', [], '#pengumuman'), 'active' => request()->routeIs('journal.announcements.*')],
+            ['label' => 'Beranda', 'url' => $scopedSlug ? url($basePrefix) : $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index') || request()->routeIs('journal.scoped.index')],
+            ['label' => 'Cari Artikel', 'url' => $scopedSlug ? url("{$basePrefix}/articles/search") : $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search') || request()->routeIs('journal.scoped.articles.search')],
+            ['label' => 'Edisi Terkini', 'url' => $scopedSlug ? url("{$basePrefix}/issues/current") : $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current') || request()->routeIs('journal.scoped.issues.current')],
+            ['label' => 'Arsip Edisi', 'url' => $scopedSlug ? url("{$basePrefix}/archives") : $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.scoped.archives') || request()->routeIs('journal.issues.show') || request()->routeIs('journal.scoped.issues.show')],
+            ['label' => 'Tentang Jurnal', 'url' => $scopedSlug ? url("{$basePrefix}/about") : $this->safeRoute('journal.about', [], '#tentang-jurnal'), 'active' => request()->routeIs('journal.about*') || request()->routeIs('journal.scoped.about*')],
+            ['label' => 'Dewan Redaksi', 'url' => $scopedSlug ? url("{$basePrefix}/about/editorial-team") : $this->safeRoute('journal.about.editorial-team', [], '#dewan-redaksi'), 'active' => request()->routeIs('journal.about.editorial-team') || request()->routeIs('journal.scoped.about.editorial-team')],
+            ['label' => 'Panduan Penulis', 'url' => $scopedSlug ? url("{$basePrefix}/about/submissions") : $this->safeRoute('journal.about.submissions', [], '#panduan-penulis'), 'active' => request()->routeIs('journal.about.submissions') || request()->routeIs('journal.scoped.about.submissions')],
+            ['label' => 'Pengumuman', 'url' => $scopedSlug ? url("{$basePrefix}/announcements") : $this->safeRoute('journal.announcements.index', [], '#pengumuman'), 'active' => request()->routeIs('journal.announcements.*') || request()->routeIs('journal.scoped.announcements.*')],
         ];
     }
 

@@ -29,14 +29,14 @@
 
     <!-- Metadata Pokok Naskah -->
     <div>
-        <div class="flex items-center gap-2 text-xs font-mono font-bold text-gray-400 mb-1">
+        <div class="flex items-center gap-2 text-xs font-sans font-medium text-gray-500 mb-1">
             <span>{{ $submission['number'] }}</span>
             <span>•</span>
             <span class="text-gray-500 font-sans font-medium">{{ $submission['section_title'] }}</span>
             <span>•</span>
             <span class="text-gray-400">{{ $submission['assignment_code'] }}</span>
         </div>
-        <h1 class="text-lg sm:text-2xl font-sans font-bold text-gray-900 leading-snug tracking-tight">
+        <h1 class="text-lg sm:text-xl lg:text-2xl font-sans font-medium text-gray-900 leading-snug">
             {{ $submission['title'] }}
         </h1>
         <p class="text-xs sm:text-sm text-gray-600 mt-1">
@@ -55,12 +55,12 @@
                     </svg>
                 </div>
                 <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-gray-500 block">Naskah Acuan Final Copyeditor (.docx)</span>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-gray-500 block">Naskah Acuan Final Copyeditor</span>
                     <span class="text-xs font-semibold text-gray-900 break-all">{{ $submission['copyedit_final_file']['name'] }}</span>
                     <div class="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
                         <span>Ukuran: {{ $submission['copyedit_final_file']['size_formatted'] }}</span>
                         <span>•</span>
-                        <span class="font-mono text-[10px] text-gray-400 truncate max-w-48 sm:max-w-xs" title="SHA-256: {{ $submission['copyedit_final_file']['checksum_sha256'] }}">
+                        <span class="text-[10px] text-gray-400 truncate max-w-48 sm:max-w-xs tabular-nums" title="SHA-256: {{ $submission['copyedit_final_file']['checksum_sha256'] }}">
                             SHA: {{ substr($submission['copyedit_final_file']['checksum_sha256'], 0, 16) }}...
                         </span>
                     </div>
@@ -76,7 +76,7 @@
                 <svg class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>Unduh Naskah Final (.docx)</span>
+                <span>Unduh Naskah Final</span>
             </a>
             @else
                 <span class="text-xs text-gray-500">Berkas belum tersedia</span>
@@ -85,7 +85,7 @@
 
         @if(!empty($submission['copyedit_final_file']['notes_from_copyeditor']))
             <div class="mt-2.5 pt-2.5 border-t border-gray-200/70 text-xs text-gray-600 flex items-start gap-1.5">
-                <span class="font-semibold text-gray-700 shrink-0">Catatan Copyeditor:</span>
+                <span class="font-semibold text-gray-700 shrink-0">Catatan Penyunting Naskah:</span>
                 <span class="italic text-gray-600">"{{ $submission['copyedit_final_file']['notes_from_copyeditor'] }}"</span>
             </div>
         @endif

@@ -151,7 +151,7 @@ class SysAdminSeeder extends Seeder
                 'initials' => 'BRLM',
                 'issn' => '2301-4455',
                 'eissn' => null,
-                'publisher' => 'Fahri Azis, S.T. (SysAdmin)',
+                'publisher' => 'Fahri Azis, S.T.',
                 'editorial_email' => 'litbang.arsip@makassar.go.id',
                 'focus_scope' => 'Arsip terbitan monograf dan buletin penelitian Badan Penelitian dan Pengembangan Daerah pra-transformasi BRIDA.',
                 'frequency' => 'Tahunan (Arsip)',

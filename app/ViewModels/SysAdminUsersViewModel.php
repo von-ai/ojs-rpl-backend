@@ -16,10 +16,16 @@ class SysAdminUsersViewModel
 
     private string $searchQuery;
 
-    public function __construct(string $activeRole = 'all', string $searchQuery = '')
+    private int $currentPage;
+
+    private int $perPage;
+
+    public function __construct(string $activeRole = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10)
     {
         $this->activeRole = $activeRole;
         $this->searchQuery = trim($searchQuery);
+        $this->currentPage = max(1, $currentPage);
+        $this->perPage = max(1, $perPage);
     }
 
     /**
@@ -133,24 +139,11 @@ class SysAdminUsersViewModel
     }
 
     /**
-     * Kumpulan pengguna terdaftar yang telah difilter.
+     * Kumpulan pengguna terdaftar yang telah difilter secara lengkap.
      *
-     * @return array<int, array{
-     *     id: string,
-     *     name: string,
-     *     email: string,
-     *     affiliation: string,
-     *     is_sysadmin: bool,
-     *     roles_formatted: string,
-     *     role_codes: array<int, string>,
-     *     journal_memberships_count: int,
-     *     status: string,
-     *     status_label: string,
-     *     status_badge_class: string,
-     *     created_at: string
-     * }>
+     * @return array<int, array<string, mixed>>
      */
-    public function users(): array
+    public function filteredUsers(): array
     {
         $items = $this->allUsers();
 
@@ -172,11 +165,35 @@ class SysAdminUsersViewModel
             $items = array_values(array_filter($items, function ($item) use ($query) {
                 return str_contains(mb_strtolower($item['name']), $query)
                     || str_contains(mb_strtolower($item['email']), $query)
+                    || str_contains(mb_strtolower($item['username'] ?? ''), $query)
                     || str_contains(mb_strtolower($item['affiliation']), $query);
             }));
         }
 
         return $items;
+    }
+
+    /**
+     * Kumpulan pengguna terdaftar yang telah difilter dan dipotong per halaman.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function users(): array
+    {
+        $filtered = $this->filteredUsers();
+        $offset = ($this->currentPage - 1) * $this->perPage;
+
+        return array_values(array_slice($filtered, $offset, $this->perPage));
+    }
+
+    /**
+     * Seluruh pengguna terdaftar (untuk opsi autocomplete / modal tanpa dipotong per halaman).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function allRegisteredUsers(): array
+    {
+        return $this->allUsers();
     }
 
     /**
@@ -224,19 +241,28 @@ class SysAdminUsersViewModel
     /**
      * Metadata paginasi pengguna.
      *
-     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int}
+     * @return array{current_page: int, per_page: int, total: int, from: int, to: int, last_page: int, has_previous_page: bool, has_next_page: bool, previous_page: int, next_page: int}
      */
     public function pagination(): array
     {
-        $total = count($this->users());
+        $total = count($this->filteredUsers());
+        $lastPage = max(1, (int) ceil($total / $this->perPage));
+        $currentPage = min($this->currentPage, $lastPage);
+
+        $from = $total > 0 ? (($currentPage - 1) * $this->perPage) + 1 : 0;
+        $to = min($currentPage * $this->perPage, $total);
 
         return [
-            'current_page' => 1,
-            'per_page' => 10,
+            'current_page' => $currentPage,
+            'per_page' => $this->perPage,
             'total' => $total,
-            'from' => $total > 0 ? 1 : 0,
-            'to' => $total,
-            'last_page' => 1,
+            'from' => $from,
+            'to' => $to,
+            'last_page' => $lastPage,
+            'has_previous_page' => $currentPage > 1,
+            'has_next_page' => $currentPage < $lastPage,
+            'previous_page' => $currentPage - 1,
+            'next_page' => $currentPage + 1,
         ];
     }
 
@@ -294,15 +320,50 @@ class SysAdminUsersViewModel
                     $rolesFormatted = ! empty($labels) ? implode(', ', array_unique($labels)) : 'Pengguna Terdaftar';
 
                     $journalCount = $user->userRoles->whereNotNull('journal_id')->pluck('journal_id')->unique()->count();
+                    $initials = strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $user->name) ?: 'U', 0, 2));
+
+                    $uniqueRolesMap = [];
+                    $journalRolesGroupedMap = [];
+
+                    foreach ($user->userRoles->whereNotNull('journal_id') as $ur) {
+                        if (! isset($uniqueRolesMap[$ur->role_code])) {
+                            $uniqueRolesMap[$ur->role_code] = [
+                                'role_code' => (string) $ur->role_code,
+                                'role_label' => UserRole::roleLabel($ur->role_code),
+                                'badge_class' => UserRole::roleBadgeClass($ur->role_code),
+                            ];
+                        }
+
+                        $jId = (string) $ur->journal_id;
+                        if (! isset($journalRolesGroupedMap[$jId])) {
+                            $journalRolesGroupedMap[$jId] = [
+                                'journal_id' => $jId,
+                                'journal_name' => (string) ($ur->journal?->name ?? 'Jurnal Ilmiah'),
+                                'roles' => [],
+                            ];
+                        }
+
+                        $journalRolesGroupedMap[$jId]['roles'][] = [
+                            'id' => (string) $ur->id,
+                            'role_code' => (string) $ur->role_code,
+                            'role_label' => UserRole::roleLabel($ur->role_code),
+                            'badge_class' => UserRole::roleBadgeClass($ur->role_code),
+                            'expertise_keywords' => is_array($ur->expertise_keywords) ? $ur->expertise_keywords : [],
+                        ];
+                    }
 
                     return [
                         'id' => (string) $user->id,
                         'name' => (string) $user->name,
                         'email' => (string) $user->email,
+                        'username' => (string) ($user->username ?? ''),
+                        'initials' => $initials,
                         'affiliation' => (string) ($user->profile?->affiliation ?? 'Sivitas Akademika BRIDA Makassar'),
                         'is_sysadmin' => $isSysAdmin,
                         'roles_formatted' => $rolesFormatted,
                         'role_codes' => $roleCodes,
+                        'unique_roles' => array_values($uniqueRolesMap),
+                        'journal_roles_grouped' => array_values($journalRolesGroupedMap),
                         'journal_memberships_count' => $journalCount,
                         'journal_roles' => $user->userRoles->whereNotNull('journal_id')->map(function ($ur) {
                             return [
@@ -321,6 +382,7 @@ class SysAdminUsersViewModel
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : 'bg-gray-100 text-gray-700 border-gray-200',
                         'created_at' => $user->created_at?->format('d M Y') ?? '01 Jan 2026',
+                        'joined_at' => $user->created_at?->format('d M Y, H:i').' WITA',
                     ];
                 })->toArray();
             }

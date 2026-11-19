@@ -107,7 +107,7 @@ class Issue extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'published' => $this->is_current ? 'Terbit (Current Issue)' : 'Terbit (Arsip)',
+            'published' => $this->is_current ? 'Terbit (Edisi Terkini)' : 'Terbit (Arsip)',
             'scheduled' => 'Terjadwal Terbit',
             default => 'Draf Kurasi Naskah',
         };

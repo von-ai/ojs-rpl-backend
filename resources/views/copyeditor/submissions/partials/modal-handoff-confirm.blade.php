@@ -1,13 +1,14 @@
 <div 
     id="handoff-confirm-modal" 
-    class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-opacity duration-200"
+    class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs transition-opacity duration-200 p-3 sm:p-4"
     role="dialog" 
     aria-modal="true" 
     aria-labelledby="handoff-modal-title"
 >
-    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
-        <!-- Header Modal -->
-        <div class="p-6 text-center space-y-3">
+    <div class="min-h-full flex items-center justify-center py-2 sm:py-4 w-full">
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] animate-in fade-in zoom-in-95 duration-150">
+            <!-- Header Modal -->
+            <div class="p-6 text-center space-y-3 overflow-y-auto flex-1 min-h-0 [scrollbar-width:thin]">
             <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center shadow-2xs">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -66,6 +67,7 @@
                 Ya, Serahkan Naskah
             </button>
         </div>
+    </div>
     </div>
 </div>
 

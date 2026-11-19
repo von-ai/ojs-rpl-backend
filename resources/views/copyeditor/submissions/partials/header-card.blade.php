@@ -21,25 +21,25 @@
 <div class="bg-white rounded-2xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
     <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div class="space-y-2 min-w-0 flex-1">
-            <div class="flex items-center gap-2 text-xs font-mono font-bold text-gray-400">
+            <div class="flex items-center gap-2 text-xs font-sans font-medium text-gray-500">
                 <span>{{ $submission['number'] }}</span>
                 <span>•</span>
                 <span class="text-gray-500 font-sans font-medium">{{ $submission['section_title'] }}</span>
             </div>
 
-            <h1 class="font-sans text-xl sm:text-2xl font-bold text-gray-900 leading-snug">
+            <h1 class="font-sans text-lg sm:text-xl lg:text-2xl font-medium text-gray-900 leading-snug">
                 {{ $submission['title'] }}
             </h1>
 
             <div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-gray-500 pt-1">
                 <div>
                     <span class="text-gray-400">Penulis Korespondensi:</span>
-                    <strong class="text-gray-800 font-semibold">{{ $submission['corresponding_author']['name'] }}</strong>
+                    <span class="text-gray-800 font-medium">{{ $submission['corresponding_author']['name'] }}</span>
                     <span class="text-gray-400">({{ $submission['corresponding_author']['email'] }})</span>
                 </div>
                 <div>
                     <span class="text-gray-400">Batas Waktu:</span>
-                    <strong class="{{ $submission['is_urgent'] ? 'text-amber-700' : 'text-gray-700' }} font-semibold">{{ $submission['due_at'] }}</strong>
+                    <span class="{{ $submission['is_urgent'] ? 'text-amber-700' : 'text-gray-700' }} font-medium tabular-nums">{{ $submission['due_at'] }}</span>
                 </div>
             </div>
         </div>

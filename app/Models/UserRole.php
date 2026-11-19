@@ -13,6 +13,8 @@ class UserRole extends Model
 {
     use HasFactory, HasUlids;
 
+    protected $touches = ['user'];
+
     protected $fillable = [
         'user_id',
         'journal_id',
@@ -166,16 +168,22 @@ class UserRole extends Model
 
     public static function roleLabel(string $roleCode): string
     {
+        $catalog = self::roleCatalog();
+
+        if (isset($catalog[$roleCode])) {
+            return $catalog[$roleCode]['label'];
+        }
+
         return match ($roleCode) {
-            'sysadmin' => 'System Administrator',
-            'manager' => 'Journal Manager',
-            'editor_in_chief' => 'Editor in Chief',
-            'section_editor' => 'Section Editor',
-            'copyeditor' => 'Copy Editor',
-            'layout_editor' => 'Layout Editor',
-            'proofreader' => 'Proofreader',
-            'reviewer' => 'Peer Reviewer',
-            'author' => 'Author',
+            'sysadmin' => 'Administrator Sistem',
+            'manager' => 'Manajer Jurnal',
+            'editor_in_chief' => 'Pemimpin Redaksi',
+            'section_editor' => 'Editor Bagian',
+            'copyeditor' => 'Penyunting Naskah',
+            'layout_editor' => 'Penata Letak',
+            'proofreader' => 'Korektor Galai',
+            'reviewer' => 'Mitra Bestari',
+            'author' => 'Penulis',
             default => ucfirst(str_replace('_', ' ', $roleCode)),
         };
     }

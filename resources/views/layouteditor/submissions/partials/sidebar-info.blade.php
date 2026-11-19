@@ -34,7 +34,7 @@
 
             <div class="pt-2.5 border-t border-gray-100">
                 <span class="text-gray-500 block text-[11px]">Email Penulis:</span>
-                <span class="font-mono text-gray-800 break-all">{{ $submission['corresponding_author']['email'] }}</span>
+                <span class="text-gray-800 break-all">{{ $submission['corresponding_author']['email'] }}</span>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
                 <span class="text-[11px] font-bold uppercase tracking-wider text-purple-900">
                     Eskalasi Masalah Aktif
                 </span>
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-200 text-purple-900 font-mono">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-200 text-purple-900 tabular-nums">
                     {{ $submission['escalation']['ticket_id'] }}
                 </span>
             </div>

@@ -75,7 +75,7 @@ class SysAdminJournalsViewModel
     /**
      * 4 Ringkasan metrik statistik multi-jurnal ilmiah.
      *
-     * @return array<int, array{title: string, value: int, description: string, badge_text: string, color_class: string}>
+     * @return array<int, array{title: string, value: int, unit: string, description: string, badge_text: string, color_class: string}>
      */
     public function summaryMetrics(): array
     {
@@ -97,6 +97,7 @@ class SysAdminJournalsViewModel
             [
                 'title' => 'Total Jurnal Ilmiah',
                 'value' => $total,
+                'unit' => 'jurnal',
                 'description' => 'Instansi jurnal terdaftar dalam platform',
                 'badge_text' => "{$total} Instansi",
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
@@ -104,6 +105,7 @@ class SysAdminJournalsViewModel
             [
                 'title' => 'Jurnal Aktif',
                 'value' => $active,
+                'unit' => 'jurnal',
                 'description' => 'Jurnal aktif menerima dan mempublikasikan artikel',
                 'badge_text' => 'Aktif Publikasi',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -111,13 +113,15 @@ class SysAdminJournalsViewModel
             [
                 'title' => 'Edisi Terbit Berjalan',
                 'value' => $runningIssues,
+                'unit' => 'edisi',
                 'description' => 'Total terbitan aktif tahun berjalan',
-                'badge_text' => 'Volume 2026',
+                'badge_text' => 'Volume '.date('Y'),
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Jurnal Diarsipkan',
                 'value' => $archived,
+                'unit' => 'jurnal',
                 'description' => 'Arsip historis terbitan masa lalu',
                 'badge_text' => 'Arsip Historis',
                 'color_class' => 'text-gray-700 bg-gray-100 border-gray-200',
@@ -303,7 +307,7 @@ class SysAdminJournalsViewModel
                         },
                         'total_submissions' => $j->submissions()->count(),
                         'current_issue_title' => $j->currentIssue?->title ?? 'Belum ada terbitan',
-                        'primary_contact' => $j->publisher ?? 'Pengelola Jurnal',
+                        'primary_contact' => trim(str_replace('(SysAdmin)', '', (string) ($j->publisher ?? 'Pengelola Jurnal'))),
                         'url_public' => '/'.$j->slug,
                     ];
                 })->toArray();

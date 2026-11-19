@@ -4,14 +4,14 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">
-                PUSTAKA TERBITAN
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-0.5">
+                Pustaka Terbitan
             </span>
-            <h2 class="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900">
                 Arsip Edisi Terdahulu
             </h2>
         </div>
-        <a href="{{ route('journal.archives') }}" class="text-xs font-bold text-brand-maroon hover:underline flex items-center gap-1">
+        <a href="{{ route('journal.archives') }}" class="text-xs font-medium text-brand-maroon hover:underline flex items-center gap-1">
             <span>Lihat Seluruh Arsip</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
@@ -28,16 +28,16 @@
                         <svg class="w-8 h-8 text-brand-maroon mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                         </svg>
-                        <span class="font-extrabold text-gray-900 text-sm block">{{ $arc['volume_no'] }}</span>
-                        <span class="text-xs text-gray-500 font-medium block">{{ $arc['year_month'] }}</span>
+                        <span class="font-medium text-gray-900 text-sm block">{{ $arc['volume_no'] }}</span>
+                        <span class="text-xs text-gray-500 font-normal block">{{ $arc['year_month'] }}</span>
                     </div>
-                    <h3 class="font-bold text-gray-900 text-sm hover:text-brand-maroon transition-colors line-clamp-2">
+                    <h3 class="font-medium text-gray-900 text-sm hover:text-brand-maroon transition-colors line-clamp-2">
                         <a href="{{ $arc['url'] ?? '#' }}">{{ $arc['title'] }}</a>
                     </h3>
                     <span class="text-xs text-gray-500 block">{{ $arc['total_articles'] }} Artikel Terpublikasi</span>
                 </div>
                 <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                    <a href="{{ $arc['url'] ?? '#' }}" class="font-bold text-gray-700 hover:text-brand-maroon flex items-center gap-1">
+                    <a href="{{ $arc['url'] ?? '#' }}" class="font-medium text-gray-700 hover:text-brand-maroon flex items-center gap-1">
                         <span>Daftar Isi Edisi</span>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -52,3 +52,5 @@
         @endforelse
     </div>
 </div>
+
+

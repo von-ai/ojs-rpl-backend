@@ -20,12 +20,15 @@ class JournalManagerUsersViewModel
 
     private int $perPage;
 
-    public function __construct(string $activeFilter = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10)
+    protected ?Journal $journal;
+
+    public function __construct(string $activeFilter = 'all', string $searchQuery = '', int $currentPage = 1, int $perPage = 10, ?Journal $journal = null)
     {
         $this->activeFilter = $activeFilter;
         $this->searchQuery = trim($searchQuery);
         $this->currentPage = max(1, $currentPage);
         $this->perPage = max(1, $perPage);
+        $this->journal = $journal;
     }
 
     /**
@@ -103,24 +106,24 @@ class JournalManagerUsersViewModel
                     'color_class' => 'text-gray-900 bg-gray-50 border-gray-200',
                 ],
                 [
-                    'title' => 'Dewan Redaksi (Editorial)',
+                    'title' => 'Dewan Redaksi',
                     'value' => $editorialCount,
-                    'description' => 'EIC, Section Editor, dan Tim Produksi',
-                    'badge_text' => 'Editorial Board',
+                    'description' => 'Pemimpin Redaksi, Editor Bagian, dan Tim Produksi',
+                    'badge_text' => 'Dewan Redaksi',
                     'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
                 ],
                 [
-                    'title' => 'Direktori Penelaah',
+                    'title' => 'Mitra Bestari',
                     'value' => $reviewersCount,
-                    'description' => 'Peer Reviewer dengan kepakaran terverifikasi',
-                    'badge_text' => 'Penelaah Aktif',
+                    'description' => 'Mitra bestari dengan kepakaran terverifikasi',
+                    'badge_text' => 'Mitra Bestari',
                     'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
                 ],
                 [
                     'title' => 'Penulis & Pembaca',
                     'value' => $authorsCount,
-                    'description' => 'Author aktif dan kontributor naskah',
-                    'badge_text' => 'Kontributor',
+                    'description' => 'Penulis aktif dan kontributor naskah',
+                    'badge_text' => 'Penulis',
                     'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
                 ],
             ];
@@ -135,24 +138,24 @@ class JournalManagerUsersViewModel
                 'color_class' => 'text-gray-900 bg-gray-50 border-gray-200',
             ],
             [
-                'title' => 'Dewan Redaksi (Editorial)',
+                'title' => 'Dewan Redaksi',
                 'value' => 0,
-                'description' => 'EIC, Section Editor, dan Tim Produksi',
-                'badge_text' => 'Editorial Board',
+                'description' => 'Pemimpin Redaksi, Editor Bagian, dan Tim Produksi',
+                'badge_text' => 'Dewan Redaksi',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
-                'title' => 'Direktori Penelaah',
+                'title' => 'Mitra Bestari',
                 'value' => 0,
-                'description' => 'Peer Reviewer dengan kepakaran terverifikasi',
-                'badge_text' => 'Penelaah Aktif',
+                'description' => 'Mitra bestari dengan kepakaran terverifikasi',
+                'badge_text' => 'Mitra Bestari',
                 'color_class' => 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Penulis & Pembaca',
                 'value' => 0,
-                'description' => 'Author aktif dan kontributor naskah',
-                'badge_text' => 'Kontributor',
+                'description' => 'Penulis aktif dan kontributor naskah',
+                'badge_text' => 'Penulis',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
         ];
@@ -196,12 +199,12 @@ class JournalManagerUsersViewModel
                 ],
                 'reviewer' => [
                     'key' => 'reviewer',
-                    'label' => 'Direktori Penelaah',
+                    'label' => 'Mitra Bestari',
                     'count' => $counts['reviewer'],
                 ],
                 'author' => [
                     'key' => 'author',
-                    'label' => 'Penulis (Author)',
+                    'label' => 'Penulis',
                     'count' => $counts['author'],
                 ],
                 'unassigned' => [
@@ -379,7 +382,8 @@ class JournalManagerUsersViewModel
     private function allUsers(): array
     {
         if (Schema::hasTable('users')) {
-            $journalId = Auth::user()?->activeJournal('manager')?->id
+            $journalId = $this->journal?->id
+                ?? Auth::user()?->activeJournal('manager')?->id
                 ?? Auth::user()?->userRoles()->where('role_code', 'manager')->whereNotNull('journal_id')->orderBy('journal_id')->value('journal_id');
 
             $query = User::with([

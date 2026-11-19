@@ -108,6 +108,9 @@ class AuthorSubmissionsPageTest extends TestCase
 
         // Panduan Alur Kerja OJS 3 di Bagian Bawah
         $response->assertSee('Panduan Alur Kerja Editorial');
+        $response->assertSee('Panduan Penulis');
+        $response->assertSee(route('journal.about.submissions'));
+        $response->assertDontSee('href="#bantuan"');
         $response->assertSee('1. Draf Submisi');
         $response->assertSee('2. Pemeriksaan Awal');
         $response->assertSee('3. Proses Telaah');

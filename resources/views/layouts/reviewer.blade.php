@@ -112,6 +112,11 @@
                     title = target.el.getAttribute('title') || target.el.textContent.trim();
                 }
 
+                if (target.el.hasAttribute('title')) {
+                    target.el.setAttribute('data-original-title', target.el.getAttribute('title'));
+                    target.el.removeAttribute('title');
+                }
+
                 if (!title) return;
 
                 titleEl.textContent = title;
@@ -130,6 +135,10 @@
             }
 
             function hideTooltip() {
+                if (activeTarget && activeTarget.hasAttribute('data-original-title')) {
+                    activeTarget.setAttribute('title', activeTarget.getAttribute('data-original-title'));
+                    activeTarget.removeAttribute('data-original-title');
+                }
                 activeTarget = null;
                 tooltip.classList.remove('opacity-100', 'scale-100');
                 tooltip.classList.add('opacity-0', 'scale-95');

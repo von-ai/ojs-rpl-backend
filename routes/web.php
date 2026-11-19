@@ -203,6 +203,8 @@ Route::middleware(['auth', 'role.access:manager'])->prefix('journalmanager')->na
     // 3. Bidang Naskah (Sections)
     Route::get('/sections', [JournalManagerController::class, 'sections'])->name('sections.index');
     Route::post('/sections', [JournalManagerController::class, 'storeSection'])->name('sections.store');
+    Route::put('/sections/{id}', [JournalManagerController::class, 'updateSection'])->name('sections.update');
+    Route::post('/sections/{id}/toggle-status', [JournalManagerController::class, 'toggleSectionStatus'])->name('sections.toggle-status');
 
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
@@ -244,6 +246,7 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
     // 1. Manajemen Jurnal Ilmiah (Multi-Tenancy)
     Route::get('/journals', [SysAdminController::class, 'journals'])->name('journals.index');
     Route::post('/journals', [SysAdminController::class, 'storeJournal'])->name('journals.store');
+    Route::post('/journals/{id}', [SysAdminController::class, 'updateJournal'])->name('journals.update');
     Route::post('/journals/{id}/status', [SysAdminController::class, 'updateJournalStatus'])->name('journals.update-status');
 
     // 2. Direktori Pengguna & Hak Akses Global
@@ -252,6 +255,7 @@ Route::middleware(['auth', 'role.access:sysadmin'])->prefix('sysadmin')->name('s
     Route::post('/users/revoke-sysadmin', [SysAdminController::class, 'revokeSysAdminRole'])->name('users.revoke-sysadmin');
     Route::post('/users/assign-journal-role', [SysAdminController::class, 'assignJournalRole'])->name('users.assign-journal-role');
     Route::post('/users/revoke-journal-role', [SysAdminController::class, 'revokeJournalRole'])->name('users.revoke-journal-role');
+    Route::post('/users/reset-password', [SysAdminController::class, 'resetPassword'])->name('users.reset-password');
     Route::post('/users/import', [SysAdminController::class, 'importUsers'])->name('users.import');
 
     // 3. Pengaturan Platform & Kesehatan Server
@@ -271,3 +275,22 @@ Route::get('/dashboard', function () {
     // Redirect to the user's default portal route or fallback to author submissions
     return redirect()->route($user ? $user->defaultPortalRoute() : 'author.submissions.index');
 })->middleware('auth')->name('dashboard');
+
+// Portal Publik Multi-Tenancy per Instansi Jurnal (/{journalSlug})
+Route::prefix('{journalSlug}')
+    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$).*$'])
+    ->name('journal.scoped.')->group(function () {
+        Route::get('/', [PublicJournalController::class, 'index'])->name('index');
+        Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
+        Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('articles.show');
+        Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
+        Route::get('/issues/{id}', [PublicJournalController::class, 'showIssue'])->name('issues.show');
+        Route::get('/archives', [PublicJournalController::class, 'archives'])->name('archives');
+        Route::get('/about', [PublicJournalController::class, 'about'])->name('about');
+        Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
+        Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');
+        Route::get('/about/submissions', [PublicJournalController::class, 'submissionsGuide'])->name('about.submissions');
+        Route::get('/about/contact', [PublicJournalController::class, 'contact'])->name('about.contact');
+        Route::get('/announcements', [PublicJournalController::class, 'announcements'])->name('announcements.index');
+        Route::get('/announcements/{id}', [PublicJournalController::class, 'showAnnouncement'])->name('announcements.show');
+    });

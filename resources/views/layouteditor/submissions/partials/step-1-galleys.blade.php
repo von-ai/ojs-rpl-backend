@@ -7,8 +7,8 @@
                 1
             </span>
             <div>
-                <h2 class="text-sm sm:text-base font-bold text-gray-900">
-                    Berkas Galai Publikasi (PDF / HTML)
+                <h2 class="text-sm sm:text-base font-medium text-gray-900">
+                    Berkas Galai Publikasi
                 </h2>
                 <p class="text-xs text-gray-500 mt-0.5">
                     Format terbitan resmi jurnal. Setiap revisi galai wajib diberi penomoran versi baru secara berurutan.
@@ -67,7 +67,7 @@
                                         <span>•</span>
                                         <span>Diunggah: {{ $galley['uploaded_at'] }}</span>
                                         <span>•</span>
-                                        <span class="font-mono text-[10px]" title="Checksum: {{ $galley['checksum_sha256'] }}">
+                                        <span class="text-[10px] tabular-nums" title="Checksum: {{ $galley['checksum_sha256'] }}">
                                             SHA-256: {{ substr($galley['checksum_sha256'], 0, 12) }}...
                                         </span>
                                     </div>

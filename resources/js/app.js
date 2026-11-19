@@ -38,6 +38,57 @@ function enhanceNativeSelects() {
     });
 }
 
+function positionDropdownPanel(container, button, panel) {
+    if (!button || !panel) return;
+
+    panel.style.top = '';
+    panel.style.bottom = '';
+    panel.style.maxHeight = '';
+
+    const btnRect = button.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    const modalDialog = button.closest('[role="dialog"], .modal, [id^="modal-"], .modal-dialog');
+    const modalCard = modalDialog ? (modalDialog.querySelector('.relative.bg-white, [class*="rounded-xl"], [class*="rounded-2xl"]') || modalDialog) : null;
+
+    let boundaryTop = 8;
+    let boundaryBottom = viewportHeight - 8;
+
+    if (modalCard) {
+        const cardRect = modalCard.getBoundingClientRect();
+        const cardStyle = window.getComputedStyle(modalCard);
+        if (cardStyle.overflow === 'hidden' || cardStyle.overflowY === 'hidden') {
+            boundaryTop = Math.max(8, cardRect.top + 8);
+            boundaryBottom = Math.min(viewportHeight - 8, cardRect.bottom - 8);
+        }
+    }
+
+    const spaceBelow = boundaryBottom - btnRect.bottom;
+    const spaceAbove = btnRect.top - boundaryTop;
+    const preferredHeight = 240;
+
+    const shouldDropUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+
+    if (shouldDropUp) {
+        panel.classList.add('custom-dropdown-panel-up');
+        panel.classList.remove('custom-dropdown-panel-down');
+        panel.style.top = 'auto';
+        panel.style.bottom = 'calc(100% + 5px)';
+        const maxH = Math.max(120, Math.min(preferredHeight, spaceAbove - 10));
+        panel.style.maxHeight = `${maxH}px`;
+    } else {
+        panel.classList.add('custom-dropdown-panel-down');
+        panel.classList.remove('custom-dropdown-panel-up');
+        panel.style.top = 'calc(100% + 5px)';
+        panel.style.bottom = 'auto';
+        const maxH = Math.max(120, Math.min(preferredHeight, spaceBelow - 10));
+        panel.style.maxHeight = `${maxH}px`;
+    }
+
+    container.classList.add('is-open');
+    container.style.zIndex = '60';
+}
+
 /** Shared dropdown behavior for every portal. Native selects remain usable without JavaScript. */
 function closeAllCustomDropdowns({ restoreFocus = false } = {}) {
     document.querySelectorAll('.custom-dropdown-container').forEach(container => {
@@ -49,6 +100,8 @@ function closeAllCustomDropdowns({ restoreFocus = false } = {}) {
         panel.classList.remove('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
         button.setAttribute('aria-expanded', 'false');
         container.querySelector('.custom-dropdown-chevron')?.classList.remove('rotate-180');
+        container.classList.remove('is-open');
+        container.style.zIndex = '';
         if (wasOpen && restoreFocus) button.focus();
     });
 }
@@ -92,12 +145,17 @@ function initCustomDropdowns() {
         const open = (last = false) => {
             if (button.disabled) return;
             closeAllCustomDropdowns();
+            positionDropdownPanel(container, button, panel);
             panel.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
             panel.classList.add('visible', 'opacity-100', 'scale-100', 'pointer-events-auto');
             button.setAttribute('aria-expanded', 'true');
             container.querySelector('.custom-dropdown-chevron')?.classList.add('rotate-180');
             const candidates = enabledItems();
-            (last ? candidates.at(-1) : candidates.find(item => item.getAttribute('aria-selected') === 'true') || candidates[0])?.focus();
+            const activeItem = (last ? candidates.at(-1) : candidates.find(item => item.getAttribute('aria-selected') === 'true') || candidates[0]);
+            if (activeItem) {
+                activeItem.focus();
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
         };
         const choose = item => {
             if (item.getAttribute('aria-disabled') === 'true') return;
@@ -179,7 +237,122 @@ document.addEventListener('focusin', event => {
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeAllCustomDropdowns({ restoreFocus: true });
 });
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCustomDropdowns);
-else initCustomDropdowns();
+document.addEventListener('scroll', event => {
+    const openContainer = document.querySelector('.custom-dropdown-container.is-open');
+    if (!openContainer) return;
+    const panel = openContainer.querySelector('.custom-dropdown-panel');
+    if (panel && (event.target === panel || panel.contains(event.target))) return;
+    const btn = openContainer.querySelector('.custom-dropdown-btn');
+    if (btn && panel) positionDropdownPanel(openContainer, btn, panel);
+}, true);
+window.addEventListener('resize', () => {
+    const openContainer = document.querySelector('.custom-dropdown-container.is-open');
+    if (!openContainer) return;
+    const btn = openContainer.querySelector('.custom-dropdown-btn');
+    const panel = openContainer.querySelector('.custom-dropdown-panel');
+    if (btn && panel) positionDropdownPanel(openContainer, btn, panel);
+});
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initCustomDropdowns();
+        initSidebarCollapse();
+    });
+} else {
+    initCustomDropdowns();
+    initSidebarCollapse();
+}
 window.initCustomDropdowns = initCustomDropdowns;
 window.closeAllCustomDropdowns = closeAllCustomDropdowns;
+window.initSidebarCollapse = initSidebarCollapse;
+
+function initSidebarCollapse() {
+    if (window.__siridaSidebarInitialized) {
+        return;
+    }
+    const sidebar = document.querySelector('.portal-sidebar') || document.querySelector('aside[id$="-sidebar"]');
+    if (!sidebar) {
+        return;
+    }
+    window.__siridaSidebarInitialized = true;
+
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const openBtn = document.getElementById('open-sidebar-btn');
+    const closeBtn = document.getElementById('close-sidebar-btn');
+    const collapseBtn = document.getElementById('sidebar-collapse-toggle-btn');
+    const bottomCollapseBtn = document.getElementById('sidebar-bottom-collapse-btn');
+    const iconLeft = document.getElementById('collapse-icon-left');
+    const iconRight = document.getElementById('collapse-icon-right');
+    const bottomIconLeft = document.getElementById('bottom-collapse-icon-left');
+    const bottomIconRight = document.getElementById('bottom-collapse-icon-right');
+
+    const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
+
+    function applyCollapseState(collapsed) {
+        document.documentElement.classList.toggle('sidebar-is-collapsed', collapsed);
+        if (collapsed) {
+            sidebar.classList.add('sidebar-collapsed');
+            iconLeft?.classList.add('hidden');
+            iconRight?.classList.remove('hidden');
+            bottomIconLeft?.classList.add('hidden');
+            bottomIconRight?.classList.remove('hidden');
+            if (collapseBtn) collapseBtn.setAttribute('title', 'Perluas Navigasi');
+            if (bottomCollapseBtn) {
+                bottomCollapseBtn.setAttribute('title', 'Perluas Sidebar');
+                const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                if (label) label.textContent = 'Perluas Sidebar';
+            }
+        } else {
+            sidebar.classList.remove('sidebar-collapsed');
+            iconLeft?.classList.remove('hidden');
+            iconRight?.classList.add('hidden');
+            bottomIconLeft?.classList.remove('hidden');
+            bottomIconRight?.classList.add('hidden');
+            if (collapseBtn) collapseBtn.setAttribute('title', 'Kecilkan Navigasi');
+            if (bottomCollapseBtn) {
+                bottomCollapseBtn.setAttribute('title', 'Kecilkan Sidebar');
+                const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                if (label) label.textContent = 'Kecilkan Sidebar';
+            }
+        }
+    }
+
+    if (window.innerWidth >= 1024 && localStorage.getItem(STORAGE_KEY) === '1') {
+        applyCollapseState(true);
+    }
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            sidebar.classList.add('sidebar-ready');
+        });
+    });
+
+    function toggleSidebarDesktop() {
+        const nextState = !sidebar.classList.contains('sidebar-collapsed');
+        applyCollapseState(nextState);
+        localStorage.setItem(STORAGE_KEY, nextState ? '1' : '0');
+    }
+
+    collapseBtn?.addEventListener('click', toggleSidebarDesktop);
+    bottomCollapseBtn?.addEventListener('click', toggleSidebarDesktop);
+
+    function toggleMobileDrawer(open) {
+        if (open) {
+            sidebar.classList.remove('-translate-x-full');
+            backdrop?.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            backdrop?.classList.add('hidden');
+        }
+    }
+
+    // Tombol drawer hanya untuk mobile (<1024px)
+    openBtn?.addEventListener('click', function () {
+        toggleMobileDrawer(true);
+    });
+    closeBtn?.addEventListener('click', function () {
+        toggleMobileDrawer(false);
+    });
+    backdrop?.addEventListener('click', function () {
+        toggleMobileDrawer(false);
+    });
+}

@@ -1,11 +1,11 @@
 {{-- resources/views/layouteditor/submissions/partials/modal-upload-galley.blade.php --}}
 <div id="modal-upload-galley" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-upload-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs" onclick="closeUploadGalleyModal()"></div>
 
         <!-- Panel Konten -->
-        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200">
+        <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-brand-maroon/10 text-brand-maroon flex items-center justify-center">

@@ -110,7 +110,7 @@ class SysAdminSettingsViewModel
     /**
      * 4 Ringkasan metrik status operasional server.
      *
-     * @return array<int, array{title: string, value: string, badge_text: string, color_class: string}>
+     * @return array<int, array{title: string, value: string, badge_text: string, description?: string, color_class: string}>
      */
     public function summaryMetrics(): array
     {
@@ -118,33 +118,45 @@ class SysAdminSettingsViewModel
         $isMaintenance = (bool) ($settings['maintenance_mode'] ?? false);
         $health = $this->serverHealth();
 
+        $scannerDriver = (string) config('filesecurity.driver');
+        $scannerStatus = match ($scannerDriver) {
+            'defender' => 'Aktif',
+            'mock', 'azurite' => 'Mock Aktif',
+            default => 'Non-Aktif',
+        };
+        $scannerDesc = match ($scannerDriver) {
+            'defender' => 'Microsoft Defender (0 Ancaman)',
+            'mock', 'azurite' => 'Mock Scanner Azurite',
+            default => 'Belum dikonfigurasi',
+        };
+
         return [
             [
                 'title' => 'Status Operasional',
                 'value' => 'Online',
                 'badge_text' => 'Normal',
+                'description' => 'Sistem Berjalan Normal',
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
             [
                 'title' => 'Mode Pemeliharaan',
                 'value' => $isMaintenance ? 'Aktif' : 'Non-Aktif',
                 'badge_text' => $isMaintenance ? 'Dibatasi (Admin)' : 'Publik Terbuka',
+                'description' => $isMaintenance ? 'Akses Terbatas Admin' : 'Akses Publik Terbuka',
                 'color_class' => $isMaintenance ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-blue-700 bg-blue-50 border-blue-200',
             ],
             [
                 'title' => 'Kapasitas Disk Storage',
-                'value' => "{$health['disk_percentage']}% Terpakai",
+                'value' => "{$health['disk_percentage']}%",
                 'badge_text' => $health['disk_free_formatted'] ?? '15.8 GB Bebas',
+                'description' => ($health['disk_free_formatted'] ?? '15.8 GB Bebas').' Tersedia',
                 'color_class' => 'text-brand-maroon bg-red-50 border-red-100',
             ],
             [
-                'title' => 'Pemindai Malware',
-                'value' => match (config('filesecurity.driver')) {
-                    'defender' => 'Microsoft Defender Aktif',
-                    'mock', 'azurite' => 'Mock Scanner (Bypass)',
-                    default => 'Pemindai belum dikonfigurasi',
-                },
+                'title' => 'Pemindai Keamanan',
+                'value' => $scannerStatus,
                 'badge_text' => '0 Ancaman',
+                'description' => $scannerDesc,
                 'color_class' => 'text-emerald-700 bg-emerald-50 border-emerald-200',
             ],
         ];

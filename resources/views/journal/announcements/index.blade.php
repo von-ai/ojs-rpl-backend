@@ -14,14 +14,14 @@
 
     <!-- Header Halaman -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-            INFORMASI REDAKSI RESMI
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
+            Informasi Redaksi Resmi
         </span>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
             Warta, Berita & Pengumuman Jurnal
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Panggilan pengajuan naskah (Call for Papers), agenda lokakarya penulisan artikel ilmiah, dan kabar pembaruan tata kelola berkala ilmiah {{ $journal->name ?? 'BRIDA Kota Makassar' }}.
+            Panggilan pengajuan naskah, agenda lokakarya penulisan artikel ilmiah, dan kabar pembaruan tata kelola berkala ilmiah {{ $journal->name ?? 'BRIDA Kota Makassar' }}.
         </p>
     </div>
 
@@ -29,12 +29,12 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <!-- Kolom Pengumuman (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 space-y-5">
+        <div class="lg:col-span-2 min-w-0 space-y-5">
             
             @forelse($announcements as $ann)
                 <article class="bg-white rounded-xl border border-gray-200 p-6 hover:border-brand-maroon/40 transition-all space-y-3">
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="px-2.5 py-0.5 rounded-full font-bold bg-brand-maroon/10 text-brand-maroon text-[10px] uppercase tracking-wider">
+                        <span class="px-2.5 py-0.5 rounded-full font-medium bg-brand-maroon/10 text-brand-maroon text-[11px] uppercase tracking-normal">
                             Pengumuman Resmi
                         </span>
                         <time class="text-gray-400 font-medium">
@@ -80,7 +80,7 @@
         </div>
 
         <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 space-y-6">
+        <aside class="lg:col-span-1 min-w-0 space-y-6">
             <x-journal.sidebar
                 :publisherInfo="$viewModel->publisherInfo()"
                 :indexingData="$viewModel->indexingData()"

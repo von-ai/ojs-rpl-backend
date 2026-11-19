@@ -82,16 +82,27 @@ class JournalManagerService
             }
             $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
             $submission = Submission::query()->lockForUpdate()->findOrFail($submission->id);
-            if ($submission->journal_id !== $issue->journal_id || ! app(LayoutEditorService::class)->checkPublicationReadiness($submission)['is_ready']) {
-                throw new DomainException('Naskah belum siap terbit atau berasal dari jurnal lain.');
+
+            if ($submission->journal_id !== $issue->journal_id) {
+                throw new DomainException('Naskah berasal dari jurnal lain dan tidak dapat ditambahkan ke edisi ini.');
             }
 
             if ($issue->isPublished()) {
                 throw new DomainException('Tidak dapat menambahkan naskah ke edisi yang sudah berstatus terbit resmi.');
             }
 
+            if (! $submission->isPaymentCleared()) {
+                throw new DomainException("Naskah '{$submission->title}' belum dapat dimasukkan ke edisi karena pembayaran APC belum diselesaikan (lakukan verifikasi bukti lunas atau berikan pembebasan biaya terlebih dahulu).");
+            }
+
             if ($issue->issueArticles()->where('submission_id', $submission->id)->exists()) {
                 throw new DomainException("Naskah '{$submission->title}' sudah terdaftar di dalam edisi ini.");
+            }
+
+            $readiness = app(LayoutEditorService::class)->checkPublicationReadiness($submission);
+            if (! $readiness['is_ready']) {
+                $reasonText = ! empty($readiness['reasons']) ? implode(' ', $readiness['reasons']) : 'Naskah belum memenuhi kriteria siap terbit.';
+                throw new DomainException("Naskah belum siap terbit: {$reasonText}");
             }
 
             return DB::transaction(function () use ($issue, $submission, $options) {
@@ -263,6 +274,42 @@ class JournalManagerService
     }
 
     /**
+     * Memperbarui informasi seksi / bidang naskah.
+     */
+    public function updateSection(Section $section, array $data, ?User $actor = null): Section
+    {
+        $name = trim((string) ($data['name'] ?? $section->name));
+        if ($name === '') {
+            throw new DomainException('Nama bidang riset / seksi wajib diisi.');
+        }
+
+        $acceptingSubmissions = isset($data['accepting_submissions'])
+            ? (bool) $data['accepting_submissions']
+            : false;
+
+        $section->update([
+            'name' => $name,
+            'description' => $data['description'] ?? null,
+            'policy' => $data['policy'] ?? $section->policy,
+            'accepting_submissions' => $acceptingSubmissions,
+        ]);
+
+        return $section->fresh();
+    }
+
+    /**
+     * Mengubah status buka / tutup penerimaan naskah pada seksi.
+     */
+    public function toggleSectionStatus(Section $section, ?User $actor = null): Section
+    {
+        $section->update([
+            'accepting_submissions' => ! $section->accepting_submissions,
+        ]);
+
+        return $section->fresh();
+    }
+
+    /**
      * Memperbarui pengaturan identitas dan kebijakan editorial jurnal.
      */
     public function updateJournalSettings(Journal $journal, array $data, ?User $actor = null): Journal
@@ -295,8 +342,16 @@ class JournalManagerService
                 if ($field === 'apc_enabled') {
                     $val = filter_var($val, FILTER_VALIDATE_BOOLEAN);
                 }
+                if ($field === 'apc_amount') {
+                    $numeric = preg_replace('/[^0-9]/', '', (string) $val);
+                    $val = $numeric !== '' ? (float) $numeric : null;
+                }
                 $updateData[$field] = $val;
             }
+        }
+
+        if (array_key_exists('apc_enabled', $updateData) && ! $updateData['apc_enabled']) {
+            $updateData['apc_amount'] = 0.00;
         }
 
         if (array_key_exists('issn_print', $data)) {
@@ -346,6 +401,8 @@ class JournalManagerService
                 'expertise_keywords' => $keywords,
             ]
         );
+
+        $user->touch();
 
         try {
             Mail::to($user->email)->send(new RoleAssignedMail($user, $userRole));

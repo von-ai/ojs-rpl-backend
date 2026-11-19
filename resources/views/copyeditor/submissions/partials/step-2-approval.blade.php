@@ -25,9 +25,9 @@
                 </svg>
             </div>
             <div class="text-xs text-emerald-900 flex-1">
-                <strong class="font-bold block text-sm">Penulis Telah Menyetujui Naskah</strong>
+                <div class="font-medium text-sm text-emerald-950">Penulis Telah Menyetujui Naskah</div>
                 <p class="mt-0.5 text-emerald-800">
-                    Seluruh berkas hasil suntingan telah disetujui oleh <strong>{{ $submission['corresponding_author']['name'] }}</strong>{{ $submission['approval']['approved_at'] ? ' pada ' . $submission['approval']['approved_at'] : '' }}. Checksum berkas telah dibekukan. Naskah siap diserahkan ke Layout Editor.
+                    Seluruh berkas hasil suntingan telah disetujui oleh <span class="font-medium text-emerald-950">{{ $submission['corresponding_author']['name'] }}</span>{{ $submission['approval']['approved_at'] ? ' pada ' . $submission['approval']['approved_at'] : '' }}. Checksum berkas telah dibekukan. Naskah siap diserahkan ke Layout Editor.
                 </p>
                 @if($submission['approval']['author_note'])
                     <p class="mt-2 p-2.5 bg-white/70 rounded border border-emerald-200 text-emerald-800 italic">
@@ -84,13 +84,13 @@
                 </div>
                 <div class="text-xs text-red-900 flex-1">
                     <div class="flex items-center gap-2">
-                        <strong class="font-bold text-sm">Tiket Mediasi Redaksi Aktif</strong>
-                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-200 text-red-800">
+                        <div class="font-medium text-sm text-red-950">Tiket Mediasi Redaksi Aktif</div>
+                        <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-200 text-red-800">
                             {{ $submission['escalation']['ticket_id'] }}
                         </span>
                     </div>
                     <p class="mt-1 text-red-800">
-                        Masalah ini sedang dalam penelaahan Section Editor (<strong>{{ $submission['section_editor'] }}</strong>).
+                        Masalah ini sedang dalam penelaahan Section Editor (<span class="font-medium text-red-950">{{ $submission['section_editor'] }}</span>).
                     </p>
                     <div class="mt-2 p-3 bg-white/80 rounded-lg border border-red-200 text-gray-800">
                         <span class="font-semibold block text-[11px] text-gray-500 uppercase tracking-wider mb-1">
@@ -112,7 +112,7 @@
                     </svg>
                 </div>
                 <div class="text-xs text-amber-900 flex-1">
-                    <strong class="font-bold block text-sm">Penulis Mengajukan Catatan Revisi</strong>
+                    <div class="font-medium block text-sm text-amber-950">Penulis Mengajukan Catatan Revisi</div>
                     <p class="mt-1 p-3 bg-white/80 rounded-lg border border-amber-200 text-gray-800 italic">
                         "{{ $submission['approval']['author_note'] }}"
                     </p>
@@ -145,9 +145,9 @@
                     </svg>
                 </div>
                 <div class="text-xs text-blue-900">
-                    <strong class="font-bold block text-sm">Menunggu Respon Penulis</strong>
-                    <p class="mt-0.5 text-blue-800">
-                        Berkas suntingan telah dikirimkan ke <strong>{{ $submission['corresponding_author']['name'] }}</strong>.
+                    <div class="font-normal text-sm text-blue-900">Menunggu Respon Penulis</div>
+                    <p class="mt-0.5 text-blue-800/90">
+                        Berkas suntingan telah dikirimkan ke <span class="font-normal text-blue-900">{{ rtrim($submission['corresponding_author']['name'], '.') }}</span>.
                     </p>
                 </div>
             </div>
