@@ -86,11 +86,11 @@
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <span>Fokus dan Ruang Lingkup (Focus and Scope)</span>
+                    <span>Fokus dan Ruang Lingkup</span>
                 </h2>
 
                 <p class="text-xs text-gray-600 leading-relaxed text-left">
-                    {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data (evidence-based policy) yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
+                    {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
                 </p>
 
                 @if(isset($journal->sections) && $journal->sections->isNotEmpty())
@@ -156,7 +156,7 @@
                 </h2>
 
                 <p class="text-xs text-gray-600 leading-relaxed text-left">
-                    {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat (double-blind peer-reviewed).' }}
+                    {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat.' }}
                 </p>
             </section>
 
