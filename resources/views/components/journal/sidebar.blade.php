@@ -32,8 +32,8 @@
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
-                <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Biaya (APC)</dt>
-                <dd class="font-medium text-emerald-800 text-right">Rp 0 (Open Access)</dd>
+                <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Biaya APC</dt>
+                <dd class="font-medium text-emerald-800 text-right">Rp 0</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
