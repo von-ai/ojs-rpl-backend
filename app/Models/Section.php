@@ -48,4 +48,12 @@ class Section extends Model
     {
         return $this->hasMany(Submission::class);
     }
+
+    /**
+     * @return HasMany<Article, $this>
+     */
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class);
+    }
 }
