@@ -124,12 +124,7 @@
                 </p>
 
                 <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <strong>{{ $viewModel->licenseLabel() }}</strong>
-                </div>
-            </section>
-
-                <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <strong>{{ $viewModel->licenseLabel() }}</strong>
+                    <strong class="text-xs sm:text-sm text-gray-800">{{ $viewModel->licenseLabel() }}</strong>
                 </div>
             </section>
 
