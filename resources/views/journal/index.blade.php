@@ -7,7 +7,7 @@
     <x-journal.announcement-banner :announcement="$viewModel->announcement()" />
 
     <!-- Main Container -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-5 space-y-5">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
         <!-- 1. Hero Catalog Search & Submit CTA Card -->
         <section>
@@ -15,7 +15,7 @@
         </section>
 
         <!-- 2. Main Content Grid: 2-Cols (Left: Issues & Articles, Right: Sidebar) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
             
             <!-- Left Main Content Column (Span 2) -->
             <div class="lg:col-span-2 min-w-0 space-y-5">
@@ -44,7 +44,7 @@
                 @endif
 
                 <!-- Articles List Section -->
-                <section class="space-y-4">
+                <section id="artikel-terbit" class="space-y-4 scroll-mt-6">
                     <div class="flex items-center justify-between border-b border-gray-200 pb-2">
                         <h2 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <span>Artikel Terbit</span>
@@ -57,12 +57,22 @@
                         @forelse ($viewModel->articles() as $article)
                             <x-journal.article-card :article="$article" />
                         @empty
-                            <div class="bg-white rounded-md border border-gray-200 p-8 text-center text-gray-500 text-xs">
-                                <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <p class="font-bold text-gray-700">Tidak ada artikel yang cocok dengan filter atau kata kunci tersebut.</p>
-                                <a href="{{ route('journal.index') }}" class="mt-2 inline-block text-brand-maroon font-bold hover:underline">Tampilkan seluruh artikel</a>
+                            <div class="bg-white rounded-xl border border-gray-200/90 p-8 sm:p-10 text-center text-xs">
+                                <div class="w-12 h-12 rounded-full bg-red-50 text-brand-maroon mx-auto flex items-center justify-center mb-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                </div>
+                                <h3 class="font-bold text-gray-900 text-sm">Belum Ada Artikel Diterbitkan</h3>
+                                <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                                    Tidak ada artikel yang cocok dengan filter atau kata kunci pencarian yang dipilih.
+                                </p>
+                                <a href="{{ route('journal.index') }}" class="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-brand-maroon bg-red-50 hover:bg-red-100 rounded-lg border border-red-200/80 transition-all active:scale-[0.98]">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Tampilkan Seluruh Artikel</span>
+                                </a>
                             </div>
                         @endforelse
                     </div>

@@ -5,9 +5,9 @@
     'announcements' => [],
 ])
 
-<div class="space-y-5">
+<div class="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-1 sm:gap-4 lg:space-y-5 lg:gap-0">
     <!-- Panel 1: Informasi Penerbitan -->
-    <div class="bg-white rounded-md border border-gray-200 p-5 space-y-4">
+    <div class="bg-white rounded-lg sm:rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-4">
         <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-normal pb-2 border-b border-gray-100 flex items-center gap-2">
             <svg class="w-4 h-4 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
@@ -32,8 +32,8 @@
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
-                <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Biaya (APC)</dt>
-                <dd class="font-medium text-emerald-800 text-right">Rp 0 (Open Access)</dd>
+                <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Biaya APC</dt>
+                <dd class="font-medium text-emerald-800 text-right">Rp 0</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
@@ -58,7 +58,7 @@
     </div>
 
     <!-- Panel 2: Pengindeksan Ilmiah -->
-    <div class="bg-white rounded-md border border-gray-200 p-5 space-y-3">
+    <div class="bg-white rounded-lg sm:rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-gray-100">
             <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-normal">Pengindeksan</h3>
             <span class="text-[10px] font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Panel 3: Statistik Portal Jurnal -->
-    <div class="bg-white rounded-md border border-gray-200 p-5 space-y-3">
+    <div class="bg-white rounded-lg sm:rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-gray-100">
             <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-normal flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +114,7 @@
     </div>
 
     <!-- Panel 4: Pengumuman Redaksi (Data Riil Database) -->
-    <div id="pengumuman" class="bg-white rounded-md border border-gray-200 p-5 space-y-3">
+    <div id="pengumuman" class="bg-white rounded-lg sm:rounded-xl border border-gray-200/90 p-4 sm:p-5 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-gray-100">
             <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-normal">Pengumuman Redaksi</h3>
             <a href="{{ route('journal.announcements.index') }}" class="text-[10px] font-medium text-brand-maroon hover:underline">Semua</a>

@@ -222,7 +222,7 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)', false);
         $response->assertSee('Fokus dan Ruang Lingkup');
-        $response->assertSee('Diamond Open Access');
+        $response->assertSee('Frekuensi Penerbitan');
     }
 
     public function test_halaman_dewan_redaksi_menampilkan_editor_dan_reviewer(): void

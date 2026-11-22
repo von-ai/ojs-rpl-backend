@@ -71,6 +71,13 @@
     display: none;
 }
 
+/* Navigasi Desktop Publik: Mutlak tersembunyi pada layar < 1024px */
+@media (max-width: 1023px) {
+    .desktop-navbar {
+        display: none !important;
+    }
+}
+
 /* Sidebar Minimized / Collapsed Mode (Desktop ≥ 1024px) — Berlaku Seragam di Seluruh Portal */
 .sidebar-collapse-btn {
     display: none !important;

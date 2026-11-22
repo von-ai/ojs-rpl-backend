@@ -115,19 +115,27 @@ class PublicJournalViewModel
     public function categories(): array
     {
         try {
-            if ($this->journal && $this->journal->sections->isNotEmpty()) {
-                return $this->journal->sections->map(fn ($s) => [
-                    'name' => $s->name,
-                    'count' => (int) $s->submissions()->count(),
-                ])->all();
-            }
+            if ($this->journal && Schema::hasTable('sections')) {
+                $sections = $this->journal->sections()
+                    ->when(Schema::hasTable('articles'), fn ($q) => $q->withCount(['articles' => fn ($aq) => $aq->where('status', 'published')]))
+                    ->get();
 
-            if (Schema::hasTable('sections')) {
-                $sections = Section::withCount('submissions')->get();
                 if ($sections->isNotEmpty()) {
                     return $sections->map(fn ($s) => [
                         'name' => $s->name,
-                        'count' => (int) $s->submissions_count,
+                        'count' => (int) ($s->articles_count ?? 0),
+                    ])->all();
+                }
+            }
+
+            if (Schema::hasTable('sections')) {
+                $sections = Section::query()
+                    ->when(Schema::hasTable('articles'), fn ($q) => $q->withCount(['articles' => fn ($aq) => $aq->where('status', 'published')]))
+                    ->get();
+                if ($sections->isNotEmpty()) {
+                    return $sections->map(fn ($s) => [
+                        'name' => $s->name,
+                        'count' => (int) ($s->articles_count ?? 0),
                     ])->all();
                 }
             }
@@ -160,12 +168,22 @@ class PublicJournalViewModel
                     ->sum('count');
             }
 
+            $rawTitle = (string) $this->dbCurrentIssue->title;
+            $cleanThemeTitle = $rawTitle;
+            if (preg_match('/^Vol\.\s*\d+\s*No\.\s*\d+(\s*\(\d{4}\))?\s*:\s*(.+)$/i', $cleanThemeTitle, $matches)) {
+                $cleanThemeTitle = trim($matches[2]);
+            }
+
+            $volumeLabel = "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year})";
+            $fullTitle = $cleanThemeTitle !== '' ? "{$volumeLabel}: {$cleanThemeTitle}" : $volumeLabel;
+
             return [
-                'volume_label' => "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year})",
-                'edition_label' => $this->dbCurrentIssue->title,
-                'published_at' => $this->dbCurrentIssue->published_at ? $this->dbCurrentIssue->published_at->format('d F Y') : ($this->dbCurrentIssue->publication_date ? $this->dbCurrentIssue->publication_date->format('d F Y') : $this->dbCurrentIssue->created_at->format('d F Y')),
+                'volume_label' => $volumeLabel,
+                'edition_label' => $cleanThemeTitle,
+                'theme_title' => $cleanThemeTitle,
+                'published_at' => $this->dbCurrentIssue->published_at ? $this->dbCurrentIssue->published_at->locale('id')->translatedFormat('d F Y') : ($this->dbCurrentIssue->publication_date ? $this->dbCurrentIssue->publication_date->locale('id')->translatedFormat('d F Y') : $this->dbCurrentIssue->created_at->locale('id')->translatedFormat('d F Y')),
                 'doi' => $this->dbCurrentIssue->doi_prefix ? "{$this->dbCurrentIssue->doi_prefix}/vol{$this->dbCurrentIssue->volume}no{$this->dbCurrentIssue->number}" : "10.55981/sirida.{$this->dbCurrentIssue->year}.v{$this->dbCurrentIssue->volume}i{$this->dbCurrentIssue->number}",
-                'title' => "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year}): {$this->dbCurrentIssue->title}",
+                'title' => $fullTitle,
                 'description' => $this->dbCurrentIssue->description ?? 'Edisi berkala ilmiah resmi terbitan '.($this->journal?->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar.'),
                 'total_articles' => $totalArticles,
                 'total_downloads' => $totalDownloads,
@@ -242,9 +260,14 @@ class PublicJournalViewModel
         if ($this->dbArchives && $this->dbArchives->isNotEmpty()) {
             return $this->dbArchives->map(fn (Issue $iss) => [
                 'id' => $iss->id,
+                'volume' => $iss->volume,
+                'number' => $iss->number,
+                'year' => $iss->year,
                 'volume_no' => "Vol. {$iss->volume} No. {$iss->number}",
-                'year_month' => $iss->year.' - '.($iss->published_at ? $iss->published_at->format('M') : ($iss->publication_date ? $iss->publication_date->format('M') : 'Edisi')),
+                'year_month' => $iss->published_at ? $iss->published_at->locale('id')->translatedFormat('F Y') : ($iss->publication_date ? $iss->publication_date->locale('id')->translatedFormat('F Y') : "Tahun {$iss->year}"),
                 'title' => $iss->title,
+                'description' => $iss->description,
+                'is_current' => (bool) ($iss->is_current ?? false),
                 'total_articles' => $iss->articles_count ?? $iss->articles()->where('status', 'published')->count(),
                 'url' => $this->safeRoute('journal.issues.show', ['id' => $iss->id], '#'),
             ])->all();
@@ -270,7 +293,7 @@ class PublicJournalViewModel
                     ->get();
 
                 return $inPress->map(fn ($sub) => [
-                    'online_first_date' => $sub->updated_at ? $sub->updated_at->format('d F Y') : 'Online First',
+                    'online_first_date' => $sub->updated_at ? $sub->updated_at->locale('id')->translatedFormat('d F Y') : 'Online First',
                     'target_volume' => 'Menunggu Terbitan',
                     'title' => $sub->title,
                     'authors' => $sub->contributors->pluck('full_name')->all() ?: ['Peneliti'],

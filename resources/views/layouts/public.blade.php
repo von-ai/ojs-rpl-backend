@@ -21,18 +21,21 @@
 <body class="font-sans antialiased text-gray-900 bg-canvas selection:bg-brand-maroon selection:text-white min-h-screen flex flex-col justify-between overflow-x-hidden w-full max-w-full">
 
     <!-- Topbar & Main Navigation Header -->
-    <header class="w-full max-w-full bg-white border-b border-gray-200 sticky top-0 z-40 overflow-hidden">
+    <header class="w-full max-w-full bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
         <x-journal.topbar :topbarData="$topbarData ?? null" :journal="$journal ?? null" />
         <x-journal.navbar :navLinks="$navLinks ?? null" :journal="$journal ?? null" />
     </header>
 
     <!-- Main Page Content -->
-    <main class="grow w-full max-w-full overflow-x-hidden">
+    <main class="grow w-full max-w-full overflow-x-clip">
         @yield('content')
     </main>
 
     <!-- Global Footer -->
     <x-journal.footer :footerData="$footerData ?? null" />
+
+    <!-- Mobile Navigation Drawer -->
+    <x-journal.mobile-drawer :navLinks="$navLinks ?? null" :journal="$journal ?? null" />
 
     @stack('scripts')
 </body>

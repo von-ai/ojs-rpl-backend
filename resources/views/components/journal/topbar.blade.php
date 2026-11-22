@@ -1,24 +1,24 @@
 @props(['topbarData' => null, 'journal' => null])
 
-<div class="bg-gray-50 border-b border-gray-200 text-xs py-1.5 px-4 sm:px-8 w-full max-w-full overflow-hidden">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 text-center sm:text-left text-gray-600 text-[11px] sm:text-xs">
+<div class="bg-gray-50 border-b border-gray-200 text-xs py-1 sm:py-1.5 px-3.5 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden">
+    <div class="max-w-7xl mx-auto flex flex-row items-center justify-between gap-2 text-gray-600 text-[10px] sm:text-xs">
         <!-- Left Metadata -->
-        <div class="flex items-center flex-wrap justify-center sm:justify-start gap-1.5 sm:gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2 truncate">
             <span><strong class="font-medium text-gray-700">p-ISSN:</strong> {{ $topbarData['p_issn'] ?? '2985-789X' }}</span>
-            <span class="text-gray-300">•</span>
-            <span><strong class="font-medium text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
+            <span class="text-gray-300 hidden sm:inline">•</span>
+            <span class="hidden sm:inline"><strong class="font-medium text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
             @if($journal && $journal->status !== 'active' && auth()->user()?->isSysAdmin())
-                <span class="ml-1 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                <span class="ml-1 hidden md:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                     Pratinjau SysAdmin: Status {{ ucfirst($journal->status) }}
                 </span>
             @endif
         </div>
 
         <!-- Right Quick Actions & Language -->
-        <div class="flex items-center justify-center sm:justify-end gap-2.5 sm:gap-4 text-[11px] sm:text-xs">
-            <span class="font-normal text-gray-500" lang="id">Bahasa Indonesia</span>
+        <div class="flex items-center justify-end gap-2 sm:gap-4 shrink-0 text-[10px] sm:text-xs">
+            <span class="hidden sm:inline font-normal text-gray-500" lang="id">Bahasa Indonesia</span>
 
-            <span class="text-gray-300">|</span>
+            <span class="hidden sm:inline text-gray-300">|</span>
 
             <!-- Auth Links -->
             @auth
@@ -27,7 +27,8 @@
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        <span>Portal System Admin</span>
+                        <span class="hidden sm:inline">Portal System Admin</span>
+                        <span class="sm:hidden">Portal Admin</span>
                     </a>
                 @else
                     <a href="{{ route('dashboard') }}" class="font-medium text-brand-maroon hover:underline">

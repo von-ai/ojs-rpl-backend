@@ -86,20 +86,19 @@
                     <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <span>Fokus dan Ruang Lingkup (Focus and Scope)</span>
+                    <span>Fokus dan Ruang Lingkup</span>
                 </h2>
 
                 <p class="text-xs text-gray-600 leading-relaxed text-left">
-                    {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data (evidence-based policy) yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
+                    {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
                 </p>
 
                 @if(isset($journal->sections) && $journal->sections->isNotEmpty())
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         @foreach($journal->sections as $sec)
                             <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                                <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-brand-maroon"></span>
-                                    <span>{{ $sec->name }}</span>
+                                <h3 class="font-bold text-gray-900">
+                                    {{ $sec->name }}
                                 </h3>
                                 @if($sec->description)
                                     <p class="text-gray-500 text-[11px] leading-relaxed">
@@ -112,36 +111,32 @@
                 @else
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-brand-maroon"></span>
-                                <span>Kebijakan Publik & Tata Kelola Daerah</span>
+                            <h3 class="font-bold text-gray-900">
+                                Kebijakan Publik & Tata Kelola Daerah
                             </h3>
                             <p class="text-gray-500 text-[11px] leading-relaxed">
                                 Inovasi pelayanan publik, reformasi birokrasi, desentralisasi fiskal, efektivitas regulasi daerah, serta partisipasi masyarakat.
                             </p>
                         </div>
                         <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-brand-maroon"></span>
-                                <span>Makassar Smart City & Rekayasa IoT</span>
+                            <h3 class="font-bold text-gray-900">
+                                Makassar Smart City & Rekayasa IoT
                             </h3>
                             <p class="text-gray-500 text-[11px] leading-relaxed">
                                 Transformasi digital pemerintahan, jaringan sensor cerdas mikroklimat lorong, sistem kecerdasan artifisial, dan analisis data perkotaan.
                             </p>
                         </div>
                         <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-brand-maroon"></span>
-                                <span>Resiliensi Pesisir & Lingkungan Hidup</span>
+                            <h3 class="font-bold text-gray-900">
+                                Resiliensi Pesisir & Lingkungan Hidup
                             </h3>
                             <p class="text-gray-500 text-[11px] leading-relaxed">
                                 Mitigasi banjir rob, manajemen tata ruang pulau-pulau Sangkarrang, pengelolaan sampah terpadu, dan adaptasi perubahan iklim.
                             </p>
                         </div>
                         <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-brand-maroon"></span>
-                                <span>Ekonomi Sirkular & Pengembangan UMKM</span>
+                            <h3 class="font-bold text-gray-900">
+                                Ekonomi Sirkular & Pengembangan UMKM
                             </h3>
                             <p class="text-gray-500 text-[11px] leading-relaxed">
                                 Pemberdayaan ekonomi lorong wisata, inkubasi bisnis rintisan daerah, pemanfaatan biokonversi limbah, dan ketahanan pangan perkotaan.
@@ -161,20 +156,7 @@
                 </h2>
 
                 <p class="text-xs text-gray-600 leading-relaxed text-left">
-                    {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat (double-blind peer-reviewed).' }}
-                </p>
-            </section>
-
-            <!-- Seksi 4: Biaya Pemrosesan Naskah (APC dari Database) -->
-            <section class="space-y-3 p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 text-xs">
-                <div class="flex items-center gap-2 text-emerald-900 font-bold text-sm">
-                    <svg class="w-5 h-5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Bebas Biaya Publikasi (Diamond Open Access / Zero APC)</span>
-                </div>
-                <p class="text-emerald-800 leading-relaxed">
-                    {{ $journal->apc_fee ?? 'Seluruh biaya pemrosesan naskah (Article Processing Charge - APC), biaya penelaahan (peer-review), penataan letak (layout editing), hingga penerbitan naskah sepenuhnya dibiayai oleh Pemerintah Kota Makassar melalui APBD BRIDA Kota Makassar. Penulis dan pembaca tidak dipungut biaya apapun (Gratis / Rp 0).' }}
+                    {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat.' }}
                 </p>
             </section>
 

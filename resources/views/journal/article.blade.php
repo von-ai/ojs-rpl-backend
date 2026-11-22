@@ -41,13 +41,10 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
 
     <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('journal.articles.search') }}" class="hover:text-brand-maroon">Katalog Artikel</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-md">{{ $article->title }}</span>
-    </nav>
+    <x-journal.breadcrumb :crumbs="[
+        ['label' => 'Katalog Artikel', 'url' => route('journal.articles.search')],
+        ['label' => $article->title]
+    ]" />
 
     <!-- Grid 2 Kolom (Konten Artikel & Sidebar Info) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
