@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Journal;
 use App\Services\Public\PublicArticleService;
 use App\ViewModels\PublicJournalViewModel;
 use DomainException;
@@ -21,17 +22,34 @@ class PublicJournalController extends Controller
     ) {}
 
     /**
+     * Resolusi profil entitas jurnal berdasarkan slug atau fallback default.
+     */
+    protected function resolveJournal(?string $journalSlug = null): Journal
+    {
+        if ($journalSlug !== null && $journalSlug !== '') {
+            $journal = $this->publicArticleService->findJournalBySlug($journalSlug);
+            if (! $journal) {
+                abort(404, "Instansi jurnal ilmiah '{$journalSlug}' tidak ditemukan atau belum aktif.");
+            }
+
+            return $journal;
+        }
+
+        return $this->publicArticleService->getJournal();
+    }
+
+    /**
      * Menampilkan Beranda Portal Jurnal Publik (UC-03).
      */
-    public function index(Request $request): View
+    public function index(Request $request, ?string $journalSlug = null): View
     {
+        $journal = $this->resolveJournal($journalSlug);
         $filters = $this->searchFilters($request);
-        $journal = $this->publicArticleService->getJournal();
 
-        // Ambil data database nyata melalui Service
-        $currentIssue = $this->publicArticleService->getCurrentIssue();
-        $articles = $this->publicArticleService->searchArticles($filters, 12);
-        $archives = $this->publicArticleService->getIssueArchives();
+        // Ambil data database nyata melalui Service sesuai jurnal yang dipilih
+        $currentIssue = $this->publicArticleService->getCurrentIssue($journal);
+        $articles = $this->publicArticleService->searchArticles($filters, 12, $journal);
+        $archives = $this->publicArticleService->getIssueArchives($journal);
 
         $viewModel = new PublicJournalViewModel(
             searchQuery: $filters['q'] ?? null,
@@ -48,14 +66,14 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Halaman Hasil Pencarian Publik (UC-04).
      */
-    public function search(Request $request): View
+    public function search(Request $request, ?string $journalSlug = null): View
     {
+        $journal = $this->resolveJournal($journalSlug);
         $filters = $this->searchFilters($request);
         $query = $filters['q'] ?? null;
         $category = $filters['category'] ?? null;
-        $journal = $this->publicArticleService->getJournal();
 
-        $results = $this->publicArticleService->searchArticles($filters, 10);
+        $results = $this->publicArticleService->searchArticles($filters, 10, $journal);
 
         $viewModel = new PublicJournalViewModel(
             searchQuery: $query,
@@ -70,10 +88,17 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Halaman Detail Artikel Ilmiah Terbit (UC-03).
      */
-    public function showArticle(Request $request, string $slugOrId): View
+    public function showArticle(Request $request, string $slugOrId, ?string $articleSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
-        $article = $this->publicArticleService->findPublishedArticle($slugOrId);
+        if ($articleSlug !== null) {
+            $journal = $this->resolveJournal($slugOrId);
+            $targetSlugOrId = $articleSlug;
+        } else {
+            $journal = $this->resolveJournal(null);
+            $targetSlugOrId = $slugOrId;
+        }
+
+        $article = $this->publicArticleService->findPublishedArticle($targetSlugOrId);
 
         if (! $article) {
             abort(404, 'Artikel ilmiah tidak ditemukan atau belum diterbitkan untuk publik.');
@@ -149,10 +174,10 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Halaman Edisi Terkini (Current Issue).
      */
-    public function currentIssue(Request $request): View
+    public function currentIssue(Request $request, ?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
-        $currentIssue = $this->publicArticleService->getCurrentIssue();
+        $journal = $this->resolveJournal($journalSlug);
+        $currentIssue = $this->publicArticleService->getCurrentIssue($journal);
 
         if (! $currentIssue) {
             abort(404, 'Edisi terbitan terkini belum dipublikasikan.');
@@ -175,10 +200,17 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Detail Edisi Tertentu (UC-03).
      */
-    public function showIssue(Request $request, string $id): View
+    public function showIssue(Request $request, string $slugOrId, ?string $issueId = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
-        $issue = $this->publicArticleService->getIssueById($id, $journal);
+        if ($issueId !== null) {
+            $journal = $this->resolveJournal($slugOrId);
+            $targetId = $issueId;
+        } else {
+            $journal = $this->resolveJournal(null);
+            $targetId = $slugOrId;
+        }
+
+        $issue = $this->publicArticleService->getIssueById($targetId, $journal);
 
         if (! $issue) {
             abort(404, 'Edisi jurnal tidak ditemukan atau belum diterbitkan.');
@@ -201,9 +233,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Halaman Arsip Seluruh Edisi Terbitan.
      */
-    public function archives(Request $request): View
+    public function archives(Request $request, ?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $issues = $this->publicArticleService->getAllPublishedIssues($journal, 12);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
@@ -213,9 +245,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Informasi Umum Jurnal (Tentang Jurnal).
      */
-    public function about(): View
+    public function about(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.about.index', compact('viewModel', 'journal'));
@@ -224,9 +256,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Susunan Dewan Redaksi dan Mitra Bestari.
      */
-    public function editorialTeam(): View
+    public function editorialTeam(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $team = $this->publicArticleService->getEditorialTeam($journal);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
@@ -236,9 +268,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Kebijakan Redaksi, Etika Publikasi & Hak Cipta.
      */
-    public function policies(): View
+    public function policies(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.about.policies', compact('viewModel', 'journal'));
@@ -247,9 +279,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Panduan Penulis & Pengiriman Naskah (Author Guidelines).
      */
-    public function submissionsGuide(): View
+    public function submissionsGuide(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.about.submissions', compact('viewModel', 'journal'));
@@ -258,9 +290,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Informasi Kontak & Sekretariat Redaksi BRIDA Makassar.
      */
-    public function contact(): View
+    public function contact(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.about.contact', compact('viewModel', 'journal'));
@@ -269,9 +301,9 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Daftar Pengumuman Resmi Jurnal.
      */
-    public function announcements(): View
+    public function announcements(?string $journalSlug = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
+        $journal = $this->resolveJournal($journalSlug);
         $announcements = $this->publicArticleService->getAnnouncements($journal, 10);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
@@ -281,10 +313,17 @@ class PublicJournalController extends Controller
     /**
      * Menampilkan Detail Pengumuman Resmi.
      */
-    public function showAnnouncement(string $id): View
+    public function showAnnouncement(Request $request, string $slugOrId, ?string $announcementId = null): View
     {
-        $journal = $this->publicArticleService->getJournal();
-        $announcement = $this->publicArticleService->findAnnouncement($id, $journal);
+        if ($announcementId !== null) {
+            $journal = $this->resolveJournal($slugOrId);
+            $targetId = $announcementId;
+        } else {
+            $journal = $this->resolveJournal(null);
+            $targetId = $slugOrId;
+        }
+
+        $announcement = $this->publicArticleService->findAnnouncement($targetId, $journal);
 
         if (! $announcement) {
             abort(404, 'Pengumuman tidak ditemukan atau belum dipublikasikan.');

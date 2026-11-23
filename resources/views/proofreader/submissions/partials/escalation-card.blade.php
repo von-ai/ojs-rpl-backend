@@ -19,7 +19,7 @@
                     <span class="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
                     <span class="text-xs font-bold text-purple-900">Eskalasi Masalah Aktif</span>
                 </div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-200 text-purple-900 border border-purple-300">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-200 text-purple-900 border border-purple-300 tabular-nums">
                     {{ $submission['escalation']['ticket_id'] }}
                 </span>
             </div>

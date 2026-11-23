@@ -116,7 +116,7 @@
                         </span>
                     </div>
 
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug tracking-tight">
+                    <h2 class="text-base sm:text-lg font-medium text-gray-900 leading-snug tracking-tight">
                         {{ $submission['title'] }}
                     </h2>
 

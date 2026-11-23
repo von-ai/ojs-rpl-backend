@@ -39,41 +39,14 @@
         </div>
     </div>
 
-    <!-- 4 Kartu Metrik Ringkasan -->
+    <!-- 4 Kartu Metrik Ringkasan (Konsisten & Rapi) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         @foreach($viewModel->metricCards() as $card)
-            <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex flex-col justify-between select-none">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider leading-tight truncate">
-                        {{ $card['title'] }}
-                    </span>
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg {{ $card['icon_bg'] }} {{ $card['icon_text'] }} flex items-center justify-center shrink-0">
-                        @if($card['icon'] === 'clipboard')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                        @elseif($card['icon'] === 'users')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        @elseif($card['icon'] === 'refresh')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        @else
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        @endif
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-4">
-                    <span class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
-                        {{ $card['count'] }}
-                    </span>
-                    <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{{ $card['subtitle'] }}</p>
-                </div>
-            </div>
+            <x-kpi-card
+                :title="$card['title']"
+                :value="$card['count']"
+                :icon="$card['icon'] ?? 'clipboard'"
+            />
         @endforeach
     </div>
 
@@ -131,7 +104,7 @@
 
                                     <a 
                                         href="{{ route('eic.submissions.show', $sub->id) }}" 
-                                        class="block text-sm font-semibold text-gray-900 hover:text-brand-maroon transition line-clamp-1"
+                                        class="block text-sm font-medium text-gray-900 hover:text-brand-maroon transition line-clamp-1"
                                     >
                                         {{ $sub->title }}
                                     </a>
@@ -161,19 +134,19 @@
         <!-- Kolom Kanan (1/3): Keputusan Terbaru & Distribusi Rubrik -->
         <aside class="lg:col-span-1 min-w-0 space-y-6">
             <!-- Kartu Keputusan Editorial Terbaru -->
-            <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
+            <section class="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-5 space-y-4 text-xs">
                 <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
                     <div 
-                        class="flex items-center gap-2 min-w-0 cursor-help"
+                        class="flex items-center gap-2.5 min-w-0 cursor-help"
                         data-tooltip="Keputusan Editorial Terbaru"
                         data-tooltip-desc="Rekaman surat keputusan resmi terakhir yang diterbitkan Pemimpin Redaksi"
                     >
-                        <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <div class="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-tight truncate">
+                        <h3 class="text-sm font-semibold text-gray-900 leading-tight truncate">
                             Keputusan Editorial Terbaru
                         </h3>
                     </div>
@@ -224,30 +197,35 @@
             </section>
 
             <!-- Kartu Distribusi Rubrik Jurnal -->
-            <section class="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-xs">
+            <section class="bg-white rounded-xl border border-gray-200/90 shadow-2xs p-5 space-y-4 text-xs">
                 <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
                     <div 
-                        class="flex items-center gap-2 min-w-0 cursor-help"
+                        class="flex items-center gap-2.5 min-w-0 cursor-help"
                         data-tooltip="Distribusi Rubrik Jurnal"
                         data-tooltip-desc="Sebaran jumlah naskah masuk berdasarkan kategori seksi ilmiah"
                     >
-                        <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                        <div class="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h7" />
                             </svg>
                         </div>
-                        <h3 class="text-xs sm:text-sm font-bold text-gray-900 leading-tight truncate">
+                        <h3 class="text-sm font-semibold text-gray-900 leading-tight">
                             Distribusi Rubrik Jurnal
                         </h3>
                     </div>
+                    <span class="text-[11px] font-medium text-gray-500 tabular-nums shrink-0">
+                        Total {{ $sections->sum('submissions_count') }} Naskah
+                    </span>
                 </div>
 
-                <div class="space-y-2.5">
+                <div class="divide-y divide-gray-100">
                     @foreach($sections as $sec)
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-gray-700 font-medium truncate">{{ $sec->name }}</span>
-                            <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-bold tabular-nums shrink-0">
-                                {{ $sec->submissions_count }} Naskah
+                        <div class="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
+                            <span class="text-gray-700 font-medium leading-snug line-clamp-2" title="{{ $sec->name }}">
+                                {{ $sec->name }}
+                            </span>
+                            <span class="inline-flex items-center justify-center min-w-6 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums shrink-0 {{ $sec->submissions_count > 0 ? 'bg-rose-50 text-brand-maroon border border-rose-200/70' : 'bg-gray-100 text-gray-400 border border-gray-200/60' }}">
+                                {{ $sec->submissions_count }}
                             </span>
                         </div>
                     @endforeach

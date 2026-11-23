@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Masuk | Portal Jurnal BRIDA Makassar')</title>
 
-    <!-- Google Fonts: Instrument Sans -->
+    <x-fonts />
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -43,7 +43,7 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="grow flex flex-col items-center justify-center p-3.5 sm:p-6 lg:p-8">
+        <main class="grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 py-8 sm:py-12">
             @yield('content')
         </main>
 

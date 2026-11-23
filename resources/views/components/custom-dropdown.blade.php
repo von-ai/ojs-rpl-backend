@@ -11,6 +11,7 @@
     'panelClass' => '',
     'containerClass' => '',
     'autoSubmit' => false,
+    'shadow' => true,
 ])
 
 <x-dropdown
@@ -26,6 +27,7 @@
     :panel-class="$panelClass"
     :container-class="$containerClass"
     :auto-submit="$autoSubmit"
+    :shadow="$shadow"
     {{ $attributes }}
 >
     {{ $slot ?? '' }}

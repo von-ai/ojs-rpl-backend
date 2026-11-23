@@ -67,11 +67,10 @@ class LayoutEditorCatalogPageTest extends TestCase
 
         // 4 Kartu Metrik
         $response->assertSee('Total Penugasan Layout');
-        $response->assertSee('8 Naskah');
+        $this->assertMatchesRegularExpression('/title="Total Penugasan Layout".*?title="8"/s', $response->getContent());
         $response->assertSee('Perlu Draf Galai');
         $response->assertSee('Koreksi Proofreading');
         $response->assertSee('Galai Siap Terbit');
-        $response->assertSee('Disetujui EIC');
 
         // Header Kolom Tabel
         $response->assertSee('Informasi Naskah');

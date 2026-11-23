@@ -46,9 +46,8 @@ class JournalManagerUsersTest extends TestCase
 
         // 4 Kartu Metrik
         $response->assertSee('Total Pengguna Jurnal');
-        $response->assertSee('Anggota');
-        $response->assertSee('Dewan Redaksi (Editorial)');
-        $response->assertSee('Direktori Penelaah');
+        $response->assertSee('Dewan Redaksi');
+        $response->assertSee('Mitra Bestari');
         $response->assertSee('Penulis & Pembaca');
 
         // Pengguna dan Peran
@@ -57,12 +56,12 @@ class JournalManagerUsersTest extends TestCase
         $managerResponse = $this->get('/journalmanager/users?q=Yusuf');
         $managerResponse->assertSee('Andi Muhammad Yusuf, M.Si.');
         $managerResponse->assertSee('Journal Manager');
-        $managerResponse->assertSee('Last Manager');
+        $managerResponse->assertSee('Manajer Tunggal');
 
         $searchResponse = $this->get('/journalmanager/users?q=Nasaruddin');
         $searchResponse->assertSee('Prof. Dr. Ir. H. Nasaruddin, M.T.');
-        $searchResponse->assertSee('Editor in Chief');
-        $searchResponse->assertSee('Last EIC');
+        $searchResponse->assertSee('Pemimpin Redaksi');
+        $searchResponse->assertSee('Pemimpin Redaksi Tunggal');
 
         // Tombol Aksi
         $response->assertSee('Reset Sandi');
@@ -169,7 +168,7 @@ class JournalManagerUsersTest extends TestCase
             'email' => 'budi.hartono@eng.unhas.ac.id',
         ]);
         $resAssign->assertRedirect('/journalmanager/users');
-        $resAssign->assertSessionHas('status', "Peran 'Section Editor' berhasil ditetapkan kepada pengguna.");
+        $resAssign->assertSessionHas('status', "Peran 'Editor Bagian' berhasil ditetapkan kepada pengguna.");
 
         // 2. Memicu reset password email
         $resReset = $this->post('/journalmanager/users/reset-password', [

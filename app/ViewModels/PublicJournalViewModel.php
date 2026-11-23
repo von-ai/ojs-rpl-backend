@@ -58,15 +58,18 @@ class PublicJournalViewModel
      */
     public function navLinks(): array
     {
+        $scopedSlug = request()->route('journalSlug');
+        $basePrefix = $scopedSlug ? "/{$scopedSlug}" : '';
+
         return [
-            ['label' => 'Beranda', 'url' => $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index')],
-            ['label' => 'Cari Artikel', 'url' => $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search')],
-            ['label' => 'Edisi Terkini', 'url' => $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current')],
-            ['label' => 'Arsip Edisi', 'url' => $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.issues.show')],
-            ['label' => 'Tentang Jurnal', 'url' => $this->safeRoute('journal.about', [], '#tentang-jurnal'), 'active' => request()->routeIs('journal.about') || request()->routeIs('journal.about.policies') || request()->routeIs('journal.about.contact')],
-            ['label' => 'Dewan Redaksi', 'url' => $this->safeRoute('journal.about.editorial-team', [], '#dewan-redaksi'), 'active' => request()->routeIs('journal.about.editorial-team')],
-            ['label' => 'Panduan Penulis', 'url' => $this->safeRoute('journal.about.submissions', [], '#panduan-penulis'), 'active' => request()->routeIs('journal.about.submissions')],
-            ['label' => 'Pengumuman', 'url' => $this->safeRoute('journal.announcements.index', [], '#pengumuman'), 'active' => request()->routeIs('journal.announcements.*')],
+            ['label' => 'Beranda', 'url' => $scopedSlug ? url($basePrefix) : $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index') || request()->routeIs('journal.scoped.index')],
+            ['label' => 'Cari Artikel', 'url' => $scopedSlug ? url("{$basePrefix}/articles/search") : $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search') || request()->routeIs('journal.scoped.articles.search')],
+            ['label' => 'Edisi Terkini', 'url' => $scopedSlug ? url("{$basePrefix}/issues/current") : $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current') || request()->routeIs('journal.scoped.issues.current')],
+            ['label' => 'Arsip Edisi', 'url' => $scopedSlug ? url("{$basePrefix}/archives") : $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.scoped.archives') || request()->routeIs('journal.issues.show') || request()->routeIs('journal.scoped.issues.show')],
+            ['label' => 'Tentang Jurnal', 'url' => $scopedSlug ? url("{$basePrefix}/about") : $this->safeRoute('journal.about', [], '#tentang-jurnal'), 'active' => request()->routeIs('journal.about*') || request()->routeIs('journal.scoped.about*')],
+            ['label' => 'Dewan Redaksi', 'url' => $scopedSlug ? url("{$basePrefix}/about/editorial-team") : $this->safeRoute('journal.about.editorial-team', [], '#dewan-redaksi'), 'active' => request()->routeIs('journal.about.editorial-team') || request()->routeIs('journal.scoped.about.editorial-team')],
+            ['label' => 'Panduan Penulis', 'url' => $scopedSlug ? url("{$basePrefix}/about/submissions") : $this->safeRoute('journal.about.submissions', [], '#panduan-penulis'), 'active' => request()->routeIs('journal.about.submissions') || request()->routeIs('journal.scoped.about.submissions')],
+            ['label' => 'Pengumuman', 'url' => $scopedSlug ? url("{$basePrefix}/announcements") : $this->safeRoute('journal.announcements.index', [], '#pengumuman'), 'active' => request()->routeIs('journal.announcements.*') || request()->routeIs('journal.scoped.announcements.*')],
         ];
     }
 
@@ -112,19 +115,27 @@ class PublicJournalViewModel
     public function categories(): array
     {
         try {
-            if ($this->journal && $this->journal->sections->isNotEmpty()) {
-                return $this->journal->sections->map(fn ($s) => [
-                    'name' => $s->name,
-                    'count' => (int) $s->submissions()->count(),
-                ])->all();
-            }
+            if ($this->journal && Schema::hasTable('sections')) {
+                $sections = $this->journal->sections()
+                    ->when(Schema::hasTable('articles'), fn ($q) => $q->withCount(['articles' => fn ($aq) => $aq->where('status', 'published')]))
+                    ->get();
 
-            if (Schema::hasTable('sections')) {
-                $sections = Section::withCount('submissions')->get();
                 if ($sections->isNotEmpty()) {
                     return $sections->map(fn ($s) => [
                         'name' => $s->name,
-                        'count' => (int) $s->submissions_count,
+                        'count' => (int) ($s->articles_count ?? 0),
+                    ])->all();
+                }
+            }
+
+            if (Schema::hasTable('sections')) {
+                $sections = Section::query()
+                    ->when(Schema::hasTable('articles'), fn ($q) => $q->withCount(['articles' => fn ($aq) => $aq->where('status', 'published')]))
+                    ->get();
+                if ($sections->isNotEmpty()) {
+                    return $sections->map(fn ($s) => [
+                        'name' => $s->name,
+                        'count' => (int) ($s->articles_count ?? 0),
                     ])->all();
                 }
             }
@@ -157,12 +168,22 @@ class PublicJournalViewModel
                     ->sum('count');
             }
 
+            $rawTitle = (string) $this->dbCurrentIssue->title;
+            $cleanThemeTitle = $rawTitle;
+            if (preg_match('/^Vol\.\s*\d+\s*No\.\s*\d+(\s*\(\d{4}\))?\s*:\s*(.+)$/i', $cleanThemeTitle, $matches)) {
+                $cleanThemeTitle = trim($matches[2]);
+            }
+
+            $volumeLabel = "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year})";
+            $fullTitle = $cleanThemeTitle !== '' ? "{$volumeLabel}: {$cleanThemeTitle}" : $volumeLabel;
+
             return [
-                'volume_label' => "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year})",
-                'edition_label' => $this->dbCurrentIssue->title,
-                'published_at' => $this->dbCurrentIssue->published_at ? $this->dbCurrentIssue->published_at->format('d F Y') : ($this->dbCurrentIssue->publication_date ? $this->dbCurrentIssue->publication_date->format('d F Y') : $this->dbCurrentIssue->created_at->format('d F Y')),
+                'volume_label' => $volumeLabel,
+                'edition_label' => $cleanThemeTitle,
+                'theme_title' => $cleanThemeTitle,
+                'published_at' => $this->dbCurrentIssue->published_at ? $this->dbCurrentIssue->published_at->locale('id')->translatedFormat('d F Y') : ($this->dbCurrentIssue->publication_date ? $this->dbCurrentIssue->publication_date->locale('id')->translatedFormat('d F Y') : $this->dbCurrentIssue->created_at->locale('id')->translatedFormat('d F Y')),
                 'doi' => $this->dbCurrentIssue->doi_prefix ? "{$this->dbCurrentIssue->doi_prefix}/vol{$this->dbCurrentIssue->volume}no{$this->dbCurrentIssue->number}" : "10.55981/sirida.{$this->dbCurrentIssue->year}.v{$this->dbCurrentIssue->volume}i{$this->dbCurrentIssue->number}",
-                'title' => "Vol. {$this->dbCurrentIssue->volume} No. {$this->dbCurrentIssue->number} ({$this->dbCurrentIssue->year}): {$this->dbCurrentIssue->title}",
+                'title' => $fullTitle,
                 'description' => $this->dbCurrentIssue->description ?? 'Edisi berkala ilmiah resmi terbitan '.($this->journal?->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar.'),
                 'total_articles' => $totalArticles,
                 'total_downloads' => $totalDownloads,
@@ -183,22 +204,20 @@ class PublicJournalViewModel
         if ($this->dbArticles && $this->dbArticles->isNotEmpty()) {
             return $this->dbArticles->getCollection()->map(function (Article $a): array {
                 $authors = $a->contributors->map(fn ($c) => $c->full_name)->all();
-                if (empty($authors)) {
-                    $authors = ['Peneliti BRIDA'];
-                }
-
-                $affiliations = $a->contributors->map(fn ($c, $idx) => ($idx + 1).". {$c->affiliation}")->all();
-                if (empty($affiliations)) {
-                    $affiliations = ['1. BRIDA Kota Makassar'];
-                }
+                $affiliations = $a->contributors
+                    ->filter(fn ($c) => filled($c->affiliation))
+                    ->pluck('affiliation')
+                    ->values()
+                    ->map(fn ($affiliation, $idx) => ($idx + 1).". {$affiliation}")
+                    ->all();
 
                 $firstGalley = $a->galleys->first();
                 $downloadUrl = $firstGalley
                     ? route('journal.articles.galleys.download', ['slugOrId' => $a->slug, 'galleyId' => $firstGalley->id])
-                    : route('journal.articles.show', $a->slug);
+                    : null;
 
-                $viewsCount = 0;
-                $downloadsCount = 0;
+                $viewsCount = null;
+                $downloadsCount = null;
                 if (Schema::hasTable('article_metrics')) {
                     $viewsCount = (int) $a->metrics()->where('event_type', 'abstract_view')->sum('count');
                     $downloadsCount = (int) $a->metrics()->where('event_type', 'galley_download')->sum('count');
@@ -207,18 +226,18 @@ class PublicJournalViewModel
                 return [
                     'id' => $a->id,
                     'slug' => $a->slug,
-                    'section' => $a->section?->name ?? 'Artikel Riset Orisinil',
-                    'pages' => $a->issues->first()?->pivot->pages ?? '1–15',
-                    'received_at' => $a->created_at ? $a->created_at->format('d M Y') : '-',
-                    'published_at' => $a->published_at ? $a->published_at->format('d M Y') : ($a->created_at ? $a->created_at->format('d M Y') : '-'),
+                    'section' => $a->section?->name,
+                    'pages' => $a->issues->first()?->pivot->pages,
+                    'received_at' => $a->created_at?->format('d M Y'),
+                    'published_at' => $a->published_at?->format('d M Y'),
                     'title' => $a->title,
                     'authors' => $authors,
                     'affiliations' => $affiliations,
                     'abstract' => $a->abstract,
                     'keywords' => is_array($a->keywords) ? $a->keywords : [],
-                    'doi' => $a->doi ?: "10.55981/sirida.{$a->slug}",
-                    'doi_url' => $a->doi ? "https://doi.org/{$a->doi}" : "https://doi.org/10.55981/sirida.{$a->slug}",
-                    'pdf_size' => '1.8 MB',
+                    'doi' => $a->doi,
+                    'doi_url' => $a->doi ? "https://doi.org/{$a->doi}" : null,
+                    'pdf_size' => null,
                     'downloads_count' => $downloadsCount,
                     'views_count' => $viewsCount,
                     'read_url' => route('journal.articles.show', $a->slug),
@@ -241,9 +260,14 @@ class PublicJournalViewModel
         if ($this->dbArchives && $this->dbArchives->isNotEmpty()) {
             return $this->dbArchives->map(fn (Issue $iss) => [
                 'id' => $iss->id,
+                'volume' => $iss->volume,
+                'number' => $iss->number,
+                'year' => $iss->year,
                 'volume_no' => "Vol. {$iss->volume} No. {$iss->number}",
-                'year_month' => $iss->year.' - '.($iss->published_at ? $iss->published_at->format('M') : ($iss->publication_date ? $iss->publication_date->format('M') : 'Edisi')),
+                'year_month' => $iss->published_at ? $iss->published_at->locale('id')->translatedFormat('F Y') : ($iss->publication_date ? $iss->publication_date->locale('id')->translatedFormat('F Y') : "Tahun {$iss->year}"),
                 'title' => $iss->title,
+                'description' => $iss->description,
+                'is_current' => (bool) ($iss->is_current ?? false),
                 'total_articles' => $iss->articles_count ?? $iss->articles()->where('status', 'published')->count(),
                 'url' => $this->safeRoute('journal.issues.show', ['id' => $iss->id], '#'),
             ])->all();
@@ -269,7 +293,7 @@ class PublicJournalViewModel
                     ->get();
 
                 return $inPress->map(fn ($sub) => [
-                    'online_first_date' => $sub->updated_at ? $sub->updated_at->format('d F Y') : 'Online First',
+                    'online_first_date' => $sub->updated_at ? $sub->updated_at->locale('id')->translatedFormat('d F Y') : 'Online First',
                     'target_volume' => 'Menunggu Terbitan',
                     'title' => $sub->title,
                     'authors' => $sub->contributors->pluck('full_name')->all() ?: ['Peneliti'],
@@ -401,6 +425,11 @@ class PublicJournalViewModel
         return [];
     }
 
+    public function licenseLabel(): string
+    {
+        return trim((string) $this->journal?->license) ?: 'Lisensi belum ditetapkan';
+    }
+
     /**
      * Get Footer details.
      *
@@ -416,7 +445,7 @@ class PublicJournalViewModel
             'address' => "Gedung Balai Kota Makassar, Lantai 3\nJl. Ahmad Yani No. 2, Kel. Baru, Kec. Ujung Pandang\nKota Makassar, Sulawesi Selatan 90111",
             'email' => $this->journal?->editorial_email ?: 'jurnal.brida@makassar.go.id',
             'phone' => $this->journal?->contact_phone ?: '(0411) 3622455',
-            'license_info' => $this->journal?->license ?: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+            'license_info' => $this->licenseLabel(),
             'copyright' => 'Badan Riset dan Inovasi Daerah Kota Makassar. Seluruh hak cipta dilindungi undang-undang.',
         ];
     }

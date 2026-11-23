@@ -40,7 +40,7 @@ class JournalManagerSeeder extends Seeder
                 'contact_phone' => '+62 411 873-456',
                 'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
                 'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-                'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+                'apc_fee' => 'Rp 0',
                 'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
                 'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
                 'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
@@ -58,7 +58,7 @@ class JournalManagerSeeder extends Seeder
             'contact_phone' => '+62 411 873-456',
             'focus_scope' => 'Jurnal mempublikasikan naskah ilmiah hasil riset empiris dan konseptual di bidang inovasi kebijakan publik, tata kelola pemerintahan perkotaan, ketahanan lingkungan pesisir, dan pembangunan daerah terpadu.',
             'frequency' => '2 Kali Setahun (Nomor 1 terbit pada bulan Juni, Nomor 2 terbit pada bulan Desember)',
-            'apc_fee' => 'Rp 0,- (Bebas Biaya Pemrosesan & Publikasi Naskah - Didanai Penuh oleh APBD BRIDA Kota Makassar)',
+            'apc_fee' => 'Rp 0',
             'open_access_policy' => 'Jurnal ini menyediakan akses terbuka langsung (Gold Open Access) ke seluruh isi naskah dengan prinsip bahwa membuat hasil penelitian dapat diakses secara bebas oleh publik demi mendukung pertukaran pengetahuan global.',
             'peer_review_policy' => 'Double-Blind Peer Review (Identitas penulis dan mitra bestari saling dirahasiakan selama proses penelaahan).',
             'license' => 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
@@ -112,95 +112,227 @@ class JournalManagerSeeder extends Seeder
             );
         }
 
-        // 3. Daftar Pengguna Inti & Peran Jurnal
+        // 3. Daftar Pengguna Inti & Peran Multi-Jurnal (Standar Multi-Tenant OJS)
         $usersData = [
             [
                 'email' => 'yusuf.brida@makassar.go.id',
                 'username' => 'yusuf.brida',
                 'name' => 'Andi Muhammad Yusuf, M.Si.',
                 'affiliation' => 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar',
-                'roles' => ['manager', 'sysadmin'],
-                'expertise' => ['Kebijakan Publik', 'Manajemen Riset Daerah'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['manager'],
+                        'expertise' => ['Kebijakan Publik', 'Manajemen Riset Daerah'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['section_editor', 'reviewer'],
+                        'expertise' => ['Tata Kelola Smart City', 'Transformasi Digital'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['editor_in_chief', 'author'],
+                        'expertise' => ['Inovasi Daerah', 'Manajemen Publik'],
+                    ],
+                ],
             ],
             [
                 'email' => 'nasaruddin.eic@unhas.ac.id',
                 'username' => 'nasaruddin.eic',
                 'name' => 'Prof. Dr. Ir. H. Nasaruddin, M.T.',
                 'affiliation' => 'Universitas Hasanuddin',
-                'roles' => ['editor_in_chief', 'section_editor', 'author'],
-                'expertise' => ['Infrastruktur Perkotaan', 'Teknologi Lingkungan'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['editor_in_chief', 'section_editor', 'author'],
+                        'expertise' => ['Infrastruktur Perkotaan', 'Teknologi Lingkungan'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['manager'],
+                        'expertise' => null,
+                    ],
+                    'jurnal-lingkungan' => [
+                        'roles' => ['reviewer', 'author'],
+                        'expertise' => ['Drainase Pesisir', 'Dinamika Struktur Rekayasa'],
+                    ],
+                ],
             ],
             [
                 'email' => 'prof.hamka@unhas.ac.id',
                 'username' => 'prof.hamka',
                 'name' => 'Prof. Hamka, Ph.D.',
                 'affiliation' => 'Fakultas Ilmu Sosial & Ilmu Politik UNHAS',
-                'roles' => ['section_editor'],
-                'expertise' => ['Inovasi Pemerintahan', 'Sosial Humaniora'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['section_editor'],
+                        'expertise' => ['Inovasi Pemerintahan', 'Sosial Humaniora'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['editor_in_chief'],
+                        'expertise' => ['Kebijakan Publik', 'Reformasi Birokrasi'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['reviewer'],
+                        'expertise' => ['E-Government', 'Sistem Informasi Administrasi'],
+                    ],
+                ],
             ],
             [
                 'email' => 'rohani.editor@unm.ac.id',
                 'username' => 'rohani.editor',
                 'name' => 'Dr. Hj. St. Rohani, M.Si.',
                 'affiliation' => 'Universitas Negeri Makassar',
-                'roles' => ['section_editor', 'author'],
-                'expertise' => ['Pemberdayaan Masyarakat', 'Ekonomi Kerakyatan'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['section_editor', 'author'],
+                        'expertise' => ['Pemberdayaan Masyarakat', 'Ekonomi Kerakyatan'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['manager'],
+                        'expertise' => null,
+                    ],
+                    'jurnal-lingkungan' => [
+                        'roles' => ['author'],
+                        'expertise' => null,
+                    ],
+                ],
             ],
             [
                 'email' => 'rahmat.hidayat@brida.makassar.go.id',
                 'username' => 'rahmat.hidayat',
                 'name' => 'Rahmat Hidayat, S.Kom.',
                 'affiliation' => 'Bagian Publikasi Ilmiah BRIDA Makassar',
-                'roles' => ['layout_editor'],
-                'expertise' => ['Tipografi Ilmiah', 'Format Galai PDF/HTML'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['layout_editor'],
+                        'expertise' => ['Tipografi Ilmiah', 'Format Galai PDF/HTML'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['copyeditor'],
+                        'expertise' => ['Bahasa Teknis TI', 'Layout XML'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['layout_editor'],
+                        'expertise' => ['Desain Grafis Jurnal'],
+                    ],
+                ],
             ],
             [
                 'email' => 'andi.kurniawan@brida.makassar.go.id',
                 'username' => 'andi.kurniawan',
                 'name' => 'Andi Kurniawan, S.Hum., M.Pd.',
                 'affiliation' => 'Pusat Bahasa & Budaya Sulawesi Selatan',
-                'roles' => ['copyeditor'],
-                'expertise' => ['EYD Edisi V', 'Tata Bahasa Akademik'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['copyeditor'],
+                        'expertise' => ['EYD Edisi V', 'Tata Bahasa Akademik'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['proofreader'],
+                        'expertise' => ['Koreksi Bukti Baca Galai'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['reviewer'],
+                        'expertise' => ['Linguistik Terapan', 'Komunikasi Publik'],
+                    ],
+                ],
             ],
             [
                 'email' => 'sitti.aminah@brida.makassar.go.id',
                 'username' => 'sitti.aminah',
                 'name' => 'Dra. Sitti Aminah, M.Hum.',
                 'affiliation' => 'Pusat Bahasa & Budaya Sulawesi Selatan',
-                'roles' => ['proofreader'],
-                'expertise' => ['Koreksi Galai', 'Tipografi'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['proofreader'],
+                        'expertise' => ['Koreksi Galai', 'Tipografi'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['copyeditor'],
+                        'expertise' => ['Penyuntingan Gaya Selingkung'],
+                    ],
+                    'jurnal-lingkungan' => [
+                        'roles' => ['proofreader'],
+                        'expertise' => ['Pemeriksaan Akhir Proof'],
+                    ],
+                ],
             ],
             [
                 'email' => 'm.basri@poliupg.ac.id',
                 'username' => 'm.basri',
                 'name' => 'Prof. Dr. Ir. Muhammad Basri, M.T.',
                 'affiliation' => 'Politeknik Negeri Ujung Pandang',
-                'roles' => ['author'],
-                'expertise' => ['Sistem Informasi Publik', 'Smart City'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['author'],
+                        'expertise' => ['Sistem Informasi Publik', 'Smart City'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['section_editor'],
+                        'expertise' => ['Jaringan Komputer', 'Sistem Tertanam'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['author'],
+                        'expertise' => null,
+                    ],
+                ],
             ],
             [
                 'email' => 'budi.hartono@eng.unhas.ac.id',
                 'username' => 'budi.hartono',
                 'name' => 'Dr. Ir. Budi Hartono, M.Eng.',
                 'affiliation' => 'Fakultas Teknik Geologi UNHAS',
-                'roles' => ['reviewer'],
-                'expertise' => ['Geoteknik Pesisir', 'Mitigasi Abrasi Pantai', 'Mekanika Tanah'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['reviewer'],
+                        'expertise' => ['Geoteknik Pesisir', 'Mitigasi Abrasi Pantai', 'Mekanika Tanah'],
+                    ],
+                    'jurnal-lingkungan' => [
+                        'roles' => ['section_editor'],
+                        'expertise' => ['Geologi Lingkungan', 'Mitigasi Bencana'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['author'],
+                        'expertise' => null,
+                    ],
+                ],
             ],
             [
                 'email' => 'nurfadillah.bahar@unhas.ac.id',
                 'username' => 'nurfadillah.bahar',
                 'name' => 'Dr. Nurfadillah Bahar, M.Kes.',
                 'affiliation' => 'Fakultas Kesehatan Masyarakat UNHAS',
-                'roles' => ['reviewer', 'author'],
-                'expertise' => ['Kesehatan Lingkungan', 'Urban Heat Island', 'Epidemiologi'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['reviewer', 'author'],
+                        'expertise' => ['Kesehatan Lingkungan', 'Urban Heat Island', 'Epidemiologi'],
+                    ],
+                    'jurnal-lingkungan' => [
+                        'roles' => ['editor_in_chief'],
+                        'expertise' => ['Sanitasi Pesisir', 'Dampak Lingkungan'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['reviewer'],
+                        'expertise' => ['Kebijakan Kesehatan Daerah'],
+                    ],
+                ],
             ],
             [
                 'email' => 'andi.ilyas@unhas.ac.id',
                 'username' => 'andi.ilyas',
                 'name' => 'Dr. Andi Muhammad Ilyas, M.Si.',
                 'affiliation' => 'Departemen Ilmu Administrasi Publik UNHAS',
-                'roles' => ['author', 'reviewer'],
-                'expertise' => ['Administrasi Publik', 'Kebijakan Daerah'],
+                'journal_roles' => [
+                    'sirida-makassar' => [
+                        'roles' => ['author', 'reviewer'],
+                        'expertise' => ['Administrasi Publik', 'Kebijakan Daerah'],
+                    ],
+                    'sirida-inovasi' => [
+                        'roles' => ['section_editor'],
+                        'expertise' => ['Manajemen Publik', 'Pelayanan Terpadu'],
+                    ],
+                    'jtiik-makassar' => [
+                        'roles' => ['manager'],
+                        'expertise' => null,
+                    ],
+                ],
             ],
         ];
 
@@ -225,23 +357,29 @@ class JournalManagerSeeder extends Seeder
                 ]
             );
 
-            // Hapus peran lama yang tidak lagi termasuk dalam daftar hak akses pengguna ini
-            UserRole::where('user_id', $user->id)
-                ->where('journal_id', $journal->id)
-                ->whereNotIn('role_code', $ud['roles'])
-                ->delete();
+            foreach ($ud['journal_roles'] as $targetSlug => $config) {
+                $targetJournal = Journal::where('slug', $targetSlug)->first();
+                if (! $targetJournal) {
+                    continue;
+                }
 
-            foreach ($ud['roles'] as $roleCode) {
-                UserRole::firstOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'journal_id' => $journal->id,
-                        'role_code' => $roleCode,
-                    ],
-                    [
-                        'expertise_keywords' => ($roleCode === 'reviewer') ? $ud['expertise'] : null,
-                    ]
-                );
+                UserRole::where('user_id', $user->id)
+                    ->where('journal_id', $targetJournal->id)
+                    ->whereNotIn('role_code', $config['roles'])
+                    ->delete();
+
+                foreach ($config['roles'] as $roleCode) {
+                    UserRole::firstOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'journal_id' => $targetJournal->id,
+                            'role_code' => $roleCode,
+                        ],
+                        [
+                            'expertise_keywords' => ($roleCode === 'reviewer') ? $config['expertise'] : null,
+                        ]
+                    );
+                }
             }
         }
 
@@ -482,7 +620,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Panggilan Pengajuan Naskah (Call for Papers) Vol. 6 No. 2 Tahun 2026',
+                'title' => 'Panggilan Pengajuan Naskah Vol. 6 No. 2 Tahun 2026',
             ],
             [
                 'body' => 'Redaksi mengundang para akademisi, peneliti, dan praktisi kebijakan daerah untuk mengirimkan naskah hasil riset terbaik bertema Inovasi Kebijakan Publik dan Ketahanan Perkotaan. Batas akhir pengiriman naskah adalah 15 November 2026.',
@@ -506,7 +644,7 @@ class JournalManagerSeeder extends Seeder
         Announcement::firstOrCreate(
             [
                 'journal_id' => $journal->id,
-                'title' => 'Pembaruan Panduan Gaya Selingkung (Author Guidelines) Tahun 2026',
+                'title' => 'Pembaruan Panduan Gaya Selingkung Tahun 2026',
             ],
             [
                 'body' => 'Mulai Volume 6, seluruh rujukan wajib menggunakan standar sitasi APA Edisi ke-7 dengan minimal 80% rujukan bersumber dari artikel jurnal terindeks bereputasi 5 tahun terakhir.',

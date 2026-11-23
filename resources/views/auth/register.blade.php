@@ -216,6 +216,39 @@
                         </div>
                     </div>
 
+                    <details>
+                        <summary>Ketentuan Layanan dan Kebijakan Privasi pendaftaran</summary>
+                        <p>{{ config('registration.purpose') }}</p>
+                        <p>{{ config('registration.terms') }}</p>
+                        <p>{{ config('registration.privacy') }}</p>
+                    </details>
+                    <input type="hidden" name="notice_version" value="{{ config('registration.version') }}">
+                    @error('notice_version')
+                        <p>Ketentuan telah diperbarui. Baca kembali sebelum mendaftar.</p>
+                    @enderror
+                    <div class="pt-2">
+                        <div class="flex items-start gap-3">
+                            <input
+                                type="checkbox"
+                                name="consent_terms"
+                                id="consent_terms"
+                                value="1"
+                                required
+                                class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon focus:ring-offset-0 cursor-pointer"
+                                {{ old('notice_version') === config('registration.version') && old('consent_terms') ? 'checked' : '' }}
+                            />
+                            <label for="consent_terms" class="text-xs text-gray-600 leading-snug cursor-pointer select-none">
+                                Saya menyetujui <span class="font-semibold text-gray-900">Ketentuan Layanan</span> dan <span class="font-semibold text-gray-900">Kebijakan Privasi</span> SIRIDA serta memberikan persetujuan pemrosesan data pribadi untuk pembuatan dan verifikasi akun. <span class="text-red-600 font-bold">*</span>
+                            </label>
+                        </div>
+                        <p id="consentError" class="mt-1.5 text-xs text-red-600 font-medium hidden">
+                            Anda wajib menyetujui Ketentuan Layanan dan Kebijakan Privasi untuk mendaftar.
+                        </p>
+                        @error('consent_terms')
+                            <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Submit Button Component -->
                     <div class="pt-4">
                         <x-button id="submitBtn">
@@ -277,15 +310,34 @@
             });
         });
 
-        // Form Submit Loading State
+        // Form Submit Loading State & Consent Guard
         const registerForm = document.getElementById('registerForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const btnIcon = document.getElementById('btnIcon');
         const btnSpinner = document.getElementById('btnSpinner');
+        const consentCheckbox = document.getElementById('consent_terms');
+        const consentError = document.getElementById('consentError');
+
+        if (consentCheckbox && consentError) {
+            consentCheckbox.addEventListener('change', function () {
+                if (this.checked) {
+                    consentError.classList.add('hidden');
+                }
+            });
+        }
 
         if (registerForm && submitBtn) {
-            registerForm.addEventListener('submit', function () {
+            registerForm.addEventListener('submit', function (e) {
+                if (consentCheckbox && !consentCheckbox.checked) {
+                    e.preventDefault();
+                    if (consentError) {
+                        consentError.classList.remove('hidden');
+                    }
+                    consentCheckbox.focus();
+                    return false;
+                }
+
                 submitBtn.disabled = true;
                 submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
                 btnText.textContent = 'Memproses...';

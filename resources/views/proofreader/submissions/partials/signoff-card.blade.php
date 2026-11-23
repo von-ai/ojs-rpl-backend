@@ -7,7 +7,7 @@
             <span>Persetujuan Akhir (Sign-off)</span>
         </h3>
         <p class="text-xs text-gray-500 mt-0.5">
-            Validasi kelaikan galai publikasi sebelum diteruskan ke Editor in Chief.
+            Validasi kelaikan galai publikasi sebelum diteruskan ke Pemimpin Redaksi.
         </p>
     </div>
 

@@ -6,6 +6,7 @@ namespace Tests\Feature\Public;
 
 use App\Models\Article;
 use App\Models\ArticleContributor;
+use App\Models\ArticleMetric;
 use App\Models\FileEntry;
 use App\Models\Galley;
 use App\Models\Issue;
@@ -221,9 +222,23 @@ class PublicJournalPortalTest extends TestCase
     /**
      * Pembaca dapat melihat halaman artikel dan tercatat metrik COUNTER abstract view (UC-03).
      */
+    public function test_expired_reader_identifier_is_removed_without_losing_view_counts(): void
+    {
+        $url = route('journal.articles.show', $this->publishedArticle->slug);
+        $this->get($url)->assertOk();
+        $this->get($url)->assertOk();
+        $this->travel(2)->hours();
+        $this->get($url)->assertOk();
+        $this->artisan('metrics:forget-visitors')->assertSuccessful();
+        $this->assertDatabaseHas('article_metrics', ['visit_hash' => '', 'count' => 2]);
+        $this->assertSame(1, ArticleMetric::where('visit_hash', '!=', '')->count());
+    }
+
     public function test_pembaca_dapat_melihat_detail_artikel_dan_tercatat_metrik_view(): void
     {
+        $this->journal->update(['license' => 'Lisensi baru']);
         $response = $this->get(route('journal.articles.show', $this->publishedArticle->slug));
+        $response->assertSee($this->publishedArticle->license);
 
         $response->assertStatus(200);
         $response->assertSee($this->publishedArticle->title);
@@ -274,5 +289,36 @@ class PublicJournalPortalTest extends TestCase
         $response->assertHeader('Content-Type', 'application/x-bibtex');
         $response->assertSee('@article{', false);
         $response->assertSee($this->publishedArticle->title);
+    }
+
+    /**
+     * Beranda portal jurnal dapat diakses berdasarkan slug jurnal (Multi-Tenancy).
+     */
+    public function test_beranda_portal_jurnal_dapat_diakses_berdasarkan_slug_jurnal_publik(): void
+    {
+        $secondJournal = Journal::create([
+            'slug' => 'jtiik-makassar',
+            'name' => 'Jurnal Teknologi Informasi dan Inovasi Perkotaan (JTIIK)',
+            'issn' => '2746-9999',
+            'eissn' => '2746-8888',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+
+        $response = $this->get('/jtiik-makassar');
+
+        $response->assertStatus(200);
+        $response->assertSee('Jurnal Teknologi Informasi dan Inovasi Perkotaan (JTIIK)');
+        $response->assertSee('2746-9999');
+    }
+
+    /**
+     * Mengakses slug jurnal yang tidak terdaftar menghasilkan 404 Not Found.
+     */
+    public function test_akses_slug_jurnal_yang_tidak_ada_menghasilkan_404(): void
+    {
+        $response = $this->get('/slug-jurnal-tidak-ditemukan-xyz');
+
+        $response->assertStatus(404);
     }
 }

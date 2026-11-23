@@ -222,7 +222,7 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)', false);
         $response->assertSee('Fokus dan Ruang Lingkup');
-        $response->assertSee('Diamond Open Access');
+        $response->assertSee('Frekuensi Penerbitan');
     }
 
     public function test_halaman_dewan_redaksi_menampilkan_editor_dan_reviewer(): void
@@ -242,7 +242,7 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Kebijakan Redaksi & Etika Publikasi Ilmiah', false);
         $response->assertSee('Double-Blind Peer Review');
-        $response->assertSee('CC BY-SA 4.0');
+        $response->assertSee('Lisensi belum ditetapkan');
     }
 
     public function test_halaman_panduan_penulis_menampilkan_struktur_imrad(): void
@@ -250,8 +250,8 @@ class PublicPagesTest extends TestCase
         $response = $this->get(route('journal.about.submissions'));
 
         $response->assertOk();
-        $response->assertSee('Panduan Penulis (Author Guidelines)');
-        $response->assertSee('IMRAD Structure');
+        $response->assertSee('Panduan Penulis');
+        $response->assertSee('Sistematika Penulisan Naskah');
         $response->assertSee('Template Resmi Naskah SIRIDA');
     }
 

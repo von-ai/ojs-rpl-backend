@@ -151,7 +151,7 @@ class SysAdminSeeder extends Seeder
                 'initials' => 'BRLM',
                 'issn' => '2301-4455',
                 'eissn' => null,
-                'publisher' => 'Fahri Azis, S.T. (SysAdmin)',
+                'publisher' => 'Fahri Azis, S.T.',
                 'editorial_email' => 'litbang.arsip@makassar.go.id',
                 'focus_scope' => 'Arsip terbitan monograf dan buletin penelitian Badan Penelitian dan Pengembangan Daerah pra-transformasi BRIDA.',
                 'frequency' => 'Tahunan (Arsip)',
@@ -194,6 +194,9 @@ class SysAdminSeeder extends Seeder
                 'country_code' => 'ID',
             ]
         );
+
+        $sirida = Journal::where('slug', 'sirida-makassar')->first();
+
         UserRole::firstOrCreate(
             ['user_id' => $rita->id, 'journal_id' => $jtiik->id, 'role_code' => 'editor_in_chief'],
             ['expertise_keywords' => ['Smart City', 'Infrastruktur Kota']]
@@ -201,6 +204,15 @@ class SysAdminSeeder extends Seeder
         UserRole::firstOrCreate(
             ['user_id' => $rita->id, 'journal_id' => $jtiik->id, 'role_code' => 'reviewer'],
             ['expertise_keywords' => ['Teknik Sipil', 'Sensor IoT']]
+        );
+        if ($sirida) {
+            UserRole::firstOrCreate(
+                ['user_id' => $rita->id, 'journal_id' => $sirida->id, 'role_code' => 'reviewer'],
+                ['expertise_keywords' => ['Teknik Sipil Transportasi']]
+            );
+        }
+        UserRole::firstOrCreate(
+            ['user_id' => $rita->id, 'journal_id' => $jrlmbp->id, 'role_code' => 'author']
         );
 
         $andiNurul = User::firstOrCreate(
@@ -228,6 +240,15 @@ class SysAdminSeeder extends Seeder
         UserRole::firstOrCreate(
             ['user_id' => $andiNurul->id, 'journal_id' => $jikpm->id, 'role_code' => 'author']
         );
+        UserRole::firstOrCreate(
+            ['user_id' => $andiNurul->id, 'journal_id' => $jtiik->id, 'role_code' => 'reviewer'],
+            ['expertise_keywords' => ['Kebijakan Smart Governance']]
+        );
+        if ($sirida) {
+            UserRole::firstOrCreate(
+                ['user_id' => $andiNurul->id, 'journal_id' => $sirida->id, 'role_code' => 'copyeditor']
+            );
+        }
 
         $salehPallu = User::firstOrCreate(
             ['email' => 'saleh.pallu@unhas.ac.id'],
@@ -254,6 +275,32 @@ class SysAdminSeeder extends Seeder
         UserRole::firstOrCreate(
             ['user_id' => $salehPallu->id, 'journal_id' => $jrlmbp->id, 'role_code' => 'reviewer'],
             ['expertise_keywords' => ['Mitigasi Rob', 'Oseanografi']]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $salehPallu->id, 'journal_id' => $jtiik->id, 'role_code' => 'author']
+        );
+        if ($sirida) {
+            UserRole::firstOrCreate(
+                ['user_id' => $salehPallu->id, 'journal_id' => $sirida->id, 'role_code' => 'reviewer'],
+                ['expertise_keywords' => ['Hidrografi Terapan']]
+            );
+        }
+
+        // Peran jurnal untuk administrator
+        UserRole::firstOrCreate(
+            ['user_id' => $primaryAdmin->id, 'journal_id' => $jtiik->id, 'role_code' => 'manager']
+        );
+        if ($sirida) {
+            UserRole::firstOrCreate(
+                ['user_id' => $primaryAdmin->id, 'journal_id' => $sirida->id, 'role_code' => 'author']
+            );
+        }
+        UserRole::firstOrCreate(
+            ['user_id' => $secondaryAdmin->id, 'journal_id' => $jtiik->id, 'role_code' => 'reviewer'],
+            ['expertise_keywords' => ['Infrastruktur Jaringan']]
+        );
+        UserRole::firstOrCreate(
+            ['user_id' => $secondaryAdmin->id, 'journal_id' => $jrlmbp->id, 'role_code' => 'author']
         );
 
         // 4. Konfigurasi Parameter Global Platform (system_settings)

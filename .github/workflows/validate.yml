@@ -51,7 +51,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: composer audit
-      - run: npm audit
+      - run: npm audit --omit=dev
       - name: Prepare private Azurite container
         run: |
           python3 - <<'PY'

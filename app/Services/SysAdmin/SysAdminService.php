@@ -142,6 +142,74 @@ class SysAdminService
     }
 
     /**
+     * Memperbarui metadata dan identitas instansi jurnal ilmiah.
+     *
+     * @param array{
+     *     name?: string,
+     *     slug?: string,
+     *     primary_contact?: string,
+     *     issn?: ?string,
+     *     eissn?: ?string,
+     *     description?: ?string
+     * } $data
+     */
+    public function updateJournal(string $journalId, array $data, ?User $actor = null): Journal
+    {
+        $journal = Journal::findOrFail($journalId);
+
+        $name = trim((string) ($data['name'] ?? $journal->name));
+        $slug = Str::slug((string) ($data['slug'] ?? $journal->slug));
+        $primaryContact = trim((string) ($data['primary_contact'] ?? $journal->publisher));
+
+        if ($name === '') {
+            throw new InvalidArgumentException('Nama instansi jurnal wajib diisi.');
+        }
+
+        if ($slug === '') {
+            $slug = Str::slug($name);
+        }
+
+        // Invariant Guard: Slug harus unik antar jurnal kecuali jurnal ini sendiri
+        if (Journal::where('slug', $slug)->where('id', '!=', $journal->id)->exists()) {
+            throw new DomainException("Slug URL '{$slug}' sudah digunakan oleh instansi jurnal lain.");
+        }
+
+        $issn = isset($data['issn']) ? (! empty($data['issn']) ? trim((string) $data['issn']) : null) : $journal->issn;
+        $eissn = isset($data['eissn']) ? (! empty($data['eissn']) ? trim((string) $data['eissn']) : null) : $journal->eissn;
+        $description = isset($data['description']) ? (! empty($data['description']) ? trim((string) $data['description']) : null) : $journal->focus_scope;
+
+        return DB::transaction(function () use ($journal, $name, $slug, $primaryContact, $issn, $eissn, $description, $actor) {
+            $journal->name = $name;
+            $journal->slug = $slug;
+            $journal->publisher = $primaryContact;
+            $journal->issn = $issn;
+            $journal->eissn = $eissn;
+            $journal->focus_scope = $description;
+            $journal->save();
+
+            AuditLog::record([
+                'journal_id' => $journal->id,
+                'actor_id' => $actor?->id,
+                'actor_type' => 'user',
+                'effective_role' => 'System Administrator',
+                'action' => 'journal.updated',
+                'resource_type' => 'journal',
+                'resource_id' => $journal->id,
+                'reason' => "Pembaruan metadata instansi jurnal ilmiah '{$journal->name}'.",
+                'details' => [
+                    'name' => $journal->name,
+                    'slug' => $journal->slug,
+                    'issn' => $journal->issn,
+                    'eissn' => $journal->eissn,
+                    'primary_contact' => $primaryContact,
+                ],
+            ]);
+
+            return $journal;
+        });
+    }
+
+    /**
      * Memperbarui status publikasi operasional jurnal (active, archived, unlisted).
      */
     public function updateJournalStatus(string $journalId, string $status, ?User $actor = null): Journal
@@ -215,6 +283,8 @@ class SysAdminService
                 'expertise_keywords' => ['Platform Superadmin', 'Sistem Infrastruktur IT'],
             ]);
 
+            $user->touch();
+
             // Kirim surel notifikasi
             if (! empty($user->email)) {
                 try {
@@ -269,6 +339,7 @@ class SysAdminService
 
             return DB::transaction(function () use ($user, $sysadminRole, $actor) {
                 $sysadminRole->delete();
+                $user->touch();
 
                 // Kirim notifikasi surel pencabutan
                 if (! empty($user->email)) {
@@ -345,6 +416,8 @@ class SysAdminService
                 ]
             );
 
+            $user->touch();
+
             // Catat log audit
             AuditLog::record([
                 'journal_id' => $journal->id,
@@ -392,6 +465,7 @@ class SysAdminService
 
         return DB::transaction(function () use ($user, $journal, $roleCode, $userRole, $actor) {
             $userRole->delete();
+            $user->touch();
 
             // Catat log audit
             AuditLog::record([

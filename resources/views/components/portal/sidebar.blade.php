@@ -5,22 +5,41 @@
     'guidelineUrl' => null,
     'guidelineLabel' => 'Pedoman Peran',
     'guidelineActive' => false,
+    'guidelineTarget' => null,
 ])
 
+<script>
+    (function() {
+        try {
+            if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        } catch (e) {}
+    })();
+</script>
 <aside id="{{ $id }}" class="portal-sidebar fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
+    <script>
+        (function() {
+            try {
+                if (window.innerWidth >= 1024 && localStorage.getItem('sirida_portal_sidebar_collapsed') === '1') {
+                    document.getElementById('{{ $id }}')?.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <!-- Header Brand & Tombol Kontrol -->
     <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
-        <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="{{ $roleLabel }} — BRIDA Kota Makassar">
+        <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="{{ $roleLabel }} BRIDA Kota Makassar">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Kota Makassar" class="w-8 h-8 object-contain shrink-0 sidebar-logo transition-transform duration-200 group-hover:scale-105">
             <div class="flex flex-col min-w-0 sidebar-brand-text text-left">
-                <span class="text-xs font-bold tracking-wide text-brand-logo leading-tight truncate">BRIDA MAKASSAR</span>
+                <span class="text-xs font-bold text-brand-logo leading-tight truncate">BRIDA MAKASSAR</span>
                 <span class="text-[11px] font-medium text-gray-500 leading-tight truncate">{{ $roleLabel }}</span>
             </div>
         </a>
 
         <!-- Desktop Minimize / Maximize Toggle Button -->
-        <button id="sidebar-collapse-toggle-btn" type="button" class="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" title="Kecilkan / Perluas Navigasi" aria-label="Kecilkan atau perluas navigasi">
+        <button id="sidebar-collapse-toggle-btn" type="button" class="sidebar-collapse-btn w-7 h-7 items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200/80 bg-white focus:outline-hidden transition shrink-0 cursor-pointer shadow-2xs" title="Kecilkan Navigasi" aria-label="Kecilkan atau perluas navigasi">
             <svg id="collapse-icon-left" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
@@ -30,7 +49,7 @@
         </button>
 
         <!-- Mobile Close Button -->
-        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-9 min-h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
+        <button id="close-sidebar-btn" type="button" class="lg:hidden ml-auto min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden transition shrink-0 cursor-pointer" aria-label="Tutup navigasi">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -40,7 +59,7 @@
     <!-- Navigation Menu Items (Sesuai Peran) -->
     <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-1.5 sidebar-scroll" aria-label="Navigasi Utama {{ $roleLabel }}">
         <div class="pb-1 px-2.5 sidebar-heading">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Menu Utama</span>
+            <span class="text-[10px] font-semibold text-gray-400 uppercase">Menu Utama</span>
         </div>
 
         {{ $slot }}
@@ -51,11 +70,12 @@
         @if($guidelineUrl)
             <a
                 href="{{ $guidelineUrl }}"
+                @if($guidelineTarget) target="{{ $guidelineTarget }}" rel="noopener noreferrer" @endif
                 title="{{ $guidelineLabel }}"
                 class="group flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-lg transition duration-150 sidebar-nav-item {{ $guidelineActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
             >
                 <svg class="w-4 h-4 shrink-0 {{ $guidelineActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 <span class="truncate sidebar-label">{{ $guidelineLabel }}</span>
             </a>
@@ -75,6 +95,23 @@
                 <span class="truncate sidebar-label">Lihat Website Jurnal</span>
             </div>
         </a>
+
+        <!-- Bottom Collapse / Expand Toggle Button for Desktop -->
+        <button
+            id="sidebar-bottom-collapse-btn"
+            type="button"
+            title="Kecilkan Sidebar"
+            aria-label="Kecilkan atau perluas sidebar"
+            class="sidebar-collapse-btn w-full group flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition duration-150 sidebar-nav-item cursor-pointer text-left"
+        >
+            <svg id="bottom-collapse-icon-left" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+            <svg id="bottom-collapse-icon-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 shrink-0 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+            <span class="truncate sidebar-label">Kecilkan Sidebar</span>
+        </button>
 
         <form action="{{ route('logout') }}" method="POST" class="m-0">
             @csrf
@@ -109,8 +146,11 @@
         const openBtn = document.getElementById('open-sidebar-btn');
         const closeBtn = document.getElementById('close-sidebar-btn');
         const collapseBtn = document.getElementById('sidebar-collapse-toggle-btn');
+        const bottomCollapseBtn = document.getElementById('sidebar-bottom-collapse-btn');
         const iconLeft = document.getElementById('collapse-icon-left');
         const iconRight = document.getElementById('collapse-icon-right');
+        const bottomIconLeft = document.getElementById('bottom-collapse-icon-left');
+        const bottomIconRight = document.getElementById('bottom-collapse-icon-right');
 
         if (!sidebar) {
             return;
@@ -119,14 +159,31 @@
         const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
 
         function applyCollapseState(collapsed) {
+            document.documentElement.classList.toggle('sidebar-is-collapsed', collapsed);
             if (collapsed) {
                 sidebar.classList.add('sidebar-collapsed');
                 iconLeft?.classList.add('hidden');
                 iconRight?.classList.remove('hidden');
+                bottomIconLeft?.classList.add('hidden');
+                bottomIconRight?.classList.remove('hidden');
+                if (collapseBtn) collapseBtn.setAttribute('title', 'Perluas Navigasi');
+                if (bottomCollapseBtn) {
+                    bottomCollapseBtn.setAttribute('title', 'Perluas Sidebar');
+                    const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                    if (label) label.textContent = 'Perluas Sidebar';
+                }
             } else {
                 sidebar.classList.remove('sidebar-collapsed');
                 iconLeft?.classList.remove('hidden');
                 iconRight?.classList.add('hidden');
+                bottomIconLeft?.classList.remove('hidden');
+                bottomIconRight?.classList.add('hidden');
+                if (collapseBtn) collapseBtn.setAttribute('title', 'Kecilkan Navigasi');
+                if (bottomCollapseBtn) {
+                    bottomCollapseBtn.setAttribute('title', 'Kecilkan Sidebar');
+                    const label = bottomCollapseBtn.querySelector('.sidebar-label');
+                    if (label) label.textContent = 'Kecilkan Sidebar';
+                }
             }
         }
 
@@ -134,11 +191,20 @@
             applyCollapseState(true);
         }
 
-        collapseBtn?.addEventListener('click', function () {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                sidebar.classList.add('sidebar-ready');
+            });
+        });
+
+        function toggleSidebarDesktop() {
             const nextState = !sidebar.classList.contains('sidebar-collapsed');
             applyCollapseState(nextState);
             localStorage.setItem(STORAGE_KEY, nextState ? '1' : '0');
-        });
+        }
+
+        collapseBtn?.addEventListener('click', toggleSidebarDesktop);
+        bottomCollapseBtn?.addEventListener('click', toggleSidebarDesktop);
 
         function toggleMobileDrawer(open) {
             if (open) {
@@ -150,6 +216,7 @@
             }
         }
 
+        // Tombol drawer hanya untuk mobile (<1024px)
         openBtn?.addEventListener('click', function () {
             toggleMobileDrawer(true);
         });

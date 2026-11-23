@@ -12,28 +12,18 @@
 
 @if($user && $rolesCount > 0)
 <div class="relative inline-block text-left" data-role-switcher>
-    <!-- Tombol Pemicu Pengalih Peran (Icon-only pada mobile/layar sempit, penuh pada layar lebar) -->
+    <!-- Tombol Pemicu Pengalih Peran (Icon-only murni) -->
     <button
         type="button"
         data-role-switcher-trigger
         aria-haspopup="true"
         aria-expanded="false"
-        aria-label="Beralih peran ruang kerja portal (Saat ini: {{ $activeMeta['label'] }})"
-        title="Peran Aktif: {{ $activeMeta['label'] }} — Klik untuk beralih peran"
-        class="inline-flex items-center justify-center gap-2 p-2 md:px-3 md:py-1.5 min-w-9 min-h-9 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+        aria-label="Beralih Peran ({{ $activeMeta['label'] }})"
+        title="Peran: {{ $activeMeta['label'] }}"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
     >
         <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
-        <span class="hidden lg:inline text-gray-500 font-medium">Peran:</span>
-        <span class="hidden md:inline font-bold text-gray-900 truncate max-w-36">{{ $activeMeta['label'] }}</span>
-        @if($rolesCount > 1)
-            <span class="hidden md:inline-flex items-center px-1.5 py-0.5 rounded bg-brand-maroon/10 text-brand-maroon text-[10px] font-bold leading-none shrink-0">
-                {{ $rolesCount }}
-            </span>
-        @endif
-        <svg data-role-switcher-chevron class="hidden md:block w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
     </button>
 
@@ -144,6 +134,14 @@
                 }
                 const isHidden = menu.classList.contains('hidden');
                 closeAllRoleSwitchers(container);
+                document.querySelectorAll('[data-journal-switcher]').forEach(function (jContainer) {
+                    const jMenu = jContainer.querySelector('[data-journal-switcher-menu]');
+                    const jTrigger = jContainer.querySelector('[data-journal-switcher-trigger]');
+                    const jChevron = jContainer.querySelector('[data-journal-switcher-chevron]');
+                    if (jMenu && !jMenu.classList.contains('hidden')) jMenu.classList.add('hidden');
+                    if (jTrigger) jTrigger.setAttribute('aria-expanded', 'false');
+                    if (jChevron) jChevron.classList.remove('rotate-180');
+                });
                 if (isHidden) {
                     menu.classList.remove('hidden');
                     trigger.setAttribute('aria-expanded', 'true');

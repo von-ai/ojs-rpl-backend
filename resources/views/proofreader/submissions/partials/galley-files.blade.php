@@ -40,7 +40,7 @@
             <!-- SHA-256 Checksum -->
             <div class="bg-white/80 border border-brand-maroon/15 rounded-lg p-2 text-[10px] text-gray-600">
                 <span class="font-bold text-gray-700 block">Checksum SHA-256:</span>
-                <span class="font-mono text-gray-500 break-all select-all block mt-0.5">
+                <span class="text-gray-500 break-all select-all block mt-0.5 tabular-nums">
                     {{ $submission['active_galley']['checksum_sha256'] }}
                 </span>
             </div>
@@ -89,7 +89,7 @@
             <a
                 href="{{ $submission['copyedit_reference']['download_url'] }}"
                 class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-blue-800 bg-white hover:bg-blue-100/60 border border-blue-300 rounded-lg transition duration-150 shadow-2xs cursor-pointer min-h-11"
-                title="Unduh Naskah Acuan Copyediting (.docx)"
+                title="Unduh Naskah Acuan Copyediting"
             >
                 <svg class="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

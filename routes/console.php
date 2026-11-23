@@ -52,3 +52,12 @@ Artisan::command('files:scan-pending', function () {
     });
     $this->info("{$count} berkas masuk antrean pemindaian.");
 })->purpose('Antrekan ulang pemindaian berkas yang belum terverifikasi');
+
+Artisan::command('metrics:forget-visitors', function () {
+    DB::table('article_metrics')
+        ->where('window_start', '<', now('UTC')->startOfHour())
+        ->where('visit_hash', '>', '')
+        ->update(['visit_hash' => '']);
+})->purpose('Hapus pengenal kunjungan setelah jendela statistik satu jam berakhir');
+
+Schedule::command('metrics:forget-visitors')->hourly();

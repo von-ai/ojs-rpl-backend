@@ -11,7 +11,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('images/brida-logo.png') }}">
 
-    <!-- Google Fonts: Inter -->
+    <x-fonts />
 
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -105,10 +105,11 @@
                     descText = (el.getAttribute('data-tooltip-desc') || '').trim();
                 } else {
                     titleText = (el.getAttribute('title') || el.textContent || '').trim();
-                    if (el.hasAttribute('title')) {
-                        el.setAttribute('data-original-title', el.getAttribute('title'));
-                        el.removeAttribute('title');
-                    }
+                }
+
+                if (el.hasAttribute('title')) {
+                    el.setAttribute('data-original-title', el.getAttribute('title'));
+                    el.removeAttribute('title');
                 }
 
                 if (!titleText) return;
@@ -129,6 +130,10 @@
             }
 
             function hideTooltip() {
+                if (activeTarget && activeTarget.hasAttribute('data-original-title')) {
+                    activeTarget.setAttribute('title', activeTarget.getAttribute('data-original-title'));
+                    activeTarget.removeAttribute('data-original-title');
+                }
                 activeTarget = null;
                 tooltip.classList.remove('visible', 'opacity-100', 'scale-100');
                 tooltip.classList.add('invisible', 'opacity-0', 'scale-95');

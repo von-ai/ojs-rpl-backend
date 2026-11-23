@@ -173,18 +173,13 @@
                                     @endphp
                                     <div class="p-3.5 rounded-lg bg-white border border-gray-200 space-y-2.5 text-xs {{ $isExtraCard ? 'extra-eic-rev-'.$round->id.' hidden' : '' }}">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <div class="flex items-center gap-2.5">
-                                                <span class="w-7 h-7 rounded-md bg-brand-navy/10 text-brand-navy font-bold flex items-center justify-center text-xs shrink-0 tabular-nums">
-                                                    R{{ $idx + 1 }}
+                                            <div>
+                                                <span class="font-bold text-gray-900 block">
+                                                    {{ $assignment->reviewer?->name ?? 'Mitra Bestari #' . ($idx + 1) }}
                                                 </span>
-                                                <div>
-                                                    <span class="font-bold text-gray-900 block">
-                                                        {{ $assignment->reviewer?->name ?? 'Mitra Bestari #' . ($idx + 1) }}
-                                                    </span>
-                                                    <span class="text-[11px] text-gray-500">
-                                                        {{ $assignment->reviewer?->email ?? '-' }}
-                                                    </span>
-                                                </div>
+                                                <span class="text-[11px] text-gray-500">
+                                                    {{ $assignment->reviewer?->email ?? '-' }}
+                                                </span>
                                             </div>
 
                                             <div class="flex items-center gap-2">

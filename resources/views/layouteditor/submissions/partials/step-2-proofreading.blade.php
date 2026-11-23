@@ -11,7 +11,7 @@
                     Putaran Proofreading & Catatan Koreksi
                 </h2>
                 <p class="text-xs text-gray-500 mt-0.5">
-                    Pemeriksaan ketepatan tipografi, ejaan, tata letak tabel, dan gambar oleh Proofreader.
+                    Pemeriksaan ketepatan tipografi, ejaan, tata letak tabel, dan gambar oleh Pemeriksa Aksara.
                 </p>
             </div>
         </div>
@@ -103,7 +103,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div class="space-y-1.5">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-mono text-[10px] font-bold text-gray-400">#{{ $note['id'] }}</span>
+                                    <span class="text-[10px] font-medium text-gray-400 tabular-nums">#{{ $note['id'] }}</span>
                                     @if($note['page'])
                                         <span class="inline-flex items-center px-1.5 py-0.2 text-[10px] font-bold rounded bg-gray-100 text-gray-700">
                                             Halaman {{ $note['page'] }}

@@ -29,41 +29,14 @@
         </div>
     </div>
 
-    <!-- 4 Kartu Metrik Ringkasan (Konsisten dengan Portal Penulis) -->
+    <!-- 4 Kartu Metrik Ringkasan (Konsisten & Rapi) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         @foreach($viewModel->metricCards() as $card)
-            <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-5 flex flex-col justify-between select-none">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider leading-tight">
-                        {{ $card['title'] }}
-                    </span>
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg {{ $card['icon_bg'] }} {{ $card['icon_text'] }} flex items-center justify-center shrink-0">
-                        @if($card['icon'] === 'clipboard')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                        @elseif($card['icon'] === 'users')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        @elseif($card['icon'] === 'refresh')
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        @else
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        @endif
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-4">
-                    <span class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
-                        {{ $card['count'] }}
-                    </span>
-                    <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">{{ $card['subtitle'] }}</p>
-                </div>
-            </div>
+            <x-kpi-card
+                :title="$card['title']"
+                :value="$card['count']"
+                :icon="$card['icon'] ?? 'clipboard'"
+            />
         @endforeach
     </div>
 
@@ -150,8 +123,8 @@
                 </div>
             </div>
         @else
-            <!-- Tampilan Desktop & Tablet (>= 640px) -->
-            <div class="hidden sm:block overflow-x-auto">
+            <!-- Tabel Responsif Daftar Naskah Editorial -->
+            <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -269,75 +242,12 @@
                 </table>
             </div>
 
-            <!-- Tampilan Mobile (< 640px) -->
-            <div class="block sm:hidden divide-y divide-gray-100">
-                @foreach($submissions as $sub)
-                    @php
-                        $rowNumber = ($submissions->firstItem() ?? 1) + $loop->index;
-                        $meta = $viewModel->statusMeta($sub->status);
-                        $assignedSe = $sub->activeEditorAssignment?->editor;
-                    @endphp
-                    <div class="p-4 space-y-3 hover:bg-gray-50/70 transition duration-150">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="text-xs font-semibold text-gray-400 tabular-nums">#{{ $rowNumber }}</span>
-                                <span class="font-normal text-gray-600 tabular-nums text-xs">
-                                    {{ $sub->submission_number }}
-                                </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200 shrink-0">
-                                    {{ $sub->section?->name ?? 'Artikel Riset' }}
-                                </span>
-                            </div>
-                            <span class="text-xs text-gray-500 tabular-nums shrink-0">
-                                {{ ($sub->submitted_at ?? $sub->created_at)?->format('d M Y') ?? '-' }}
-                            </span>
-                        </div>
-
-                        <div class="min-w-0">
-                            <a 
-                                href="{{ route('eic.submissions.show', $sub->id) }}" 
-                                class="block font-normal text-gray-900 text-sm leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon transition duration-150"
-                            >
-                                {{ $sub->title }}
-                            </a>
-                            <p class="text-xs text-gray-500 mt-1">
-                                Penulis: <span class="font-medium text-gray-700">{{ $sub->author?->name ?? 'Penulis Naskah' }}</span>
-                            </p>
-                        </div>
-
-                        <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
-                            <div>
-                                <span class="text-gray-400 block text-[11px] font-semibold uppercase tracking-wider">Status Naskah</span>
-                                <div class="mt-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold {{ $meta['badge_class'] }}">
-                                        {{ $meta['label'] }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="text-right shrink-0">
-                                <span class="text-gray-400 block text-[11px] font-semibold uppercase tracking-wider">Editor Bagian</span>
-                                <span class="mt-1 block font-medium text-gray-700">
-                                    {{ $assignedSe?->name ?? 'Belum ditugaskan' }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="pt-2 flex items-center justify-end border-t border-gray-100">
-                            <a 
-                                href="{{ route('eic.submissions.show', $sub->id) }}" 
-                                class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
-                            >
-                                Detail
-                            </a>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
             <!-- Bagian Bawah Tabel / Paginasi -->
-            <div class="px-4 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200">
-                {{ $submissions->links() }}
-            </div>
+            @if($submissions->hasPages())
+                <div class="px-4 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200">
+                    {{ $submissions->links() }}
+                </div>
+            @endif
         @endif
     </div>
 

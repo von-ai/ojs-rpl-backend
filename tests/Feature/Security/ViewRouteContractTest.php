@@ -12,7 +12,7 @@ class ViewRouteContractTest extends TestCase
     {
         $count = 0;
         foreach ((new Finder)->files()->in(resource_path('views'))->name('*.blade.php') as $file) {
-            preg_match_all('/(?<![\w.])route\([\'\"]([^\'\"]+)[\'\"]/', $file->getContents(), $matches);
+            preg_match_all('/(?<![\w.>:])route\([\'\"]([^\'\"]+)[\'\"]/', $file->getContents(), $matches);
             foreach ($matches[1] as $name) {
                 $this->assertTrue(Route::has($name), $file->getRelativePathname().': '.$name);
                 $count++;

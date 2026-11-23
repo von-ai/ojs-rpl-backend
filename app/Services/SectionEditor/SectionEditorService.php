@@ -19,10 +19,11 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use RuntimeException;
 
 class SectionEditorService
 {
@@ -79,23 +80,50 @@ class SectionEditorService
         return $query->paginate($perPage)->withQueryString();
     }
 
-    /**
-     * Memastikan adanya putaran review (Review Round) aktif untuk naskah ini.
-     */
-    public function ensureActiveReviewRound(Submission $submission, ?string $note = null, ?FileEntry $anonymousFile = null, ?string $reviewerTitle = null, ?string $reviewerAbstract = null): ReviewRound
+    public function openReviewRound(Submission $submission, User $editor, ReviewRoundOpeningInput $input): ReviewRound
     {
-        return DB::transaction(function () use ($submission, $note, $anonymousFile, $reviewerTitle, $reviewerAbstract) {
-            $submission = PortalAccess::lockSubmission($submission, Auth::user(), 'section_editor');
+        $diskName = (string) config('filesecurity.disk', 'azure');
+        $path = $input->anonymousFile->store('review-anonymous/'.$submission->id, $diskName);
+        if (! is_string($path)) {
+            throw new RuntimeException('Berkas anonim tidak dapat disimpan.');
+        }
+
+        try {
+            return DB::transaction(function () use ($submission, $editor, $input, $diskName, $path): ReviewRound {
+                $file = FileEntry::create([
+                    'storage_disk' => $diskName,
+                    'storage_path' => $path,
+                    'original_name' => 'manuskrip-anonim.'.$input->anonymousFile->extension(),
+                    'mime_type' => $input->anonymousFile->getMimeType(),
+                    'byte_size' => (int) Storage::disk($diskName)->size($path),
+                    'checksum_sha256' => hash_file('sha256', $input->anonymousFile->getRealPath()),
+                    'virus_scan_status' => 'pending',
+                    'created_by' => $editor->id,
+                ]);
+
+                return $this->ensureActiveReviewRound(
+                    $submission,
+                    $editor,
+                    $file,
+                    $input->reviewerTitle,
+                    $input->reviewerAbstract,
+                    $input->note,
+                );
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk($diskName)->delete($path);
+            throw $exception;
+        }
+    }
+
+    private function ensureActiveReviewRound(Submission $submission, User $editor, FileEntry $anonymousFile, string $reviewerTitle, string $reviewerAbstract, ?string $note): ReviewRound
+    {
+        return DB::transaction(function () use ($submission, $editor, $note, $anonymousFile, $reviewerTitle, $reviewerAbstract) {
+            $submission = PortalAccess::lockSubmission($submission, $editor, 'section_editor');
             if (! in_array($submission->status, ['submitted', 'in_review', 'under_review', 'revisions_requested'], true)) {
                 throw new InvalidArgumentException('Status naskah tidak mengizinkan putaran telaah baru.');
             }
             $active = $submission->reviewRounds()->where('status', 'active')->first();
-            if (! $anonymousFile) {
-                if ($active) {
-                    return $active;
-                }
-                throw new InvalidArgumentException('Siapkan berkas, judul, dan abstrak anonim sebelum membuka putaran telaah.');
-            }
             $replaceUnsafeRound = $active && ! $active->hasDistinctAnonymizedFile();
             if ($active && ! $replaceUnsafeRound && $active->activeAssignments()->exists()) {
                 throw new InvalidArgumentException('Selesaikan penugasan pada putaran aktif sebelum membuka putaran baru.');
