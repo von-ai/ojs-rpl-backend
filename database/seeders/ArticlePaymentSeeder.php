@@ -65,16 +65,17 @@ class ArticlePaymentSeeder extends Seeder
             $path1 = "payments/{$subPending->id}/bukti_transfer_brimo_sub106.png";
             Storage::disk('azure')->put($path1, $dummyReceiptPng);
 
-            $file1 = FileEntry::create([
-                'storage_disk' => 'azure',
-                'storage_path' => $path1,
-                'original_name' => 'bukti_transfer_brimo_sub106.png',
-                'mime_type' => 'image/png',
-                'byte_size' => strlen($dummyReceiptPng),
-                'checksum_sha256' => hash('sha256', $dummyReceiptPng),
-                'virus_scan_status' => 'clean',
-                'created_by' => $subPending->author_id ?? $authorUser->id,
-            ]);
+            $file1 = FileEntry::updateOrCreate(
+                ['storage_disk' => 'azure', 'storage_path' => $path1],
+                [
+                    'original_name' => 'bukti_transfer_brimo_sub106.png',
+                    'mime_type' => 'image/png',
+                    'byte_size' => strlen($dummyReceiptPng),
+                    'checksum_sha256' => hash('sha256', $dummyReceiptPng),
+                    'virus_scan_status' => 'clean',
+                    'created_by' => $subPending->author_id ?? $authorUser->id,
+                ]
+            );
 
             $invoiceNumber1 = 'INV-'.($subPending->submission_number ? str_replace('-', '', $subPending->submission_number) : strtoupper(Str::substr((string) $subPending->id, -8)));
 
@@ -111,16 +112,17 @@ class ArticlePaymentSeeder extends Seeder
             $path2 = "payments/{$subRejected->id}/struk_atm_mandiri_sub110.png";
             Storage::disk('azure')->put($path2, $dummyReceiptPng);
 
-            $file2 = FileEntry::create([
-                'storage_disk' => 'azure',
-                'storage_path' => $path2,
-                'original_name' => 'struk_atm_mandiri_sub110.png',
-                'mime_type' => 'image/png',
-                'byte_size' => strlen($dummyReceiptPng),
-                'checksum_sha256' => hash('sha256', $dummyReceiptPng),
-                'virus_scan_status' => 'clean',
-                'created_by' => $subRejected->author_id ?? $authorUser->id,
-            ]);
+            $file2 = FileEntry::updateOrCreate(
+                ['storage_disk' => 'azure', 'storage_path' => $path2],
+                [
+                    'original_name' => 'struk_atm_mandiri_sub110.png',
+                    'mime_type' => 'image/png',
+                    'byte_size' => strlen($dummyReceiptPng),
+                    'checksum_sha256' => hash('sha256', $dummyReceiptPng),
+                    'virus_scan_status' => 'clean',
+                    'created_by' => $subRejected->author_id ?? $authorUser->id,
+                ]
+            );
 
             $invoiceNumber2 = 'INV-'.($subRejected->submission_number ? str_replace('-', '', $subRejected->submission_number) : strtoupper(Str::substr((string) $subRejected->id, -8)));
 
@@ -189,16 +191,17 @@ class ArticlePaymentSeeder extends Seeder
             $path3 = "payments/{$subVerified->id}/bukti_transfer_bni_sub107.png";
             Storage::disk('azure')->put($path3, $dummyReceiptPng);
 
-            $file3 = FileEntry::create([
-                'storage_disk' => 'azure',
-                'storage_path' => $path3,
-                'original_name' => 'bukti_transfer_bni_sub107.png',
-                'mime_type' => 'image/png',
-                'byte_size' => strlen($dummyReceiptPng),
-                'checksum_sha256' => hash('sha256', $dummyReceiptPng),
-                'virus_scan_status' => 'clean',
-                'created_by' => $subVerified->author_id ?? $authorUser->id,
-            ]);
+            $file3 = FileEntry::updateOrCreate(
+                ['storage_disk' => 'azure', 'storage_path' => $path3],
+                [
+                    'original_name' => 'bukti_transfer_bni_sub107.png',
+                    'mime_type' => 'image/png',
+                    'byte_size' => strlen($dummyReceiptPng),
+                    'checksum_sha256' => hash('sha256', $dummyReceiptPng),
+                    'virus_scan_status' => 'clean',
+                    'created_by' => $subVerified->author_id ?? $authorUser->id,
+                ]
+            );
 
             $invoiceNumber4 = 'INV-'.($subVerified->submission_number ? str_replace('-', '', $subVerified->submission_number) : strtoupper(Str::substr((string) $subVerified->id, -8)));
 
