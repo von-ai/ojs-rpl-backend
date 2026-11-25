@@ -154,7 +154,7 @@
             </div>
 
             <a
-                href="{{ auth()->check() ? route('author.submissions.create') : route('login') }}"
+                href="{{ route(auth()->user()?->hasRole('author') ? 'author.submissions.create' : (auth()->check() ? 'dashboard' : 'login'), absolute: false) }}"
                 onclick="window.closeMobileNav()"
                 class="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg shadow-2xs transition-all"
             >
@@ -178,7 +178,7 @@
 
                     <div class="flex items-center gap-2 pt-1 border-t border-gray-200">
                         <a
-                            href="{{ auth()->user()->isSysAdmin() ? route('sysadmin.journals.index') : route('dashboard') }}"
+                            href="{{ auth()->user()->isSysAdmin() ? route('sysadmin.journals.index', absolute: false) : route('dashboard', absolute: false) }}"
                             onclick="window.closeMobileNav()"
                             class="flex-1 text-center py-1.5 px-2 bg-white hover:bg-gray-100 text-gray-700 font-medium text-xs rounded border border-gray-200 transition-colors"
                         >
@@ -199,7 +199,7 @@
             @else
                 <div class="grid grid-cols-2 gap-2 pt-1">
                     <a
-                        href="{{ route('login') }}"
+                        href="{{ route('login', absolute: false) }}"
                         onclick="window.closeMobileNav()"
                         class="text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded-lg transition-colors border border-gray-200"
                     >
