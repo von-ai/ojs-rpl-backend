@@ -348,7 +348,19 @@ class SysAdminSeeder extends Seeder
         );
 
         // 6. Jejak Rekam Audit Append-Only (audit_logs)
-        AuditLog::record([
+        // Tabel append-only (UPDATE/DELETE dilarang), sehingga idempotensi dijaga dengan
+        // melewati log yang (request_id, action)-nya sudah tercatat.
+        $recordOnce = static function (array $attributes): void {
+            $exists = AuditLog::where('request_id', $attributes['request_id'])
+                ->where('action', $attributes['action'])
+                ->exists();
+
+            if (! $exists) {
+                AuditLog::record($attributes);
+            }
+        };
+
+        $recordOnce([
             'id' => 'LOG-01JARK-01',
             'actor_id' => $primaryAdmin->id,
             'actor_type' => 'user',
@@ -365,7 +377,7 @@ class SysAdminSeeder extends Seeder
             'occurred_at' => now()->subDays(5),
         ]);
 
-        AuditLog::record([
+        $recordOnce([
             'id' => 'LOG-01JARK-02',
             'actor_id' => $primaryAdmin->id,
             'user_id' => $secondaryAdmin->id,
@@ -383,7 +395,7 @@ class SysAdminSeeder extends Seeder
             'occurred_at' => now()->subDays(6),
         ]);
 
-        AuditLog::record([
+        $recordOnce([
             'id' => 'LOG-01JARK-03',
             'actor_type' => 'system',
             'system_actor' => 'malware_scanner',
@@ -397,7 +409,7 @@ class SysAdminSeeder extends Seeder
             'occurred_at' => now()->subDays(6)->addHours(4),
         ]);
 
-        AuditLog::record([
+        $recordOnce([
             'journal_id' => $arsip->id,
             'actor_id' => $primaryAdmin->id,
             'actor_type' => 'user',
@@ -414,7 +426,7 @@ class SysAdminSeeder extends Seeder
             'occurred_at' => now()->subDays(7),
         ]);
 
-        AuditLog::record([
+        $recordOnce([
             'journal_id' => $jtiik->id,
             'actor_id' => $primaryAdmin->id,
             'actor_type' => 'user',
@@ -428,7 +440,7 @@ class SysAdminSeeder extends Seeder
             'occurred_at' => now()->subDays(8),
         ]);
 
-        AuditLog::record([
+        $recordOnce([
             'actor_type' => 'system',
             'system_actor' => 'cache_purger',
             'effective_role' => 'System Service',

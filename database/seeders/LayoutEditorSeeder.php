@@ -290,19 +290,22 @@ class LayoutEditorSeeder extends Seeder
                 ]
             );
 
-            ProductionEscalation::updateOrCreate(
-                ['submission_id' => $sub108->id, 'status' => 'open'],
-                [
-                    'id' => 'ESC-2026-0071',
-                    'copyedit_id' => null,
-                    'galley_id' => $galley108->id,
-                    'opened_by' => $layoutEditor->id,
-                    'reason' => 'Gambar peta kontur batimetri pantai berdimensi lanskap sangat lebar, memerlukan persetujuan Section Editor untuk penambahan halaman lampiran peta berformat lanskap.',
-                    'resolution' => null,
-                    'resume_stage' => null,
-                    'version' => 1,
-                ]
-            );
+            // Dicari berdasarkan ID eskalasi miliknya sendiri (bukan submission_id + status),
+            // agar tidak menimpa eskalasi 'open' milik CopyeditSeeder (ESC-2026-0042) pada
+            // submission yang sama dan seeder tetap idempoten saat dijalankan ulang.
+            $escalation = ProductionEscalation::find('ESC-2026-0071') ?? new ProductionEscalation;
+            $escalation->forceFill([
+                'id' => 'ESC-2026-0071',
+                'submission_id' => $sub108->id,
+                'status' => 'open',
+                'copyedit_id' => null,
+                'galley_id' => $galley108->id,
+                'opened_by' => $layoutEditor->id,
+                'reason' => 'Gambar peta kontur batimetri pantai berdimensi lanskap sangat lebar, memerlukan persetujuan Section Editor untuk penambahan halaman lampiran peta berformat lanskap.',
+                'resolution' => null,
+                'resume_stage' => null,
+                'version' => 1,
+            ])->save();
         }
 
         // Skenario 4: SUB-2026-00109 — Ready (v2 Galai Disetujui EIC, Siap Terbit)

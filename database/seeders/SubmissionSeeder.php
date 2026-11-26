@@ -516,45 +516,47 @@ class SubmissionSeeder extends Seeder
             $submission->version = 1;
             $submission->save();
 
-            // Refresh kontributor
-            SubmissionContributor::where('submission_id', $submission->id)->delete();
+            // Upsert kontributor berdasarkan posisi (ID stabil antar-run), hapus posisi yang tidak lagi ada
+            $positions = array_column($item['contributors'], 'position');
+            SubmissionContributor::where('submission_id', $submission->id)
+                ->whereNotIn('position', $positions)
+                ->delete();
             foreach ($item['contributors'] as $c) {
-                SubmissionContributor::create([
-                    'submission_id' => $submission->id,
-                    'user_id' => $c['is_corresponding'] ? $author->id : null,
-                    'given_name' => $c['given_name'],
-                    'family_name' => $c['family_name'],
-                    'email' => $c['email'],
-                    'affiliation' => $c['affiliation'],
-                    'orcid' => $c['orcid'],
-                    'is_corresponding' => $c['is_corresponding'],
-                    'position' => $c['position'],
-                ]);
+                SubmissionContributor::updateOrCreate(
+                    ['submission_id' => $submission->id, 'position' => $c['position']],
+                    [
+                        'user_id' => $c['is_corresponding'] ? $author->id : null,
+                        'given_name' => $c['given_name'],
+                        'family_name' => $c['family_name'],
+                        'email' => $c['email'],
+                        'affiliation' => $c['affiliation'],
+                        'orcid' => $c['orcid'],
+                        'is_corresponding' => $c['is_corresponding'],
+                    ]
+                );
             }
 
             // Simpan Berkas Terkait jika ada
             if (! empty($item['files'])) {
-                // Hapus asosiasi lama jika ada
-                SubmissionFile::where('submission_id', $submission->id)->delete();
-
                 foreach ($item['files'] as $f) {
-                    $fileEntry = FileEntry::create([
-                        'storage_disk' => 'azure',
-                        'storage_path' => 'manuscripts/'.md5($f['name']).'.dat',
-                        'original_name' => $f['name'],
-                        'mime_type' => $f['mime_type'],
-                        'byte_size' => $f['size'],
-                        'checksum_sha256' => hash('sha256', $f['name']),
-                        'virus_scan_status' => 'clean',
-                        'created_by' => $author->id,
-                    ]);
+                    // Dikunci via original_name (sama seperti seeder lain yang memindahkan
+                    // storage_path baris ini) agar run ulang tidak membuat entri ganda.
+                    $fileEntry = FileEntry::firstOrCreate(
+                        ['storage_disk' => 'azure', 'original_name' => $f['name']],
+                        [
+                            'storage_path' => 'manuscripts/'.md5($f['name']).'.dat',
+                            'mime_type' => $f['mime_type'],
+                            'byte_size' => $f['size'],
+                            'checksum_sha256' => hash('sha256', $f['name']),
+                            'virus_scan_status' => 'clean',
+                            'created_by' => $author->id,
+                        ]
+                    );
 
-                    SubmissionFile::create([
-                        'submission_id' => $submission->id,
-                        'file_id' => $fileEntry->id,
-                        'genre' => $f['genre'],
-                        'version' => 1,
-                    ]);
+                    SubmissionFile::updateOrCreate(
+                        ['submission_id' => $submission->id, 'file_id' => $fileEntry->id],
+                        ['genre' => $f['genre'], 'version' => 1]
+                    );
                 }
             }
         }

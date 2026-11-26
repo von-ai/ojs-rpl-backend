@@ -73,10 +73,23 @@ fi
 CMD="${CMD} --force"
 
 echo -e "${BLUE}--> Menjalankan '${CMD}' di Container '${WEB_NAME}'...${NC}"
+# 'az containerapp exec' tidak meneruskan exit code perintah di dalam kontainer,
+# sehingga output ditangkap lalu dicek penanda kegagalan Artisan/PHP/SQL.
+EXEC_LOG="$(mktemp)"
+trap 'rm -f "${EXEC_LOG}"' EXIT
+
+set +e
 az containerapp exec \
     --name "${WEB_NAME}" \
     --resource-group "${RG_NAME}" \
     --container "web" \
-    --command "${CMD}"
+    --command "${CMD}" 2>&1 | tee "${EXEC_LOG}"
+AZ_STATUS=${PIPESTATUS[0]}
+set -e
+
+if [ "${AZ_STATUS}" -ne 0 ] || grep -q -E 'SQLSTATE\[|^In [A-Za-z]+\.php line [0-9]+:|PHP (Fatal|Parse) error|Symfony\\Component\\.*Exception|Command .* failed' "${EXEC_LOG}"; then
+    echo -e "\n${RED}[FAILED] Migrasi/seeder gagal dieksekusi. Periksa output di atas.${NC}"
+    exit 1
+fi
 
 echo -e "\n${GREEN}[SUCCESS] Migrasi database berhasil dieksekusi di Azure Container Apps!${NC}"

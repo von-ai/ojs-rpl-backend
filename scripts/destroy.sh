@@ -80,7 +80,7 @@ if [ -z "$SCOPE" ]; then
     echo -e "     - ${CYAN}Azure Blob Storage TETAP UTUH${NC} (seluruh naskah tersimpan aman & metadata TiDB tidak rusak)."
     echo -e "  ${YELLOW}2) Azure Blob Storage Saja${NC}"
     echo -e "     - Menghapus: Storage Account, Containers, dan seluruh file naskah di dalamnya."
-    echo -e "     - Stateless App tetap berjalan (namun unduhan file naskah akan 404)."
+    echo -e "     - Container Apps & Cloudflare IKUT terhapus karena bergantung pada storage key."
     echo -e "  ${RED}3) SEMUA Komponen (Full Teardown)${NC}"
     echo -e "     - Menghapus: Seluruh resource cloud (App + Storage) tanpa terkecuali."
     echo -e "  4) Batal"

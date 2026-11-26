@@ -111,7 +111,7 @@
                         <div class="flex items-center gap-2 flex-wrap">
                             <p id="selected-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $existingManuscript?->original_name ?? 'naskah-ilmiah.pdf' }}</p>
                             <span id="file-status-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded {{ $existingManuscript ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200' }}">
-                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <svg id="file-status-icon" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                                 <span id="file-status-text">{{ $existingManuscript ? 'Tersimpan di Draf' : 'Berkas Terpilih' }}</span>

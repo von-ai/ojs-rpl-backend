@@ -590,10 +590,24 @@ document.addEventListener('DOMContentLoaded', function () {
         return hasNewlySelected || hasBlobUploaded || hasExisting;
     }
 
+    // Label "Tersimpan di Cloud" hanya boleh tampil jika unggah langsung benar-benar berhasil.
+    function updateFileStatusBadge() {
+        const badge = document.getElementById('file-status-badge');
+        const label = document.getElementById('file-status-text');
+        if (!badge || !label) return;
+        const isUploaded = !!(blobPathInput && blobPathInput.value.trim() !== '');
+        const isPending = !isUploaded && !!manuscriptInput?.files?.[0];
+        label.textContent = isUploaded ? 'Tersimpan di Cloud' : (isPending ? 'Belum Tersimpan di Cloud' : 'Tersimpan di Draf');
+        ['bg-emerald-50', 'text-emerald-700', 'border-emerald-200'].forEach(c => badge.classList.toggle(c, !isPending));
+        ['bg-amber-50', 'text-amber-800', 'border-amber-200'].forEach(c => badge.classList.toggle(c, isPending));
+        document.getElementById('file-status-icon')?.classList.toggle('hidden', isPending);
+    }
+
     // Helper fungsi update status visual dropzone naskah
     function updateDropzoneUI(hasFile, fileName = '', fileSize = 0, statusType = 'selected') {
         if (dropzoneUploading) dropzoneUploading.classList.add('hidden');
         if (hasFile) {
+            updateFileStatusBadge();
             if (selectedFileName) selectedFileName.textContent = fileName;
             if (selectedFileSize) selectedFileSize.textContent = formatFileSize(fileSize);
 

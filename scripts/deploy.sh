@@ -64,6 +64,7 @@ AUTO_APPROVE=""
 RUN_MIGRATION=false
 PLAN_ONLY=false
 SCOPE="all" # all | storage-only | app-only
+IMAGE_TAG="" # kosong = otomatis: sha-<commit origin/main>
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -87,6 +88,18 @@ while [[ $# -gt 0 ]]; do
             SCOPE="app-only"
             shift
             ;;
+        --image-tag)
+            IMAGE_TAG="${2:-}"
+            if [ -z "$IMAGE_TAG" ]; then
+                echo -e "${RED}[ERROR] --image-tag membutuhkan nilai (contoh: sha-651e03c).${NC}"
+                exit 1
+            fi
+            shift 2
+            ;;
+        --image-tag=*)
+            IMAGE_TAG="${1#*=}"
+            shift
+            ;;
         --help|-h)
             echo -e "Penggunaan: $0 [OPSI]"
             echo -e "Opsi:"
@@ -94,6 +107,8 @@ while [[ $# -gt 0 ]]; do
             echo -e "  --app-only          Hanya inisiasi/deploy Stateless App (ACA, Redis, Cloudflare, Monitor)"
             echo -e "  --migrate           Jalankan migrasi database otomatis setelah deploy"
             echo -e "  --plan-only         Hanya lakukan kalkulasi rencana perubahan tanpa menerapkan"
+            echo -e "  --image-tag TAG     Tag image container yang dirilis (contoh: sha-651e03c)."
+            echo -e "                      Default: sha-<7 karakter commit origin/main terbaru>"
             echo -e "  --auto-approve, -y  Menyetujui eksekusi perubahan secara otomatis"
             exit 0
             ;;
@@ -137,6 +152,46 @@ elif [ "$SCOPE" == "app-only" ]; then
     )
 fi
 
+# 3b. Tentukan image container (tag SHA yang tidak berubah, bukan 'latest')
+# Tag mutable seperti ':latest' di-cache oleh node Azure Container Apps sehingga
+# revisi baru bisa tetap memakai image lama. Tag SHA memaksa penarikan image baru.
+IMAGE_REPO="$(grep -E '^[[:space:]]*container_image[[:space:]]*=' terraform.tfvars | head -n 1 | sed -E 's/^[^"]*"([^"]*)".*$/\1/')"
+IMAGE_REPO="${IMAGE_REPO%%@*}"
+IMAGE_REPO="${IMAGE_REPO%:*}"
+if [ -z "$IMAGE_REPO" ] || [[ "$IMAGE_REPO" != *"/"* ]]; then
+    IMAGE_REPO="ghcr.io/von-ai/ojs-rpl-backend"
+fi
+
+if [ -z "$IMAGE_TAG" ]; then
+    git -C "${PROJECT_ROOT}" fetch -q origin main 2>/dev/null || \
+        echo -e "${YELLOW}[WARNING] Gagal 'git fetch origin main'; memakai referensi lokal.${NC}"
+    SHA="$(git -C "${PROJECT_ROOT}" rev-parse --short=7 origin/main 2>/dev/null || true)"
+    if [ -z "$SHA" ]; then
+        echo -e "${RED}[ERROR] Tidak bisa menentukan commit origin/main. Gunakan --image-tag sha-<commit>.${NC}"
+        exit 1
+    fi
+    IMAGE_TAG="sha-${SHA}"
+fi
+CONTAINER_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
+echo -e "${GREEN}[OK]${NC} Image container yang dirilis: ${BLUE}${CONTAINER_IMAGE}${NC}"
+
+# Pastikan tag sudah terbit di registry (workflow Docker Publish harus selesai)
+if command -v skopeo &> /dev/null; then
+    if ! skopeo inspect --no-tags "docker://${CONTAINER_IMAGE}" &> /dev/null; then
+        echo -e "${RED}[ERROR] Image ${CONTAINER_IMAGE} tidak ditemukan di registry.${NC}"
+        echo -e "Pastikan workflow 'Build & Publish Docker Image' untuk commit tersebut sudah selesai, atau registry bersifat privat (periksa kredensial)."
+        exit 1
+    fi
+elif command -v docker &> /dev/null && docker info &> /dev/null; then
+    if ! docker manifest inspect "${CONTAINER_IMAGE}" &> /dev/null; then
+        echo -e "${RED}[ERROR] Image ${CONTAINER_IMAGE} tidak ditemukan di registry.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}[WARNING] 'skopeo'/'docker' tidak tersedia; keberadaan image tidak diverifikasi.${NC}"
+fi
+IMAGE_ARGS=("-var" "container_image=${CONTAINER_IMAGE}")
+
 # 4. Inisialisasi Terraform
 echo -e "\n${BLUE}--> [Step 1/3] Menjalankan ${TF_BIN} init -upgrade...${NC}"
 ${TF_BIN} init -upgrade
@@ -148,13 +203,13 @@ ${TF_BIN} validate
 # 6. Plan atau Apply
 if [ "$PLAN_ONLY" = true ]; then
     echo -e "\n${BLUE}--> [Step 3/3] Menghasilkan execution plan (--plan-only)...${NC}"
-    ${TF_BIN} plan "${TARGET_ARGS[@]}"
+    ${TF_BIN} plan "${IMAGE_ARGS[@]}" "${TARGET_ARGS[@]}"
     echo -e "\n${GREEN}[SUCCESS] Execution plan selesai dihasilkan.${NC}"
     exit 0
 fi
 
 echo -e "\n${BLUE}--> [Step 3/3] Menerapkan konfigurasi infrastruktur (${TF_BIN} apply)...${NC}"
-${TF_BIN} apply ${AUTO_APPROVE} "${TARGET_ARGS[@]}"
+${TF_BIN} apply ${AUTO_APPROVE} "${IMAGE_ARGS[@]}" "${TARGET_ARGS[@]}"
 
 echo -e "\n${GREEN}===================================================================${NC}"
 echo -e "${GREEN}             DEPLOYMENT INFRASTRUKTUR BERHASIL!                    ${NC}"

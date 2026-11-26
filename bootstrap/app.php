@@ -10,6 +10,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\TrustHosts;
+use Illuminate\Http\Request;
+use League\Flysystem\FilesystemException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,4 +47,18 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['password', 'password_confirmation', 'token']);
+
+        // Gangguan object storage saat mengirim formulir: kembalikan pengguna ke formulir
+        // dengan pesan yang jelas. Exception tetap dicatat di log seperti biasa.
+        $exceptions->render(function (FilesystemException $e, Request $request) {
+            if ($request->isMethodSafe()) {
+                return null;
+            }
+
+            $message = 'Penyimpanan berkas sedang tidak dapat diakses sehingga data belum tersimpan. Silakan pilih ulang berkas dan coba lagi beberapa saat.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $message], 503)
+                : back()->withInput($request->except(['password', 'password_confirmation', 'token', 'blob_path']))->with('error', $message);
+        });
     })->create();
