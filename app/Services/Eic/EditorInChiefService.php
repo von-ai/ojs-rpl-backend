@@ -122,6 +122,62 @@ class EditorInChiefService
                 ->where('journal_id', $submission->journal_id));
     }
 
+    /** @return Builder<User> */
+    public function eligibleCopyeditors(Submission $submission): Builder
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->when($submission->author_id, fn ($query) => $query->where('id', '!=', $submission->author_id))
+            ->whereNotIn('id', $submission->contributors()->select('user_id')->whereNotNull('user_id'))
+            ->whereNotIn('email', $submission->contributors()->select('email')->whereNotNull('email'))
+            ->whereHas('userRoles', fn ($query) => $query
+                ->where('role_code', 'copyeditor')
+                ->where('journal_id', $submission->journal_id));
+    }
+
+    /**
+     * Menugaskan atau mengganti Penyunting Naskah (Copyeditor) untuk naskah yang sudah diterima.
+     */
+    public function assignCopyeditor(
+        Submission $submission,
+        User $eic,
+        User $copyeditor
+    ): Copyedit {
+        return DB::transaction(function () use ($submission, $eic, $copyeditor) {
+            $submission = PortalAccess::lockSubmission($submission, $eic, 'editor_in_chief');
+
+            if (! in_array($submission->status, ['accepted', 'in_production'], true)) {
+                throw new DomainException('Penugasan Penyunting Naskah hanya dapat diubah saat naskah berstatus diterima atau dalam tahap produksi.');
+            }
+
+            $copyedit = $submission->copyedit()->lockForUpdate()->first();
+            if (! $copyedit) {
+                throw new DomainException('Tahap copyediting belum diinisialisasi untuk naskah ini.');
+            }
+
+            if ($copyedit->status === 'completed') {
+                throw new DomainException('Penyunting Naskah tidak dapat diganti karena tahap copyediting sudah selesai.');
+            }
+
+            if (! $this->eligibleCopyeditors($submission)->whereKey($copyeditor->id)->exists()) {
+                throw new DomainException('Penyunting Naskah harus aktif, terverifikasi, bebas konflik, dan memiliki peran pada jurnal ini.');
+            }
+
+            $copyedit->copy_editor_id = $copyeditor->id;
+            $copyedit->version = (int) $copyedit->version + 1;
+            $copyedit->save();
+
+            SendReviewNotice::dispatch(
+                $copyeditor->email,
+                'Penugasan copyediting SIRIDA',
+                'Anda ditugaskan sebagai Penyunting Naskah. '.route('copyeditor.submissions.show', $submission->id)
+            );
+
+            return $copyedit;
+        });
+    }
+
     /**
      * Menugaskan Section Editor untuk memimpin penelaahan naskah (UC-11).
      */
@@ -250,12 +306,17 @@ class EditorInChiefService
                         throw new DomainException('Naskah hasil telaah belum terverifikasi untuk copyediting.');
                     }
                     app(PrivateFileService::class)->stream($source);
-                    $copyeditor = User::where('status', 'active')->whereNotNull('email_verified_at')
-                        ->where('id', '!=', $submission->author_id)
-                        ->whereNotIn('id', DB::table('submission_contributors')->select('user_id')->where('submission_id', $submission->id)->whereNotNull('user_id'))
-                        ->whereHas('userRoles', fn ($q) => $q->where('role_code', 'copyeditor')->where('journal_id', $submission->journal_id))->orderBy('id')->first();
-                    if (! $copyeditor) {
-                        throw new DomainException('Belum ada Copyeditor aktif dan terverifikasi pada jurnal ini.');
+                    $requestedCopyeditorId = ! empty($data['copy_editor_id']) ? (string) $data['copy_editor_id'] : null;
+                    if ($requestedCopyeditorId !== null) {
+                        $copyeditor = $this->eligibleCopyeditors($submission)->whereKey($requestedCopyeditorId)->first();
+                        if (! $copyeditor) {
+                            throw new DomainException('Penyunting Naskah harus aktif, terverifikasi, bebas konflik, dan memiliki peran pada jurnal ini.');
+                        }
+                    } else {
+                        $copyeditor = $this->eligibleCopyeditors($submission)->orderBy('id')->first();
+                        if (! $copyeditor) {
+                            throw new DomainException('Belum ada Copyeditor aktif dan terverifikasi pada jurnal ini.');
+                        }
                     }
                     Copyedit::create(['submission_id' => $submission->id, 'copy_editor_id' => $copyeditor->id, 'source_file_id' => $source->id, 'status' => 'assigned', 'due_at' => now()->addDays(7), 'version' => 1]);
                     SendReviewNotice::dispatch($copyeditor->email, 'Penugasan copyediting SIRIDA', 'Naskah siap disunting. '.route('copyeditor.submissions.show', $submission->id));
