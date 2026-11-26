@@ -10,7 +10,7 @@
     <!-- Modal Card Container -->
     <div 
         id="action-modal-card" 
-        class="relative w-full max-w-md my-auto bg-white rounded-2xl border border-gray-200/90 shadow-2xl overflow-hidden transition-all duration-200 transform scale-95 opacity-0"
+        class="relative w-full max-w-md my-auto bg-white rounded-2xl border border-outline-variant shadow-2xl overflow-hidden transition-all duration-200 transform scale-95 opacity-0"
     >
         <!-- Tombol Tutup (X) -->
         <button 
@@ -68,7 +68,7 @@
         </div>
 
         <!-- Footer Aksi -->
-        <div class="bg-gray-50/80 px-5 py-3.5 border-t border-gray-100 flex items-center justify-end gap-2.5">
+        <div class="bg-gray-50/80 px-5 py-3.5 border-t border-divider flex items-center justify-end gap-2.5">
             <button 
                 type="button" 
                 id="action-modal-btn-cancel" 

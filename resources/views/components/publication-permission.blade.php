@@ -46,7 +46,7 @@
                         name="agreement_reference" 
                         placeholder="Nomor atau kode arsip perjanjian (misal: ARSIP-2026-01)"
                         value="{{ old('agreement_reference') }}"
-                        class="w-full max-w-md px-3.5 py-2 text-xs rounded-lg border border-gray-300 focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon bg-white text-gray-900 shadow-2xs transition"
+                        class="w-full max-w-md px-3.5 py-2 text-xs rounded-lg border border-outline focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon bg-white text-gray-900 shadow-2xs transition"
                     >
                 </div>
             @endif
@@ -58,7 +58,7 @@
                         type="checkbox" 
                         name="confirmed" 
                         value="1"
-                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon cursor-pointer shrink-0"
+                        class="mt-0.5 h-4 w-4 rounded border-outline text-brand-maroon focus:ring-brand-maroon cursor-pointer shrink-0"
                     >
                     <span>
                         {{ $editor ? 'Saya telah memverifikasi perjanjian penulis untuk menerbitkan naskah ini dengan lisensi' : 'Saya mengizinkan penerbitan naskah ini dengan lisensi' }}

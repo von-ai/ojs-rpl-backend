@@ -50,6 +50,7 @@
 
     <!-- Navigation Menu Items (2 Menu Minimalis, Fokus Proofreading) -->
     <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-1.5 sidebar-scroll" aria-label="Navigasi Utama Proofreader">
+        <x-portal.menu-section>Menu utama</x-portal.menu-section>
         @php
             $isSubmissionsActive = request()->routeIs('proofreader.submissions.*') || request()->routeIs('proofreader.dashboard');
             $isGuidelinesActive = request()->routeIs('proofreader.guidelines');
@@ -67,6 +68,7 @@
             <span class="truncate sidebar-label">Penugasan Proofreading</span>
         </a>
 
+        <x-portal.menu-section>Referensi jurnal</x-portal.menu-section>
         <!-- 2. Panduan Bukti Baca -->
         <a 
             href="{{ route('proofreader.guidelines') }}" 

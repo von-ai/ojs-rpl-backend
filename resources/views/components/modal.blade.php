@@ -35,11 +35,11 @@
 
         <!-- Modal Card Container (Terkunci Maksimal Tinggi Layar & Scroll di Dalam) -->
         <div 
-            class="relative w-full {{ $maxWidthClass }} mx-auto my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] flex flex-col bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden transition-all duration-200 transform scale-100 opacity-100 text-xs sm:text-sm"
+            class="relative w-full {{ $maxWidthClass }} mx-auto my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] flex flex-col bg-white rounded-2xl border border-outline-variant shadow-2xl overflow-hidden transition-all duration-200 transform scale-100 opacity-100 text-xs sm:text-sm"
         >
             @if($title)
                 <!-- Header Modal (Pinned di Atas) -->
-                <div class="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/70">
+                <div class="px-5 sm:px-6 py-4 border-b border-divider flex items-center justify-between shrink-0 bg-gray-50/70">
                     <h3 id="{{ $name }}-title" class="text-base font-bold text-gray-900 leading-snug">
                         {{ $title }}
                     </h3>
@@ -64,7 +64,7 @@
 
             @if(isset($footer))
                 <!-- Footer Aksi (Pinned di Bawah) -->
-                <div class="bg-gray-50/80 px-5 py-3.5 border-t border-gray-100 flex items-center justify-end gap-2.5 shrink-0">
+                <div class="bg-gray-50/80 px-5 py-3.5 border-t border-divider flex items-center justify-end gap-2.5 shrink-0">
                     {{ $footer }}
                 </div>
             @endif

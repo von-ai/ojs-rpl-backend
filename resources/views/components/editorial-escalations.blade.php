@@ -7,7 +7,7 @@
     <form method="POST" action="{{ route($routePrefix.'.submissions.escalations.resolve', [$submission->id, $escalation->id]) }}" class="space-y-3">
         @csrf
         <label for="resolution-{{ $escalation->id }}" class="block text-xs font-semibold text-gray-700">Catatan penyelesaian editor</label>
-        <textarea id="resolution-{{ $escalation->id }}" name="resolution" required minlength="5" maxlength="4000" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-brand-maroon"></textarea>
+        <textarea id="resolution-{{ $escalation->id }}" name="resolution" required minlength="5" maxlength="4000" rows="3" class="w-full rounded-lg border border-outline p-3 text-sm focus:ring-brand-maroon"></textarea>
         <x-button>Selesaikan mediasi</x-button>
     </form>
 </section>

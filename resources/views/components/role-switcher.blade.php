@@ -20,7 +20,7 @@
         aria-expanded="false"
         aria-label="Beralih Peran ({{ $activeMeta['label'] }})"
         title="Peran: {{ $activeMeta['label'] }}"
-        class="inline-flex items-center justify-center gap-1.5 min-h-9 px-2.5 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer"
+        class="inline-flex items-center justify-center gap-1.5 min-h-9 px-2.5 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-outline-variant transition cursor-pointer"
     >
         <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -33,21 +33,21 @@
         data-role-switcher-menu
         role="menu"
         aria-orientation="vertical"
-        class="hidden absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-gray-200 shadow-xl z-50 overflow-hidden"
+        class="hidden absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-outline-variant shadow-xl z-50 overflow-hidden"
     >
         <!-- Header Panel -->
-        <div class="px-4 py-3 bg-surface-subtle border-b border-gray-200 flex items-center justify-between gap-2">
+        <div class="px-4 py-3 bg-surface-subtle border-b border-divider flex items-center justify-between gap-2">
             <div class="min-w-0 text-left">
                 <p class="text-xs font-bold text-gray-900 truncate">Beralih Ruang Kerja Peran</p>
                 <p class="text-[11px] text-gray-500 truncate">Pilih peran aktif untuk berpindah portal</p>
             </div>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-gray-700 border border-gray-200 shrink-0">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-gray-700 border border-outline-variant shrink-0">
                 {{ $rolesCount }} Peran
             </span>
         </div>
 
         <!-- Daftar Peran yang Dimiliki Pengguna -->
-        <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+        <div class="max-h-80 overflow-y-auto divide-y divide-divider">
             @foreach($roles as $role)
                 @php
                     $isCurrent = $role['code'] === $activeCode;
