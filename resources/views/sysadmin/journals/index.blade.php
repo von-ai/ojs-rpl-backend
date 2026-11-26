@@ -129,17 +129,24 @@
                             <!-- Kolom Instansi Jurnal -->
                             <td class="py-3.5 px-4 min-w-56">
                                 <div>
+                                    <button
+                                        type="button"
+                                        onclick='openEditJournalModal(@json($journal))'
+                                        class="text-left font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-xs sm:text-sm cursor-pointer"
+                                        title="Kelola / sunting identitas {{ $journal['name'] }}"
+                                    >
+                                        {{ $journal['name'] }}
+                                    </button>
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-xs sm:text-sm"
-                                        title="Buka website publik {{ $journal['name'] }}"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-brand-maroon font-normal mt-0.5 hover:underline"
+                                        title="Buka halaman publik /{{ $journal['slug'] }} di tab baru"
                                     >
-                                        {{ $journal['name'] }}
+                                        <span>/{{ $journal['slug'] }}</span>
+                                        <span aria-hidden="true">↗</span>
                                     </a>
-                                    <span class="inline-block text-[11px] text-gray-400 font-normal mt-0.5">
-                                        /{{ $journal['slug'] }}
-                                    </span>
                                 </div>
                             </td>
 
