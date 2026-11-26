@@ -198,7 +198,19 @@ class CopyeditorSubmissionController extends Controller
     {
         $data = $request->validate(['submission_id' => ['required', 'string'], 'decision' => ['required', 'in:approved,revisions_requested'], 'note' => ['nullable', 'string', 'max:4000'], 'reason' => ['required_if:decision,revisions_requested', 'nullable', 'string', 'max:4000']]);
         $copyedit = $this->findCopyedit($data['submission_id']);
-        $approval = $copyedit->approvals()->where('author_id', Auth::id())->whereNull('invalidated_at')->where('decision', 'requested')->firstOrFail();
+        abort_unless($copyedit, 404, 'Data copyediting tidak ditemukan.');
+
+        $user = Auth::user();
+        $isAuthorizedAuthor = $copyedit->submission->author_id === $user->id
+            || $copyedit->submission->contributors()->where('user_id', $user->id)->exists()
+            || $copyedit->approvals()->where('author_id', $user->id)->exists();
+        abort_unless($isAuthorizedAuthor, 403, 'Anda tidak memiliki hak akses sebagai penulis pada naskah ini.');
+
+        $approval = $copyedit->approvals()
+            ->whereNull('invalidated_at')
+            ->where('decision', 'requested')
+            ->latest('created_at')
+            ->firstOrFail();
         try {
             if ($data['decision'] === 'approved') {
                 $this->copyeditorService->approveByAuthor($approval, Auth::user(), $data['note'] ?? null);

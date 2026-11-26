@@ -355,7 +355,7 @@ class AuthorSubmissionsViewModel
                     $tabs = match ($sub->status) {
                         'draft' => ['semua', 'draf'],
                         'submitted' => ['semua', 'aktif'],
-                        'in_review' => ['semua', 'aktif'],
+                        'in_review', 'under_review' => ['semua', 'aktif'],
                         'revisions_requested' => ['semua', 'aktif', 'perlu-revisi'],
                         'in_production', 'accepted' => ['semua', 'aktif', 'produksi'],
                         'published' => ['semua', 'terbit'],
@@ -366,7 +366,7 @@ class AuthorSubmissionsViewModel
                     $statusLabel = match ($sub->status) {
                         'draft' => 'Draf Belum Diajukan',
                         'submitted' => 'Pemeriksaan Awal Editor',
-                        'in_review' => 'Proses Telaah',
+                        'in_review', 'under_review' => 'Proses Telaah',
                         'revisions_requested' => 'Perlu Revisi',
                         'in_production' => 'Pemeriksaan Galai',
                         'accepted' => 'Naskah Diterima',
@@ -380,7 +380,7 @@ class AuthorSubmissionsViewModel
                     $statusBadgeClass = match ($sub->status) {
                         'draft' => 'bg-gray-100 text-gray-700 border border-gray-200',
                         'submitted' => 'bg-blue-50 text-blue-700 border border-blue-200',
-                        'in_review' => 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+                        'in_review', 'under_review' => 'bg-indigo-50 text-indigo-700 border border-indigo-200',
                         'revisions_requested' => 'bg-red-50 text-red-700 border border-red-200',
                         'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border border-amber-200',
                         'published' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
@@ -416,7 +416,7 @@ class AuthorSubmissionsViewModel
 
                             return 'Menunggu Respons Penulis';
                         })(),
-                        'in_review' => 'Putaran 1 Review',
+                        'in_review', 'under_review' => 'Putaran 1 Review',
                         'in_production', 'accepted' => $isPaidJournal
                             ? ($payment && $payment->isVerified() ? 'Pembayaran Lunas • Tata Letak' : ($payment && $payment->isPendingVerification() ? 'Verifikasi Bukti Bayar' : ($payment && $payment->isRejected() ? 'Bukti Bayar Perlu Diperbaiki' : 'Menunggu Bukti Bayar APC')))
                             : 'Tata Letak & Galai',

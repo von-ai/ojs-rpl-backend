@@ -443,6 +443,7 @@ class JournalManagerUsersViewModel
                             ],
                         ];
                     } else {
+                        $catalogOrder = array_flip(array_keys(UserRole::roleCatalog()));
                         $formattedRoles = array_map(function ($code) {
                             return [
                                 'code' => $code,
@@ -450,6 +451,10 @@ class JournalManagerUsersViewModel
                                 'badge_class' => UserRole::roleBadgeClass($code),
                             ];
                         }, $roleCodes);
+
+                        usort($formattedRoles, function ($a, $b) use ($catalogOrder) {
+                            return ($catalogOrder[$a['code']] ?? 99) <=> ($catalogOrder[$b['code']] ?? 99);
+                        });
                     }
 
                     // Gabungkan kata kunci kepakaran dari peran reviewer

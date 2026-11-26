@@ -20,7 +20,7 @@ class EicSubmissionsViewModel
      */
     public static function getSidebarBadgeCount(): int
     {
-        return Submission::whereIn('status', ['submitted', 'in_review', 'revisions_requested'])->count();
+        return Submission::whereIn('status', ['submitted', 'in_review', 'under_review', 'revisions_requested'])->count();
     }
 
     /**
@@ -48,7 +48,7 @@ class EicSubmissionsViewModel
     public function metricCards(): array
     {
         $needDeskReview = Submission::where('status', 'submitted')->count();
-        $inReview = Submission::where('status', 'in_review')->count();
+        $inReview = Submission::whereIn('status', ['in_review', 'under_review'])->count();
         $needRevision = Submission::where('status', 'revisions_requested')->count();
         $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'ready_for_issue', 'published'])->count();
 
@@ -100,7 +100,7 @@ class EicSubmissionsViewModel
     public function tabs(): array
     {
         $needDeskReview = Submission::where('status', 'submitted')->count();
-        $inReview = Submission::where('status', 'in_review')->count();
+        $inReview = Submission::whereIn('status', ['in_review', 'under_review'])->count();
         $needRevision = Submission::where('status', 'revisions_requested')->count();
         $decided = Submission::whereIn('status', ['accepted', 'declined', 'in_production', 'ready_for_issue', 'published'])->count();
         $all = Submission::where('status', '!=', 'draft')->count();
@@ -126,7 +126,7 @@ class EicSubmissionsViewModel
                 'label' => 'Menunggu Skrining',
                 'badge_class' => 'bg-amber-50 text-amber-800 border border-amber-200',
             ],
-            'in_review' => [
+            'in_review', 'under_review' => [
                 'label' => 'Dalam Penelaahan',
                 'badge_class' => 'bg-sky-50 text-sky-800 border border-sky-200',
             ],

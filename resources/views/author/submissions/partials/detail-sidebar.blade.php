@@ -375,7 +375,11 @@
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Bahasa:</span>
-                    <span class="font-semibold text-emerald-700 text-right wrap-break-word min-w-0">{{ $submission['production_info']['copyediting_status'] }}</span>
+                    @php
+                        $ceStatus = $submission['production_info']['copyediting_status'] ?? '';
+                        $ceColor = str_contains($ceStatus, 'Menunggu') ? 'text-amber-700' : (str_contains($ceStatus, 'Perlu') ? 'text-rose-700' : 'text-emerald-700');
+                    @endphp
+                    <span class="font-semibold {{ $ceColor }} text-right wrap-break-word min-w-0">{{ $ceStatus }}</span>
                 </div>
                 <div class="flex items-start justify-between gap-2">
                     <span class="text-gray-500 shrink-0">Tata Letak:</span>

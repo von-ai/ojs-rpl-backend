@@ -115,7 +115,7 @@ class AuthorSubmissionDetailViewModel
         $stageNumber = match ($sub->status) {
             'draft' => 1,
             'submitted' => 2,
-            'in_review' => 3,
+            'in_review', 'under_review' => 3,
             'revisions_requested' => 4,
             'in_production', 'accepted' => 5,
             'published' => 6,
@@ -126,7 +126,7 @@ class AuthorSubmissionDetailViewModel
         $statusLabel = match ($sub->status) {
             'draft' => 'Draf Belum Diajukan',
             'submitted' => 'Pemeriksaan Awal Editor',
-            'in_review' => 'Proses Telaah',
+            'in_review', 'under_review' => 'Proses Telaah',
             'revisions_requested' => 'Perlu Revisi Penulis',
             'in_production' => 'Tahap Produksi & Pemeriksaan Galai',
             'accepted' => 'Naskah Diterima untuk Produksi',
@@ -140,7 +140,7 @@ class AuthorSubmissionDetailViewModel
         $statusBadgeClass = match ($sub->status) {
             'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
             'submitted' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'in_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'in_review', 'under_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             'revisions_requested' => 'bg-red-50 text-red-700 border-red-200',
             'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border-amber-200',
             'published' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -243,7 +243,7 @@ class AuthorSubmissionDetailViewModel
             'files' => $files,
             'timeline' => $this->buildTimelineForSubmission($sub, $stageNumber),
             'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->buildEditorialFeedback($sub) : null,
-            'review_info' => ($sub->status === 'in_review') ? $this->buildReviewInfo($sub) : null,
+            'review_info' => in_array($sub->status, ['in_review', 'under_review'], true) ? $this->buildReviewInfo($sub) : null,
             'initial_screening' => ($sub->status === 'submitted') ? $this->buildInitialScreeningInfo($sub) : null,
             'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub, $user) : null,
             'publication' => ($sub->status === 'published') ? $this->buildPublicationInfo($sub) : null,
@@ -733,8 +733,23 @@ class AuthorSubmissionDetailViewModel
         $issue = $sub->issue;
         $targetIssue = $issue ? ($issue->title ?: 'Volume '.$issue->volume.' Nomor '.$issue->number.' ('.$issue->year.')') : 'Edisi Mendatang (2026)';
 
-        $hasCopyedit = $sub->copyedits->isNotEmpty();
-        $copyeditStatus = $hasCopyedit ? 'Penyuntingan Kebahasaan Selesai' : 'Dalam Proses Tata Bahasa';
+        $latestCopyedit = $sub->copyedits->first();
+        $copyeditStatus = 'Belum Dimulai';
+        if ($latestCopyedit) {
+            $latestApproval = $latestCopyedit->approvals->first(fn ($a) => is_null($a->invalidated_at))
+                ?? $latestCopyedit->approvals->first();
+            if ($latestCopyedit->status === 'completed') {
+                $copyeditStatus = 'Penyuntingan Selesai (Telah Masuk Layout)';
+            } elseif ($latestApproval?->decision === 'approved') {
+                $copyeditStatus = 'Disetujui Penulis';
+            } elseif ($latestApproval?->decision === 'requested') {
+                $copyeditStatus = 'Menunggu Persetujuan Penulis';
+            } elseif ($latestApproval?->decision === 'revisions_requested') {
+                $copyeditStatus = 'Perlu Perbaikan Suntingan';
+            } else {
+                $copyeditStatus = 'Dalam Proses Penyuntingan';
+            }
+        }
 
         $hasGalley = $sub->galleys->isNotEmpty();
         $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
@@ -993,7 +1008,7 @@ class AuthorSubmissionDetailViewModel
 
         return match ($status) {
             'draft' => null,
-            'in_review' => 'Naskah telah masuk tahap penelaahan oleh mitra bestari (peer review) sehingga tidak dapat ditarik kembali secara sepihak.',
+            'in_review', 'under_review' => 'Naskah telah masuk tahap penelaahan oleh mitra bestari (peer review) sehingga tidak dapat ditarik kembali secara sepihak.',
             'revisions_requested' => 'Naskah telah ditindaklanjuti oleh dewan redaksi dengan permintaan perbaikan/revisi.',
             'in_production', 'accepted' => 'Naskah telah disetujui untuk terbit dan sedang dalam proses tata letak (galai).',
             'published' => 'Naskah telah terbit resmi dengan identifikasi Digital Object Identifier (DOI).',

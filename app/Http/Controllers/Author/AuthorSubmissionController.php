@@ -276,8 +276,7 @@ class AuthorSubmissionController extends Controller
             return response()->json(['data' => $submission]);
         }
 
-        $copyeditApproval = CopyeditApproval::with('copyedit.outputs.file')
-            ->where('author_id', $request->user()->id)
+        $copyeditApproval = CopyeditApproval::with(['copyedit.outputs.file', 'copyedit.copyEditor'])
             ->whereNull('invalidated_at')
             ->where('decision', 'requested')
             ->whereHas('copyedit', fn ($q) => $q->where('submission_id', $submission['id']))

@@ -27,12 +27,14 @@
         </div>
     @endif
 
-    @include('author.submissions.partials.copyedit-approval')
     <!-- Header & Breadcrumbs Navigasi -->
     @include('author.submissions.partials.detail-header', ['submission' => $submission])
 
     <!-- Workflow Tracker Stepper (6 Tahapan Alur Kerja Editorial OJS 3) -->
     @include('author.submissions.partials.detail-workflow-tracker', ['submission' => $submission])
+
+    <!-- Panel Persetujuan Copyediting Penulis (Jika Ada Permintaan Aktif) -->
+    @include('author.submissions.partials.copyedit-approval')
 
     <!-- Tata Letak 2 Kolom Responsif (2/3 Konten Manuskrip, 1/3 Sidebar Editorial Sticky) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

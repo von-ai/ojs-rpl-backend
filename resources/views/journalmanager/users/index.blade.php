@@ -130,7 +130,7 @@
                         <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Nama Pengguna</th>
                         <th scope="col" class="py-3 px-4 sm:px-5 min-w-48 whitespace-nowrap">Email</th>
                         <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Afiliasi</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-36">Peran Jurnal</th>
+                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-44 max-w-xs">Peran Jurnal</th>
                         <th scope="col" class="py-3 px-4 sm:px-5 min-w-40">Bidang Kepakaran</th>
                         <th scope="col" class="py-3 px-4 sm:px-5 min-w-32 whitespace-nowrap">Beban Naskah</th>
                         <th scope="col" class="py-3 px-4 sm:px-5 text-center whitespace-nowrap">Status</th>
@@ -216,14 +216,55 @@
                             </td>
 
                             <!-- 5. Kolom Peran Jurnal -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="flex flex-wrap gap-1 max-w-xs">
-                                    @foreach($user['roles'] as $role)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] }}">
-                                            {{ $role['label'] }}
-                                        </span>
-                                    @endforeach
-                                </div>
+                            <td class="py-3.5 px-4 sm:px-5 min-w-44 max-w-xs">
+                                @if(count($user['roles']) > 0)
+                                    @php
+                                        $rolesCount = count($user['roles']);
+                                        $showExpandable = $rolesCount > 3;
+                                        $visibleCount = $showExpandable ? 2 : $rolesCount;
+                                        $visibleRoles = array_slice($user['roles'], 0, $visibleCount);
+                                        $hiddenRoles = $showExpandable ? array_slice($user['roles'], $visibleCount) : [];
+                                        $hiddenRoleLabels = implode(', ', array_column($hiddenRoles, 'label'));
+                                    @endphp
+
+                                    <div class="space-y-1.5">
+                                        <div class="flex flex-wrap items-center gap-1">
+                                            @foreach($visibleRoles as $role)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] }}">
+                                                    {{ $role['label'] }}
+                                                </span>
+                                            @endforeach
+
+                                            @if($showExpandable)
+                                                <button
+                                                    type="button"
+                                                    onclick="toggleMoreJmRoles('{{ $user['id'] }}', this)"
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 transition-colors cursor-pointer select-none"
+                                                    title="Peran lainnya: {{ $hiddenRoleLabels }}"
+                                                    data-count="{{ count($hiddenRoles) }}"
+                                                    data-expanded="false"
+                                                >
+                                                    <span>+{{ count($hiddenRoles) }}</span>
+                                                    <svg class="w-2.5 h-2.5 text-gray-500 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        @if($showExpandable)
+                                            <div id="more-jm-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1 pt-1.5 border-t border-dashed border-gray-200">
+                                                @foreach($hiddenRoles as $role)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] }}">
+                                                        {{ $role['label'] }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400 italic">Belum Ada Peran</span>
+                                @endif
                             </td>
 
                             <!-- 6. Kolom Bidang Kepakaran (Terpisah Sendiri) -->
@@ -797,6 +838,32 @@
 
     // State pengguna yang sedang dibuka modal detailnya
     let activeDetailUser = null;
+
+    /**
+     * Toggle Tampilan Peran Tambahan pada Tabel Journal Manager
+     */
+    function toggleMoreJmRoles(userId, btn) {
+        const target = document.getElementById('more-jm-roles-' + userId);
+        if (!target) return;
+
+        const isHidden = target.classList.contains('hidden');
+        const icon = btn.querySelector('svg');
+        const count = btn.getAttribute('data-count') || '';
+
+        if (isHidden) {
+            target.classList.remove('hidden');
+            btn.setAttribute('data-expanded', 'true');
+            btn.querySelector('span').textContent = 'Tutup';
+            btn.classList.add('bg-gray-200');
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            target.classList.add('hidden');
+            btn.setAttribute('data-expanded', 'false');
+            btn.querySelector('span').textContent = `+${count}`;
+            btn.classList.remove('bg-gray-200');
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
 
     /**
      * Buka modal detail profil pengguna lengkap
