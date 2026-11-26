@@ -59,7 +59,7 @@ class JournalSwitchController extends Controller
         }
 
         $meta = UserRole::roleMeta($targetRole);
-        $message = "Konteks jurnal aktif berhasil dialihkan ke {$journal->name}.";
+        $message = "Anda sekarang bekerja di {$journal->name}.";
 
         return redirect()
             ->route($meta['route'])

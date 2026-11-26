@@ -95,7 +95,7 @@ class JournalSwitchTest extends TestCase
 
         $response->assertRedirect(route('journalmanager.issues.index'));
         $response->assertSessionHas('active_journal_id', $this->journalB->id);
-        $response->assertSessionHas('journal_switched_toast', "Konteks jurnal aktif berhasil dialihkan ke {$this->journalB->name}.");
+        $response->assertSessionHas('journal_switched_toast', "Anda sekarang bekerja di {$this->journalB->name}.");
 
         // Periksa bahwa pengaturan memuat informasi Jurnal B setelah beralih
         $settingsResponse = $this->actingAs($user)

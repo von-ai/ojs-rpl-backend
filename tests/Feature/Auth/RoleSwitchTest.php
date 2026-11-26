@@ -60,7 +60,7 @@ class RoleSwitchTest extends TestCase
 
         $resSectionEditor->assertRedirect(route('section-editor.submissions.index'));
         $resSectionEditor->assertSessionHas('active_role', 'section_editor');
-        $resSectionEditor->assertSessionHas('role_switched_toast', 'Peran aktif berhasil dialihkan ke Editor Bagian.');
+        $resSectionEditor->assertSessionHas('role_switched_toast', 'Anda sekarang berperan sebagai Editor Bagian.');
 
         // 2. Beralih ke peran Mitra Bestari (reviewer)
         $resReviewer = $this->actingAs($user)->post(route('role.switch'), [
@@ -69,7 +69,7 @@ class RoleSwitchTest extends TestCase
 
         $resReviewer->assertRedirect(route('reviewer.assignments.index'));
         $resReviewer->assertSessionHas('active_role', 'reviewer');
-        $resReviewer->assertSessionHas('role_switched_toast', 'Peran aktif berhasil dialihkan ke Mitra Bestari.');
+        $resReviewer->assertSessionHas('role_switched_toast', 'Anda sekarang berperan sebagai Mitra Bestari.');
 
         // 3. Beralih ke peran Penulis (author)
         $resAuthor = $this->actingAs($user)->post(route('role.switch'), [
