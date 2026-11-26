@@ -32,6 +32,11 @@ class RoleSwitchController extends Controller
 
         $request->session()->put('active_role', $roleCode);
 
+        $targetJournal = $user->activeJournal($roleCode);
+        if ($targetJournal) {
+            $request->session()->put('active_journal_id', $targetJournal->id);
+        }
+
         $meta = UserRole::roleMeta($roleCode);
         $message = "Peran aktif berhasil dialihkan ke {$meta['label']}.";
 

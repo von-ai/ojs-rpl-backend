@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Jobs\ScanFile;
+use App\Services\Security\MalwareScannerInterface;
 use Database\Factories\FileEntryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,16 @@ class FileEntry extends Model
     {
         static::created(function (self $file) {
             if ($file->virus_scan_status === 'pending') {
+                if (app()->isLocal() && config('filesecurity.driver') === 'mock') {
+                    try {
+                        (new ScanFile($file->id))->handle(app(MalwareScannerInterface::class));
+
+                        return;
+                    } catch (\Throwable) {
+                        // Fall back to queue
+                    }
+                }
+
                 ScanFile::dispatch($file->id);
             }
         });

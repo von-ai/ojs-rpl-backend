@@ -6,6 +6,7 @@ use App\Jobs\ProcessOutboxJob;
 use App\Jobs\PruneExpiredChallengesJob;
 use App\Jobs\ScanFile;
 use App\Models\FileEntry;
+use App\Services\Security\MalwareScannerInterface;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -42,16 +43,26 @@ Schedule::call(fn () => DB::table('manuscript_upload_sessions')->where('expires_
 // Dijadwalkan pukul 02:00 WITA (UTC+8) saat beban sistem terendah
 Schedule::job(new BackupDatabaseToAzureJob)->dailyAt('02:00')->timezone('Asia/Makassar');
 
-Artisan::command('files:scan-pending', function () {
+Artisan::command('files:scan-pending {--sync : Jalankan pemindaian secara langsung tanpa antrean}', function () {
     $count = 0;
-    FileEntry::whereIn('virus_scan_status', ['pending', 'error'])->chunkById(100, function ($files) use (&$count) {
+    $scanner = $this->option('sync') ? app(MalwareScannerInterface::class) : null;
+    FileEntry::whereIn('virus_scan_status', ['pending', 'error'])->chunk(100, function ($files) use (&$count, $scanner) {
         foreach ($files as $file) {
-            ScanFile::dispatch($file->id);
-            $count++;
+            if ($scanner) {
+                try {
+                    (new ScanFile($file->id))->handle($scanner);
+                    $count++;
+                } catch (Throwable $e) {
+                    $this->warn("File {$file->id} ({$file->storage_path}): {$e->getMessage()}");
+                }
+            } else {
+                ScanFile::dispatch($file->id);
+                $count++;
+            }
         }
     });
-    $this->info("{$count} berkas masuk antrean pemindaian.");
-})->purpose('Antrekan ulang pemindaian berkas yang belum terverifikasi');
+    $this->info("{$count} berkas ".($this->option('sync') ? 'berhasil dipindai secara langsung.' : 'masuk antrean pemindaian.'));
+})->purpose('Antrekan ulang atau jalankan pemindaian berkas yang belum terverifikasi');
 
 Artisan::command('metrics:forget-visitors', function () {
     DB::table('article_metrics')

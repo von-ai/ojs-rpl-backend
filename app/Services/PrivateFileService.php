@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Jobs\ScanFile;
 use App\Models\FileEntry;
 use App\Models\User;
+use App\Services\Security\MalwareScannerInterface;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -31,9 +34,19 @@ class PrivateFileService
 
     public function stream(FileEntry $file, ?string $downloadName = null): StreamedResponse
     {
+        if ($file->virus_scan_status === 'pending' && app()->isLocal() && config('filesecurity.driver') === 'mock') {
+            try {
+                (new ScanFile($file->id))->handle(app(MalwareScannerInterface::class));
+                $file->refresh();
+            } catch (\Throwable) {
+                // Ignore and fall through to abort_unless
+            }
+        }
+
         abort_unless($file->virus_scan_status === 'clean', 423, 'Berkas belum lulus pemindaian keamanan.');
         $path = $file->storage_path;
         abort_if(! is_string($path) || $path === '' || str_contains($path, "\0") || preg_match('~(^|[\\\\/])\.\.([\\\\/]|$)~', $path) || str_starts_with($path, '/'), 404);
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk($file->storage_disk ?: 'azure');
         abort_unless($disk->exists($path), 404, 'Berkas fisik tidak ditemukan.');
         if ($file->checksum_sha256) {

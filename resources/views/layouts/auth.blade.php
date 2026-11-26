@@ -43,7 +43,7 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 py-8 sm:py-12">
+        <main class="grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 py-6 sm:py-8 lg:py-10">
             @yield('content')
         </main>
 

@@ -596,6 +596,38 @@ class SectionEditorWorkflowTest extends TestCase
         $this->assertTrue($response->headers->get('content-disposition') !== null);
     }
 
+    public function test_section_editor_dapat_mengunduh_berkas_anonim_putaran_telaah(): void
+    {
+        $anonFile = FileEntry::create([
+            'original_name' => 'Naskah_Anonim_Round1.pdf',
+            'storage_path' => 'submissions/anon-round1.pdf',
+            'byte_size' => 10240,
+            'mime_type' => 'application/pdf',
+            'checksum_sha256' => hash('sha256', 'anon dummy content'),
+            'virus_scan_status' => 'clean',
+        ]);
+
+        Storage::disk('azure')->put($anonFile->storage_path, 'anon dummy content');
+
+        ReviewRound::create([
+            'submission_id' => $this->submission->id,
+            'round' => 1,
+            'status' => 'active',
+            'anonymized_file_id' => $anonFile->id,
+            'reviewer_title' => 'Judul Naskah Anonim Bebas Identitas',
+            'minimum_completed_reviews' => 2,
+        ]);
+
+        $response = $this->actingAs($this->sectionEditor)
+            ->get(route('section-editor.submissions.files.download', [
+                'id' => $this->submission->id,
+                'fileId' => $anonFile->id,
+            ]));
+
+        $response->assertOk();
+        $this->assertTrue($response->headers->get('content-disposition') !== null);
+    }
+
     public function test_halaman_detail_section_editor_mematuhi_standar_kebersihan_ui(): void
     {
         $response = $this->actingAs($this->sectionEditor)

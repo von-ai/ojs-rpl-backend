@@ -59,10 +59,10 @@
 
     <!-- Bidang Fokus / Keilmuan (Taksonomi Ilmiah) -->
     @if(!empty($submission['subject_area']))
-        <div class="pt-2 border-t border-gray-100 text-xs">
-            <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200/70 space-y-1">
-                <span class="font-semibold text-gray-500 block text-[11px] uppercase tracking-wider">Bidang Fokus / Keilmuan</span>
-                <span class="text-gray-900 font-bold block">{{ $submission['subject_area'] }}</span>
+        <div class="space-y-1.5 pt-3 border-t border-gray-100">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Bidang Fokus / Keilmuan</h3>
+            <div class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                {{ $submission['subject_area'] }}
             </div>
         </div>
     @endif
