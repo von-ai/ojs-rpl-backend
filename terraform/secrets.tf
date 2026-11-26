@@ -9,7 +9,7 @@ locals {
   storage_primary_blob_endpoint = var.create_storage_account ? azurerm_storage_account.storage[0].primary_blob_endpoint : (length(data.azurerm_storage_account.existing) > 0 ? data.azurerm_storage_account.existing[0].primary_blob_endpoint : "https://${var.existing_storage_account_name}.blob.core.windows.net/")
   storage_container_manuscripts = var.storage_container_name
   storage_container_backups     = "sirida-backups"
-  storage_rg_name               = var.create_storage_account ? (var.separate_storage_resource_group ? azurerm_resource_group.storage_rg[0].name : azurerm_resource_group.rg.name) : (var.existing_storage_resource_group_name != "" ? var.existing_storage_resource_group_name : (var.storage_resource_group_name != "" ? var.storage_resource_group_name : "rg-${var.project_name}-storage-${var.environment}"))
+  storage_rg_name               = var.create_storage_account ? azurerm_resource_group.storage_rg[0].name : (var.existing_storage_resource_group_name != "" ? var.existing_storage_resource_group_name : (var.storage_resource_group_name != "" ? var.storage_resource_group_name : "rg-${var.project_name}-storage-${var.environment}"))
 
   common_secrets = concat(
     [
