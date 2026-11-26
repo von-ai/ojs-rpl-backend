@@ -287,7 +287,7 @@ class PublicJournalViewModel
             if (Schema::hasTable('submissions')) {
                 $inPress = Submission::with(['contributors', 'section'])
                     ->when($this->journal, fn ($q) => $q->where('journal_id', $this->journal->id))
-                    ->whereIn('status', ['accepted', 'in_production'])
+                    ->whereIn('status', ['accepted', 'in_production', 'ready_for_issue', 'scheduled'])
                     ->latest('updated_at')
                     ->take(5)
                     ->get();
@@ -371,7 +371,7 @@ class PublicJournalViewModel
             $acceptanceRate = '0%';
             if (Schema::hasTable('submissions')) {
                 $totalSubmissions = Submission::count();
-                $acceptedSubmissions = Submission::whereIn('status', ['published', 'accepted', 'in_production'])->count();
+                $acceptedSubmissions = Submission::whereIn('status', ['published', 'accepted', 'in_production', 'ready_for_issue', 'scheduled'])->count();
                 if ($totalSubmissions > 0) {
                     $rate = round(($acceptedSubmissions / $totalSubmissions) * 100, 1);
                     $acceptanceRate = $rate.'%';

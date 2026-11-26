@@ -146,6 +146,10 @@ class EicSubmissionsViewModel
                 'label' => 'Siap Terbit',
                 'badge_class' => 'bg-emerald-50 text-emerald-800 border border-emerald-200',
             ],
+            'scheduled' => [
+                'label' => 'Terjadwal Terbit',
+                'badge_class' => 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+            ],
             'published' => [
                 'label' => 'Telah Terbit',
                 'badge_class' => 'bg-green-50 text-green-800 border border-green-200',
