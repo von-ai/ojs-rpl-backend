@@ -419,3 +419,10 @@ function initMobileNavigation() {
         });
     });
 }
+
+// Pastikan halaman admin/portal tidak menampilkan data basi dari bfcache saat tombol Back/Forward ditekan
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted && /^\/(sysadmin|journalmanager|eic|section-editor|reviewer|copyeditor|layouteditor|proofreader|author|dashboard)(\/|$)/.test(window.location.pathname)) {
+        window.location.reload();
+    }
+});
