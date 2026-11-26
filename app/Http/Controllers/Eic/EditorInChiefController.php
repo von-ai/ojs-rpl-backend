@@ -54,6 +54,7 @@ class EditorInChiefController extends Controller
             ->get();
 
         $recentDecisions = EditorialDecision::with(['submission.author', 'decider'])
+            ->whereHas('submission')
             ->latest('sent_at')
             ->limit(5)
             ->get();
