@@ -13,6 +13,8 @@ async function handleRequest(request) {
   headers.set("X-Forwarded-Host", originalHost);
   headers.set("X-Forwarded-Proto", "https");
 
+  const isDynamicPortal = /^\/(sysadmin|journalmanager|eic|section-editor|reviewer|copyeditor|layouteditor|proofreader|author|dashboard|auth|login|register|password|email)(\/|$)/.test(url.pathname);
+
   const newRequest = new Request(url.toString(), {
     method: request.method,
     headers: headers,
@@ -20,10 +22,16 @@ async function handleRequest(request) {
     redirect: "manual"
   });
 
-  const response = await fetch(newRequest);
+  const response = await fetch(newRequest, isDynamicPortal ? { cf: { cacheTtl: 0, cacheEverything: false } } : undefined);
 
   // Sesuaikan header Location pada response redirect (301, 302, 307, 308)
   const responseHeaders = new Headers(response.headers);
+  if (isDynamicPortal) {
+    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, private");
+    responseHeaders.set("Pragma", "no-cache");
+    responseHeaders.set("Expires", "0");
+    responseHeaders.set("CDN-Cache-Control", "no-store");
+  }
   const location = responseHeaders.get("Location");
   if (location && location.includes(targetHost)) {
     responseHeaders.set("Location", location.replace(targetHost, originalHost));

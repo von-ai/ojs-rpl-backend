@@ -21,8 +21,40 @@ class SecurityHeaders
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
-        if ($request->user() || $request->is('login', 'register', 'password/*', 'email/*')) {
-            $response->headers->set('Cache-Control', 'no-store, private');
+        $isNoCacheRoute = $request->user() !== null
+            || $request->is(
+                'login',
+                'register',
+                'password/*',
+                'email/*',
+                'dashboard',
+                'auth/*',
+                'sysadmin',
+                'sysadmin/*',
+                'journalmanager',
+                'journalmanager/*',
+                'eic',
+                'eic/*',
+                'section-editor',
+                'section-editor/*',
+                'reviewer',
+                'reviewer/*',
+                'copyeditor',
+                'copyeditor/*',
+                'layouteditor',
+                'layouteditor/*',
+                'proofreader',
+                'proofreader/*',
+                'author',
+                'author/*'
+            );
+
+        if ($isNoCacheRoute) {
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', '0');
+            $response->headers->set('CDN-Cache-Control', 'no-store');
+            $response->headers->set('Surrogate-Control', 'no-store');
         }
 
         return $response;
