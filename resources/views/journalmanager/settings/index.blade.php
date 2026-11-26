@@ -3,16 +3,16 @@
 @section('title', 'Pengaturan Jurnal & Kebijakan Editorial — Portal Journal Manager')
 
 @section('content')
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="max-w-7xl mx-auto space-y-5">
 
     <!-- Header Halaman & Kontrol Mode Tampilan / Edit -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 pb-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
             <div class="flex items-center gap-2.5">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                     Pengaturan Jurnal & Kebijakan Editorial
                 </h1>
-                <span id="mode-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                <span id="mode-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-800 text-white">
                     Mode Baca
                 </span>
             </div>

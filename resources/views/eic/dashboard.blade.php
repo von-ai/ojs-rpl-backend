@@ -62,11 +62,9 @@
                         data-tooltip="Naskah Prioritas Menunggu Tindakan"
                         data-tooltip-desc="Daftar naskah aktif yang memerlukan skrining awal, pendelegasian editor bagian, atau keputusan akhir"
                     >
-                        <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                        </div>
+                        <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
                         <h2 class="text-sm font-bold text-gray-900 leading-tight truncate">
                             Naskah Prioritas Menunggu Tindakan
                         </h2>
@@ -141,11 +139,9 @@
                         data-tooltip="Keputusan Editorial Terbaru"
                         data-tooltip-desc="Rekaman surat keputusan resmi terakhir yang diterbitkan Pemimpin Redaksi"
                     >
-                        <div class="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
+                        <svg class="w-4 h-4 text-gray-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         <h3 class="text-sm font-semibold text-gray-900 leading-tight truncate">
                             Keputusan Editorial Terbaru
                         </h3>
@@ -159,10 +155,10 @@
                         @foreach($recentDecisions as $dec)
                             @php
                                 $decBadge = match($dec->decision) {
-                                    'accept' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                    'revisions_required', 'resubmit' => 'bg-amber-50 text-amber-800 border-amber-200',
-                                    'decline' => 'bg-rose-50 text-rose-700 border-rose-200',
-                                    default => 'bg-gray-100 text-gray-700 border-gray-200',
+                                    'accept' => 'bg-emerald-600 text-white border-emerald-600',
+                                    'revisions_required', 'resubmit' => 'bg-amber-600 text-white border-amber-600',
+                                    'decline' => 'bg-brand-maroon text-white border-brand-maroon',
+                                    default => 'bg-gray-600 text-white border-gray-600',
                                 };
                                 $decLabel = match($dec->decision) {
                                     'accept' => 'Diterima',
@@ -204,11 +200,9 @@
                         data-tooltip="Distribusi Rubrik Jurnal"
                         data-tooltip-desc="Sebaran jumlah naskah masuk berdasarkan kategori seksi ilmiah"
                     >
-                        <div class="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h7" />
-                            </svg>
-                        </div>
+                        <svg class="w-4 h-4 text-gray-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
                         <h3 class="text-sm font-semibold text-gray-900 leading-tight">
                             Distribusi Rubrik Jurnal
                         </h3>
@@ -224,7 +218,7 @@
                             <span class="text-gray-700 font-medium leading-snug line-clamp-2" title="{{ $sec->name }}">
                                 {{ $sec->name }}
                             </span>
-                            <span class="inline-flex items-center justify-center min-w-6 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums shrink-0 {{ $sec->submissions_count > 0 ? 'bg-rose-50 text-brand-maroon border border-rose-200/70' : 'bg-gray-100 text-gray-400 border border-gray-200/60' }}">
+                            <span class="inline-flex items-center justify-center min-w-6 px-2 py-0.5 rounded-md text-[11px] font-semibold tabular-nums shrink-0 {{ $sec->submissions_count > 0 ? 'bg-brand-maroon text-white' : 'bg-gray-200 text-gray-700' }}">
                                 {{ $sec->submissions_count }}
                             </span>
                         </div>

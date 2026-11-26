@@ -28,7 +28,7 @@ class LoginPageTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('BRIDA Makassar');
         $response->assertSee('Masuk ke portal jurnal');
-        $response->assertSee('Riset dan inovasi untuk Kota Makassar.');
+        $response->assertSee('Email atau nama pengguna');
     }
 
     /**

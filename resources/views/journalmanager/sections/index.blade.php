@@ -32,7 +32,7 @@
         <!-- Tenant Workspace Active Context Bar -->
         <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white border border-gray-200/90 shadow-2xs text-xs">
             <div class="flex items-center gap-2.5 min-w-0">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-brand-maroon border border-rose-200/70 shrink-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-brand-maroon text-white shrink-0">
                     Ruang Kerja Jurnal
                 </span>
                 <span class="font-semibold text-gray-900 truncate" title="{{ $journal->name }}">
@@ -146,84 +146,60 @@
                             </td>
 
                             <!-- Kolom Status Penerimaan (Bahasa Indonesia) -->
-                            <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
+                            <td class="py-3 px-4 align-middle whitespace-nowrap">
                                 @if($section['accepting_submissions'])
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-600 text-white">
                                         <span>Menerima Naskah</span>
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-600 text-white">
                                         <span>Pengajuan Ditutup</span>
                                     </span>
                                 @endif
                             </td>
 
-                            <!-- Kolom Aksi (Buka/Tutup Status Cepat & Edit Seksi) -->
-                            <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <!-- Tombol Cepat Buka / Tutup Penerimaan Naskah (Dengan Modal Konfirmasi) -->
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick='openToggleSectionStatusModal(@json($section))'
-                                            title="{{ $section['accepting_submissions'] ? 'Tutup Penerimaan Naskah' : 'Buka Penerimaan Naskah' }}"
-                                            class="w-7 h-7 inline-flex items-center justify-center rounded-lg border {{ $section['accepting_submissions'] ? 'border-amber-200 bg-amber-50/70 text-amber-700 hover:bg-amber-100 hover:border-amber-300 focus:ring-amber-400' : 'border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 focus:ring-emerald-400' }} shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2"
-                                            aria-label="{{ $section['accepting_submissions'] ? 'Tutup Penerimaan Naskah' : 'Buka Penerimaan Naskah' }}"
-                                        >
-                                            @if($section['accepting_submissions'])
-                                                <!-- Icon Gembok Terkunci (Klik untuk menutup naskah) -->
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                </svg>
-                                            @else
-                                                <!-- Icon Gembok Terbuka (Klik untuk membuka naskah) -->
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                                </svg>
-                                            @endif
-                                        </button>
-                                        <!-- Tooltip Pop-up di Atas Tombol -->
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-150 flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2.5 py-1 text-[11px] font-semibold text-white bg-gray-900 rounded-md shadow-lg">
-                                                {{ $section['accepting_submissions'] ? 'Tutup Penerimaan Naskah' : 'Buka Penerimaan Naskah' }}
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Tombol Edit Modal -->
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick='openEditSectionModal(@json($section))'
-                                            title="Edit Bidang Naskah"
-                                            class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50/70 text-gray-700 hover:bg-gray-100 hover:border-gray-300 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-gray-400"
-                                            aria-label="Edit Bidang Naskah"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            <!-- Kolom Aksi (Ikon Bersih Tanpa Kotak Pastel) -->
+                            <td class="py-3 px-4 align-middle text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button
+                                        type="button"
+                                        onclick='openToggleSectionStatusModal(@json($section))'
+                                        title="{{ $section['accepting_submissions'] ? 'Tutup Penerimaan Naskah' : 'Buka Penerimaan Naskah' }}"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-amber-700 hover:bg-gray-100 transition cursor-pointer"
+                                        aria-label="{{ $section['accepting_submissions'] ? 'Tutup Penerimaan Naskah' : 'Buka Penerimaan Naskah' }}"
+                                    >
+                                        @if($section['accepting_submissions'])
+                                            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                             </svg>
-                                        </button>
-                                        <!-- Tooltip Pop-up di Atas Tombol -->
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-150 flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2.5 py-1 text-[11px] font-semibold text-white bg-gray-900 rounded-md shadow-lg">
-                                                Edit Bidang Naskah
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45"></div>
-                                        </div>
-                                    </div>
+                                        @else
+                                            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                            </svg>
+                                        @endif
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onclick='openEditSectionModal(@json($section))'
+                                        title="Edit Bidang Naskah"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
+                                        aria-label="Edit Bidang Naskah"
+                                    >
+                                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 px-4 text-center">
+                            <td colspan="6" class="py-10 px-4 text-center">
                                 <div class="max-w-sm mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                    </div>
+                                    <svg class="w-8 h-8 text-gray-400 mb-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                                    </svg>
                                     <h3 class="text-sm font-semibold text-gray-900 mb-1">Belum Ada Bidang Riset</h3>
                                     <p class="text-xs text-gray-500 mb-4 text-center">Tambahkan seksi bidang naskah untuk mengelompokkan tema penelitian jurnal Anda.</p>
                                     <button type="button" onclick="openCreateSectionModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-2xs transition cursor-pointer">

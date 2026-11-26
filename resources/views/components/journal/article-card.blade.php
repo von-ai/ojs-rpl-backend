@@ -82,14 +82,14 @@
         </div>
 
         @if(!empty($publishedAt))
-            <div class="text-[11px] text-gray-500 flex items-center gap-1.5">
-                <span>Terbit: <strong class="font-medium text-gray-700">{{ $publishedAt }}</strong></span>
+            <div class="text-xs text-gray-600 flex items-center gap-1.5">
+                <span>Terbit: <strong class="font-semibold text-gray-800">{{ $publishedAt }}</strong></span>
             </div>
         @endif
     </div>
 
     <!-- Article Title -->
-    <h3 class="text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand-maroon leading-snug break-words [text-wrap:balance] transition-colors">
+    <h3 class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand-maroon leading-snug break-words [text-wrap:balance] transition-colors">
         @if(!empty($readUrl) && $readUrl !== '#')
             <a href="{{ $readUrl }}">{{ $title }}</a>
         @else

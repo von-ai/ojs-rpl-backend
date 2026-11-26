@@ -121,20 +121,20 @@
             </form>
         </div>
 
-        <!-- Tabel Pengguna Jurnal (Kolom Terpisah: Kepakaran & Beban Naskah) -->
+        <!-- Tabel Pengguna Jurnal (Compact & Tanpa Scroll Horizontal Desktop) -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold text-[11px] uppercase tracking-wider">
-                        <th scope="col" class="py-3 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Nama Pengguna</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-48 whitespace-nowrap">Email</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Afiliasi</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-36">Peran Jurnal</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-40">Bidang Kepakaran</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-32 whitespace-nowrap">Beban Naskah</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-center whitespace-nowrap">Status</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-right whitespace-nowrap">Aksi</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold text-[11px] uppercase tracking-wider">
+                        <th scope="col" class="py-2.5 px-2 text-center whitespace-nowrap w-8">NO</th>
+                        <th scope="col" class="py-2.5 px-2.5">Pengguna</th>
+                        <th scope="col" class="py-2.5 px-2.5">Email</th>
+                        <th scope="col" class="py-2.5 px-2.5 hidden xl:table-cell">Afiliasi</th>
+                        <th scope="col" class="py-2.5 px-2.5">Peran</th>
+                        <th scope="col" class="py-2.5 px-2.5 hidden 2xl:table-cell">Kepakaran</th>
+                        <th scope="col" class="py-2.5 px-2.5 whitespace-nowrap">Beban</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-center whitespace-nowrap">Status</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -148,16 +148,16 @@
                         @endphp
                         <tr class="hover:bg-gray-50/80 transition-colors group">
                             <!-- 1. Kolom NO -->
-                            <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+                            <td class="py-2.5 px-2 text-center whitespace-nowrap text-xs font-normal text-gray-500 tabular-nums">
                                 {{ $rowNumber }}
                             </td>
 
                             <!-- 2. Kolom Nama Pengguna (Klik Nama Membuka Modal Detail) -->
-                            <td class="py-3.5 px-4 sm:px-5">
+                            <td class="py-2.5 px-2.5 max-w-44">
                                 <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <button 
-                                            type="button" 
+                                    <div class="flex items-center gap-1 flex-wrap">
+                                        <button
+                                            type="button"
                                             onclick="openUserDetailModal('{{ $user['id'] }}')"
                                             class="font-semibold text-gray-900 hover:text-brand-maroon transition text-left leading-tight cursor-pointer"
                                             title="Klik untuk melihat detail profil pengguna"
@@ -165,79 +165,72 @@
                                             {{ $user['name'] }}
                                         </button>
                                         @if($user['is_last_admin'])
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200 shrink-0" title="Manajer tunggal yang dilindungi aturan sistem">
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-700 text-white shrink-0" title="Manajer tunggal yang dilindungi aturan sistem">
                                                 Manajer Tunggal
                                             </span>
                                         @endif
                                         @if($user['is_last_eic'])
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800 border border-red-200 shrink-0" title="Pemimpin redaksi tunggal yang dilindungi aturan sistem">
-                                                Pemimpin Redaksi Tunggal
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-maroon text-white shrink-0" title="Pemimpin redaksi tunggal yang dilindungi aturan sistem">
+                                                EIC Tunggal
                                             </span>
                                         @endif
                                     </div>
-                                    <span class="text-[11px] text-gray-400 block mt-0.5">
-                                        Terdaftar: {{ $user['joined_at'] }}
+                                    <span class="text-[11px] text-gray-500 block mt-0.5">
+                                        {{ $user['joined_at'] }}
                                     </span>
                                 </div>
                             </td>
 
-                            <!-- 3. Kolom Email Terpisah (Font & Ukuran Konsisten) -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-xs text-gray-600 select-all">
+                            <!-- 3. Kolom Email -->
+                            <td class="py-2.5 px-2.5 max-w-48">
+                                <div class="flex items-center gap-1 min-w-0">
+                                    <span class="text-xs text-gray-700 select-all truncate" title="{{ $user['email'] }}">
                                         {{ $user['email'] }}
                                     </span>
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick="copyUserEmail('{{ $user['email'] }}', this)"
-                                            class="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition cursor-pointer"
-                                            aria-label="Salin Email"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        </button>
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2 py-0.5 text-[10px] font-semibold text-white bg-gray-900 rounded shadow-md">
-                                                Salin
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45"></div>
-                                        </div>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onclick="copyUserEmail('{{ $user['email'] }}', this)"
+                                        class="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition cursor-pointer shrink-0"
+                                        title="Salin Email"
+                                        aria-label="Salin Email"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
 
-                            <!-- 4. Kolom Afiliasi Terpisah -->
-                            <td class="py-3.5 px-4 sm:px-5">
-                                <span class="text-xs text-gray-600 block line-clamp-2" title="{{ $user['affiliation'] }}">
+                            <!-- 4. Kolom Afiliasi -->
+                            <td class="py-2.5 px-2.5 hidden xl:table-cell max-w-40">
+                                <span class="text-xs text-gray-700 block line-clamp-2 leading-snug" title="{{ $user['affiliation'] }}">
                                     {{ $user['affiliation'] }}
                                 </span>
                             </td>
 
                             <!-- 5. Kolom Peran Jurnal -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="flex flex-wrap gap-1 max-w-xs">
+                            <td class="py-2.5 px-2.5">
+                                <div class="flex flex-wrap gap-1 max-w-44">
                                     @foreach($user['roles'] as $role)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] }}">
                                             {{ $role['label'] }}
                                         </span>
                                     @endforeach
                                 </div>
                             </td>
 
-                            <!-- 6. Kolom Bidang Kepakaran (Terpisah Sendiri) -->
-                            <td class="py-3.5 px-4 sm:px-5 max-w-xs">
+                            <!-- 6. Kolom Bidang Kepakaran -->
+                            <td class="py-2.5 px-2.5 hidden 2xl:table-cell max-w-36">
                                 @if(count($user['expertise']) > 0)
                                     <div class="flex flex-wrap gap-1">
                                         @foreach(array_slice($user['expertise'], 0, 2) as $exp)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200/70">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-200 text-gray-800">
                                                 {{ $exp }}
                                             </span>
                                         @endforeach
                                         @if(count($user['expertise']) > 2)
-                                            <span 
-                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 cursor-help border border-gray-200/70"
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-200 text-gray-700 cursor-help"
                                                 title="{{ implode(', ', array_slice($user['expertise'], 2)) }}"
                                             >
                                                 +{{ count($user['expertise']) - 2 }}
@@ -249,22 +242,19 @@
                                 @endif
                             </td>
 
-                            <!-- 7. Kolom Beban Naskah (Terpisah Sendiri dengan Status Jelas) -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                            <!-- 7. Kolom Beban Naskah -->
+                            <td class="py-2.5 px-2.5 whitespace-nowrap">
                                 @if($user['active_assignments_count'] > 0)
-                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        <span>{{ $user['active_assignments_count'] }} Naskah Aktif</span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-600 text-white">
+                                        <span>{{ $user['active_assignments_count'] }} Naskah</span>
                                     </span>
                                 @else
                                     @php
                                         $hasEditorialOrReviewer = count(array_intersect($user['role_codes'] ?? [], ['manager', 'editor_in_chief', 'section_editor', 'reviewer', 'copyeditor', 'layout_editor', 'proofreader'])) > 0;
                                     @endphp
                                     @if($hasEditorialOrReviewer)
-                                        <span class="inline-flex items-center text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 px-2 py-0.5 rounded-md">
-                                            <span>Siap Ditugaskan</span>
+                                        <span class="inline-flex items-center text-[11px] font-semibold text-white bg-emerald-600 px-2 py-0.5 rounded-md">
+                                            <span>Siap</span>
                                         </span>
                                     @else
                                         <span class="text-xs text-gray-400 select-none">—</span>
@@ -273,91 +263,61 @@
                             </td>
 
                             <!-- 8. Kolom Status -->
-                            <td class="py-3.5 px-4 sm:px-5 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border {{ $user['status_badge_class'] }}">
+                            <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border {{ $user['status_badge_class'] }}">
                                     {{ $user['status_label'] }}
                                 </span>
                             </td>
 
-                            <!-- 9. Kolom Aksi (Icon Buttons dengan Tooltip Halus) -->
-                            <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1.5">
+                            <!-- 9. Kolom Aksi (Ikon Bersih Tanpa Kotak Pastel) -->
+                            <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button
+                                        type="button"
+                                        onclick="openUserDetailModal('{{ $user['id'] }}')"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-blue-700 hover:bg-gray-100 transition cursor-pointer"
+                                        title="Lihat Detail Profil"
+                                        aria-label="Lihat Detail Profil"
+                                    >
+                                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </button>
 
-                                    <!-- Tombol Aksi 1: Lihat Detail Profil Pengguna (Modal Trigger) -->
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                            class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:border-blue-300 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-blue-400"
-                                            aria-label="Lihat Detail Profil"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                        <!-- Tooltip -->
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2 py-1 text-[10px] font-semibold text-white bg-gray-900 rounded-md shadow-md">
-                                                Lihat Detail
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45"></div>
-                                        </div>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onclick="openResetPasswordModal('{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-amber-700 hover:bg-gray-100 transition cursor-pointer"
+                                        title="Reset Sandi Pengguna"
+                                        aria-label="Reset Sandi Pengguna"
+                                    >
+                                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                                        </svg>
+                                    </button>
 
-                                    <!-- Tombol Aksi 2: Reset Sandi -->
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick="openResetPasswordModal('{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
-                                            class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50/70 text-amber-700 hover:bg-amber-100 hover:border-amber-300 shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-amber-400"
-                                            aria-label="Reset Sandi Pengguna"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                            </svg>
-                                        </button>
-                                        <!-- Tooltip -->
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2 py-1 text-[10px] font-semibold text-white bg-gray-900 rounded-md shadow-md">
-                                                Reset Sandi
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Tombol Aksi 3: Ubah Peran -->
-                                    <div class="relative group/tooltip inline-block">
-                                        <button 
-                                            type="button" 
-                                            onclick="openAssignRoleModal('{{ $user['id'] }}')"
-                                            class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-brand-maroon/20 bg-brand-maroon/5 text-brand-maroon hover:bg-brand-maroon hover:text-white shadow-2xs transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/40"
-                                            aria-label="Ubah Peran Pengguna"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <!-- Tooltip (Orientasi ke Kanan agar Tidak Terpotong Layar) -->
-                                        <div class="absolute bottom-full right-0 mb-1.5 hidden group-hover/tooltip:flex group-focus/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                            <div class="px-2 py-1 text-[10px] font-semibold text-white bg-gray-900 rounded-md shadow-md">
-                                                Ubah Peran
-                                            </div>
-                                            <div class="w-1.5 h-1.5 -mt-0.5 bg-gray-900 rotate-45 self-end mr-2.5"></div>
-                                        </div>
-                                    </div>
-
+                                    <button
+                                        type="button"
+                                        onclick="openAssignRoleModal('{{ $user['id'] }}')"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
+                                        title="Ubah Peran Pengguna"
+                                        aria-label="Ubah Peran Pengguna"
+                                    >
+                                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-12 px-4 text-center">
+                            <td colspan="9" class="py-10 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                        </svg>
+                                    <svg class="w-8 h-8 text-gray-400 mb-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
                                     </div>
                                     <h3 class="text-sm font-bold text-gray-800">Tidak ada pengguna ditemukan</h3>
                                     <p class="text-xs text-gray-500 mt-1">
@@ -644,7 +604,7 @@
                         id="assign_user_email" 
                         required 
                         list="registered_users_email_list"
-                        placeholder="Masukkan alamat email akun pengguna..." 
+                        placeholder="Email pengguna"
                         class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" 
                         value=""
                     >

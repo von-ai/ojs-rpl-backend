@@ -1,6 +1,6 @@
 @extends('layouts.sysadmin')
 
-@section('title', 'Manajemen Instansi Jurnal Ilmiah — Portal System Administrator')
+@section('title', 'Kelola jurnal — Portal System Administrator')
 
 @section('content')
 <div class="max-w-7xl mx-auto space-y-5">
@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-                Manajemen Instansi Jurnal Ilmiah
+                Kelola jurnal
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Tata kelola multi-tenancy portal jurnal, penetapan nomor ISSN/E-ISSN, dan status operasional publikasi BRIDA Kota Makassar.
+                Tambah jurnal, ubah ISSN, atau atur status penerbitan.
             </p>
         </div>
 
@@ -20,7 +20,7 @@
             type="button"
             onclick="openAddJournalModal()"
             class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-none transition self-start sm:self-center cursor-pointer"
-            title="Daftarkan Instansi Jurnal Baru"
+            title="Tambah jurnal"
         >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -105,167 +105,192 @@
 
         <!-- Tabel Daftar Jurnal Ilmiah -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-gray-50/80 border-b border-gray-200 text-gray-600">
-                        <th scope="col" class="py-3 px-3 text-center whitespace-nowrap w-12 text-[11px] uppercase tracking-wider font-semibold">NO</th>
-                        <th scope="col" class="py-3 px-4 min-w-56 text-[11px] uppercase tracking-wider font-semibold">INSTANSI JURNAL</th>
-                        <th scope="col" class="py-3 px-4 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">IDENTITAS &amp; ISSN</th>
-                        <th scope="col" class="py-3 px-4 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">PENANGGUNG JAWAB</th>
-                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">TOTAL NASKAH</th>
-                        <th scope="col" class="py-3 px-4 min-w-44 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">EDISI TERKINI</th>
-                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">STATUS</th>
-                        <th scope="col" class="py-3 px-4 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">AKSI</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600">
+                        <th scope="col" class="py-2.5 px-2 text-center whitespace-nowrap w-8 text-[11px] uppercase tracking-wider font-semibold">NO</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-[11px] uppercase tracking-wider font-semibold">INSTANSI JURNAL</th>
+                        <th scope="col" class="py-2.5 px-2.5 whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">ISSN</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-[11px] uppercase tracking-wider font-semibold">PIC</th>
+                        <th scope="col" class="py-2.5 px-2 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">NASKAH</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-[11px] uppercase tracking-wider font-semibold">EDISI TERKINI</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">STATUS</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-center whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($viewModel->journals() as $journal)
                         <tr class="hover:bg-gray-50/70 transition duration-150">
                             <!-- Kolom NO -->
-                            <td class="py-3.5 px-3 text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+                            <td class="py-2.5 px-2 text-center whitespace-nowrap text-xs font-normal text-gray-500 tabular-nums">
                                 {{ $loop->iteration }}
                             </td>
 
                             <!-- Kolom Instansi Jurnal -->
-                            <td class="py-3.5 px-4 min-w-56">
+                            <td class="py-2.5 px-2.5 max-w-60">
                                 <div>
+                                    <button
+                                        type="button"
+                                        onclick='openEditJournalModal(@json($journal))'
+                                        class="text-left font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-xs sm:text-[13px] cursor-pointer"
+                                        title="Kelola / sunting identitas {{ $journal['name'] }}"
+                                    >
+                                        {{ $journal['name'] }}
+                                    </button>
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition block leading-snug text-xs sm:text-sm"
-                                        title="Buka website publik {{ $journal['name'] }}"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-brand-maroon font-normal mt-0.5 hover:underline"
+                                        title="Buka halaman publik /{{ $journal['slug'] }} di tab baru"
                                     >
-                                        {{ $journal['name'] }}
+                                        <span>/{{ $journal['slug'] }}</span>
+                                        <span aria-hidden="true">↗</span>
                                     </a>
-                                    <span class="inline-block text-[11px] text-gray-400 font-normal mt-0.5">
-                                        /{{ $journal['slug'] }}
-                                    </span>
                                 </div>
                             </td>
 
                             <!-- Kolom Identitas & ISSN -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
+                            <td class="py-2.5 px-2.5 whitespace-nowrap">
                                 <div class="space-y-0.5 text-xs">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-gray-400 text-[10px] font-semibold uppercase">P-ISSN</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-gray-500 text-[10px] font-semibold uppercase">P:</span>
                                         <span class="text-gray-800 font-medium tabular-nums">{{ $journal['issn'] ?? '—' }}</span>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-gray-400 text-[10px] font-semibold uppercase">E-ISSN</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-gray-500 text-[10px] font-semibold uppercase">E:</span>
                                         <span class="text-gray-800 font-medium tabular-nums">{{ $journal['eissn'] ?? '—' }}</span>
                                     </div>
                                 </div>
                             </td>
 
                             <!-- Kolom Penanggung Jawab -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <span class="font-medium text-gray-800 block text-xs truncate max-w-48" title="{{ $journal['primary_contact'] }}">
+                            <td class="py-2.5 px-2.5 max-w-36">
+                                <span class="font-medium text-gray-800 block text-xs leading-snug line-clamp-2" title="{{ $journal['primary_contact'] }}">
                                     {{ $journal['primary_contact'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Total Naskah -->
-                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 tabular-nums">
+                            <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-xs font-semibold bg-gray-200 text-gray-900 tabular-nums">
                                     {{ number_format($journal['total_submissions'], 0, ',', '.') }}
                                 </span>
                             </td>
 
                             <!-- Kolom Edisi Terkini -->
-                            <td class="py-3.5 px-4 min-w-44 max-w-xs">
+                            <td class="py-2.5 px-2.5 max-w-40">
                                 <div>
                                     @if(!empty($journal['current_issue_title']) && $journal['current_issue_title'] !== 'Belum ada terbitan')
                                         <span class="text-xs font-medium text-gray-800 block line-clamp-1 leading-snug" title="{{ $journal['current_issue_title'] }}">
                                             {{ $journal['current_issue_title'] }}
                                         </span>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 mt-0.5">
-                                            Edisi Aktif Terpublikasi
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-600 text-white mt-0.5">
+                                            Terpublikasi
                                         </span>
                                     @else
-                                        <span class="text-xs text-gray-400 italic block">
-                                            Belum ada terbitan
+                                        <span class="text-xs text-gray-500 italic block">
+                                            Belum terbit
                                         </span>
                                     @endif
                                 </div>
                             </td>
 
                             <!-- Kolom Status -->
-                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border {{ $journal['status_badge_class'] }}">
+                            <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border {{ $journal['status_badge_class'] }}">
                                     {{ $journal['status_label'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Aksi -->
-                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                <div class="inline-flex items-center gap-1.5 justify-center">
-                                    <!-- Tombol Edit Metadata Jurnal -->
+                            <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center gap-1 justify-center">
+                                    <!-- Tombol Edit Metadata Jurnal (Ikon Saja) -->
                                     <button
                                         type="button"
                                         onclick='openEditJournalModal(@json($journal))'
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-brand-maroon bg-red-50 hover:bg-brand-maroon hover:text-white border border-red-200/90 transition shadow-none cursor-pointer"
+                                        class="w-8 h-8 rounded-md inline-flex items-center justify-center text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
                                         data-tooltip="Sunting Identitas Jurnal"
+                                        title="Sunting Identitas Jurnal"
                                         aria-label="Sunting Identitas Jurnal"
                                     >
-                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                         </svg>
                                     </button>
 
-                                    <!-- Tombol Lihat Website Publik -->
+                                    <!-- Tombol Lihat Website Publik (Ikon Saja) -->
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200/90 transition shadow-none cursor-pointer"
+                                        rel="noopener noreferrer"
+                                        class="w-8 h-8 rounded-md inline-flex items-center justify-center text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer"
                                         data-tooltip="Kunjungi Website Publik"
+                                        title="Kunjungi Website Publik"
                                         aria-label="Kunjungi Website Publik"
                                     >
-                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                                         </svg>
                                     </a>
 
-                                    <!-- Tombol Ubah Status Jurnal -->
-                                    <form action="{{ route('sysadmin.journals.update-status', $journal['id']) }}" method="POST" class="inline">
-                                        @csrf
-                                        @if($journal['status'] === 'active')
+                                    <!-- Tombol Ubah Status Jurnal dengan Modal Konfirmasi -->
+                                    @if($journal['status'] === 'active')
+                                        <form
+                                            action="{{ route('sysadmin.journals.update-status', $journal['id']) }}"
+                                            method="POST"
+                                            class="inline"
+                                            data-confirm="Apakah Anda betul ingin mengarsipkan jurnal {{ $journal['name'] }}? Jurnal yang diarsipkan tidak lagi menerima pengajuan naskah baru."
+                                            data-confirm-title="Arsipkan Jurnal?"
+                                            data-confirm-btn="Ya, Arsipkan"
+                                            data-confirm-cancel="Batal"
+                                            data-confirm-type="danger"
+                                        >
+                                            @csrf
                                             <input type="hidden" name="status" value="archived">
                                             <button
                                                 type="submit"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white border border-amber-200/90 transition shadow-none cursor-pointer"
-                                                data-tooltip="Arsipkan Publikasi Jurnal"
+                                                class="min-h-7 px-2.5 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-gray-800 bg-white hover:bg-gray-800 hover:text-white hover:border-gray-800 border border-gray-300 transition shadow-2xs cursor-pointer"
+                                                title="Arsipkan Publikasi Jurnal"
                                                 aria-label="Arsipkan Publikasi Jurnal"
                                             >
-                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                                                </svg>
+                                                <span>Arsipkan</span>
                                             </button>
-                                        @else
+                                        </form>
+                                    @else
+                                        <form
+                                            action="{{ route('sysadmin.journals.update-status', $journal['id']) }}"
+                                            method="POST"
+                                            class="inline"
+                                            data-confirm="Apakah Anda ingin mengaktifkan kembali publikasi jurnal {{ $journal['name'] }}?"
+                                            data-confirm-title="Aktifkan Kembali Jurnal?"
+                                            data-confirm-btn="Ya, Aktifkan"
+                                            data-confirm-cancel="Batal"
+                                            data-confirm-type="primary"
+                                        >
+                                            @csrf
                                             <input type="hidden" name="status" value="active">
                                             <button
                                                 type="submit"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200/90 transition shadow-none cursor-pointer"
-                                                data-tooltip="Aktifkan Publikasi Jurnal"
+                                                class="min-h-7 px-2.5 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 transition shadow-2xs cursor-pointer"
+                                                title="Aktifkan Publikasi Jurnal"
                                                 aria-label="Aktifkan Publikasi Jurnal"
                                             >
-                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                                <span>Aktifkan</span>
                                             </button>
-                                        @endif
-                                    </form>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 px-4 text-center">
+                            <td colspan="8" class="py-10 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                                        </svg>
-                                    </div>
+                                    <svg class="w-8 h-8 text-gray-400 mb-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
                                     <h3 class="text-sm font-semibold text-gray-800">Tidak ada instansi jurnal</h3>
                                     <p class="text-xs text-gray-500 mt-1">
                                         Tidak ditemukan jurnal yang cocok dengan filter atau kata kunci pencarian.
@@ -319,10 +344,10 @@
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
                 <h3 id="modal-add-journal-title" class="text-base font-semibold text-gray-900">
-                    Daftarkan Instansi Jurnal Ilmiah Baru
+                    Tambah jurnal
                 </h3>
                 <p class="text-xs text-gray-500 mt-0.5">
-                    Buat entitas portal jurnal baru di bawah naungan BRIDA Kota Makassar.
+                    Isi nama dan alamat jurnal.
                 </p>
             </div>
             <button

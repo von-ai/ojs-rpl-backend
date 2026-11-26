@@ -20,7 +20,7 @@
         })();
     </script>
     <!-- Header Brand & Tombol Kontrol -->
-    <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
+    <div class="h-14 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
         <a href="{{ route('proofreader.submissions.index') }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="Portal Proofreader BRIDA Kota Makassar">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Kota Makassar" class="w-8 h-8 object-contain shrink-0 sidebar-logo transition-transform duration-200 group-hover:scale-105">

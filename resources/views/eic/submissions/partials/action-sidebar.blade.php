@@ -229,7 +229,7 @@
                                 id="desk_se_search_input"
                                 type="text" 
                                 class="editor-combobox-input w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 focus:bg-white border border-gray-300 focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 rounded-lg pl-9 pr-16 py-2.5 text-gray-900 font-semibold placeholder:font-normal placeholder:text-gray-400 transition cursor-text focus:outline-hidden"
-                                placeholder="Ketik nama atau pilih editor..."
+                                placeholder="Cari atau pilih editor"
                                 value="{{ $selectedEditorObj ? $selectedEditorObj->name : '' }}"
                                 autocomplete="off"
                                 role="combobox"

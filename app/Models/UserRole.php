@@ -74,7 +74,7 @@ class UserRole extends Model
                 'description' => 'Tata kelola edisi terbitan, anggota redaksi, dan kebijakan jurnal',
                 'route' => 'journalmanager.issues.index',
                 'prefix' => 'journalmanager',
-                'badge_class' => 'bg-purple-50 text-purple-800 border-purple-200',
+                'badge_class' => 'bg-indigo-700 text-white border-indigo-700',
             ],
             'section_editor' => [
                 'code' => 'section_editor',
@@ -83,7 +83,7 @@ class UserRole extends Model
                 'description' => 'Penugasan mitra bestari, pemantauan telaah, dan rekomendasi',
                 'route' => 'section-editor.submissions.index',
                 'prefix' => 'section-editor',
-                'badge_class' => 'bg-blue-50 text-blue-800 border-blue-200',
+                'badge_class' => 'bg-blue-700 text-white border-blue-700',
             ],
             'reviewer' => [
                 'code' => 'reviewer',
@@ -92,7 +92,7 @@ class UserRole extends Model
                 'description' => 'Evaluasi substansi naskah ilmiah dan pengiriman rekomendasi telaah',
                 'route' => 'reviewer.assignments.index',
                 'prefix' => 'reviewer',
-                'badge_class' => 'bg-blue-50 text-blue-700 border-blue-200',
+                'badge_class' => 'bg-teal-700 text-white border-teal-700',
             ],
             'copyeditor' => [
                 'code' => 'copyeditor',
@@ -101,7 +101,7 @@ class UserRole extends Model
                 'description' => 'Penyuntingan tata bahasa, gaya selingkung, dan naskah bersih',
                 'route' => 'copyeditor.submissions.index',
                 'prefix' => 'copyeditor',
-                'badge_class' => 'bg-sky-50 text-sky-800 border-sky-200',
+                'badge_class' => 'bg-cyan-700 text-white border-cyan-700',
             ],
             'layout_editor' => [
                 'code' => 'layout_editor',
@@ -110,7 +110,7 @@ class UserRole extends Model
                 'description' => 'Produksi galai publikasi dan tata letak artikel siap terbit',
                 'route' => 'layouteditor.submissions.index',
                 'prefix' => 'layouteditor',
-                'badge_class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'badge_class' => 'bg-amber-700 text-white border-amber-700',
             ],
             'proofreader' => [
                 'code' => 'proofreader',
@@ -119,7 +119,7 @@ class UserRole extends Model
                 'description' => 'Pemeriksaan bukti baca akhir dan verifikasi catatan koreksi',
                 'route' => 'proofreader.submissions.index',
                 'prefix' => 'proofreader',
-                'badge_class' => 'bg-indigo-50 text-indigo-800 border-indigo-200',
+                'badge_class' => 'bg-violet-700 text-white border-violet-700',
             ],
             'author' => [
                 'code' => 'author',
@@ -128,7 +128,7 @@ class UserRole extends Model
                 'description' => 'Pengajuan naskah penelitian, pemantauan status, dan unggah revisi',
                 'route' => 'author.submissions.index',
                 'prefix' => 'author',
-                'badge_class' => 'bg-gray-100 text-gray-700 border-gray-200',
+                'badge_class' => 'bg-gray-700 text-white border-gray-700',
             ],
             'sysadmin' => [
                 'code' => 'sysadmin',
@@ -137,7 +137,7 @@ class UserRole extends Model
                 'description' => 'Tata kelola multi-jurnal, hak akses global, dan kesehatan platform',
                 'route' => 'sysadmin.journals.index',
                 'prefix' => 'sysadmin',
-                'badge_class' => 'bg-rose-50 text-rose-800 border-rose-200',
+                'badge_class' => 'bg-slate-900 text-white border-slate-900',
             ],
         ];
     }
@@ -191,16 +191,16 @@ class UserRole extends Model
     public static function roleBadgeClass(string $roleCode): string
     {
         return match ($roleCode) {
-            'sysadmin' => 'bg-rose-50 text-rose-800 border-rose-200',
-            'manager' => 'bg-purple-50 text-purple-800 border-purple-200',
+            'sysadmin' => 'bg-slate-900 text-white border-slate-900',
+            'manager' => 'bg-indigo-700 text-white border-indigo-700',
             'editor_in_chief' => 'bg-brand-maroon text-white border-brand-maroon',
-            'section_editor' => 'bg-blue-50 text-blue-800 border-blue-200',
-            'copyeditor' => 'bg-sky-50 text-sky-800 border-sky-200',
-            'layout_editor' => 'bg-amber-50 text-amber-800 border-amber-200',
-            'proofreader' => 'bg-indigo-50 text-indigo-800 border-indigo-200',
-            'reviewer' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'author' => 'bg-gray-100 text-gray-700 border-gray-200',
-            default => 'bg-gray-100 text-gray-700 border-gray-200',
+            'section_editor' => 'bg-blue-700 text-white border-blue-700',
+            'copyeditor' => 'bg-cyan-700 text-white border-cyan-700',
+            'layout_editor' => 'bg-amber-700 text-white border-amber-700',
+            'proofreader' => 'bg-violet-700 text-white border-violet-700',
+            'reviewer' => 'bg-teal-700 text-white border-teal-700',
+            'author' => 'bg-gray-700 text-white border-gray-700',
+            default => 'bg-gray-700 text-white border-gray-700',
         };
     }
 }

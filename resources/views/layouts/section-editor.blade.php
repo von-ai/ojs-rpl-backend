@@ -16,7 +16,7 @@
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased text-gray-900 bg-canvas h-dvh min-h-dvh flex flex-col lg:flex-row overflow-hidden pb-[env(safe-area-inset-bottom)]">
+<body class="portal-workspace font-sans antialiased text-gray-900 bg-canvas h-dvh min-h-dvh flex flex-col lg:flex-row overflow-hidden pb-[env(safe-area-inset-bottom)]">
 
     <!-- Sidebar Navigasi Editor Bagian -->
     <x-section-editor.sidebar />
@@ -28,7 +28,7 @@
         <x-section-editor.header />
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main class="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 space-y-4">
             @yield('content')
         </main>
     </div>
