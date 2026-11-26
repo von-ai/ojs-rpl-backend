@@ -12,14 +12,14 @@
 <!-- Mobile Off-Canvas Navigation Drawer -->
 <div
     id="mobile-nav-drawer"
-    class="fixed inset-y-0 right-0 z-50 w-full max-w-[310px] sm:max-w-xs bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-full lg:hidden border-l border-gray-200"
+    class="fixed inset-y-0 right-0 z-50 w-full max-w-[310px] sm:max-w-xs bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-full lg:hidden border-l border-divider"
     role="dialog"
     aria-modal="true"
     aria-label="Menu Navigasi Mobile"
     aria-hidden="true"
 >
     <!-- Drawer Header -->
-    <div class="px-4 py-3.5 border-b border-gray-200 flex items-center justify-between gap-3 bg-gray-50/80 shrink-0">
+    <div class="px-4 py-3.5 border-b border-divider flex items-center justify-between gap-3 bg-gray-50/80 shrink-0">
         <a href="{{ $journal && request()->route()?->parameter('journalSlug') ? url('/' . $journal->slug) : url('/') }}" class="flex items-center gap-2.5 min-w-0" onclick="window.closeMobileNav()">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Makassar" class="w-8 h-8 object-contain shrink-0">
             <div class="flex flex-col min-w-0">
@@ -37,7 +37,7 @@
             id="mobile-nav-close-btn"
             type="button"
             onclick="window.closeMobileNav()"
-            class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200/80 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 shadow-2xs shrink-0"
+            class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 shadow-2xs shrink-0"
             aria-label="Tutup menu navigasi"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +55,7 @@
                 name="q"
                 placeholder="Cari artikel ilmiah..."
                 value="{{ request('q') }}"
-                class="w-full pl-9 pr-3 py-2 text-xs bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
+                class="w-full pl-9 pr-3 py-2 text-xs bg-gray-100 border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon transition-all"
             >
             <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -148,7 +148,7 @@
         </div>
 
         <!-- Fast CTA & Auth Section in Mobile Drawer -->
-        <div class="pt-2 border-t border-gray-200 space-y-2">
+        <div class="pt-2 border-t border-divider space-y-2">
             <div class="px-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                 Aksi Cepat
             </div>
@@ -165,7 +165,7 @@
             </a>
 
             @auth
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+                <div class="bg-gray-50 border border-outline-variant rounded-lg p-3 space-y-2">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
                             {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
@@ -176,11 +176,11 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 pt-1 border-t border-gray-200">
+                    <div class="flex items-center gap-2 pt-1 border-t border-divider">
                         <a
                             href="{{ auth()->user()->isSysAdmin() ? route('sysadmin.journals.index', absolute: false) : route('dashboard', absolute: false) }}"
                             onclick="window.closeMobileNav()"
-                            class="flex-1 text-center py-1.5 px-2 bg-white hover:bg-gray-100 text-gray-700 font-medium text-xs rounded border border-gray-200 transition-colors"
+                            class="flex-1 text-center py-1.5 px-2 bg-white hover:bg-gray-100 text-gray-700 font-medium text-xs rounded border border-outline-variant transition-colors"
                         >
                             Dashboard
                         </a>
@@ -201,7 +201,7 @@
                     <a
                         href="{{ route('login', absolute: false) }}"
                         onclick="window.closeMobileNav()"
-                        class="text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded-lg transition-colors border border-gray-200"
+                        class="text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded-lg transition-colors border border-outline-variant"
                     >
                         Masuk
                     </a>
@@ -218,7 +218,7 @@
     </div>
 
     <!-- Drawer Footer -->
-    <div class="p-3.5 bg-gray-50 border-t border-gray-200 text-[10px] text-gray-500 space-y-1 shrink-0">
+    <div class="p-3.5 bg-gray-50 border-t border-divider text-[10px] text-gray-500 space-y-1 shrink-0">
         <div class="flex items-center justify-between">
             <span><strong>p-ISSN:</strong> {{ $journal?->issn ?: '2746-8194' }}</span>
             <span><strong>e-ISSN:</strong> {{ $journal?->eissn ?: '2746-8208' }}</span>

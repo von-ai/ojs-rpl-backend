@@ -2,7 +2,7 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
     <!-- Left 2-Column Catalog Search Panel -->
-    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 lg:p-6 flex flex-col justify-between">
+    <div class="lg:col-span-2 bg-white rounded-xl border border-outline-variant p-4 sm:p-5 lg:p-6 flex flex-col justify-between">
         <div>
             <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-snug [text-wrap:balance]">
                 Cari artikel jurnal
@@ -22,7 +22,7 @@
                             value="{{ request('q') }}"
                             aria-label="Cari artikel"
                             placeholder="Ketik judul, penulis, atau kata kunci..."
-                            class="w-full min-h-12 pl-10 pr-8 py-2.5 text-sm sm:text-base bg-gray-50/90 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon focus:bg-white transition-all placeholder:text-gray-500 text-gray-900"
+                            class="w-full min-h-12 pl-10 pr-8 py-2.5 text-sm sm:text-base bg-gray-50/90 border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon focus:bg-white transition-all placeholder:text-gray-500 text-gray-900"
                         >
                         <svg class="w-4.5 h-4.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -67,7 +67,7 @@
         </div>
 
         <!-- Category Filter Pills (Responsive Horizontal Scroll with Right Fade Mask on Mobile, Wrapped on Desktop) -->
-        <div class="pt-3.5 border-t border-gray-100">
+        <div class="pt-3.5 border-t border-divider">
             <div class="flex items-center justify-between gap-2 mb-2">
                 <span class="text-xs sm:text-sm font-semibold text-gray-700">
                     Topik

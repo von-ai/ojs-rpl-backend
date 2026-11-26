@@ -1,6 +1,6 @@
 @props(['announcement' => null])
 
-<div class="bg-gray-50/90 border-b border-gray-200/80 px-3.5 sm:px-6 lg:px-8 py-2 text-xs text-gray-700 w-full max-w-full">
+<div class="bg-gray-50/90 border-b border-divider px-3.5 sm:px-6 lg:px-8 py-2 text-xs text-gray-700 w-full max-w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2.5 min-w-0 w-full">
         <div class="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-brand-maroon text-white uppercase tracking-wider shrink-0 shadow-2xs">

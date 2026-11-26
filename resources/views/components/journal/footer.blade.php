@@ -1,6 +1,6 @@
 @props(['footerData' => null])
 
-<footer class="bg-white border-t border-gray-200 mt-10 sm:mt-12 text-xs text-gray-600 w-full max-w-full overflow-hidden">
+<footer class="bg-white border-t border-divider mt-10 sm:mt-12 text-xs text-gray-600 w-full max-w-full overflow-hidden">
     <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             <!-- Col 1: Brand Info -->
@@ -22,7 +22,7 @@
 
             <!-- Col 2: Sekretariat Redaksi -->
             <div class="space-y-2">
-                <h4 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] pb-1 border-b border-gray-100">Sekretariat Redaksi</h4>
+                <h4 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] pb-1 border-b border-divider">Sekretariat Redaksi</h4>
                 <p class="text-xs text-gray-500 leading-relaxed whitespace-pre-line font-normal break-words">
                     {{ $footerData['address'] ?? "Gedung Balai Kota Makassar, Lantai 3\nJl. Ahmad Yani No. 2, Kel. Baru, Kec. Ujung Pandang\nKota Makassar, Sulawesi Selatan 90111" }}
                 </p>
@@ -34,7 +34,7 @@
 
             <!-- Col 3: Pengindeksan & Lisensi -->
             <div class="space-y-2 sm:col-span-2 md:col-span-1">
-                <h4 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] pb-1 border-b border-gray-100">Pengindeksan & Lisensi</h4>
+                <h4 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] pb-1 border-b border-divider">Pengindeksan & Lisensi</h4>
                 <p class="text-xs text-gray-500 leading-relaxed font-normal [text-wrap:pretty]">
                     Artikel dalam jurnal ini diindeks oleh: SINTA (Akreditasi Peringkat 2), Garuda, CrossRef (DOI), Google Scholar, dan Directory of Open Access Journals (DOAJ).
                 </p>
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Bottom Copyright Bar -->
-    <div class="bg-gray-50 border-t border-gray-200/80 py-3.5 px-3.5 sm:px-6 lg:px-8">
+    <div class="bg-gray-50 border-t border-divider py-3.5 px-3.5 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-[11px] text-gray-500 text-center sm:text-left">
             <p>&copy; {{ date('Y') }} {{ $footerData['copyright'] ?? 'Badan Riset dan Inovasi Daerah Kota Makassar. Seluruh hak cipta dilindungi undang-undang.' }}</p>
             <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-4 font-normal text-gray-600">

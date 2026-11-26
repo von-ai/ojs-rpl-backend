@@ -1,8 +1,8 @@
 @props(['inPress' => []])
 
-<div class="bg-white rounded-lg sm:rounded-xl border border-gray-200/90 p-4 sm:p-6 space-y-4">
+<div class="bg-white rounded-lg sm:rounded-xl border border-outline-variant p-4 sm:p-6 space-y-4">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+    <div class="flex items-center justify-between border-b border-divider pb-3">
         <div>
             <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-0.5">
                 Terbitan Mendatang
@@ -19,7 +19,7 @@
     <!-- Dynamic Items List -->
     <div class="space-y-3.5">
         @forelse ($inPress as $item)
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200/80 hover:border-brand-maroon/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div class="bg-gray-50 p-4 rounded-lg border border-outline-variant hover:border-brand-maroon/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div class="space-y-1.5 flex-1">
                     <div class="flex items-center gap-2 text-[11px] text-gray-500">
                         <span>Online First: <strong class="font-medium text-gray-700">{{ $item['online_first_date'] ?? 'Online First' }}</strong></span>

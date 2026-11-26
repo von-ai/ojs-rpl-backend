@@ -1,8 +1,8 @@
 @props(['issue' => null])
 
-<div id="edisi-terkini" class="bg-white rounded-xl border border-gray-200/90 overflow-hidden">
+<div id="edisi-terkini" class="bg-white rounded-xl border border-outline-variant overflow-hidden">
     <!-- Header Row (Responsive: Compact on Mobile, Full on Desktop) -->
-    <div class="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between gap-2">
+    <div class="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-50/80 border-b border-divider flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider bg-red-100/70 text-brand-maroon whitespace-nowrap shrink-0">
                 Edisi Terkini
@@ -34,12 +34,12 @@
         </div>
 
         <!-- Compact 1-Row Stats Strip -->
-        <div class="grid grid-cols-3 gap-1 py-2 px-1.5 bg-gray-50/90 rounded-lg border border-gray-200/70 text-center">
+        <div class="grid grid-cols-3 gap-1 py-2 px-1.5 bg-gray-50/90 rounded-lg border border-outline-variant text-center">
             <div class="px-1">
                 <strong class="text-gray-900 font-bold text-xs block tabular-nums">{{ $issue['total_articles'] ?? '0' }}</strong>
                 <span class="text-[10px] text-gray-500">Artikel</span>
             </div>
-            <div class="border-x border-gray-200/80 px-1">
+            <div class="border-x border-divider px-1">
                 <strong class="text-gray-900 font-bold text-xs block tabular-nums">{{ number_format($issue['total_downloads'] ?? 0) }}</strong>
                 <span class="text-[10px] text-gray-500">Unduhan</span>
             </div>
@@ -77,7 +77,7 @@
     <!-- Desktop View (md:grid): 2-Column Balanced Editorial Grid -->
     <div class="hidden md:grid md:grid-cols-12 md:gap-6 p-6 items-stretch">
         <!-- Left: Issue Identity Card (md:col-span-4) -->
-        <div class="md:col-span-4 min-w-0 bg-gray-50/90 rounded-xl p-5 border border-gray-200/70 flex flex-col justify-between space-y-4">
+        <div class="md:col-span-4 min-w-0 bg-gray-50/90 rounded-xl p-5 border border-outline-variant flex flex-col justify-between space-y-4">
             <div>
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                     TERBITAN RESMI
@@ -90,7 +90,7 @@
                 </p>
             </div>
 
-            <div class="space-y-2 pt-3 border-t border-gray-200/70 text-xs">
+            <div class="space-y-2 pt-3 border-t border-divider text-xs">
                 <div class="flex items-center justify-between text-gray-600 gap-2">
                     <span class="shrink-0">Jumlah Artikel</span>
                     <strong class="text-gray-900 font-bold tabular-nums truncate">{{ $issue['total_articles'] ?? '0' }} Naskah</strong>
@@ -117,7 +117,7 @@
                             href="https://doi.org/{{ $issue['doi'] }}"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-gray-100 hover:bg-red-50 text-[11px] font-mono text-gray-700 hover:text-brand-maroon transition-colors group border border-gray-200/80 max-w-full"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-gray-100 hover:bg-red-50 text-[11px] font-mono text-gray-700 hover:text-brand-maroon transition-colors group border border-outline-variant max-w-full"
                             title="Buka DOI Resolver (Tautan Eksternal)"
                         >
                             <span class="font-bold text-brand-maroon shrink-0">DOI</span>
@@ -147,7 +147,7 @@
                     <span>Lihat Seluruh Artikel Edisi Ini</span>
                 </a>
 
-                <a href="#artikel-terbit" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:text-brand-maroon bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-all shrink-0">
+                <a href="#artikel-terbit" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:text-brand-maroon bg-white hover:bg-gray-50 border border-outline-variant rounded-lg transition-all shrink-0">
                     <span>Gulir ke Daftar Artikel</span>
                     <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>

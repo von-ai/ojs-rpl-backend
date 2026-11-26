@@ -59,9 +59,9 @@
     }
 @endphp
 
-<div class="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 hover:border-brand-maroon/40 transition-all space-y-3 group shadow-none">
+<div class="bg-white rounded-xl border border-outline-variant p-4 sm:p-5 transition-all space-y-3 group shadow-none">
     <!-- Top Metadata Badges & Dates -->
-    <div class="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-gray-100 pb-2.5">
+    <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex items-center flex-wrap gap-2">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 tracking-normal">
                 <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
     @endif
 
     <!-- Bottom Footer Row: DOI, Metrics & Action Buttons -->
-    <div class="pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+    <div class="pt-3 border-t border-divider flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <!-- Left: DOI & Metrics -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3 text-gray-500 min-w-0">
             @if(!empty($doi))
@@ -159,7 +159,7 @@
         <!-- Right: Action Buttons (Lihat Abstrak + Unduh Galai PDF) -->
         <div class="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0 shrink-0">
             @if(!empty($readUrl) && $readUrl !== '#')
-                <a href="{{ $readUrl }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:text-brand-maroon bg-gray-50 hover:bg-gray-100 active:scale-[0.98] border border-gray-200 rounded-lg transition-all">
+                <a href="{{ $readUrl }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:text-brand-maroon bg-gray-50 hover:bg-gray-100 active:scale-[0.98] border border-outline-variant rounded-lg transition-all">
                     <span>Lihat Abstrak</span>
                     <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
