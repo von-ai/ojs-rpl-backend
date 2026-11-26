@@ -37,6 +37,9 @@ class Journal extends Model
         'open_access_policy',
         'peer_review_policy',
         'license',
+        'author_guideline_path',
+        'author_guideline_filename',
+        'author_guideline_updated_at',
         'status',
         'current_issue_id',
         'version',
@@ -45,7 +48,16 @@ class Journal extends Model
     protected $casts = [
         'apc_enabled' => 'boolean',
         'apc_amount' => 'decimal:2',
+        'author_guideline_updated_at' => 'datetime',
     ];
+
+    /**
+     * Memeriksa apakah jurnal memiliki berkas template / panduan penulisan yang diunggah.
+     */
+    public function hasAuthorGuidelineTemplate(): bool
+    {
+        return ! empty($this->author_guideline_path);
+    }
 
     /**
      * Memeriksa apakah jurnal memungut biaya pemrosesan naskah (APC / Berbayar)
