@@ -150,9 +150,11 @@
     window.__siridaTextScaleInitialized = true;
     var KEY = 'sirida_text_scale';
     var SCALES = ['normal', 'lg', 'xl'];
+    var currentScale;
     function getSaved() { try { return localStorage.getItem(KEY) || 'normal'; } catch (e) { return 'normal'; } }
     function apply(scale) {
         var v = SCALES.indexOf(scale) !== -1 ? scale : 'normal';
+        currentScale = v;
         var r = document.documentElement;
         r.classList.remove('text-scale-lg', 'text-scale-xl');
         r.style.fontSize = v === 'lg' ? '112.5%' : (v === 'xl' ? '125%' : '');
@@ -163,6 +165,9 @@
             var t = btn.getAttribute('data-text-scale-btn');
             if (t === 'cycle') {
                 var lbl = v === 'normal' ? 'A+' : (v === 'lg' ? 'A++' : 'A');
+                var title = v === 'xl' ? 'Kembalikan ukuran teks normal' : (v === 'lg' ? 'Perbesar ukuran teks (Sangat Besar)' : 'Perbesar ukuran teks (Besar)');
+                btn.setAttribute('aria-label', title);
+                btn.setAttribute('title', title);
                 var span = btn.querySelector('[data-text-scale-label]');
                 if (span) span.textContent = lbl;
                 btn.setAttribute('aria-pressed', v !== 'normal' ? 'true' : 'false');
@@ -182,14 +187,13 @@
     }
     window.siridaApplyTextScale = apply;
     apply(getSaved());
-    document.addEventListener('DOMContentLoaded', function () { apply(getSaved()); });
+    document.addEventListener('DOMContentLoaded', function () { apply(currentScale); });
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-text-scale-btn]');
         if (!btn) return;
         var t = btn.getAttribute('data-text-scale-btn');
         if (t === 'cycle') {
-            var cur = getSaved();
-            apply(SCALES[(SCALES.indexOf(cur) + 1) % SCALES.length]);
+            apply(SCALES[(SCALES.indexOf(currentScale) + 1) % SCALES.length]);
         } else {
             apply(t);
         }
