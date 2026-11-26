@@ -53,7 +53,7 @@
                         class="group inline-flex items-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 border-b-2 text-xs sm:text-sm font-semibold transition duration-150 whitespace-nowrap shrink-0 {{ $tab['active'] ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300' }}"
                     >
                         <span>{{ $tab['label'] }}</span>
-                        <span class="py-0.5 px-2 rounded-full text-xs font-bold tabular-nums {{ $tab['active'] ? 'bg-brand-maroon/10 text-brand-maroon' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200' }}">
+                        <span class="py-0.5 px-2 rounded-full text-xs font-bold tabular-nums {{ $tab['active'] ? 'bg-brand-maroon text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200' }}">
                             {{ $tab['count'] }}
                         </span>
                     </a>
@@ -133,18 +133,18 @@
                 </div>
             </div>
         @else
-            <!-- Tampilan Tabel Desktop & Tablet (>= 640px) -->
-            <div class="hidden sm:block overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
+            <!-- Tabel Daftar Penugasan (Selalu Tampil & Responsif via overflow-x-auto) -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            <th scope="col" class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">ID NASKAH</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 min-w-70">JUDUL ARTIKEL</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">BIDANG KAJIAN</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">TENGGAT WAKTU</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 whitespace-nowrap">STATUS PENUGASAN</th>
-                            <th scope="col" class="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">AKSI</th>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            <th scope="col" class="py-3 px-2.5 text-center whitespace-nowrap w-10">NO</th>
+                            <th scope="col" class="py-3 px-3 whitespace-nowrap">ID NASKAH</th>
+                            <th scope="col" class="py-3 px-3">JUDUL ARTIKEL</th>
+                            <th scope="col" class="py-3 px-3 whitespace-nowrap">BIDANG KAJIAN</th>
+                            <th scope="col" class="py-3 px-3 whitespace-nowrap">TENGGAT WAKTU</th>
+                            <th scope="col" class="py-3 px-3 whitespace-nowrap">STATUS PENUGASAN</th>
+                            <th scope="col" class="py-3 px-3 text-right whitespace-nowrap">AKSI</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -159,38 +159,38 @@
                             @endphp
                             <tr class="hover:bg-gray-50/70 transition duration-150">
                                 <!-- Kolom 0: Nomor Urut -->
-                                <td class="py-4 px-3 sm:px-4 align-top text-center whitespace-nowrap text-xs font-semibold text-gray-400 tabular-nums">
+                                <td class="py-3 px-2.5 align-top text-center whitespace-nowrap text-xs font-semibold text-gray-500 tabular-nums">
                                     {{ $rowNumber }}
                                 </td>
 
                                 <!-- Kolom 1: ID Naskah & Putaran -->
-                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
-                                    <div class="text-sm font-normal text-gray-700 tabular-nums">
+                                <td class="py-3 px-3 align-top whitespace-nowrap">
+                                    <div class="text-xs sm:text-sm font-semibold text-gray-900 tabular-nums">
                                         {{ $subNumber }}
                                     </div>
-                                    <div class="flex items-center gap-1.5 mt-0.5">
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 tabular-nums">
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-600 text-white tabular-nums">
                                             Putaran {{ $round?->round ?? 1 }}
                                         </span>
-                                        <span class="text-xs text-gray-400 tabular-nums">
+                                        <span class="text-xs text-gray-500 tabular-nums">
                                             {{ ($assignment->invited_at ?? $assignment->created_at)?->format('d M Y') ?? '-' }}
                                         </span>
                                     </div>
                                 </td>
 
                                 <!-- Kolom 2: Judul Artikel (Double-Blind) -->
-                                <td class="py-4 px-4 sm:px-6 align-top min-w-70">
+                                <td class="py-3 px-3 align-top max-w-sm">
                                     <div class="relative group block max-w-full">
-                                        <a 
-                                            href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
+                                        <a
+                                            href="{{ route('reviewer.assignments.show', $assignment->id) }}"
                                             title="{{ $title }}"
-                                            class="block font-normal text-gray-900 leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon hover:underline decoration-brand-maroon/40 underline-offset-2 transition duration-150 cursor-pointer"
+                                            class="block font-semibold text-gray-900 leading-snug line-clamp-2 wrap-break-word hover:text-brand-maroon hover:underline decoration-brand-maroon/40 underline-offset-2 transition duration-150 cursor-pointer"
                                         >
                                             {{ $title }}
                                         </a>
                                     </div>
-                                    <div class="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div class="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
@@ -199,25 +199,25 @@
                                 </td>
 
                                 <!-- Kolom 3: Bidang Kajian -->
-                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 shrink-0">
+                                <td class="py-3 px-3 align-top whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-200 text-gray-800 shrink-0">
                                         {{ $submission?->section?->name ?? 'Artikel Riset' }}
                                     </span>
                                 </td>
 
                                 <!-- Kolom 4: Tenggat Waktu (Respons / Telaah) -->
-                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap space-y-1">
+                                <td class="py-3 px-3 align-top whitespace-nowrap space-y-1">
                                     @if($assignment->status === 'invited')
                                         <div>
                                             <span class="text-[11px] text-gray-500 block">Batas Respons:</span>
-                                            <strong class="text-xs text-gray-800 tabular-nums">
+                                            <strong class="text-xs text-gray-900 tabular-nums">
                                                 {{ $assignment->response_due_at ? $assignment->response_due_at->format('d M Y') : '-' }}
                                             </strong>
                                         </div>
                                     @else
                                         <div>
                                             <span class="text-[11px] text-gray-500 block">Batas Telaah:</span>
-                                            <strong class="text-xs text-gray-800 tabular-nums">
+                                            <strong class="text-xs text-gray-900 tabular-nums">
                                                 {{ $assignment->review_due_at ? $assignment->review_due_at->format('d M Y') : '-' }}
                                             </strong>
                                             @php
@@ -239,17 +239,17 @@
                                 </td>
 
                                 <!-- Kolom 5: Status Penugasan -->
-                                <td class="py-4 px-4 sm:px-6 align-top whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border {{ $meta['badge_class'] }}">
+                                <td class="py-3 px-3 align-top whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $meta['badge_class'] }}">
                                         {{ $meta['label'] }}
                                     </span>
                                 </td>
 
                                 <!-- Kolom 6: Aksi -->
-                                <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
-                                    <a 
-                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                                        class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
+                                <td class="py-3 px-3 align-top text-right whitespace-nowrap">
+                                    <a
+                                        href="{{ route('reviewer.assignments.show', $assignment->id) }}"
+                                        class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold rounded-md border border-brand-maroon bg-brand-maroon text-white hover:bg-brand-maroon-hover transition duration-150 shrink-0 shadow-2xs"
                                     >
                                         Detail
                                     </a>
@@ -258,72 +258,6 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Tampilan Kartu Responsif Mobile (< 640px) -->
-            <div class="sm:hidden divide-y divide-gray-100">
-                @foreach($viewModel->assignments as $assignment)
-                    @php
-                        $rowNumber = ($viewModel->assignments->firstItem() ?? 1) + $loop->index;
-                        $round = $assignment->reviewRound;
-                        $submission = $round?->submission;
-                        $title = $round?->reviewer_title ?? 'Judul anonim belum disiapkan';
-                        $subNumber = $submission?->submission_number ?? 'SUB-'.$submission?->id;
-                        $meta = $viewModel->statusMeta($assignment->status);
-                    @endphp
-                    <div class="p-4 space-y-3">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px] font-bold tabular-nums">
-                                    {{ $rowNumber }}
-                                </span>
-                                <span class="font-mono text-[11px] text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded">
-                                    {{ $subNumber }}
-                                </span>
-                                <span class="text-[10px] text-indigo-700 bg-indigo-50 font-semibold px-1.5 py-0.5 rounded border border-indigo-100">
-                                    Putaran {{ $round?->round ?? 1 }}
-                                </span>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border {{ $meta['badge_class'] }}">
-                                {{ $meta['label'] }}
-                            </span>
-                        </div>
-
-                        <a 
-                            href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                            class="font-semibold text-gray-900 text-sm block leading-snug line-clamp-2 hover:text-brand-maroon transition"
-                        >
-                            {{ $title }}
-                        </a>
-
-                        <div class="text-xs text-gray-500 space-y-1.5 pt-2 border-t border-gray-100">
-                            <div class="flex justify-between items-center">
-                                <span>Bidang Kajian:</span>
-                                <span class="font-medium text-gray-800">{{ $submission?->section?->name ?? 'Artikel Riset' }}</span>
-                            </div>
-                            @if($assignment->status === 'invited')
-                                <div class="flex justify-between items-center">
-                                    <span>Batas Respons:</span>
-                                    <strong class="font-medium text-gray-900 tabular-nums">{{ $assignment->response_due_at ? $assignment->response_due_at->format('d M Y') : '-' }}</strong>
-                                </div>
-                            @else
-                                <div class="flex justify-between items-center">
-                                    <span>Batas Telaah:</span>
-                                    <strong class="font-medium text-gray-900 tabular-nums">{{ $assignment->review_due_at ? $assignment->review_due_at->format('d M Y') : '-' }}</strong>
-                                </div>
-                            @endif
-                        </div>
-
-                        <div class="pt-1">
-                            <a 
-                                href="{{ route('reviewer.assignments.show', $assignment->id) }}" 
-                                class="w-full inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
-                            >
-                                Detail
-                            </a>
-                        </div>
-                    </div>
-                @endforeach
             </div>
 
             <!-- Paginasi -->
