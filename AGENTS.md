@@ -55,5 +55,5 @@ Gunakan nama skill dari katalog agent. Jika ada alias, periksa deskripsinya. Jik
 
 ## Pull request
 
-- Saat menyiapkan PR, baca skill `pr`. Tulis judul dan deskripsi PR dalam bahasa Indonesia. Gunakan bagian **Ringkasan** untuk perubahan dan tujuannya, **Bukti** untuk hasil pemeriksaan yang benar-benar dijalankan, dan **Risiko Merge** untuk dampak serta cara mengembalikan perubahan.
+- Saat menyiapkan PR, baca skill `pr`. Tulis judul dan deskripsi PR dalam bahasa Indonesia. Isi deskripsi PR cukup dengan ringkasan singkat perubahan dan tujuannya.
 - Pertahankan nama paket, identifier kode, nama branch, perintah, dan kutipan log sesuai aslinya.
