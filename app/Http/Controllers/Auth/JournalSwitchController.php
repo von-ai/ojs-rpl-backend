@@ -24,7 +24,7 @@ class JournalSwitchController extends Controller
         ]);
 
         $journalId = (string) $validated['journal_id'];
-        $journal = Journal::findOrFail($journalId);
+        $journal = Journal::withoutGlobalScope('portal_access')->findOrFail($journalId);
         $user = $request->user();
 
         if (! $user) {
