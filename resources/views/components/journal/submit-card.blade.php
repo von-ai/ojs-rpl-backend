@@ -15,7 +15,7 @@
 
         <!-- CTA Buttons (1 baris di mobile & desktop) -->
         <div class="grid grid-cols-2 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
-            <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 bg-white hover:bg-gray-50 active:scale-[0.98] rounded-lg transition-all text-center cursor-pointer shadow-none whitespace-nowrap">
+            <a href="{{ route(auth()->user()?->hasRole('author') ? 'author.submissions.create' : (auth()->check() ? 'dashboard' : 'login'), absolute: false) }}" class="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 bg-white hover:bg-gray-50 active:scale-[0.98] rounded-lg transition-all text-center cursor-pointer shadow-none whitespace-nowrap">
                 <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-maroon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>

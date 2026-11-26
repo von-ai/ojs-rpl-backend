@@ -82,7 +82,7 @@
         @endif
 
         <a
-            href="{{ url('/') }}"
+            href="{{ rtrim(config('app.url'), '/') . route('journal.issues.current', absolute: false) }}"
             target="_blank"
             rel="noopener noreferrer"
             title="Lihat Website Jurnal"
