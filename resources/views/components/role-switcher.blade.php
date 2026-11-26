@@ -12,7 +12,7 @@
 
 @if($user && $rolesCount > 0)
 <div class="relative inline-block text-left" data-role-switcher>
-    <!-- Tombol Pemicu Pengalih Peran (Icon-only murni) -->
+    <!-- Tombol Pemicu Pengalih Peran (Compact dengan label jelas di md+) -->
     <button
         type="button"
         data-role-switcher-trigger
@@ -20,11 +20,12 @@
         aria-expanded="false"
         aria-label="Beralih Peran ({{ $activeMeta['label'] }})"
         title="Peran: {{ $activeMeta['label'] }}"
-        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+        class="inline-flex items-center justify-center gap-1.5 min-h-9 px-2.5 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer"
     >
-        <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
+        <span class="hidden md:inline max-w-32 truncate">{{ $activeMeta['label'] }}</span>
     </button>
 
     <!-- Panel Dropdown Daftar Peran -->
