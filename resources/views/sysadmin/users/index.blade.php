@@ -267,40 +267,33 @@
                                     <button
                                         type="button"
                                         onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition cursor-pointer"
-                                        data-tooltip="Lihat Detail Profil"
+                                        class="min-h-8 px-2.5 py-1 inline-flex items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                        title="Lihat Detail Profil"
                                         aria-label="Lihat Detail Profil"
                                     >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
+                                        <span>Detail</span>
                                     </button>
 
                                     <!-- Aksi 2: Kelola Peran Jurnal -->
                                     <button
                                         type="button"
                                         onclick="openAssignRoleModal('{{ $user['id'] }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-red-200/90 bg-red-50/70 text-brand-maroon hover:bg-red-100 hover:border-red-300 transition cursor-pointer"
-                                        data-tooltip="Kelola Peran Jurnal"
+                                        class="min-h-8 px-2.5 py-1 inline-flex items-center justify-center gap-1 rounded-lg border border-brand-maroon bg-brand-maroon text-white hover:bg-brand-maroon-hover text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                        title="Kelola Peran Jurnal"
                                         aria-label="Kelola Peran Jurnal"
                                     >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                        </svg>
+                                        <span>Peran</span>
                                     </button>
 
                                     <!-- Aksi 3: Reset Sandi -->
                                     <button
                                         type="button"
                                         onclick="openResetPasswordModal('{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50/70 text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition cursor-pointer"
-                                        data-tooltip="Reset Sandi Pengguna"
+                                        class="min-h-8 px-2.5 py-1 inline-flex items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                        title="Reset Sandi Pengguna"
                                         aria-label="Reset Sandi Pengguna"
                                     >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                        </svg>
+                                        <span>Sandi</span>
                                     </button>
 
                                     <!-- Aksi 4: Toggle Hak Akses System Administrator -->
@@ -319,13 +312,11 @@
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
                                             <button
                                                 type="submit"
-                                                class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50/70 text-red-700 hover:bg-red-100 hover:border-red-300 transition cursor-pointer"
-                                                data-tooltip="Cabut Hak Akses SysAdmin"
+                                                class="min-h-8 px-2.5 py-1 inline-flex items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white text-red-700 hover:bg-red-700 hover:text-white hover:border-red-700 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                                title="Cabut Hak Akses SysAdmin"
                                                 aria-label="Cabut Hak Akses SysAdmin"
                                             >
-                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                                </svg>
+                                                <span>Cabut Admin</span>
                                             </button>
                                         </form>
                                     @else
@@ -343,13 +334,11 @@
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
                                             <button
                                                 type="submit"
-                                                class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-purple-200 bg-purple-50/70 text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition cursor-pointer"
-                                                data-tooltip="Jadikan System Administrator"
+                                                class="min-h-8 px-2.5 py-1 inline-flex items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-800 hover:text-white hover:border-gray-800 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                                title="Jadikan System Administrator"
                                                 aria-label="Jadikan System Administrator"
                                             >
-                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                </svg>
+                                                <span>+ Admin</span>
                                             </button>
                                         </form>
                                     @endif

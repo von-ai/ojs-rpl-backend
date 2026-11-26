@@ -210,24 +210,27 @@
                                     <button
                                         type="button"
                                         onclick='openEditJournalModal(@json($journal))'
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-brand-maroon bg-red-50 hover:bg-brand-maroon hover:text-white border border-red-200/90 transition shadow-none cursor-pointer"
-                                        data-tooltip="Sunting Identitas Jurnal"
+                                        class="min-h-8 px-2.5 py-1.5 rounded-lg inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover border border-brand-maroon transition shadow-2xs cursor-pointer"
+                                        title="Sunting Identitas Jurnal"
                                         aria-label="Sunting Identitas Jurnal"
                                     >
-                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="w-3.5 h-3.5 pointer-events-none shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
+                                        <span>Sunting</span>
                                     </button>
 
                                     <!-- Tombol Lihat Website Publik -->
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
-                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200/90 transition shadow-none cursor-pointer"
-                                        data-tooltip="Kunjungi Website Publik"
+                                        rel="noopener noreferrer"
+                                        class="min-h-8 px-2.5 py-1.5 rounded-lg inline-flex items-center justify-center gap-1 text-xs font-semibold text-gray-800 bg-white hover:bg-gray-100 border border-gray-300 transition shadow-2xs cursor-pointer"
+                                        title="Kunjungi Website Publik"
                                         aria-label="Kunjungi Website Publik"
                                     >
-                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <span>Buka</span>
+                                        <svg class="w-3.5 h-3.5 pointer-events-none shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
                                     </a>
@@ -239,25 +242,21 @@
                                             <input type="hidden" name="status" value="archived">
                                             <button
                                                 type="submit"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white border border-amber-200/90 transition shadow-none cursor-pointer"
-                                                data-tooltip="Arsipkan Publikasi Jurnal"
+                                                class="min-h-8 px-2.5 py-1.5 rounded-lg inline-flex items-center justify-center gap-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-800 hover:text-white hover:border-gray-800 border border-gray-300 transition shadow-2xs cursor-pointer"
+                                                title="Arsipkan Publikasi Jurnal"
                                                 aria-label="Arsipkan Publikasi Jurnal"
                                             >
-                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                                                </svg>
+                                                <span>Arsipkan</span>
                                             </button>
                                         @else
                                             <input type="hidden" name="status" value="active">
                                             <button
                                                 type="submit"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200/90 transition shadow-none cursor-pointer"
-                                                data-tooltip="Aktifkan Publikasi Jurnal"
+                                                class="min-h-8 px-2.5 py-1.5 rounded-lg inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 border border-emerald-700 transition shadow-2xs cursor-pointer"
+                                                title="Aktifkan Publikasi Jurnal"
                                                 aria-label="Aktifkan Publikasi Jurnal"
                                             >
-                                                <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                                <span>Aktifkan</span>
                                             </button>
                                         @endif
                                     </form>
