@@ -410,40 +410,50 @@ html.text-scale-xl {
 }
 
 .portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-emerald-50"],
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-green-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-emerald-100"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-green-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-green-100"] {
     background-color: #059669 !important;
     border-color: #059669 !important;
     color: #ffffff !important;
 }
 
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-blue-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-blue-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-blue-100"] {
     background-color: #2563eb !important;
     border-color: #2563eb !important;
     color: #ffffff !important;
 }
 
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-sky-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-sky-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-sky-100"] {
     background-color: #0284c7 !important;
     border-color: #0284c7 !important;
     color: #ffffff !important;
 }
 
 .portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-amber-50"],
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-orange-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-amber-100"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-orange-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-orange-100"] {
     background-color: #d97706 !important;
     border-color: #d97706 !important;
     color: #ffffff !important;
 }
 
 .portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-red-50"],
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-rose-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-red-100"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-rose-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-rose-100"] {
     background-color: #e40017 !important;
     border-color: #e40017 !important;
     color: #ffffff !important;
 }
 
 .portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-purple-50"],
-.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-indigo-50"] {
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-purple-100"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-indigo-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-indigo-100"] {
     background-color: #4f46e5 !important;
     border-color: #4f46e5 !important;
     color: #ffffff !important;
