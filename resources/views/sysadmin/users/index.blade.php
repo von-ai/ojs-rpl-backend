@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="min-w-0 flex-1">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
-                Direktori Pengguna &amp; Hak Akses Global
+                Pengguna dan hak akses
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Kelola keanggotaan jurnal, penetapan wewenang dewan redaksi, dan hak akses System Administrator lintas portal.
+                Tambah pengguna dan atur peran mereka di setiap jurnal.
             </p>
         </div>
 
@@ -445,7 +445,7 @@
                 Riwayat Pengimporan Massal Pengguna via CSV
             </h2>
             <p class="text-xs text-gray-500 mt-0.5">
-                Audit rekam jejak operasi impor akun massal, validasi baris, dan penanganan kegagalan format.
+                Periksa jumlah akun yang berhasil diimpor dan baris yang gagal.
             </p>
         </div>
 
@@ -1167,7 +1167,7 @@
                 journalContainer.innerHTML = `
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-200/70 text-center">
                         <p class="text-xs text-gray-500 font-medium">Pengguna Terdaftar Global</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Belum memiliki penugasan peran pada instansi jurnal spesifik.</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Belum punya peran di jurnal mana pun.</p>
                     </div>
                 `;
             } else {

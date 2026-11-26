@@ -354,7 +354,7 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-200 text-amber-900">Pending</span>
                                 </div>
                                 <p class="text-amber-900 leading-relaxed text-left">
-                                    Dimohonkan hingga: <strong class="tabular-nums">{{ $pendingExt->requested_due_at->format('d M Y') }}</strong><br>
+                                    Tenggat yang diminta: <strong class="tabular-nums">{{ $pendingExt->requested_due_at->format('d M Y') }}</strong><br>
                                     Alasan: <span class="italic">"{{ $pendingExt->reason }}"</span>
                                 </p>
                                 <div class="flex items-center gap-2 pt-1">

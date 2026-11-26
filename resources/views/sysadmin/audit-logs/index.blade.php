@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
-                Jejak Audit &amp; Pemantauan Sistem (audit_logs)
+                Jejak Audit
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Catatan permanen append-only atas seluruh mutasi konfigurasi, perubahan peran sistem, dan eksekusi tugas latar belakang.
+                Lihat siapa yang mengubah pengaturan atau peran, serta kapan tugas sistem berjalan.
             </p>
         </div>
     </div>

@@ -1,6 +1,6 @@
 @extends('layouts.sysadmin')
 
-@section('title', 'Manajemen Instansi Jurnal Ilmiah — Portal System Administrator')
+@section('title', 'Kelola jurnal — Portal System Administrator')
 
 @section('content')
 <div class="max-w-7xl mx-auto space-y-5">
@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-                Manajemen Instansi Jurnal Ilmiah
+                Kelola jurnal
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Tata kelola multi-tenancy portal jurnal, penetapan nomor ISSN/E-ISSN, dan status operasional publikasi BRIDA Kota Makassar.
+                Tambah jurnal, ubah ISSN, atau atur status penerbitan.
             </p>
         </div>
 
@@ -20,7 +20,7 @@
             type="button"
             onclick="openAddJournalModal()"
             class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon/90 rounded-lg shadow-none transition self-start sm:self-center cursor-pointer"
-            title="Daftarkan Instansi Jurnal Baru"
+            title="Tambah jurnal"
         >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -319,10 +319,10 @@
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
                 <h3 id="modal-add-journal-title" class="text-base font-semibold text-gray-900">
-                    Daftarkan Instansi Jurnal Ilmiah Baru
+                    Tambah jurnal
                 </h3>
                 <p class="text-xs text-gray-500 mt-0.5">
-                    Buat entitas portal jurnal baru di bawah naungan BRIDA Kota Makassar.
+                    Isi nama dan alamat jurnal.
                 </p>
             </div>
             <button

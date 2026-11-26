@@ -17,7 +17,7 @@
                 </span>
             </div>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                Konfigurasi parameter global situs SIRIDA, kebijakan pemeliharaan, serta diagnostik infrastruktur server BRIDA Kota Makassar.
+                Atur identitas situs, aktifkan mode pemeliharaan, atau periksa kondisi server.
             </p>
         </div>
     </div>

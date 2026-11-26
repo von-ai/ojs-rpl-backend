@@ -644,7 +644,7 @@
                         id="assign_user_email" 
                         required 
                         list="registered_users_email_list"
-                        placeholder="Masukkan alamat email akun pengguna..." 
+                        placeholder="Email pengguna"
                         class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon" 
                         value=""
                     >

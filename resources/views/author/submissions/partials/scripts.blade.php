@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (file.size > maxSize) {
-                    fileErrorMsg.textContent = 'Ukuran berkas terlalu besar. Batas maksimal yang diperbolehkan adalah 20 MB. Silakan pilih berkas lain atau kurangi ukuran dokumen Anda.';
+                    fileErrorMsg.textContent = 'Berkas melebihi 20 MB. Perkecil ukurannya atau pilih berkas lain.';
                     fileErrorMsg.classList.remove('hidden');
                     this.value = '';
                     updateDropzoneUI(false);
@@ -1518,7 +1518,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!sectionSelect || !sectionSelect.value) {
                 await window.showAlertModal({
                     title: 'Seksi Jurnal Belum Dipilih',
-                    message: 'Silakan pilih kategori seksi atau bidang jurnal terlebih dahulu.',
+                    message: 'Pilih bidang jurnal.',
                     type: 'warning'
                 });
                 if (sectionSelect) sectionSelect.focus();
@@ -1558,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (titleWords === 0) {
                 await window.showAlertModal({
                     title: 'Judul Naskah Wajib Diisi',
-                    message: 'Silakan isi judul lengkap artikel ilmiah Anda.',
+                    message: 'Isi judul artikel.',
                     type: 'warning'
                 });
                 titleInput.focus();
@@ -1578,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (abstractWords === 0) {
                 await window.showAlertModal({
                     title: 'Abstrak Naskah Wajib Diisi',
-                    message: 'Silakan isi teks abstrak artikel ilmiah Anda.',
+                    message: 'Isi abstrak artikel.',
                     type: 'warning'
                 });
                 abstractInput.focus();

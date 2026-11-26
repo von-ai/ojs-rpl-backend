@@ -93,7 +93,7 @@
                         name="description" 
                         rows="2" 
                         required
-                        placeholder="Jelaskan kata/kalimat/tabel yang perlu diperbaiki oleh Layout Editor..."
+                        placeholder="Sebutkan bagian yang perlu diperbaiki dan usulkan perubahannya."
                         class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-2xs"
                     ></textarea>
                 </div>
