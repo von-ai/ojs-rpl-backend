@@ -37,7 +37,7 @@
             @auth
                 <a
                     href="{{ auth()->user()->isSysAdmin() ? route('sysadmin.journals.index', absolute: false) : route('dashboard', absolute: false) }}"
-                    class="inline-flex w-9 h-9 sm:w-9.5 sm:h-9.5 items-center justify-center text-brand-maroon bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors shrink-0 font-bold text-xs cursor-pointer active:scale-95"
+                    class="inline-flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-full bg-brand-maroon hover:bg-brand-maroon-hover text-white uppercase tracking-wider shadow-2xs transition shrink-0 font-bold text-xs cursor-pointer active:scale-95"
                     title="Dashboard {{ auth()->user()->name }}"
                     aria-label="Dashboard Pengguna"
                 >
