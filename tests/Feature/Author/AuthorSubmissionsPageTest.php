@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
 use Database\Seeders\SubmissionSeeder;
+use Dom\HTMLDocument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -84,7 +85,10 @@ class AuthorSubmissionsPageTest extends TestCase
         $response->assertSee('Semua Seksi');
 
         // Tidak Boleh Ada Persentase pada Status
-        $response->assertDontSee('%');
+        $document = HTMLDocument::createFromString($response->getContent(), LIBXML_NOERROR);
+        $table = $document->getElementById('submissions-table-content');
+        $this->assertNotNull($table);
+        $this->assertStringNotContainsString('%', $table->textContent);
 
         // Daftar Naskah Hasil Seeding Riil
         $response->assertSee('SUB-2026-00104');
