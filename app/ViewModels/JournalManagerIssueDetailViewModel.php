@@ -256,6 +256,16 @@ class JournalManagerIssueDetailViewModel
             'badge_class' => 'bg-brand-maroon',
         ];
 
+        $journalSlug = $issue->journal?->slug;
+        $publicUrl = $issue->isPublished()
+            ? ($journalSlug
+                ? route('journal.scoped.issues.show', ['journalSlug' => $journalSlug, 'id' => $issue->id])
+                : route('journal.issues.show', $issue->id))
+            : null;
+        $archivesUrl = $journalSlug
+            ? route('journal.scoped.archives', ['journalSlug' => $journalSlug])
+            : route('journal.archives');
+
         return [
             'id' => (string) $issue->id,
             'volume' => (string) $issue->volume,
@@ -276,6 +286,8 @@ class JournalManagerIssueDetailViewModel
             'articles' => $articles,
             'ready_articles' => $readyArticles,
             'activity_timeline' => $timeline,
+            'public_url' => $publicUrl,
+            'archives_url' => $archivesUrl,
         ];
     }
 }

@@ -30,6 +30,37 @@
         </a>
     </div>
 
+    @if(count($viewModel->availableJournals()) > 1)
+        <!-- Switcher Pilihan Jurnal untuk Arsip -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-2.5 text-xs text-gray-700 min-w-0">
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 text-brand-maroon shrink-0 border border-red-100">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </span>
+                <div class="min-w-0 truncate">
+                    <p class="font-semibold text-gray-900 truncate">Arsip Jurnal: {{ $journal->name ?? 'Jurnal Terpilih' }}</p>
+                    <p class="text-[11px] text-gray-500">Pilih jurnal di samping untuk melihat arsip terbitannya</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+                @foreach($viewModel->availableJournals() as $j)
+                    <a
+                        href="{{ $j['archives_url'] }}"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $j['is_current'] ? 'bg-brand-maroon text-white shadow-2xs' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300' }}"
+                        title="{{ $j['name'] }}"
+                    >
+                        <span>{{ $j['name'] }}</span>
+                        @if($j['is_current'])
+                            <span class="w-1.5 h-1.5 rounded-full bg-white ml-0.5"></span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         

@@ -48,7 +48,38 @@ class PublicJournalViewModel
                 ['code' => 'id', 'label' => 'ID', 'active' => true],
                 ['code' => 'en', 'label' => 'EN', 'active' => false],
             ],
+            'journals' => $this->availableJournals(),
         ];
+    }
+
+    /**
+     * Mengambil daftar seluruh jurnal aktif untuk pengalih dan navigasi portal publik.
+     *
+     * @return array<int, array{id: string, name: string, initials: string, slug: string, url: string, archives_url: string, is_current: bool}>
+     */
+    public function availableJournals(): array
+    {
+        try {
+            if (! Schema::hasTable('journals')) {
+                return [];
+            }
+
+            return Journal::where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'initials'])
+                ->map(fn ($j) => [
+                    'id' => (string) $j->id,
+                    'name' => (string) $j->name,
+                    'initials' => (string) ($j->initials ?: strtoupper(substr($j->name, 0, 6))),
+                    'slug' => (string) $j->slug,
+                    'url' => url('/'.$j->slug),
+                    'archives_url' => url('/'.$j->slug.'/archives'),
+                    'is_current' => $this->journal && (string) $this->journal->id === (string) $j->id,
+                ])
+                ->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

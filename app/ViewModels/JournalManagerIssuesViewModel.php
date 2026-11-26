@@ -269,7 +269,7 @@ class JournalManagerIssuesViewModel
     private function allIssues(): array
     {
         if (Schema::hasTable('issues')) {
-            $issuesQuery = Issue::withCount('issueArticles');
+            $issuesQuery = Issue::with(['journal'])->withCount('issueArticles');
             if ($this->journal !== null) {
                 $issuesQuery->where('journal_id', $this->journal->id);
             }
@@ -282,6 +282,13 @@ class JournalManagerIssuesViewModel
 
             if ($issues->isNotEmpty()) {
                 return $issues->map(function (Issue $issue) {
+                    $journalSlug = $issue->journal?->slug ?? $this->journal?->slug;
+                    $urlPublic = $issue->status === 'published'
+                        ? ($journalSlug
+                            ? route('journal.scoped.issues.show', ['journalSlug' => $journalSlug, 'id' => $issue->id])
+                            : route('journal.issues.show', $issue->id))
+                        : null;
+
                     return [
                         'id' => (string) $issue->id,
                         'volume' => (string) $issue->volume,
@@ -297,6 +304,7 @@ class JournalManagerIssuesViewModel
                         'published_at' => $issue->published_at ? $issue->published_at->translatedFormat('d M Y') : null,
                         'scheduled_at' => $issue->scheduled_at ? $issue->scheduled_at->translatedFormat('d M Y') : null,
                         'url_workspace' => route('journalmanager.issues.show', $issue->id),
+                        'url_public' => $urlPublic,
                     ];
                 })->all();
             }

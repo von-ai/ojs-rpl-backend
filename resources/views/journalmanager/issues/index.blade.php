@@ -203,13 +203,29 @@
 
                             <!-- Kolom 6: AKSI -->
                             <td class="py-4 px-4 sm:px-6 align-top text-right whitespace-nowrap">
-                                <a
-                                    href="{{ $issue['url_workspace'] }}"
-                                    class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
-                                    title="Buka Ruang Kerja Edisi"
-                                >
-                                    Detail
-                                </a>
+                                <div class="flex items-center justify-end gap-1.5">
+                                    @if(!empty($issue['url_public']))
+                                        <a
+                                            href="{{ $issue['url_public'] }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="inline-flex items-center justify-center p-1.5 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 rounded-md border border-emerald-200 transition"
+                                            title="Buka Halaman Publik Edisi"
+                                            aria-label="Buka Halaman Publik Edisi"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    @endif
+                                    <a
+                                        href="{{ $issue['url_workspace'] }}"
+                                        class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition duration-150 shrink-0"
+                                        title="Buka Ruang Kerja Edisi"
+                                    >
+                                        Detail
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty
