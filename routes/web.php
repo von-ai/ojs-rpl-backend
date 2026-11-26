@@ -281,7 +281,7 @@ Route::get('/dashboard', function () {
 
 // Portal Publik Multi-Tenancy per Instansi Jurnal (/{journalSlug})
 Route::prefix('{journalSlug}')
-    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$).*$'])
+    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$)[^/]+$'])
     ->name('journal.scoped.')->group(function () {
         Route::get('/', [PublicJournalController::class, 'index'])->name('index');
         Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
