@@ -153,6 +153,34 @@ class JournalManagerSettingsViewModel
         return [];
     }
 
+    /**
+     * Informasi berkas template & panduan penulisan naskah resmi jurnal.
+     *
+     * @return array{
+     *     has_template: bool,
+     *     filename: ?string,
+     *     updated_at: ?string,
+     *     download_url: string
+     * }
+     */
+    public function authorGuideline(): array
+    {
+        $journal = $this->resolveJournal();
+        $hasTemplate = $journal !== null && $journal->hasAuthorGuidelineTemplate();
+        $downloadUrl = $journal && $journal->slug
+            ? route('journal.scoped.about.submissions.template', ['journalSlug' => $journal->slug])
+            : route('journal.about.submissions.template');
+
+        return [
+            'has_template' => $hasTemplate,
+            'filename' => $hasTemplate ? (string) ($journal->author_guideline_filename ?: basename((string) $journal->author_guideline_path)) : null,
+            'updated_at' => $hasTemplate && $journal->author_guideline_updated_at
+                ? $journal->author_guideline_updated_at->translatedFormat('d M Y, H:i').' WITA'
+                : null,
+            'download_url' => $downloadUrl,
+        ];
+    }
+
     private function resolveJournal(): ?Journal
     {
         if ($this->journal !== null) {
