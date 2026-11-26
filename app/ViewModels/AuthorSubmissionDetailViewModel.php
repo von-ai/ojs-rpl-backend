@@ -225,7 +225,7 @@ class AuthorSubmissionDetailViewModel
             'references' => $sub->references,
             'comments_for_editor' => $sub->comments_for_editor,
             'section' => $sectionName,
-            'permission_license' => (! in_array($sub->status, ['declined', 'rejected', 'withdrawn', 'archived', 'published', 'draft'], true) && $authUser && $sub->author_id === $authUser->id) ? $sub->journal?->license : null,
+            'permission_license' => (! in_array($sub->status, ['declined', 'rejected', 'withdrawn', 'archived', 'published', 'draft'], true) && $user && $sub->author_id === $user->id) ? $sub->journal?->license : null,
             'has_permission_recorded' => Schema::hasTable('publication_permissions') && DB::table('publication_permissions')
                 ->where('submission_id', $sub->id)
                 ->where('license', trim((string) ($sub->journal?->license ?? '')))

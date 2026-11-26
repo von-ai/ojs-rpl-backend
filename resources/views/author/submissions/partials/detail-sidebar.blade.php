@@ -260,16 +260,18 @@
     <!-- Kasus D: Pemeriksaan Awal Redaksi -->
     @if($submission['status'] === 'submitted' && !empty($submission['initial_screening']))
         <div id="panel-pemeriksaan" class="bg-white rounded-xl border border-blue-200 p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-blue-100 pb-3">
-                <div class="flex items-center gap-2 text-blue-900 min-w-0">
+            <div class="flex items-center justify-between gap-2 border-b border-blue-100 pb-3">
+                <div class="flex items-center gap-2 text-blue-900 min-w-0 flex-1">
                     <div class="w-6 h-6 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                         </svg>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold truncate" title="{{ $submission['initial_screening']['stage_title'] }}">{{ $submission['initial_screening']['stage_title'] }}</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-blue-950 leading-tight">
+                        {{ $submission['initial_screening']['stage_title'] }}
+                    </h3>
                 </div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
                     Desk Review
                 </span>
             </div>
@@ -691,7 +693,64 @@
         </div>
     @endif
 
-    <!-- 2. Informasi Jurnal & Penerbit -->
+    <!-- 2. Izin Penerbitan & Lisensi Publikasi -->
+    @if(!in_array($submission['status'], ['declined', 'rejected', 'withdrawn', 'archived', 'published', 'draft'], true) && filled($submission['permission_license'] ?? null))
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3.5 shadow-2xs">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div class="flex items-center gap-2 text-gray-900 min-w-0">
+                    <div class="w-6 h-6 rounded-md bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xs sm:text-sm font-bold truncate">Izin Penerbitan</h3>
+                </div>
+                @if($submission['has_permission_recorded'] ?? false)
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                        Terverifikasi
+                    </span>
+                @else
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                        Perlu Izin
+                    </span>
+                @endif
+            </div>
+
+            @if($submission['has_permission_recorded'] ?? false)
+                <div class="p-3 bg-emerald-50/60 rounded-lg border border-emerald-100 text-xs text-emerald-900 space-y-1">
+                    <div class="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Izin Publikasi Diberikan</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-700 leading-relaxed">
+                        Naskah ini disetujui terbit dengan lisensi <strong>{{ $submission['permission_license'] }}</strong>.
+                    </p>
+                </div>
+            @else
+                <form method="post" action="{{ route('author.submissions.permission', $submission['id']) }}" class="space-y-3">
+                    @csrf
+                    <input type="hidden" name="license" value="{{ trim($submission['permission_license']) }}">
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        Persetujuan lisensi distribusi terbuka diperlukan sebelum naskah dapat diterbitkan secara resmi.
+                    </p>
+                    <label class="flex items-start gap-2.5 cursor-pointer text-xs text-gray-700 leading-snug p-2.5 rounded-lg bg-gray-50 border border-gray-200/70 hover:bg-gray-100/60 transition">
+                        <input required type="checkbox" name="confirmed" value="1" class="mt-0.5 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon/20 shrink-0 cursor-pointer">
+                        <span>Saya mengizinkan penerbitan dengan lisensi <strong class="text-gray-900">{{ $submission['permission_license'] }}</strong>.</span>
+                    </label>
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon/90 active:scale-[0.98] rounded-lg transition shadow-2xs cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Catat Izin Penerbitan</span>
+                    </button>
+                </form>
+            @endif
+        </div>
+    @endif
+
+    <!-- 3. Informasi Jurnal & Penerbit -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider">

@@ -34,15 +34,6 @@
     <!-- Workflow Tracker Stepper (6 Tahapan Alur Kerja Editorial OJS 3) -->
     @include('author.submissions.partials.detail-workflow-tracker', ['submission' => $submission])
 
-    @if(!in_array($submission['status'], ['declined', 'rejected', 'withdrawn', 'archived', 'published', 'draft'], true) && filled($submission['permission_license'] ?? null))
-        @include('components.publication-permission', [
-            'license' => $submission['permission_license'], 
-            'id' => $submission['id'], 
-            'editor' => false,
-            'hasPermission' => $submission['has_permission_recorded'] ?? false
-        ])
-    @endif
-
     <!-- Tata Letak 2 Kolom Responsif (2/3 Konten Manuskrip, 1/3 Sidebar Editorial Sticky) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 

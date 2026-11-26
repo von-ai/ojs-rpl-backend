@@ -4,6 +4,7 @@
     $completedCount = $viewModel->completedReviewsCount();
     $minReq = $viewModel->minimumCompletedReviews();
     $isFinalized = $viewModel->isWorkflowFinalized();
+    $hasAnonymizedRound = $activeRound->exists && $activeRound->hasDistinctAnonymizedFile();
 @endphp
 
 <section class="bg-white rounded-xl border border-gray-200 p-6 sm:p-7 space-y-6">
@@ -30,8 +31,94 @@
         </div>
     </div>
 
-    @if(!$isFinalized && (!$activeRound->hasDistinctAnonymizedFile() || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
-        <form id="form-siapkan-putaran" action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4 rounded-xl border border-amber-200 bg-amber-50/50 p-5 scroll-mt-6">
+    @if($hasAnonymizedRound)
+        <!-- Kartu Status: Berkas Naskah Anonim Berhasil Disiapkan & Aktif -->
+        <div class="rounded-xl border border-emerald-200/90 bg-emerald-50/60 p-4 sm:p-5 space-y-3.5 shadow-2xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-bold text-emerald-950">Berkas Naskah Anonim Siap</h3>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300">
+                                <svg class="w-2.5 h-2.5 text-emerald-600" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
+                                Double-Blind Aktif
+                            </span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-emerald-800/90 mt-0.5 leading-relaxed">
+                            Identitas penulis telah disamarkan sebagai acuan telaah objektif bagi mitra bestari.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tombol aksi -->
+                <div class="flex items-center gap-2 shrink-0">
+                    @if($activeRound->anonymized_file_id)
+                        <a href="{{ route('section-editor.submissions.files.download', [$submission->id, $activeRound->anonymized_file_id]) }}" 
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 font-semibold text-xs transition cursor-pointer shadow-2xs">
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Unduh Berkas</span>
+                        </a>
+                    @endif
+                    @if(!$isFinalized)
+                        <button type="button" 
+                                onclick="toggleSiapkanPutaranForm()" 
+                                id="btn-toggle-siapkan-putaran"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white font-semibold text-xs transition cursor-pointer shadow-2xs">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            <span id="text-toggle-siapkan-putaran">Ganti Berkas</span>
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Detail Dokumen Anonim yang Telah Diunggah -->
+            <div class="bg-white/95 rounded-lg border border-emerald-200/80 p-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/60">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 block tracking-wider leading-none">Dokumen Naskah</span>
+                        <span class="text-xs font-bold text-gray-900 truncate block mt-0.5" title="{{ $activeRound->anonymizedFile?->original_name }}">
+                            {{ $activeRound->anonymizedFile?->original_name ?? 'manuskrip-anonim.pdf' }}
+                        </span>
+                        @if($activeRound->anonymizedFile?->byte_size)
+                            <span class="text-[11px] text-gray-500 font-normal">({{ number_format($activeRound->anonymizedFile->byte_size / 1024, 1) }} KB) &bull; Bebas Identitas</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/60">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 block tracking-wider leading-none">Judul Telaah Anonim</span>
+                        <span class="text-xs font-bold text-gray-900 truncate block mt-0.5" title="{{ $activeRound->reviewer_title }}">
+                            {{ $activeRound->reviewer_title ?: $submission->title }}
+                        </span>
+                        <span class="text-[11px] text-gray-500 font-normal">Telah diverifikasi tanpa nama penulis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(!$isFinalized && (!$hasAnonymizedRound || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
+        <form id="form-siapkan-putaran" action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4 rounded-xl border border-amber-200 bg-amber-50/50 p-5 scroll-mt-6 {{ $hasAnonymizedRound ? 'hidden' : '' }}">
             @csrf
             <div class="flex items-start gap-3">
                 <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
@@ -72,7 +159,8 @@
             </label>
 
             <button type="submit" class="px-4 py-2.5 rounded-lg bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-bold text-xs transition cursor-pointer shadow-none">
-                Simpan &amp; Buka Putaran Telaah Anonim
+                <span>Simpan &amp; Buka Putaran Telaah Anonim</span>
+                <span class="sr-only">Siapkan putaran baru</span>
             </button>
         </form>
     @endif
@@ -443,6 +531,21 @@
             btn.setAttribute('aria-expanded', 'false');
             if (label) label.textContent = 'Lihat Detail';
             if (icon) icon.classList.remove('rotate-180');
+        }
+    }
+
+    function toggleSiapkanPutaranForm() {
+        const form = document.getElementById('form-siapkan-putaran');
+        const text = document.getElementById('text-toggle-siapkan-putaran');
+        if (!form) return;
+        const isHidden = form.classList.toggle('hidden');
+        if (text) {
+            text.textContent = isHidden ? 'Ganti Berkas' : 'Tutup Formulir';
+        }
+        if (!isHidden) {
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const fileInput = form.querySelector('input[type="file"]');
+            if (fileInput) fileInput.focus();
         }
     }
 

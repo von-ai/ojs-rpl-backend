@@ -65,14 +65,40 @@
 
         <div class="h-6 w-px bg-gray-200 hidden sm:block" aria-hidden="true"></div>
 
-        <!-- User Profile Avatar & Tombol Keluar (Icon-only) -->
+        <!-- User Profile Avatar & Hover Card Info -->
         <div class="flex items-center gap-2 pl-0.5">
-            <div
-                class="w-9 h-9 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0 shadow-2xs select-none cursor-default"
-                title="{{ $displayName }} ({{ $displaySub }})"
-                aria-label="{{ $displayName }}"
-            >
-                {{ $initials }}
+            <div class="relative group">
+                <button
+                    type="button"
+                    class="w-9 h-9 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0 shadow-2xs select-none cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/30 transition hover:ring-2 hover:ring-brand-maroon/20"
+                    aria-label="{{ $displayName }}"
+                    aria-haspopup="true"
+                >
+                    {{ $initials }}
+                </button>
+
+                <!-- Floating Hover Tooltip / Profile Card -->
+                <div class="absolute right-0 top-full mt-2 w-64 p-3 bg-white border border-gray-200/90 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 transform origin-top-right z-50 pointer-events-none group-hover:pointer-events-auto">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-brand-maroon text-white flex items-center justify-center font-bold text-sm uppercase tracking-wider shrink-0 shadow-xs">
+                            {{ $initials }}
+                        </div>
+                        <div class="min-w-0 flex-1 text-left">
+                            <p class="text-xs font-bold text-gray-900 truncate" title="{{ $displayName }}">
+                                {{ $displayName }}
+                            </p>
+                            <p class="text-[11px] text-gray-500 truncate" title="{{ $authUser?->email ?? $displaySub }}">
+                                {{ $authUser?->email ?? $displaySub }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                        <span class="text-gray-400 font-medium">Peran Aktif:</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md font-semibold bg-brand-maroon/10 text-brand-maroon text-[10px]">
+                            {{ $roleMeta['label'] }}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <form action="{{ route('logout') }}" method="POST" class="m-0">
