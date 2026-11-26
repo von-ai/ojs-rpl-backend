@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    /* Font Formal & Standar Institusi Akademis: Inter */
-    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-serif: 'Lora', Cambria, Georgia, 'Times New Roman', serif;
+    /* Tipografi Konsisten & Ramah Mata (ui-ux-pro-max: Corporate Trust / Accessible) */
+    --font-sans: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-heading: 'Lexend', 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-serif: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
     /* Identitas Warna Resmi BRIN & BRIDA (brin.go.id) */
     --color-brand-logo: #FA0019;
@@ -21,9 +21,9 @@
     --color-brand-navy: #002E72;
     --color-brand-navy-hover: #001F54;
 
-    /* Token Warna Latar Canvas & Panel */
-    --color-canvas: #F8F9FA;
-    --color-surface-subtle: #F7F7F8;
+    /* Token Warna Latar Canvas & Panel (Lembut & Ramah Mata) */
+    --color-canvas: #F5F6F8;
+    --color-surface-subtle: #F3F4F6;
 
     /* Standarisasi Sudut Lengkungan (Compact & Subtle: 4px - 6px) */
     --radius-3xl: 8px;
@@ -32,15 +32,107 @@
     --radius-lg: 5px;
     --radius-md: 4px;
     --radius-sm: 2px;
+
+    /* Skala Tipografi Compact Namun Nyaman Dibaca (Anti-Kekecilan di Seluruh Web) */
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: 1.45;
+    --text-sm: 0.9375rem;
+    --text-sm--line-height: 1.55;
 }
 
-/* Optimasi Tipografi Akademis & Angka Tabular untuk Data Jurnal */
+/* Optimasi Tipografi Akademis, Aksesibilitas Senior, & Angka Tabular */
 @layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
     body {
-        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+        font-family: var(--font-sans);
+        font-feature-settings: 'tnum';
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         letter-spacing: normal;
+        line-height: 1.55;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: var(--font-heading);
+        letter-spacing: -0.01em;
+    }
+
+    button, input, select, textarea {
+        font-family: inherit;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: 1.125rem;
+        height: 1.125rem;
+        accent-color: var(--color-brand-maroon);
+        cursor: pointer;
+    }
+
+    /* Indikator fokus keyboard yang tegas (WCAG AA/AAA) */
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 2.5px solid var(--color-brand-maroon);
+        outline-offset: 2px;
+    }
+}
+
+/* Lantai Keterbacaan Global: Cegah teks mikroskopis (9px–11px) & teks bantu terlalu pudar di seluruh portal */
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\],
+.text-\[11\.5px\] {
+    font-size: 0.78125rem !important; /* 12.5px minimum floor */
+    line-height: 1.45 !important;
+}
+
+p.text-\[11px\],
+label .text-\[11px\] {
+    font-size: 0.8125rem !important; /* 13px untuk deskripsi & checklist */
+    line-height: 1.5 !important;
+}
+
+p.text-gray-400,
+span.text-gray-400:not(.custom-dropdown-chevron),
+dd.text-gray-400,
+dt.text-gray-400 {
+    color: #525B69;
+}
+
+p.text-gray-500 {
+    color: #4B5563;
+}
+
+/* Mode Perbesaran Teks Ramah Orang Tua (di luar @layer agar selalu prioritas tertinggi) */
+html.text-scale-lg {
+    font-size: 112.5% !important;
+}
+
+html.text-scale-xl {
+    font-size: 125% !important;
+}
+
+/* Ruang kerja admin & portal: compact, tenang di mata, tidak boros ruang */
+.portal-workspace table th,
+.portal-workspace table td {
+    line-height: 1.45;
+}
+
+.portal-workspace table tbody tr {
+    transition: background-color 150ms ease;
+}
+
+/* Hormati preferensi pengurangan gerak (WCAG / ui-ux-pro-max) */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 
@@ -267,4 +359,20 @@
 }
 .custom-dropdown-container.is-open {
     z-index: 60 !important;
+}
+
+.portal-workspace :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--color-brand-navy);
+    outline-offset: 2px;
+}
+
+.portal-workspace [role="dialog"].overflow-y-auto.items-center {
+    align-items: safe center;
+}
+
+@media (max-width: 639px) {
+    .portal-workspace form :where(input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], input[type="url"], input[type="date"], textarea, select):not(.custom-dropdown-native) {
+        font-size: 1rem;
+        min-height: 2.75rem;
+    }
 }

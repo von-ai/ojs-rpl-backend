@@ -408,3 +408,83 @@ window.addEventListener('pageshow', function (event) {
         window.location.reload();
     }
 });
+
+// Pengatur Ukuran Teks Ramah Pengguna Senior (Normal / Besar / Sangat Besar)
+(function initTextScaleControls() {
+    if (window.__siridaTextScaleInitialized) return;
+    window.__siridaTextScaleInitialized = true;
+
+    const STORAGE_KEY = 'sirida_text_scale';
+    const SCALES = ['normal', 'lg', 'xl'];
+
+    function applyScale(scale) {
+        const valid = SCALES.includes(scale) ? scale : 'normal';
+        const root = document.documentElement;
+        root.classList.remove('text-scale-lg', 'text-scale-xl');
+        if (valid === 'lg') {
+            root.classList.add('text-scale-lg');
+            root.style.fontSize = '112.5%';
+        } else if (valid === 'xl') {
+            root.classList.add('text-scale-xl');
+            root.style.fontSize = '125%';
+        } else {
+            root.style.fontSize = '';
+        }
+
+        try {
+            localStorage.setItem(STORAGE_KEY, valid);
+        } catch (e) {}
+
+        document.querySelectorAll('[data-text-scale-btn]').forEach((btn) => {
+            const target = btn.getAttribute('data-text-scale-btn');
+            if (target === 'cycle') {
+                const label = valid === 'normal' ? 'A+' : (valid === 'lg' ? 'A++' : 'A');
+                const title = valid === 'normal'
+                    ? 'Perbesar ukuran teks (Besar)'
+                    : (valid === 'lg' ? 'Perbesar ukuran teks (Sangat Besar)' : 'Kembalikan ukuran teks normal');
+                btn.setAttribute('aria-label', title);
+                btn.setAttribute('title', title);
+                btn.setAttribute('aria-pressed', valid !== 'normal' ? 'true' : 'false');
+                const span = btn.querySelector('[data-text-scale-label]');
+                if (span) span.textContent = label;
+                btn.classList.toggle('bg-red-50', valid !== 'normal');
+                btn.classList.toggle('text-brand-maroon', valid !== 'normal');
+                btn.classList.toggle('border-brand-maroon/40', valid !== 'normal');
+            } else {
+                const isActive = target === valid;
+                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                btn.classList.toggle('bg-brand-maroon', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('text-gray-700', !isActive);
+            }
+        });
+    }
+
+    function getSavedScale() {
+        try {
+            return localStorage.getItem(STORAGE_KEY) || 'normal';
+        } catch (e) {
+            return 'normal';
+        }
+    }
+
+    window.siridaApplyTextScale = applyScale;
+    applyScale(getSavedScale());
+
+    document.addEventListener('DOMContentLoaded', function () {
+        applyScale(getSavedScale());
+    });
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-text-scale-btn]');
+        if (!btn) return;
+        const target = btn.getAttribute('data-text-scale-btn');
+        if (target === 'cycle') {
+            const current = getSavedScale();
+            const next = SCALES[(SCALES.indexOf(current) + 1) % SCALES.length];
+            applyScale(next);
+        } else {
+            applyScale(target);
+        }
+    });
+})();
