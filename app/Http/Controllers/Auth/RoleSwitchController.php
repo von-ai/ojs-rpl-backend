@@ -38,7 +38,7 @@ class RoleSwitchController extends Controller
         }
 
         $meta = UserRole::roleMeta($roleCode);
-        $message = "Peran aktif berhasil dialihkan ke {$meta['label']}.";
+        $message = "Anda sekarang berperan sebagai {$meta['label']}.";
 
         return redirect()
             ->route($meta['route'])

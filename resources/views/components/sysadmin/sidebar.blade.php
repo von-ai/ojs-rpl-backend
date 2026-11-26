@@ -60,6 +60,7 @@
             $isAuditActive = request()->routeIs('sysadmin.audit-logs.*');
         @endphp
 
+        <x-portal.menu-section>Jurnal dan pengguna</x-portal.menu-section>
         <!-- 1. Jurnal Ilmiah (Multi-Tenancy) -->
         <a 
             href="{{ route('sysadmin.journals.index') }}" 
@@ -84,6 +85,7 @@
             <span class="truncate sidebar-label">Pengguna &amp; Akses</span>
         </a>
 
+        <x-portal.menu-section>Sistem</x-portal.menu-section>
         <!-- 3. Pengaturan Situs & Platform -->
         <a 
             href="{{ route('sysadmin.settings.index') }}" 

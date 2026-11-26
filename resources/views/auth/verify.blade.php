@@ -5,10 +5,10 @@
 @section('content')
 <div class="w-full max-w-md lg:max-w-5xl mx-auto my-auto py-6">
     <!-- Main Verify Card Container -->
-    <div class="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+    <div class="bg-white rounded-2xl border border-outline-variant shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
         <!-- Sisi Kiri: Panel Informasi (Desktop Lg Ke Atas) -->
-        <div class="hidden lg:flex lg:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-gray-200/90 flex-col justify-between">
+        <div class="hidden lg:flex lg:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-divider flex-col justify-between">
             <div>
                 <!-- Subtitle Category -->
                 <span class="text-[11px] font-bold tracking-wider text-brand-maroon uppercase block mb-3">
@@ -25,7 +25,7 @@
                     Keamanan akun Anda adalah prioritas kami. Verifikasi email diperlukan untuk memastikan bahwa ini benar-benar Anda.
                 </p>
 
-                <div class="border-b border-gray-200/80 mb-6"></div>
+                <div class="border-b border-divider mb-6"></div>
 
                 <div class="space-y-4">
                     <div class="flex items-start gap-3">
@@ -103,7 +103,7 @@
                 @endif
 
                 <!-- Tautan Bantuan / Resend -->
-                <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+                <div class="mt-8 pt-6 border-t border-divider text-center">
                     <p class="text-sm text-gray-500">
                         Tidak menerima email atau tautan kedaluwarsa?
                     </p>

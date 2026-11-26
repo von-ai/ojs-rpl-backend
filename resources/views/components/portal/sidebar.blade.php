@@ -17,7 +17,7 @@
         } catch (e) {}
     })();
 </script>
-<aside id="{{ $id }}" class="portal-sidebar fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
+<aside id="{{ $id }}" class="portal-sidebar fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-divider flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-full lg:shrink-0 select-none">
     <script>
         (function() {
             try {
@@ -28,7 +28,7 @@
         })();
     </script>
     <!-- Header Brand & Tombol Kontrol -->
-    <div class="h-14 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
+    <div class="h-14 px-4 flex items-center justify-between border-b border-divider shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
         <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="{{ $roleLabel }} BRIDA Kota Makassar">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Kota Makassar" class="w-8 h-8 object-contain shrink-0 sidebar-logo transition-transform duration-200 group-hover:scale-105">
@@ -39,7 +39,7 @@
         </a>
 
         <!-- Desktop Minimize / Maximize Toggle Button -->
-        <button id="sidebar-collapse-toggle-btn" type="button" class="sidebar-collapse-btn w-7 h-7 items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200/80 bg-white focus:outline-hidden transition shrink-0 cursor-pointer shadow-2xs" title="Kecilkan Navigasi" aria-label="Kecilkan atau perluas navigasi">
+        <button id="sidebar-collapse-toggle-btn" type="button" class="sidebar-collapse-btn w-7 h-7 items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-outline-variant bg-white focus:outline-hidden transition shrink-0 cursor-pointer shadow-2xs" title="Kecilkan Navigasi" aria-label="Kecilkan atau perluas navigasi">
             <svg id="collapse-icon-left" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
@@ -58,15 +58,10 @@
 
     <!-- Navigation Menu Items (Sesuai Peran) -->
     <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 sidebar-scroll" aria-label="Navigasi Utama {{ $roleLabel }}">
-        <div class="pb-1 px-2.5 sidebar-heading">
-            <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Menu Utama</span>
-        </div>
+        <x-portal.menu-section>Menu utama</x-portal.menu-section>
 
         {{ $slot }}
-    </nav>
-
-    <!-- Bottom Secondary Navigation (Panduan, Website Jurnal & Keluar) -->
-    <div class="p-3 border-t border-gray-200 space-y-1 shrink-0 bg-gray-50/50 sidebar-footer">
+        <x-portal.menu-section>Referensi jurnal</x-portal.menu-section>
         @if($guidelineUrl)
             <a
                 href="{{ $guidelineUrl }}"
@@ -96,6 +91,9 @@
             </div>
         </a>
 
+    </nav>
+
+    <div class="p-3 border-t border-divider shrink-0 bg-gray-50/50 sidebar-footer">
         <form action="{{ route('logout') }}" method="POST" class="m-0">
             @csrf
             <button

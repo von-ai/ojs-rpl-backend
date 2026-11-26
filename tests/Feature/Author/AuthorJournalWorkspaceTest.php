@@ -203,7 +203,7 @@ class AuthorJournalWorkspaceTest extends TestCase
 
         $switchResponse->assertRedirect(route('author.submissions.index'));
         $switchResponse->assertSessionHas('active_journal_id', $this->journalB->id);
-        $switchResponse->assertSessionHas('journal_switched_toast', "Konteks jurnal aktif berhasil dialihkan ke {$this->journalB->name}.");
+        $switchResponse->assertSessionHas('journal_switched_toast', "Anda sekarang bekerja di {$this->journalB->name}.");
 
         // Setelah beralih, buka halaman index
         $indexResponse = $this->actingAs($this->author)

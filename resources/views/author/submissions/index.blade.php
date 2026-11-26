@@ -56,8 +56,8 @@
     </div>
 
     <!-- Navigasi Tab Status Naskah -->
-    <div class="border-b border-gray-200">
-        <nav id="submissions-tabs-nav" class="flex space-x-1 sm:space-x-2 overflow-x-auto pb-px no-scrollbar" aria-label="Tab Kategori Naskah">
+    <div class="rounded-lg border border-outline-variant bg-white overflow-hidden">
+        <nav id="submissions-tabs-nav" class="section-menu" aria-label="Tab Kategori Naskah">
             @foreach($viewModel->tabs() as $tab)
                 @php
                     $isActive = ($filters['tab'] ?? 'semua') === $tab['key'];

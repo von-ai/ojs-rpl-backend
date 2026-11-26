@@ -5,10 +5,10 @@
 @section('content')
 <div class="w-full max-w-md lg:max-w-5xl mx-auto my-auto">
     <!-- Main Register Card Container -->
-    <div class="bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+    <div class="bg-white rounded-2xl border border-outline-variant shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
 
         <!-- Sisi Kiri: Panel Informasi (Desktop Lg Ke Atas) -->
-        <div class="hidden lg:flex lg:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-gray-200/90 flex-col justify-between">
+        <div class="hidden lg:flex lg:col-span-5 bg-surface-subtle p-7 sm:p-9 lg:p-10 border-r border-divider flex-col justify-between">
             <div>
                 <!-- Subtitle Category -->
                 <span class="text-[11px] font-bold tracking-wider text-brand-maroon uppercase block mb-3">
@@ -25,7 +25,7 @@
                     Daftarkan akun untuk mengajukan naskah riset, memantau proses telaah, dan berkontribusi dalam ekosistem inovasi Kota Makassar.
                 </p>
 
-                <div class="border-b border-gray-200/80 mb-6"></div>
+                <div class="border-b border-divider mb-6"></div>
 
                 <!-- Feature Guidance List (Konsisten dengan Login Card) -->
                 <div class="space-y-5">
@@ -239,7 +239,7 @@
                     </div>
 
                     <!-- Row 5: Ketentuan Layanan & Kebijakan Privasi Accordion Card -->
-                    <div class="rounded-xl border border-gray-200/90 bg-gray-50/70 p-3 sm:p-3.5 text-xs transition-colors hover:bg-gray-50">
+                    <div class="rounded-xl border border-outline-variant bg-gray-50/70 p-3 sm:p-3.5 text-xs transition-colors hover:bg-gray-50">
                         <details class="group [&_summary::-webkit-details-marker]:hidden">
                             <summary class="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-gray-800 hover:text-brand-maroon transition-colors select-none">
                                 <span class="flex items-center gap-2">
@@ -255,7 +255,7 @@
                                     </svg>
                                 </span>
                             </summary>
-                            <div class="mt-2.5 pt-2.5 border-t border-gray-200/80 space-y-2 text-[11px] text-gray-600 leading-relaxed">
+                            <div class="mt-2.5 pt-2.5 border-t border-divider space-y-2 text-[11px] text-gray-600 leading-relaxed">
                                 <div class="flex items-start gap-2">
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wide shrink-0 mt-0.5">Tujuan</span>
                                     <p>{{ config('registration.purpose') }}</p>
@@ -287,7 +287,7 @@
                                 id="consent_terms"
                                 value="1"
                                 required
-                                class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon focus:ring-offset-0 cursor-pointer transition"
+                                class="mt-0.5 h-4 w-4 rounded border-outline text-brand-maroon focus:ring-brand-maroon focus:ring-offset-0 cursor-pointer transition"
                                 {{ old('notice_version') === config('registration.version') && old('consent_terms') ? 'checked' : '' }}
                             />
                             <label for="consent_terms" class="text-xs text-gray-600 leading-snug cursor-pointer select-none">
@@ -319,7 +319,7 @@
             </div>
 
             <!-- Bottom Login Link Inside Card -->
-            <div class="mt-5 pt-4 text-center text-xs text-gray-500 border-t border-gray-100">
+            <div class="mt-5 pt-4 text-center text-xs text-gray-500 border-t border-divider">
                 <span>Sudah memiliki akun?</span>
                 @if (Route::has('login'))
                     <a href="{{ route('login') }}" class="ml-1 text-brand-maroon font-bold hover:underline">

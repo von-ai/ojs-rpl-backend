@@ -26,7 +26,7 @@
                     aria-label="Cari artikel cepat"
                     placeholder="Cari artikel..."
                     value="{{ request('q') }}"
-                    class="w-full min-h-10 pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon placeholder:text-gray-500 transition-all"
+                    class="w-full min-h-10 pl-9 pr-3 py-2 text-sm bg-gray-50 border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-maroon focus:border-brand-maroon placeholder:text-gray-500 transition-all"
                 >
                 <svg class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -48,7 +48,7 @@
                 <button
                     type="button"
                     onclick="const el = document.querySelector('input[name=q]'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }"
-                    class="sm:hidden inline-flex w-9 h-9 items-center justify-center text-gray-700 hover:text-brand-maroon bg-white hover:bg-red-50 rounded-lg border border-gray-200 transition-colors shrink-0 cursor-pointer active:scale-95"
+                    class="sm:hidden inline-flex w-9 h-9 items-center justify-center text-gray-700 hover:text-brand-maroon bg-white hover:bg-red-50 rounded-lg border border-outline-variant transition-colors shrink-0 cursor-pointer active:scale-95"
                     title="Cari Artikel"
                     aria-label="Cari Artikel"
                 >
@@ -63,7 +63,7 @@
                 id="mobile-nav-toggle-btn"
                 type="button"
                 onclick="window.toggleMobileNav(event)"
-                class="lg:hidden inline-flex items-center justify-center w-9 h-9 sm:w-9.5 sm:h-9.5 rounded-lg text-gray-700 hover:text-brand-maroon bg-white hover:bg-red-50 border border-gray-200 transition-all cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 active:scale-95"
+                class="lg:hidden inline-flex items-center justify-center w-9 h-9 sm:w-9.5 sm:h-9.5 rounded-lg text-gray-700 hover:text-brand-maroon bg-white hover:bg-red-50 border border-outline-variant transition-all cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-maroon/20 active:scale-95"
                 aria-label="Buka menu navigasi"
                 aria-expanded="false"
                 aria-controls="mobile-nav-drawer"
@@ -80,8 +80,8 @@
 </div>
 
 <!-- Desktop Navigation Link Bar (Hidden on < lg, Visible on lg+) -->
-<nav class="desktop-navbar hidden lg:block border-t border-gray-200 bg-white px-3 sm:px-8 w-full max-w-full" aria-label="Navigasi utama jurnal">
-    <div class="max-w-7xl mx-auto flex items-center gap-1.5 text-sm font-medium text-gray-700 py-1">
+<nav class="desktop-navbar hidden lg:block border-t border-divider bg-white px-3 sm:px-8 w-full max-w-full" aria-label="Navigasi utama jurnal">
+    <div class="max-w-7xl mx-auto section-menu text-sm font-medium text-gray-700 py-1">
         @if (!empty($navLinks))
             @foreach ($navLinks as $link)
                 <a href="{{ $link['url'] }}" class="px-3.5 py-2.5 rounded-md transition-colors text-nowrap {{ $link['active'] ? 'text-brand-maroon font-bold border-b-2 border-brand-maroon rounded-b-none' : 'text-gray-700 hover:text-brand-maroon hover:bg-gray-50' }}">

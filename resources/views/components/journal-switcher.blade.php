@@ -20,7 +20,7 @@
         aria-expanded="false"
         aria-label="Beralih Jurnal ({{ $activeJournal?->name ?? 'Jurnal' }})"
         title="Jurnal aktif: {{ $activeJournal?->name ?? 'Jurnal' }} — Klik untuk ganti jurnal"
-        class="inline-flex items-center justify-center gap-1.5 min-h-9 px-2.5 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-gray-200 transition cursor-pointer"
+        class="inline-flex items-center justify-center gap-1.5 min-h-9 px-2.5 rounded-lg text-xs font-semibold bg-surface-subtle hover:bg-gray-100 text-gray-800 border border-outline-variant transition cursor-pointer"
     >
         <svg class="w-4 h-4 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -36,21 +36,21 @@
         data-journal-switcher-menu
         role="menu"
         aria-orientation="vertical"
-        class="hidden absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-gray-200 shadow-xl z-50 overflow-hidden"
+        class="hidden absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-outline-variant shadow-xl z-50 overflow-hidden"
     >
         <!-- Header Panel -->
-        <div class="px-4 py-3 bg-surface-subtle border-b border-gray-200 flex items-center justify-between gap-2">
+        <div class="px-4 py-3 bg-surface-subtle border-b border-divider flex items-center justify-between gap-2">
             <div class="min-w-0 text-left">
                 <p class="text-xs font-bold text-gray-900 truncate">Beralih Konteks Jurnal</p>
                 <p class="text-[11px] text-gray-500 truncate">Pilih jurnal aktif untuk ruang kerja portal</p>
             </div>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-gray-700 border border-gray-200 shrink-0">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-gray-700 border border-outline-variant shrink-0">
                 {{ $journalsCount }} Jurnal
             </span>
         </div>
 
         <!-- Daftar Jurnal yang Dapat Diakses Pengguna -->
-        <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+        <div class="max-h-80 overflow-y-auto divide-y divide-divider">
             @foreach($journals as $journal)
                 @php
                     $isCurrent = $activeJournal && ((string) $journal['id'] === (string) $activeJournal->id);

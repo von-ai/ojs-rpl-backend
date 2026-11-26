@@ -38,11 +38,11 @@
     }
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 hover:border-brand-maroon/40 transition-all flex flex-col justify-between space-y-3 sm:space-y-3.5 group shadow-none']) }}>
+<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-outline-variant p-4 sm:p-5 hover:border-brand-maroon/40 transition-all flex flex-col justify-between space-y-3 sm:space-y-3.5 group shadow-none']) }}>
     <div class="space-y-2.5">
         <!-- Top Status & Year Badge -->
         <div class="flex items-center justify-between text-xs">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $isCurrent ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-200' }}">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $isCurrent ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-outline-variant' }}">
                 {{ $isCurrent ? 'Edisi Terkini' : 'Arsip' }}
             </span>
             @if($year)
@@ -51,7 +51,7 @@
         </div>
 
         <!-- Visual Box: Emblem Buku + Volume & Bulan -->
-        <div class="bg-gray-50 group-hover:bg-red-50/40 p-3 sm:p-3.5 rounded-lg text-center border border-gray-200/70 transition-colors">
+        <div class="bg-gray-50 group-hover:bg-red-50/40 p-3 sm:p-3.5 rounded-lg text-center border border-outline-variant transition-colors">
             <svg class="w-6 h-6 sm:w-7 sm:h-7 text-brand-maroon mx-auto mb-1 transition-transform group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
             </svg>
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Action Link (Konsisten Terletak di Sisi Kanan) -->
-    <div class="pt-2.5 sm:pt-3 border-t border-gray-100 flex items-center justify-end text-xs">
+    <div class="pt-2.5 sm:pt-3 border-t border-divider flex items-center justify-end text-xs">
         <a href="{{ $url }}" class="font-semibold text-brand-maroon hover:underline flex items-center gap-1 group-hover:translate-x-0.5 transition-transform ml-auto">
             <span>{{ $actionLabel }}</span>
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

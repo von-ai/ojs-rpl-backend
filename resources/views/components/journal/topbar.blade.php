@@ -1,6 +1,6 @@
 @props(['topbarData' => null, 'journal' => null])
 
-<div class="bg-gray-50 border-b border-gray-200 text-xs py-1.5 px-3.5 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden">
+<div class="bg-gray-50 border-b border-divider text-xs py-1.5 px-3.5 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden">
     <div class="max-w-7xl mx-auto flex flex-row items-center justify-between gap-2 text-gray-700 text-xs">
         <!-- Left Metadata -->
         <div class="flex items-center gap-1.5 sm:gap-2 truncate">
@@ -28,8 +28,8 @@
             <!-- Kontrol Ukuran Teks Ramah Pembaca Senior -->
             <div class="inline-flex items-center rounded-md border border-gray-300 bg-white overflow-hidden" role="group" aria-label="Pengaturan ukuran teks">
                 <button type="button" data-text-scale-btn="normal" aria-pressed="true" title="Ukuran teks normal" class="px-2 py-0.5 text-[11px] font-bold text-gray-700 hover:bg-gray-100 transition cursor-pointer">A</button>
-                <button type="button" data-text-scale-btn="lg" aria-pressed="false" title="Ukuran teks besar" class="px-2 py-0.5 text-xs font-bold text-gray-700 hover:bg-gray-100 border-l border-gray-200 transition cursor-pointer">A+</button>
-                <button type="button" data-text-scale-btn="xl" aria-pressed="false" title="Ukuran teks sangat besar" class="hidden sm:inline-block px-2 py-0.5 text-[13px] font-bold text-gray-700 hover:bg-gray-100 border-l border-gray-200 transition cursor-pointer">A++</button>
+                <button type="button" data-text-scale-btn="lg" aria-pressed="false" title="Ukuran teks besar" class="px-2 py-0.5 text-xs font-bold text-gray-700 hover:bg-gray-100 border-l border-divider transition cursor-pointer">A+</button>
+                <button type="button" data-text-scale-btn="xl" aria-pressed="false" title="Ukuran teks sangat besar" class="hidden sm:inline-block px-2 py-0.5 text-[13px] font-bold text-gray-700 hover:bg-gray-100 border-l border-divider transition cursor-pointer">A++</button>
             </div>
 
             <span class="hidden sm:inline text-gray-300" aria-hidden="true">|</span>

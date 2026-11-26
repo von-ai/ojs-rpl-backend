@@ -1,7 +1,6 @@
 <div 
     id="toast-notification-container" 
-    class="fixed top-4 right-4 sm:top-5 sm:right-5 z-100 flex flex-col gap-2.5 pointer-events-none max-w-sm sm:max-w-md w-full"
-    aria-live="polite" 
+    class="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] sm:left-auto sm:right-6 sm:bottom-6 z-100 flex flex-col items-end gap-2 pointer-events-none sm:max-w-sm"
     role="region" 
     aria-label="Pemberitahuan Sistem"
 ></div>
@@ -41,40 +40,7 @@
         `
     };
 
-    const TOAST_STYLES = {
-        warning: {
-            card: 'bg-white border-gray-200 border-l-4 border-l-amber-600 text-gray-900 shadow-lg',
-            badge: 'bg-transparent',
-            title: 'text-gray-900 font-semibold',
-            message: 'text-gray-600',
-            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
-            defaultTitle: 'Peringatan'
-        },
-        error: {
-            card: 'bg-white border-gray-200 border-l-4 border-l-brand-maroon text-gray-900 shadow-lg',
-            badge: 'bg-transparent',
-            title: 'text-gray-900 font-semibold',
-            message: 'text-gray-600',
-            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
-            defaultTitle: 'Terjadi Kesalahan'
-        },
-        success: {
-            card: 'bg-white border-gray-200 border-l-4 border-l-emerald-600 text-gray-900 shadow-lg',
-            badge: 'bg-transparent',
-            title: 'text-gray-900 font-semibold',
-            message: 'text-gray-600',
-            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
-            defaultTitle: 'Berhasil'
-        },
-        info: {
-            card: 'bg-white border-gray-200 border-l-4 border-l-blue-600 text-gray-900 shadow-lg',
-            badge: 'bg-transparent',
-            title: 'text-gray-900 font-semibold',
-            message: 'text-gray-600',
-            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
-            defaultTitle: 'Informasi'
-        }
-    };
+    const typeLabels = { warning: 'Peringatan', error: 'Kesalahan', success: 'Berhasil', info: 'Informasi' };
 
     function escapeHtml(text) {
         if (!text) return '';
@@ -112,9 +78,9 @@
 
         if (config.type === 'danger') config.type = 'error';
         if (config.type === 'yellow') config.type = 'warning';
-        const style = TOAST_STYLES[config.type] || TOAST_STYLES.warning;
+
         const iconSvg = TOAST_ICONS[config.type] || TOAST_ICONS.warning;
-        const titleText = config.title || style.defaultTitle;
+        const titleText = config.title || (config.message ? '' : typeLabels[config.type] || typeLabels.warning);
 
         if (!container) return null;
 
@@ -123,6 +89,7 @@
             const oldest = container.firstElementChild;
             if (oldest && oldest._dismiss) {
                 oldest._dismiss();
+                oldest.remove();
             } else if (oldest) {
                 oldest.remove();
             }
@@ -130,29 +97,19 @@
 
         // Buat DOM element toast
         const toast = document.createElement('div');
-        toast.className = `toast-item pointer-events-auto relative w-full rounded-xl border ${style.card} transition-all duration-200 ease-out transform -translate-y-2 opacity-0 scale-[0.98]`;
-        toast.setAttribute('role', 'alert');
+        toast.className = 'toast-item pointer-events-auto max-w-full rounded-lg border border-outline-variant bg-white text-gray-900 shadow-menu transition duration-200 ease-out translate-y-2 opacity-0';
+        toast.setAttribute('role', config.type === 'error' || config.type === 'warning' ? 'alert' : 'status');
 
         const hasAutoDismiss = config.duration > 0;
 
         toast.innerHTML = `
-            <div class="p-3.5 sm:p-4 flex items-start gap-3">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${style.badge}">
-                    ${iconSvg}
+            <div class="flex items-center gap-2.5 pl-3.5 pr-1.5 py-1.5">
+                <span aria-hidden="true" class="shrink-0">${iconSvg}</span>
+                <div class="min-w-0 py-1 text-sm leading-snug wrap-anywhere">
+                    ${titleText ? `<p class="font-semibold">${escapeHtml(titleText)}</p>` : ''}
+                    ${config.message ? `<p>${escapeHtml(config.message)}</p>` : ''}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h4 class="text-xs sm:text-sm font-semibold leading-snug ${style.title}">
-                        ${escapeHtml(titleText)}
-                    </h4>
-                    <p class="text-xs mt-0.5 leading-relaxed ${style.message}">
-                        ${escapeHtml(config.message)}
-                    </p>
-                </div>
-                <button 
-                    type="button" 
-                    class="toast-close-btn -mr-1 -mt-0.5 rounded-lg p-1 transition cursor-pointer active:scale-95 ${style.closeBtn}" 
-                    aria-label="Tutup notifikasi"
-                >
+                <button type="button" class="toast-close-btn inline-flex size-10 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 cursor-pointer" aria-label="Tutup notifikasi">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
@@ -165,8 +122,8 @@
         // Memicu animasi enter pada frame berikutnya
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                toast.classList.remove('-translate-y-2', 'opacity-0', 'scale-[0.98]');
-                toast.classList.add('translate-y-0', 'opacity-100', 'scale-100');
+                toast.classList.remove('translate-y-2', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
             });
         });
 
@@ -180,8 +137,8 @@
             isDismissed = true;
             if (timerId) clearTimeout(timerId);
 
-            toast.classList.remove('translate-y-0', 'opacity-100', 'scale-100');
-            toast.classList.add('-translate-y-2', 'opacity-0', 'scale-[0.98]');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-2', 'opacity-0');
 
             toast.addEventListener('transitionend', () => {
                 toast.remove();
@@ -268,14 +225,12 @@
         @elseif(session('journal_switched_toast'))
             showToast({
                 type: 'success',
-                title: 'Konteks Jurnal Dialihkan',
                 message: @json(session('journal_switched_toast')),
                 duration: 3500
             });
         @elseif(session('role_switched_toast'))
             showToast({
                 type: 'success',
-                title: 'Peran Aktif Dialihkan',
                 message: @json(session('role_switched_toast')),
                 duration: 3500
             });
@@ -289,28 +244,24 @@
         @elseif(session('error'))
             showToast({
                 type: 'error',
-                title: 'Pemberitahuan',
                 message: @json(session('error')),
                 duration: 5000
             });
         @elseif(session('toast_success'))
             showToast({
                 type: 'success',
-                title: 'Berhasil',
                 message: @json(session('toast_success')),
                 duration: 4000
             });
         @elseif(session('success'))
             showToast({
                 type: 'success',
-                title: 'Berhasil',
                 message: @json(session('success')),
                 duration: 4500
             });
         @elseif(session('status'))
             showToast({
                 type: 'success',
-                title: 'Berhasil',
                 message: @json(session('status')),
                 duration: 4500
             });
