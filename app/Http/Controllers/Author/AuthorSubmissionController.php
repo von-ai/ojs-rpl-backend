@@ -27,6 +27,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -362,10 +363,15 @@ class AuthorSubmissionController extends Controller
             return redirect()
                 ->route('author.submissions.show', $submission->id)
                 ->with('error', $e->getMessage());
+        } catch (FilesystemException $e) {
+            // Ditangani terpusat di bootstrap/app.php.
+            throw $e;
         } catch (\Throwable $e) {
+            report($e);
+
             return redirect()
                 ->route('author.submissions.show', $submission->id)
-                ->with('error', 'Terjadi kesalahan sistem saat memproses revisi naskah: '.$e->getMessage());
+                ->with('error', 'Terjadi kesalahan sistem saat memproses revisi naskah. Silakan coba lagi.');
         }
     }
 

@@ -34,7 +34,8 @@ return [
             'url' => env('AZURE_STORAGE_URL'),
             'public_url' => env('AZURE_STORAGE_PUBLIC_URL'),
             'prefix' => env('AZURE_STORAGE_PREFIX', null),
-            'throw' => false,
+            // Wajib true: dengan false, store() yang gagal hanya mengembalikan `false`.
+            'throw' => true,
         ],
 
         'azure-backups' => [
