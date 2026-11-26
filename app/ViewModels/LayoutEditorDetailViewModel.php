@@ -236,10 +236,16 @@ class LayoutEditorDetailViewModel
         }
 
         // Approvals
+        $activeGalley = $sub->activeGalley;
+        $isGalleyReadyForAuthor = (bool) ($activeGalley?->readyForAuthorSignoff());
+
         $authorSignoff = [
             'approved' => false,
             'approved_at' => null,
             'notes' => null,
+            'ready' => $isGalleyReadyForAuthor,
+            'status_label' => $isGalleyReadyForAuthor ? 'Menunggu Penulis' : 'Menunggu Proofreading Selesai',
+            'status_badge_class' => $isGalleyReadyForAuthor ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-gray-100 text-gray-600 border-gray-200',
         ];
         $editorFinal = [
             'approved' => false,
@@ -254,6 +260,9 @@ class LayoutEditorDetailViewModel
                     'approved' => true,
                     'approved_at' => $authApp->approved_at->translatedFormat('d M Y H:i').' WITA',
                     'notes' => $authApp->note,
+                    'ready' => true,
+                    'status_label' => 'Disetujui Penulis',
+                    'status_badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
                 ];
             }
             $eicApp = $g->approvals->where('stage', 'editor_final')->whereNull('invalidated_at')->last();

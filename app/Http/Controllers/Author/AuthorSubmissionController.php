@@ -414,7 +414,13 @@ class AuthorSubmissionController extends Controller
 
     public function downloadProofreadGalley(Request $request, string $id, string $galleyId): StreamedResponse
     {
-        $galley = $this->findGalleyForSignoff($request, $id, $galleyId);
+        $submission = $this->findAuthorSubmission($id, $request->user());
+        $isAuthorizedAuthor = $submission && ($submission->author_id === $request->user()->id
+            || $submission->contributors()->where('user_id', $request->user()->id)->exists());
+        abort_unless($isAuthorizedAuthor && in_array($submission->status, ['accepted', 'in_production', 'scheduled', 'published'], true), 404);
+
+        $galley = $submission->galleys()->findOrFail($galleyId);
+        abort_unless($galley->file && $galley->file->virus_scan_status === 'clean', 404);
 
         return app(PrivateFileService::class)->stream($galley->file);
     }
@@ -438,8 +444,9 @@ class AuthorSubmissionController extends Controller
     private function findGalleyForSignoff(Request $request, string $id, string $galleyId): Galley
     {
         $submission = $this->findAuthorSubmission($id, $request->user());
-        abort_unless($submission && $submission->author_id === $request->user()->id
-            && in_array($submission->status, ['accepted', 'in_production'], true), 404);
+        $isAuthorizedAuthor = $submission && ($submission->author_id === $request->user()->id
+            || $submission->contributors()->where('user_id', $request->user()->id)->exists());
+        abort_unless($isAuthorizedAuthor && in_array($submission->status, ['accepted', 'in_production'], true), 404);
         $galley = $submission->activeGalley;
         abort_unless($galley && $galley->id === $galleyId && $galley->readyForAuthorSignoff(), 404);
 

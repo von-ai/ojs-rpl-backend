@@ -752,13 +752,36 @@ class AuthorSubmissionDetailViewModel
         }
 
         $hasGalley = $sub->galleys->isNotEmpty();
-        $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
-
         $galley = $sub->activeGalley;
-        $canReviewGalley = $user?->id === $sub->author_id && $galley?->readyForAuthorSignoff();
-        $authorApproved = $canReviewGalley && $galley->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
-            && $approval->invalidated_at === null && $approval->approved_by === $sub->author_id
-            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256);
+        $isAuthorizedAuthor = $user && ($user->id === $sub->author_id || $sub->contributors()->where('user_id', $user->id)->exists());
+        $isGalleyReady = (bool) ($galley?->readyForAuthorSignoff());
+        $canReviewGalley = $isAuthorizedAuthor && $isGalleyReady;
+        $authorApproved = $isAuthorizedAuthor && (bool) ($galley?->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
+            && $approval->invalidated_at === null
+            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256));
+
+        if ($authorApproved) {
+            $layoutStatus = 'Pemeriksaan Galai Selesai (Disetujui Penulis)';
+        } elseif ($canReviewGalley) {
+            $layoutStatus = 'Menunggu Persetujuan Galai oleh Penulis';
+        } elseif ($galley?->stage === 'proofreading') {
+            $layoutStatus = 'Penataan Selesai — Sedang Ditinjau Proofreader';
+        } elseif ($hasGalley) {
+            $layoutStatus = 'Draf Galai PDF Tersedia (Menunggu Proofreader)';
+        } else {
+            $layoutStatus = 'Penataan Tata Letak (Sedang Dikerjakan)';
+        }
+
+        $instructions = match (true) {
+            $authorApproved => 'Anda telah menyetujui draf galai publikasi ini. Saat ini dewan redaksi sedang memproses otorisasi akhir untuk penerbitan resmi artikel.',
+            $canReviewGalley => 'Galai cetak sementara (galley proof) telah selesai ditinjau oleh Proofreader dan siap untuk pemeriksaan akhir Anda. Silakan unduh dan berikan persetujuan penerbitan.',
+            $hasGalley && $galley?->stage === 'proofreading' => 'Draf galai PDF telah diunggah oleh Layout Editor dan saat ini sedang dalam proses peninjauan oleh Proofreader. Anda dapat mengunduh pratinjau draf berkas ini di bawah.',
+            $hasGalley => 'Draf galai telah diunggah oleh penata letak. Menunggu proses proofreading sebelum pemeriksaan akhir oleh penulis.',
+            default => 'Penata letak sedang menyusun berkas galai PDF (typesetting). Anda akan dapat memeriksa berkas setelah draf galai tersedia.',
+        };
+
+        $galleyDownloadUrl = ($hasGalley && $galley) ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null;
+        $galleyApprovalUrl = ($canReviewGalley && ! $authorApproved) ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null;
 
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
@@ -768,10 +791,12 @@ class AuthorSubmissionDetailViewModel
             'layout_status' => $layoutStatus,
             'proofreading_deadline' => now()->addDays(7)->format('d M Y'),
             'galley_preview_ready' => $canReviewGalley,
-            'galley_download_url' => $canReviewGalley ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null,
-            'galley_approval_url' => $canReviewGalley && ! $authorApproved ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null,
+            'galley_download_url' => $galleyDownloadUrl,
+            'galley_approval_url' => $galleyApprovalUrl,
             'galley_author_approved' => $authorApproved,
-            'instructions' => 'Penulis dimohon untuk memeriksa berkas galai cetak sementara (galley proof) guna memastikan tidak ada kesalahan tipografi, rumus, atau tabel sebelum artikel diterbitkan secara resmi.',
+            'instructions' => $instructions,
+            'galley_version' => $galley?->version ?? 1,
+            'is_proofreading_in_progress' => $hasGalley && ! $isGalleyReady && ! $authorApproved,
         ];
     }
 
