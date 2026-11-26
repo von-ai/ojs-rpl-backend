@@ -312,6 +312,22 @@ class PublicJournalPortalTest extends TestCase
         $response->assertSee('2746-9999');
     }
 
+    public function test_halaman_tentang_dapat_diakses_melalui_slug_jurnal(): void
+    {
+        $this->get("/{$this->journal->slug}/about")
+            ->assertOk()
+            ->assertViewIs('journal.about.index')
+            ->assertViewHas('journal', $this->journal);
+    }
+
+    public function test_detail_artikel_dapat_diakses_melalui_slug_jurnal(): void
+    {
+        $this->get("/{$this->journal->slug}/articles/{$this->publishedArticle->slug}")
+            ->assertOk()
+            ->assertViewIs('journal.article')
+            ->assertSee($this->publishedArticle->title);
+    }
+
     /**
      * Mengakses slug jurnal yang tidak terdaftar menghasilkan 404 Not Found.
      */

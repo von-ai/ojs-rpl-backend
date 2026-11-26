@@ -358,6 +358,7 @@ class EditorInChiefController extends Controller
             'decision' => ['required', 'in:accept,revisions_required,resubmit,decline'],
             'note_for_author' => ['required', 'string', 'max:5000'],
             'internal_note' => ['nullable', 'string', 'max:2000'],
+            'copy_editor_id' => ['nullable', 'exists:users,id'],
             'revision_due_at' => [
                 'nullable',
                 'required_if:decision,revisions_required,resubmit',
@@ -366,6 +367,7 @@ class EditorInChiefController extends Controller
         ], [
             'decision.required' => 'Jenis keputusan editorial wajib dipilih.',
             'note_for_author.required' => 'Surat pengantar atau catatan resmi untuk penulis wajib diisi.',
+            'copy_editor_id.exists' => 'Penyunting Naskah yang dipilih tidak terdaftar di sistem.',
             'revision_due_at.required_if' => 'Batas waktu revisi wajib ditentukan bila meminta perbaikan naskah.',
         ]);
 
@@ -388,6 +390,40 @@ class EditorInChiefController extends Controller
             return redirect()
                 ->route('eic.submissions.show', $submission->id)
                 ->with('success', "Keputusan editorial resmi berhasil diterbitkan: {$label}.");
+        } catch (DomainException $e) {
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Menugaskan atau mengganti Penyunting Naskah (Copyeditor) untuk naskah yang telah diterima.
+     */
+    public function assignCopyeditor(Request $request, string $id): RedirectResponse
+    {
+        $submission = Submission::where('id', $id)->orWhere('submission_number', $id)->firstOrFail();
+
+        $validated = $request->validate([
+            'copy_editor_id' => ['required', 'exists:users,id'],
+        ], [
+            'copy_editor_id.required' => 'Pilih Penyunting Naskah yang akan ditugaskan.',
+            'copy_editor_id.exists' => 'Penyunting Naskah yang dipilih tidak terdaftar di sistem.',
+        ]);
+
+        try {
+            $eic = $request->user();
+            $copyeditor = User::findOrFail($validated['copy_editor_id']);
+
+            $this->eicService->assignCopyeditor(
+                submission: $submission,
+                eic: $eic,
+                copyeditor: $copyeditor
+            );
+
+            return redirect()
+                ->route('eic.submissions.show', $submission->id)
+                ->with('success', "Penyunting Naskah {$copyeditor->name} berhasil ditugaskan untuk naskah ini.");
         } catch (DomainException $e) {
             return redirect()
                 ->route('eic.submissions.show', $submission->id)

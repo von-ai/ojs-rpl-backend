@@ -108,6 +108,7 @@ Route::middleware(['auth', 'role.access:editor_in_chief'])->prefix('eic')->name(
     Route::get('/submissions/{id}/files/{fileId}/download', [EditorInChiefController::class, 'downloadFile'])->name('submissions.files.download');
     Route::post('/submissions/{id}/desk-review', [EditorInChiefController::class, 'storeDeskReview'])->name('submissions.desk-review');
     Route::post('/submissions/{id}/assign-editor', [EditorInChiefController::class, 'assignEditor'])->name('submissions.assign-editor');
+    Route::post('/submissions/{id}/assign-copyeditor', [EditorInChiefController::class, 'assignCopyeditor'])->name('submissions.assign-copyeditor');
     Route::post('/submissions/{id}/decision', [EditorInChiefController::class, 'storeDecision'])->name('submissions.decision');
     Route::post('/submissions/{id}/approve-galley', [EditorInChiefController::class, 'approveGalley'])->name('submissions.approve-galley');
     Route::get('/submissions/{id}/payment/proof', [EditorInChiefController::class, 'downloadPaymentProof'])->name('submissions.payment.proof');
@@ -281,7 +282,7 @@ Route::get('/dashboard', function () {
 
 // Portal Publik Multi-Tenancy per Instansi Jurnal (/{journalSlug})
 Route::prefix('{journalSlug}')
-    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$).*$'])
+    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$)[^/]+$'])
     ->name('journal.scoped.')->group(function () {
         Route::get('/', [PublicJournalController::class, 'index'])->name('index');
         Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
