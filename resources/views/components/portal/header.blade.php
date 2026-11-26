@@ -52,10 +52,10 @@
 
         @if($activeJournal)
             <span
-                class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50/80 border border-red-200/80 text-xs font-semibold text-brand-maroon max-w-sm truncate shrink"
+                class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-gray-300 text-xs font-semibold text-gray-900 max-w-sm truncate shrink shadow-2xs"
                 title="Sedang berada di jurnal: {{ $activeJournal->name }}"
             >
-                <span class="w-1.5 h-1.5 rounded-full bg-brand-maroon shrink-0" aria-hidden="true"></span>
+                <span class="w-2 h-2 rounded-full bg-brand-maroon shrink-0" aria-hidden="true"></span>
                 <span class="text-gray-600 font-normal shrink-0">Jurnal:</span>
                 <span class="truncate">{{ $activeJournal->name }}</span>
             </span>
@@ -117,8 +117,8 @@
                         </div>
                     </div>
                     <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                        <span class="text-gray-400 font-medium">Peran Aktif:</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-md font-semibold bg-brand-maroon/10 text-brand-maroon text-[10px]">
+                        <span class="text-gray-500 font-medium">Peran Aktif:</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md font-semibold bg-brand-maroon text-white text-[10px]">
                             {{ $roleMeta['label'] }}
                         </span>
                     </div>
@@ -166,9 +166,11 @@
                 var span = btn.querySelector('[data-text-scale-label]');
                 if (span) span.textContent = lbl;
                 btn.setAttribute('aria-pressed', v !== 'normal' ? 'true' : 'false');
-                btn.classList.toggle('bg-red-50', v !== 'normal');
-                btn.classList.toggle('text-brand-maroon', v !== 'normal');
-                btn.classList.toggle('border-brand-maroon/40', v !== 'normal');
+                btn.classList.toggle('bg-brand-maroon', v !== 'normal');
+                btn.classList.toggle('text-white', v !== 'normal');
+                btn.classList.toggle('border-brand-maroon', v !== 'normal');
+                btn.classList.toggle('bg-surface-subtle', v === 'normal');
+                btn.classList.toggle('text-gray-800', v === 'normal');
             } else {
                 var active = t === v;
                 btn.setAttribute('aria-pressed', active ? 'true' : 'false');

@@ -385,8 +385,8 @@ class SysAdminUsersViewModel
                         'status' => (string) ($user->status ?? 'active'),
                         'status_label' => ($user->status ?? 'active') === 'active' ? 'Aktif' : 'Non-Aktif',
                         'status_badge_class' => ($user->status ?? 'active') === 'active'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-gray-100 text-gray-700 border-gray-200',
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-gray-600 text-white border-gray-600',
                         'created_at' => $user->created_at?->format('d M Y') ?? '01 Jan 2026',
                         'joined_at' => $user->created_at?->format('d M Y, H:i').' WITA',
                     ];
