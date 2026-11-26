@@ -833,6 +833,12 @@ class EditorInChiefWorkflowTest extends TestCase
             ])
             ->assertSessionHas('success');
 
+        $firstCopyeditor->userRoles()->where('role_code', 'copyeditor')->delete();
+        $this->get(route('eic.submissions.show', $this->submission->id))
+            ->assertOk()
+            ->assertSee('id="reassign_copy_editor_id"', false)
+            ->assertSee($secondCopyeditor->name);
+
         $this->actingAs($this->eic)
             ->post(route('eic.submissions.assign-copyeditor', $this->submission->id), [
                 'copy_editor_id' => $secondCopyeditor->id,
