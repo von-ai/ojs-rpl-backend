@@ -35,9 +35,9 @@
 
     /* Skala Tipografi Compact Namun Nyaman Dibaca (Anti-Kekecilan di Seluruh Web) */
     --text-xs: 0.8125rem;
-    --text-xs--line-height: 1.45;
-    --text-sm: 0.9375rem;
-    --text-sm--line-height: 1.55;
+    --text-xs--line-height: 1.3;
+    --text-sm: 0.9rem;
+    --text-sm--line-height: 1.38;
 }
 
 /* Optimasi Tipografi Akademis, Aksesibilitas Senior, & Angka Tabular */
@@ -52,7 +52,7 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         letter-spacing: normal;
-        line-height: 1.55;
+        line-height: 1.42;
     }
 
     h1, h2, h3, h4 {
@@ -85,13 +85,13 @@
 .text-\[11px\],
 .text-\[11\.5px\] {
     font-size: 0.78125rem !important; /* 12.5px minimum floor */
-    line-height: 1.45 !important;
+    line-height: 1.3 !important;
 }
 
 p.text-\[11px\],
 label .text-\[11px\] {
     font-size: 0.8125rem !important; /* 13px untuk deskripsi & checklist */
-    line-height: 1.5 !important;
+    line-height: 1.35 !important;
 }
 
 p.text-gray-400,
@@ -368,6 +368,85 @@ html.text-scale-xl {
 
 .portal-workspace [role="dialog"].overflow-y-auto.items-center {
     align-items: safe center;
+}
+
+/* Standarisasi Material Design Lintas Semua Portal Peran:
+   1. Ikon tampil bersih tanpa kotak pastel (ukuran proporsional & tidak kekecilan).
+   2. Badge status/peran memakai warna solid kontras tinggi (bukan pastel transparan).
+   3. Kerapatan baris tabel rapi agar teks multi-baris tidak jomplang. */
+.portal-workspace table td,
+.portal-workspace table th {
+    line-height: 1.32;
+}
+
+.portal-workspace :is(div, span):is([class*="w-6 h-6"], [class*="w-7 h-7"], [class*="w-8 h-8"], [class*="w-9 h-9"], [class*="w-10 h-10"]):is([class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-orange-50"], [class*="bg-green-50"], [class*="bg-brand-maroon/"], [class*="bg-red-100"], [class*="bg-rose-100"], [class*="bg-emerald-100"], [class*="bg-amber-100"], [class*="bg-blue-100"]):not(.rounded-full) {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.portal-workspace :is(div, span):is([class*="w-6 h-6"], [class*="w-7 h-7"], [class*="w-8 h-8"], [class*="w-9 h-9"], [class*="w-10 h-10"]):is([class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-orange-50"], [class*="bg-green-50"], [class*="bg-brand-maroon/"], [class*="bg-red-100"], [class*="bg-rose-100"], [class*="bg-emerald-100"], [class*="bg-amber-100"], [class*="bg-blue-100"]):not(.rounded-full) > svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.portal-workspace :is(button, a):is([class*="w-7 h-7"], [class*="w-8 h-8"]):is([class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-brand-maroon/"]) {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+.portal-workspace :is(button, a):is([class*="w-7 h-7"], [class*="w-8 h-8"]):is([class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-brand-maroon/"]):hover {
+    background-color: #f3f4f6 !important;
+}
+
+.portal-workspace :is(button, a):is([class*="w-7 h-7"], [class*="w-8 h-8"]):is([class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-brand-maroon/"]) > svg {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-emerald-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-green-50"] {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-blue-50"] {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-sky-50"] {
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-amber-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-orange-50"] {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-red-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-rose-50"] {
+    background-color: #e40017 !important;
+    border-color: #e40017 !important;
+    color: #ffffff !important;
+}
+
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-purple-50"],
+.portal-workspace span[class*="inline-flex"][class*="px-"][class*="bg-indigo-50"] {
+    background-color: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
 }
 
 @media (max-width: 639px) {

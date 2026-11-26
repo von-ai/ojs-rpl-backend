@@ -111,30 +111,30 @@
     $colorClass = $iconColor ?? $defaultColor;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200 p-3.5 flex items-center gap-3 shadow-2xs']) }}>
-    <div class="{{ $colorClass }} flex items-center justify-center shrink-0" aria-hidden="true">
+<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200 px-3.5 py-3 flex items-center gap-3.5 shadow-2xs']) }}>
+    <div class="{{ $colorClass }} flex items-center justify-center shrink-0 [&_svg]:w-7 [&_svg]:h-7" aria-hidden="true">
         @if(isset($iconSlot))
             {{ $iconSlot }}
         @elseif($resolvedIcon)
             {!! $resolvedIcon !!}
         @else
-            <svg class="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <svg class="w-7 h-7 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
         @endif
     </div>
 
     <div class="min-w-0 flex-1">
-        <span class="text-xs font-semibold text-gray-700 block truncate" title="{{ $title }}">
+        <span class="text-xs font-semibold text-gray-600 block truncate leading-tight" title="{{ $title }}">
             {{ $title }}
         </span>
         <div class="mt-0.5 flex items-baseline">
-            <span class="{{ $valueClass ?? 'text-xl sm:text-2xl font-bold text-gray-900 tabular-nums tracking-tight' }} truncate block" title="{{ $value }}">
+            <span class="{{ $valueClass ?? 'text-xl font-bold text-gray-900 tabular-nums tracking-tight leading-tight' }} truncate block" title="{{ $value }}">
                 {{ $value }}
             </span>
         </div>
         @if(!empty($description))
-            <p class="text-xs text-gray-600 break-words mt-0.5 leading-snug" title="{{ $description }}">{{ $description }}</p>
+            <p class="text-xs text-gray-600 break-words mt-0.5 leading-tight" title="{{ $description }}">{{ $description }}</p>
         @endif
     </div>
 </div>
