@@ -35,6 +35,7 @@ Route::name('journal.')->group(function () {
     Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
     Route::get('/issues/{id}', [PublicJournalController::class, 'showIssue'])->name('issues.show');
     Route::get('/archives', [PublicJournalController::class, 'archives'])->name('archives');
+    Route::get('/journals', [PublicJournalController::class, 'journalsDirectory'])->name('journals.index');
 
     // Informasi Jurnal & Kebijakan Redaksi (About & Policies)
     Route::get('/about', [PublicJournalController::class, 'about'])->name('about');
@@ -281,7 +282,7 @@ Route::get('/dashboard', function () {
 
 // Portal Publik Multi-Tenancy per Instansi Jurnal (/{journalSlug})
 Route::prefix('{journalSlug}')
-    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions$).*$'])
+    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions|journals$).*$'])
     ->name('journal.scoped.')->group(function () {
         Route::get('/', [PublicJournalController::class, 'index'])->name('index');
         Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
@@ -289,6 +290,7 @@ Route::prefix('{journalSlug}')
         Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
         Route::get('/issues/{id}', [PublicJournalController::class, 'showIssue'])->name('issues.show');
         Route::get('/archives', [PublicJournalController::class, 'archives'])->name('archives');
+        Route::get('/journals', [PublicJournalController::class, 'journalsDirectory'])->name('journals.index');
         Route::get('/about', [PublicJournalController::class, 'about'])->name('about');
         Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
         Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');

@@ -7,6 +7,15 @@
             <span><strong class="font-medium text-gray-700">p-ISSN:</strong> {{ $topbarData['p_issn'] ?? '2985-789X' }}</span>
             <span class="text-gray-300 hidden sm:inline">•</span>
             <span class="hidden sm:inline"><strong class="font-medium text-gray-700">e-ISSN:</strong> {{ $topbarData['e_issn'] ?? '2985-8888' }}</span>
+            @if(!empty($topbarData['journals']) && count($topbarData['journals']) > 1)
+                <span class="text-gray-300 hidden sm:inline">•</span>
+                <a href="{{ route('journal.journals.index') }}" class="hidden sm:inline-flex items-center gap-1 font-semibold text-brand-maroon hover:underline" title="Lihat Direktori Seluruh Jurnal">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span>Katalog {{ count($topbarData['journals']) }} Jurnal</span>
+                </a>
+            @endif
             @if($journal && $journal->status !== 'active' && auth()->user()?->isSysAdmin())
                 <span class="ml-1 hidden md:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                     Pratinjau SysAdmin: Status {{ ucfirst($journal->status) }}

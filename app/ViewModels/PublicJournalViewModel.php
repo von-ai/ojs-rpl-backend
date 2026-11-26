@@ -83,6 +83,75 @@ class PublicJournalViewModel
     }
 
     /**
+     * Mengambil daftar komprehensif seluruh jurnal ilmiah untuk halaman direktori publik.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function directoryJournals(?string $search = null): array
+    {
+        try {
+            if (! Schema::hasTable('journals')) {
+                return [];
+            }
+
+            $query = Journal::query()
+                ->where('status', 'active')
+                ->withCount([
+                    'issues' => fn ($q) => $q->where('status', 'published'),
+                    'submissions as published_articles_count' => fn ($q) => $q->where('status', 'published'),
+                ])
+                ->with(['currentIssue']);
+
+            if ($search !== null && trim($search) !== '') {
+                $term = '%'.trim($search).'%';
+                $query->where(function ($q) use ($term): void {
+                    $q->where('name', 'like', $term)
+                        ->orWhere('initials', 'like', $term)
+                        ->orWhere('description', 'like', $term)
+                        ->orWhere('publisher', 'like', $term)
+                        ->orWhere('issn', 'like', $term)
+                        ->orWhere('eissn', 'like', $term);
+                });
+            }
+
+            return $query->orderBy('name')->get()->map(function (Journal $j): array {
+                $slug = (string) $j->slug;
+                $initials = (string) ($j->initials ?: strtoupper(substr($j->name, 0, 6)));
+
+                return [
+                    'id' => (string) $j->id,
+                    'name' => (string) $j->name,
+                    'initials' => $initials,
+                    'slug' => $slug,
+                    'publisher' => $j->publisher ?: 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar',
+                    'issn' => $j->issn,
+                    'eissn' => $j->eissn,
+                    'description' => $j->description ?: $j->focus_scope,
+                    'frequency' => $j->frequency ?: '2 Kali Setahun',
+                    'apc_label' => $j->isPaidApc() ? 'Berbayar (APC)' : 'Bebas Biaya (Gold OA)',
+                    'is_paid' => $j->isPaidApc(),
+                    'published_issues_count' => (int) $j->issues_count,
+                    'published_articles_count' => (int) $j->published_articles_count,
+                    'current_issue' => $j->currentIssue ? [
+                        'id' => (string) $j->currentIssue->id,
+                        'title' => (string) $j->currentIssue->title,
+                        'volume' => (string) $j->currentIssue->volume,
+                        'number' => (string) $j->currentIssue->number,
+                        'year' => (int) $j->currentIssue->year,
+                    ] : null,
+                    'url' => url('/'.$slug),
+                    'archives_url' => url('/'.$slug.'/archives'),
+                    'current_issue_url' => url('/'.$slug.'/issues/current'),
+                    'about_url' => url('/'.$slug.'/about'),
+                    'is_current' => $this->journal && (string) $this->journal->id === (string) $j->id,
+                ];
+            })->all();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Get main navigation bar links.
      *
      * @return array<int, array{label: string, url: string, active: bool}>
@@ -94,6 +163,7 @@ class PublicJournalViewModel
 
         return [
             ['label' => 'Beranda', 'url' => $scopedSlug ? url($basePrefix) : $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index') || request()->routeIs('journal.scoped.index')],
+            ['label' => 'Katalog Jurnal', 'url' => $this->safeRoute('journal.journals.index', [], '/journals'), 'active' => request()->routeIs('journal.journals.*') || request()->routeIs('journal.scoped.journals.*')],
             ['label' => 'Cari Artikel', 'url' => $scopedSlug ? url("{$basePrefix}/articles/search") : $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search') || request()->routeIs('journal.scoped.articles.search')],
             ['label' => 'Edisi Terkini', 'url' => $scopedSlug ? url("{$basePrefix}/issues/current") : $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current') || request()->routeIs('journal.scoped.issues.current')],
             ['label' => 'Arsip Edisi', 'url' => $scopedSlug ? url("{$basePrefix}/archives") : $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.scoped.archives') || request()->routeIs('journal.issues.show') || request()->routeIs('journal.scoped.issues.show')],

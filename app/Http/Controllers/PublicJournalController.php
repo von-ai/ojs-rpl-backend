@@ -243,6 +243,19 @@ class PublicJournalController extends Controller
     }
 
     /**
+     * Menampilkan Direktori / Katalog Seluruh Jurnal Ilmiah Publik.
+     */
+    public function journalsDirectory(Request $request, ?string $journalSlug = null): View
+    {
+        $journal = $this->resolveJournal($journalSlug);
+        $search = (string) $request->query('q', '');
+        $viewModel = new PublicJournalViewModel(journal: $journal);
+        $journals = $viewModel->directoryJournals($search);
+
+        return view('journal.directory.index', compact('journals', 'viewModel', 'journal', 'search'));
+    }
+
+    /**
      * Menampilkan Informasi Umum Jurnal (Tentang Jurnal).
      */
     public function about(?string $journalSlug = null): View
