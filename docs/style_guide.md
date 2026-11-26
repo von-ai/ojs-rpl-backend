@@ -15,14 +15,14 @@ Seluruh token warna dan tipografi dikelola secara tersentralisasi pada berkas `r
 | Nama Token Tailwind v4 | Variabel CSS | Nilai Hex | Peruntukan & Hierarki Visual |
 | :--- | :--- | :--- | :--- |
 | `text-brand-logo` | `--color-brand-logo` | `#FA0019` | **Warna Merah Standar BRIN.** Identitas warna resmi Badan Riset dan Inovasi Nasional (brin.go.id). |
-| `bg-brand-maroon` | `--color-brand-maroon` | `#E40017` | **Warna Primer Merek BRIN.** Digunakan pada tombol CTA utama, tombol submit naskah, active state sidebar, dan ring fokus formulir. |
+| `bg-brand-maroon` | `--color-brand-maroon` | `#E40017` | Aksen merah BRIDA untuk aksi utama, tautan, dan fokus formulir. |
 | `hover:bg-brand-maroon-hover` | `--color-brand-maroon-hover` | `#C50014` | State *hover* interaktif pada tombol primer dan tautan penting. |
 | `active:bg-brand-maroon-active` | `--color-brand-maroon-active` | `#A00010` | State *active / pressed* saat elemen diklik. |
 | `bg-brand-maroon-light` | `--color-brand-maroon-light` | `#FEE2E2` | Latar belakang aksen halus untuk notifikasi, badge, dan kontainer seleksi. |
 | `text-brand-navy` | `--color-brand-navy` | `#002E72` | **Warna Sekunder Merek.** Identitas aksen publikasi akademik dan header portal OJS. |
 | `hover:text-brand-navy-hover` | `--color-brand-navy-hover` | `#001F54` | State *hover* untuk tautan beraksen navy. |
-| `bg-canvas` | `--color-canvas` | `#F8F9FA` | Latar belakang canvas utama seluruh halaman aplikasi. |
-| `bg-surface-subtle` | `--color-surface-subtle` | `#F7F7F8` | Latar belakang lembut untuk panel informasi dan kolom formulir non-aktif. |
+| `bg-canvas` | `--color-canvas` | `#F9FAFB` | Latar belakang canvas utama seluruh halaman aplikasi. |
+| `bg-surface-subtle` | `--color-surface-subtle` | `#F3F4F6` | Latar belakang lembut untuk panel informasi dan kolom formulir non-aktif. |
 | `bg-white` | Neutral Surface | `#FFFFFF` | Latar belakang kartu kontainer (*card container*), tabel, dan bidang input. |
 
 ---
