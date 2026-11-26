@@ -855,7 +855,7 @@
                     $assignedCopyeditor = $submission->copyedit->copyEditor;
                     $canReassignCopyeditor = in_array($submission->status, ['accepted', 'in_production'], true)
                         && $submission->copyedit->status !== 'completed';
-                    $reassignCopyeditors = $canReassignCopyeditor ? $viewModel->availableCopyeditors() : collect();
+                    $reassignCopyeditors = $canReassignCopyeditor ? $viewModel->availableCopyeditors()->where('id', '!=', $submission->copyedit->copy_editor_id) : collect();
                 @endphp
                 <div class="pt-3 border-t border-gray-100 space-y-2.5">
                     <div class="flex items-center justify-between gap-2">
@@ -869,7 +869,7 @@
                         <div class="text-gray-500 truncate">{{ $assignedCopyeditor?->email ?? '' }}</div>
                     </div>
 
-                    @if($canReassignCopyeditor && $reassignCopyeditors->count() > 1)
+                    @if($reassignCopyeditors->isNotEmpty())
                         <form action="{{ route('eic.submissions.assign-copyeditor', $submission->id) }}" method="POST" class="space-y-2">
                             @csrf
                             <label for="reassign_copy_editor_id" class="block text-[11px] font-semibold text-gray-700">
@@ -878,7 +878,7 @@
                             <div class="relative custom-dropdown-container" data-dropdown="reassign-copyeditor">
                                 <select id="reassign_copy_editor_id" name="copy_editor_id" class="sr-only" tabindex="-1" required>
                                     @foreach($reassignCopyeditors as $ce)
-                                        <option value="{{ $ce->id }}" {{ (string) $submission->copyedit->copy_editor_id === (string) $ce->id ? 'selected' : '' }}>
+                                        <option value="{{ $ce->id }}" {{ $loop->first ? 'selected' : '' }}>
                                             {{ $ce->name }}
                                         </option>
                                     @endforeach
@@ -890,7 +890,7 @@
                                     aria-expanded="false"
                                 >
                                     <span class="custom-dropdown-label truncate">
-                                        {{ $assignedCopyeditor?->name ?? 'Pilih Penyunting Naskah' }}
+                                        {{ $reassignCopyeditors->first()->name }}
                                     </span>
                                     <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -898,9 +898,8 @@
                                 </button>
                                 <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
                                     @foreach($reassignCopyeditors as $ce)
-                                        @php $isAssignedCe = ((string) $submission->copyedit->copy_editor_id === (string) $ce->id); @endphp
                                         <div
-                                            class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isAssignedCe ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                            class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $loop->first ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                                             data-value="{{ $ce->id }}"
                                             data-label="{{ $ce->name }}"
                                         >
@@ -908,7 +907,7 @@
                                                 <div class="font-semibold leading-tight truncate">{{ $ce->name }}</div>
                                                 <div class="text-[11px] text-gray-500 font-normal mt-0.5 truncate">{{ $ce->email }} • {{ $ce->active_copyedits_count ?? 0 }} naskah aktif</div>
                                             </div>
-                                            <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isAssignedCe ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $loop->first ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
