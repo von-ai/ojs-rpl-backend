@@ -206,54 +206,81 @@
                             <!-- Kolom Aksi -->
                             <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1 justify-center">
-                                    <!-- Tombol Edit Metadata Jurnal -->
+                                    <!-- Tombol Edit Metadata Jurnal (Ikon Saja) -->
                                     <button
                                         type="button"
                                         onclick='openEditJournalModal(@json($journal))'
-                                        class="min-h-7 px-2 py-1 rounded-md inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover border border-brand-maroon transition shadow-2xs cursor-pointer"
+                                        class="w-8 h-8 rounded-md inline-flex items-center justify-center text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Sunting Identitas Jurnal"
                                         title="Sunting Identitas Jurnal"
                                         aria-label="Sunting Identitas Jurnal"
                                     >
-                                        <span>Sunting</span>
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
                                     </button>
 
-                                    <!-- Tombol Lihat Website Publik -->
+                                    <!-- Tombol Lihat Website Publik (Ikon Saja) -->
                                     <a
                                         href="{{ $journal['url_public'] }}"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        class="min-h-7 px-2 py-1 rounded-md inline-flex items-center justify-center gap-1 text-xs font-semibold text-gray-800 bg-white hover:bg-gray-100 border border-gray-300 transition shadow-2xs cursor-pointer"
+                                        class="w-8 h-8 rounded-md inline-flex items-center justify-center text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Kunjungi Website Publik"
                                         title="Kunjungi Website Publik"
                                         aria-label="Kunjungi Website Publik"
                                     >
-                                        <span>Buka</span>
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
                                     </a>
 
-                                    <!-- Tombol Ubah Status Jurnal -->
-                                    <form action="{{ route('sysadmin.journals.update-status', $journal['id']) }}" method="POST" class="inline">
-                                        @csrf
-                                        @if($journal['status'] === 'active')
+                                    <!-- Tombol Ubah Status Jurnal dengan Modal Konfirmasi -->
+                                    @if($journal['status'] === 'active')
+                                        <form
+                                            action="{{ route('sysadmin.journals.update-status', $journal['id']) }}"
+                                            method="POST"
+                                            class="inline"
+                                            data-confirm="Apakah Anda betul ingin mengarsipkan jurnal {{ $journal['name'] }}? Jurnal yang diarsipkan tidak lagi menerima pengajuan naskah baru."
+                                            data-confirm-title="Arsipkan Jurnal?"
+                                            data-confirm-btn="Ya, Arsipkan"
+                                            data-confirm-cancel="Batal"
+                                            data-confirm-type="danger"
+                                        >
+                                            @csrf
                                             <input type="hidden" name="status" value="archived">
                                             <button
                                                 type="submit"
-                                                class="min-h-7 px-2 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-gray-800 bg-white hover:bg-gray-800 hover:text-white hover:border-gray-800 border border-gray-300 transition shadow-2xs cursor-pointer"
+                                                class="min-h-7 px-2.5 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-gray-800 bg-white hover:bg-gray-800 hover:text-white hover:border-gray-800 border border-gray-300 transition shadow-2xs cursor-pointer"
                                                 title="Arsipkan Publikasi Jurnal"
                                                 aria-label="Arsipkan Publikasi Jurnal"
                                             >
                                                 <span>Arsipkan</span>
                                             </button>
-                                        @else
+                                        </form>
+                                    @else
+                                        <form
+                                            action="{{ route('sysadmin.journals.update-status', $journal['id']) }}"
+                                            method="POST"
+                                            class="inline"
+                                            data-confirm="Apakah Anda ingin mengaktifkan kembali publikasi jurnal {{ $journal['name'] }}?"
+                                            data-confirm-title="Aktifkan Kembali Jurnal?"
+                                            data-confirm-btn="Ya, Aktifkan"
+                                            data-confirm-cancel="Batal"
+                                            data-confirm-type="primary"
+                                        >
+                                            @csrf
                                             <input type="hidden" name="status" value="active">
                                             <button
                                                 type="submit"
-                                                class="min-h-7 px-2 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 transition shadow-2xs cursor-pointer"
+                                                class="min-h-7 px-2.5 py-1 rounded-md inline-flex items-center justify-center text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 transition shadow-2xs cursor-pointer"
                                                 title="Aktifkan Publikasi Jurnal"
                                                 aria-label="Aktifkan Publikasi Jurnal"
                                             >
                                                 <span>Aktifkan</span>
                                             </button>
-                                        @endif
-                                    </form>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
