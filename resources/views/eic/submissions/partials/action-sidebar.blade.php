@@ -314,6 +314,20 @@
                             <div class="editor-combobox-empty p-4 text-center text-xs text-gray-500 hidden">
                                 Tidak ada Editor Bagian yang cocok dengan pencarian.
                             </div>
+
+                            @if($availableEditors->isEmpty())
+                                <div class="p-3 text-left text-xs text-amber-900 bg-amber-50/90 rounded-lg border border-amber-200 space-y-1 mt-1">
+                                    <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Belum Ada Editor Bagian</span>
+                                    </div>
+                                    <p class="text-[11px] text-amber-800 leading-relaxed font-normal">
+                                        Jurnal <strong>{{ $submission->journal?->name ?? 'ini' }}</strong> belum memiliki staf dengan peran <em>Editor Bagian</em>. Anda dapat memilih <em>Tugaskan Nanti</em> atau minta Manajer Jurnal menambahkan peran Editor Bagian.
+                                    </p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -548,6 +562,20 @@
                             <div class="editor-combobox-empty p-4 text-center text-xs text-gray-500 hidden">
                                 Tidak ada Editor Bagian yang cocok dengan pencarian.
                             </div>
+
+                            @if($availableEditors->isEmpty())
+                                <div class="p-3 text-left text-xs text-amber-900 bg-amber-50/90 rounded-lg border border-amber-200 space-y-1 mt-1">
+                                    <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Belum Ada Editor Bagian</span>
+                                    </div>
+                                    <p class="text-[11px] text-amber-800 leading-relaxed font-normal">
+                                        Jurnal <strong>{{ $submission->journal?->name ?? 'ini' }}</strong> belum memiliki staf dengan peran <em>Editor Bagian</em>. Anda dapat memilih <em>Tugaskan Nanti</em> atau minta Manajer Jurnal menambahkan peran Editor Bagian.
+                                    </p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
