@@ -44,8 +44,8 @@
     <!-- Filter Tabs & Bar Pencarian -->
     <div class="space-y-4">
         <!-- Tab Navigasi Status -->
-        <div class="border-b border-gray-200">
-            <nav class="flex space-x-1 sm:space-x-2 overflow-x-auto overflow-y-hidden no-scrollbar" aria-label="Tab Filter Status Naskah">
+        <div class="rounded-lg border border-outline-variant bg-white overflow-hidden">
+            <nav class="section-menu" aria-label="Tab Filter Status Naskah">
                 @foreach($viewModel->tabs() as $tab)
                     <a 
                         href="{{ route('section-editor.submissions.index', ['status' => $tab['key'], 'search' => $viewModel->searchQuery()]) }}"

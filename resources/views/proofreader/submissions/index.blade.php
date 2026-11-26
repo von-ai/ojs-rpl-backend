@@ -42,7 +42,7 @@
         <!-- Filter Tabs & Search Bar Terpadu -->
         <div class="p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Status -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none" aria-label="Filter Status Proofreading">
+            <div class="section-menu grow" aria-label="Filter Status Proofreading">
                 @php
                     $tabs = $viewModel->tabs();
                 @endphp
