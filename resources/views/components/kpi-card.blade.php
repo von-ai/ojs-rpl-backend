@@ -132,30 +132,30 @@
     $colorClass = $iconColor ?? $defaultColor;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200/90 p-4 flex items-center gap-3.5 transition duration-150']) }}>
-    <div class="w-10 h-10 rounded-xl {{ $bgClass }} {{ $colorClass }} flex items-center justify-center shrink-0">
+<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200/80 p-3 flex items-center gap-3']) }}>
+    <div class="w-9 h-9 rounded-lg {{ $bgClass }} {{ $colorClass }} flex items-center justify-center shrink-0" aria-hidden="true">
         @if(isset($iconSlot))
             {{ $iconSlot }}
         @elseif($resolvedIcon)
             {!! $resolvedIcon !!}
         @else
-            <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
         @endif
     </div>
 
     <div class="min-w-0 flex-1">
-        <span class="text-xs font-medium text-gray-500 block truncate" title="{{ $title }}">
+        <span class="text-xs font-semibold text-gray-700 block truncate" title="{{ $title }}">
             {{ $title }}
         </span>
-        <div class="mt-1 flex items-baseline">
-            <span class="{{ $valueClass ?? 'text-2xl font-bold text-gray-900 tabular-nums tracking-tight' }} truncate block" title="{{ $value }}">
+        <div class="mt-0.5 flex items-baseline">
+            <span class="{{ $valueClass ?? 'text-xl sm:text-2xl font-bold text-gray-900 tabular-nums tracking-tight' }} truncate block" title="{{ $value }}">
                 {{ $value }}
             </span>
         </div>
         @if(!empty($description))
-            <p class="text-[11px] text-gray-400 truncate mt-0.5" title="{{ $description }}">{{ $description }}</p>
+            <p class="text-xs text-gray-600 break-words mt-0.5 leading-snug" title="{{ $description }}">{{ $description }}</p>
         @endif
     </div>
 </div>
