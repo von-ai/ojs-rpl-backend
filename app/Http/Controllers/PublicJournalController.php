@@ -10,6 +10,7 @@ use App\ViewModels\PublicJournalViewModel;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -298,6 +299,30 @@ class PublicJournalController extends Controller
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.about.submissions', compact('viewModel', 'journal'));
+    }
+
+    /**
+     * Mengunduh berkas template & panduan penulisan resmi jurnal.
+     */
+    public function downloadAuthorGuideline(?string $journalSlug = null): StreamedResponse|BinaryFileResponse
+    {
+        $journal = $this->resolveJournal($journalSlug);
+
+        if ($journal->hasAuthorGuidelineTemplate()) {
+            $disk = Storage::disk();
+            if ($disk->exists((string) $journal->author_guideline_path)) {
+                $downloadName = $journal->author_guideline_filename ?: "template-{$journal->slug}.docx";
+
+                return $disk->download((string) $journal->author_guideline_path, $downloadName);
+            }
+        }
+
+        $fallbackPath = public_path('files/template-sirida-makassar.docx');
+        if (is_file($fallbackPath)) {
+            return response()->download($fallbackPath, 'template-sirida-makassar.docx');
+        }
+
+        abort(404, 'Berkas template panduan penulisan belum tersedia.');
     }
 
     /**

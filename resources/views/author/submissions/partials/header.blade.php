@@ -60,7 +60,7 @@
         Formulir Pengajuan Naskah Baru
     </h1>
     <p class="mt-1 text-xs sm:text-sm text-gray-500 leading-relaxed">
-        Silakan lengkapi seluruh 5 langkah tahapan pengajuan naskah ilmiah sesuai ketentuan editorial {{ $viewModel->activeJournal()?->name ?? 'Jurnal Ilmiah' }}.
+        Ikuti 5 langkah untuk mengirim naskah ke {{ $viewModel->activeJournal()?->name ?? 'Jurnal Ilmiah' }}.
     </p>
 
     <!-- Stepper Desktop (Horizontal) -->

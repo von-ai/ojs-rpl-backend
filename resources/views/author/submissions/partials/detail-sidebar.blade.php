@@ -423,7 +423,7 @@
                     @if($submission['production_info']['galley_approval_url'])
                         <form method="POST" action="{{ $submission['production_info']['galley_approval_url'] }}"
                               data-confirm="Apakah Anda yakin ingin menyetujui versi galai cetak ini untuk proses penerbitan resmi?"
-                              data-confirm-title="Setujui Galai Publikasi"
+                              data-confirm-title="Setujui galai"
                               data-confirm-type="success"
                               class="pt-1 border-t border-purple-100">
                             @csrf
@@ -431,7 +431,7 @@
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span>Setujui Galai Publikasi</span>
+                                <span>Setujui galai publikasi</span>
                             </button>
                         </form>
                     @elseif($submission['production_info']['galley_author_approved'])

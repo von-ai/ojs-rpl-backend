@@ -227,7 +227,7 @@
                                 <span class="text-[10px] font-bold bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">Menunggu Editor</span>
                             </div>
                             <p class="text-[11px] text-amber-800">
-                                Dimohonkan hingga: <strong class="tabular-nums">{{ $viewModel->pendingExtension()->requested_due_at->format('d M Y') }}</strong><br>
+                                Tenggat yang diminta: <strong class="tabular-nums">{{ $viewModel->pendingExtension()->requested_due_at->format('d M Y') }}</strong><br>
                                 Alasan: <span class="italic">"{{ $viewModel->pendingExtension()->reason }}"</span>
                             </p>
                         </div>
@@ -292,7 +292,7 @@
                             Konfirmasi Kesediaan Menelaah Naskah
                         </h2>
                         <p class="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
-                            Dewan Redaksi mengundang Anda untuk menelaah naskah ini berdasarkan rekam jejak riset dan kepakaran ilmiah Anda. Silakan konfirmasi kesediaan sebelum batas respon: 
+                            Redaksi mengundang Anda untuk menelaah naskah ini. Beri jawaban sebelum
                             <strong class="text-gray-900 tabular-nums">{{ $viewModel->assignment->response_due_at ? $viewModel->assignment->response_due_at->format('d M Y') : '-' }}</strong>.
                         </p>
                     </div>
@@ -816,7 +816,7 @@
                 @csrf
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">
-                        Batas Waktu Baru yang Dimohonkan <span class="text-rose-500">*</span>
+                        Tenggat baru <span class="text-rose-500">*</span>
                     </label>
                     <input 
                         type="date" 
@@ -830,7 +830,7 @@
 
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">
-                        Alasan Permohonan Waktu Tambahan <span class="text-rose-500">*</span>
+                        Alasan meminta tambahan waktu <span class="text-rose-500">*</span>
                     </label>
                     <textarea 
                         name="reason" 

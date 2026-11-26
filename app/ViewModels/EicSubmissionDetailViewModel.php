@@ -205,6 +205,22 @@ class EicSubmissionDetailViewModel
     }
 
     /**
+     * Mengambil daftar Penyunting Naskah (Copyeditor) aktif dan bebas konflik pada jurnal naskah ini.
+     *
+     * @return Collection<int, User>
+     */
+    public function availableCopyeditors(): Collection
+    {
+        return $this->eicService->eligibleCopyeditors($this->submission)
+            ->withCount([
+                'copyedits as active_copyedits_count' => fn ($q) => $q->where('status', '!=', 'completed'),
+            ])
+            ->orderBy('full_name')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * Informasi ringkas status alur kerja naskah sesuai 9 status kanonis.
      *
      * @return array{label: string, badge_class: string, stage_name: string}

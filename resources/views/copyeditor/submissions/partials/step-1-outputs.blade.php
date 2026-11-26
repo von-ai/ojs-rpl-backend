@@ -74,7 +74,7 @@
         @empty
             <div class="p-6 rounded-xl border border-dashed border-gray-300 text-center space-y-1">
                 <p class="text-xs font-semibold text-gray-700">Belum ada berkas suntingan yang diunggah</p>
-                <p class="text-[11px] text-gray-500">Silakan pilih berkas Word hasil suntingan Anda pada formulir di bawah.</p>
+                <p class="text-[11px] text-gray-500">Pilih berkas Word yang sudah disunting.</p>
             </div>
         @endforelse
     </div>

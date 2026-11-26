@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kepatuhan backend SIRIDA</title>
+<link rel="stylesheet" href="../assets/teach.css">
+<main>
+<header><h1>Kepatuhan backend SIRIDA</h1><p>Dalam lima menit, Anda bisa menjelaskan aturan yang diperiksa server dan bukti yang disimpannya. Contoh diambil dari commit <code>30ee21a</code>.</p></header>
+<section>
+<h2>1. Bukti persetujuan saat daftar</h2>
+<p>Bayangkan Anda diminta menunjukkan apa yang disetujui seseorang bulan lalu. Formulir hari ini mungkin sudah berbeda. SIRIDA memeriksa centang dan versi pemberitahuan di server. Ketika akun dibuat, transaksi yang sama menyimpan versi, teks, tujuan, pengguna dan waktu di <code>audit_logs</code> lewat peristiwa <code>account_registered</code>.</p>
+<p>Pasal 20 UU PDP mengatur pilihan dasar pemrosesan. Jika dasar yang dipakai adalah persetujuan, Pasal 24 mewajibkan pengendali dapat menunjukkan buktinya. Dasar yang tepat per tujuan tetap perlu ditetapkan pengelola. <a href="../app/Http/Requests/Auth/IdentityRequest.php">Validasi</a> · <a href="../app/Services/Identity/RegistrationService.php">Transaksi registrasi</a> · <a href="https://peraturan.bpk.go.id/Download/224884/UU%20Nomor%2027%20Tahun%202022.pdf">UU PDP</a></p>
+</section>
+<section>
+<h2>2. Izin sebelum artikel terbit</h2>
+<p>Penulis utama bisa menyetujui lisensi naskah. Pemimpin Redaksi jurnal bisa mencatat referensi perjanjian tertulis yang sudah diperiksa. Saat edisi diterbitkan, backend mencocokkan bukti terbaru dengan lisensi jurnal. Jika berbeda, penerbitan ditolak. Saat berhasil, artikel menyimpan lisensinya sendiri.</p>
+<p><code>publications:audit-licenses</code> menelusuri bukti saat artikel terbit. Untuk perjanjian tertulis, pengelola tetap perlu mencocokkan referensi dengan dokumen asli dan kewenangan pemberi izin. <a href="../app/Services/PublicationPermissionService.php">Pencatatan izin</a> · <a href="../app/Services/PublicationService.php">Pemeriksaan publikasi</a> · <a href="https://peraturan.bpk.go.id/Download/28018/UU%20Nomor%2028%20Tahun%202014.pdf">UU Hak Cipta, Pasal 80</a></p>
+</section>
+<section>
+<h2>3. Statistik dan data pengguna</h2>
+<p>Statistik memakai pengenal berkunci dari IP, informasi browser, dan jam UTC. Pengenal itu mengelompokkan kunjungan dalam satu jam. Scheduler membersihkannya dari jendela yang telah berakhir, sambil mempertahankan angka kunjungan. Pengenal sementara masih dapat mengaitkan aktivitas dalam jendelanya. Log server dan cadangan punya siklus simpan tersendiri.</p>
+<p><a href="../app/Services/Public/PublicArticleService.php">Pencatatan statistik</a> · <a href="../routes/console.php">Jadwal pembersihan</a></p>
+</section>
+<section>
+<h2>Coba jawab sebelum membuka jawaban</h2>
+<p>Sebuah naskah mempunyai izin CC BY 4.0. Sebelum terbit, jurnal beralih ke CC BY-SA 4.0. Apa yang terjadi dan bukti apa yang dibutuhkan?</p>
+<details><summary>Periksa jawaban</summary><p>Penerbitan ditolak. Penulis utama atau Pemimpin Redaksi perlu mencatat bukti yang mencakup CC BY-SA 4.0. Jika artikel telah terbit dengan CC BY 4.0, halaman artikel memakai lisensi yang disimpan saat terbit.</p></details>
+<p>Setelah pembersihan metrik, data apa yang masih tersedia?</p>
+<details><summary>Periksa jawaban</summary><p>Jumlah kunjungan tetap tersedia. Pengenal kunjungan pada jendela lama dikosongkan.</p></details>
+</section>
+<footer><p>Bacaan utama untuk sesi ini adalah Pasal 20 dan 24 UU PDP. Kanal permintaan hak data dan respons insiden masih berupa prosedur pengelola dalam dokumen proyek. <a href="https://peraturan.bpk.go.id/Download/224884/UU%20Nomor%2027%20Tahun%202022.pdf">Teks resmi UU PDP</a> · <a href="../docs/legal-compliance.md">Dokumen SIRIDA</a></p><p>Simpan <a href="../reference/kartu-kepatuhan.html">kartu ringkas</a> dan tanyakan pada saya bagian kode yang ingin Anda telusuri bersama.</p></footer>
+</main>
+</html>

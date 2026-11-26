@@ -28,7 +28,7 @@
         })();
     </script>
     <!-- Header Brand & Tombol Kontrol -->
-    <div class="h-16 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
+    <div class="h-14 px-4 flex items-center justify-between border-b border-gray-200 shrink-0 sidebar-header">
         <!-- Logo & Nama Platform -->
         <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 min-w-0 group sidebar-brand-link" title="{{ $roleLabel }} BRIDA Kota Makassar">
             <img src="{{ asset('images/brida-logo.png') }}" alt="Logo BRIDA Kota Makassar" class="w-8 h-8 object-contain shrink-0 sidebar-logo transition-transform duration-200 group-hover:scale-105">
@@ -57,24 +57,24 @@
     </div>
 
     <!-- Navigation Menu Items (Sesuai Peran) -->
-    <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-1.5 sidebar-scroll" aria-label="Navigasi Utama {{ $roleLabel }}">
+    <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 sidebar-scroll" aria-label="Navigasi Utama {{ $roleLabel }}">
         <div class="pb-1 px-2.5 sidebar-heading">
-            <span class="text-[10px] font-semibold text-gray-400 uppercase">Menu Utama</span>
+            <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Menu Utama</span>
         </div>
 
         {{ $slot }}
     </nav>
 
     <!-- Bottom Secondary Navigation (Panduan, Website Jurnal & Keluar) -->
-    <div class="p-3 border-t border-gray-200 space-y-1 shrink-0 bg-gray-50/40 sidebar-footer">
+    <div class="p-3 border-t border-gray-200 space-y-1 shrink-0 bg-gray-50/50 sidebar-footer">
         @if($guidelineUrl)
             <a
                 href="{{ $guidelineUrl }}"
                 @if($guidelineTarget) target="{{ $guidelineTarget }}" rel="noopener noreferrer" @endif
                 title="{{ $guidelineLabel }}"
-                class="group flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-lg transition duration-150 sidebar-nav-item {{ $guidelineActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+                class="group flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-lg transition duration-150 sidebar-nav-item {{ $guidelineActive ? 'bg-brand-maroon text-white font-semibold shadow-2xs' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100' }}"
             >
-                <svg class="w-4 h-4 shrink-0 {{ $guidelineActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 shrink-0 {{ $guidelineActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 <span class="truncate sidebar-label">{{ $guidelineLabel }}</span>
@@ -82,17 +82,17 @@
         @endif
 
         <a
-            href="{{ url('/') }}"
+            href="{{ rtrim(config('app.url'), '/') . route('journal.issues.current', absolute: false) }}"
             target="_blank"
             rel="noopener noreferrer"
-            title="Lihat Website Jurnal"
-            class="group flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition duration-150 sidebar-nav-item"
+            title="Buka situs jurnal"
+            class="group flex items-center justify-between px-3 py-2 text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition duration-150 sidebar-nav-item"
         >
             <div class="flex items-center gap-3 min-w-0">
-                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                <span class="truncate sidebar-label">Lihat Website Jurnal</span>
+                <span class="truncate sidebar-label">Buka situs jurnal</span>
             </div>
         </a>
 

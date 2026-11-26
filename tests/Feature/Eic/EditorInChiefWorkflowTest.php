@@ -761,4 +761,89 @@ class EditorInChiefWorkflowTest extends TestCase
             ])->assertRedirect();
         $this->assertSame('waived', $payment->fresh()->status);
     }
+
+    public function test_eic_can_choose_specific_copyeditor_when_accepting_submission(): void
+    {
+        Queue::fake([SendReviewNotice::class]);
+        $this->completeReviewRound($this->submission);
+
+        $firstCopyeditor = User::factory()->create(['full_name' => 'Copyeditor Pertama']);
+        $secondCopyeditor = User::factory()->create(['full_name' => 'Copyeditor Kedua']);
+        $this->grantRole($firstCopyeditor, 'copyeditor', $this->journal->id);
+        $this->grantRole($secondCopyeditor, 'copyeditor', $this->journal->id);
+
+        $this->actingAs($this->eic)
+            ->post(route('eic.submissions.decision', $this->submission->id), [
+                'decision' => 'accept',
+                'copy_editor_id' => $secondCopyeditor->id,
+                'note_for_author' => 'Naskah diterima dan ditugaskan ke Copyeditor Kedua.',
+            ])
+            ->assertRedirect(route('eic.submissions.show', $this->submission->id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('copyedits', [
+            'submission_id' => $this->submission->id,
+            'copy_editor_id' => $secondCopyeditor->id,
+            'status' => 'assigned',
+        ]);
+    }
+
+    public function test_eic_cannot_assign_ineligible_copyeditor_when_accepting_submission(): void
+    {
+        $this->completeReviewRound($this->submission);
+        $otherJournal = Journal::create([
+            'slug' => 'jurnal-lain-ce',
+            'name' => 'Jurnal Lain',
+            'status' => 'active',
+            'version' => 1,
+        ]);
+        $otherJournalCopyeditor = User::factory()->create();
+        $this->grantRole($otherJournalCopyeditor, 'copyeditor', $otherJournal->id);
+
+        $this->actingAs($this->eic)
+            ->post(route('eic.submissions.decision', $this->submission->id), [
+                'decision' => 'accept',
+                'copy_editor_id' => $otherJournalCopyeditor->id,
+                'note_for_author' => 'Percobaan penugasan lintas jurnal.',
+            ])
+            ->assertRedirect(route('eic.submissions.show', $this->submission->id))
+            ->assertSessionHas('error');
+
+        $this->assertSame('submitted', $this->submission->fresh()->status);
+        $this->assertDatabaseMissing('copyedits', [
+            'submission_id' => $this->submission->id,
+        ]);
+    }
+
+    public function test_eic_can_reassign_copyeditor_after_acceptance(): void
+    {
+        Queue::fake([SendReviewNotice::class]);
+        $this->completeReviewRound($this->submission);
+
+        $firstCopyeditor = User::factory()->create(['full_name' => 'Copyeditor Awal']);
+        $secondCopyeditor = User::factory()->create(['full_name' => 'Copyeditor Pengganti']);
+        $this->grantRole($firstCopyeditor, 'copyeditor', $this->journal->id);
+        $this->grantRole($secondCopyeditor, 'copyeditor', $this->journal->id);
+
+        $this->actingAs($this->eic)
+            ->post(route('eic.submissions.decision', $this->submission->id), [
+                'decision' => 'accept',
+                'copy_editor_id' => $firstCopyeditor->id,
+                'note_for_author' => 'Naskah diterima.',
+            ])
+            ->assertSessionHas('success');
+
+        $this->actingAs($this->eic)
+            ->post(route('eic.submissions.assign-copyeditor', $this->submission->id), [
+                'copy_editor_id' => $secondCopyeditor->id,
+            ])
+            ->assertRedirect(route('eic.submissions.show', $this->submission->id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('copyedits', [
+            'submission_id' => $this->submission->id,
+            'copy_editor_id' => $secondCopyeditor->id,
+        ]);
+        Queue::assertPushed(SendReviewNotice::class, fn (SendReviewNotice $job) => $job->email === $secondCopyeditor->email);
+    }
 }

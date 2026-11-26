@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
-                Jejak Audit &amp; Pemantauan Sistem (audit_logs)
+                Jejak Audit
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Catatan permanen append-only atas seluruh mutasi konfigurasi, perubahan peran sistem, dan eksekusi tugas latar belakang.
+                Lihat siapa yang mengubah pengaturan atau peran, serta kapan tugas sistem berjalan.
             </p>
         </div>
     </div>
@@ -95,83 +95,81 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
-                        <th scope="col" class="py-3 px-4">Waktu &amp; Request ID</th>
-                        <th scope="col" class="py-3 px-4">Aktor Pelaksana</th>
-                        <th scope="col" class="py-3 px-4">Tindakan / Aksi</th>
-                        <th scope="col" class="py-3 px-4">Entitas Sumber Daya</th>
-                        <th scope="col" class="py-3 px-4">Alasan &amp; Justifikasi</th>
-                        <th scope="col" class="py-3 px-4">Diff Data Mutasi</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
+                        <th scope="col" class="py-2.5 px-3">Waktu &amp; Request ID</th>
+                        <th scope="col" class="py-2.5 px-3">Aktor Pelaksana</th>
+                        <th scope="col" class="py-2.5 px-3">Tindakan / Aksi</th>
+                        <th scope="col" class="py-2.5 px-3">Entitas Sumber Daya</th>
+                        <th scope="col" class="py-2.5 px-3">Alasan &amp; Justifikasi</th>
+                        <th scope="col" class="py-2.5 px-3">Diff Data</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($viewModel->logs() as $log)
                         <tr class="hover:bg-gray-50/80 transition-colors">
                             <!-- Kolom ID, Waktu & Request ID -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <span class="font-mono font-bold text-gray-900 block">
+                            <td class="py-2.5 px-3">
+                                <span class="font-mono font-bold text-gray-900 block text-xs">
                                     {{ $log['id'] }}
                                 </span>
                                 <span class="text-xs text-gray-600 block mt-0.5">
                                     {{ $log['occurred_at'] }}
                                 </span>
-                                <span class="text-[10px] font-mono text-gray-400 block mt-0.5">
+                                <span class="text-[11px] font-mono text-gray-500 block mt-0.5">
                                     {{ $log['request_id'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Aktor Pelaksana -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="font-semibold text-gray-800 block">
-                                        {{ $log['actor_name'] }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-1.5 mt-0.5">
+                            <td class="py-2.5 px-3">
+                                <span class="font-semibold text-gray-900 block">
+                                    {{ $log['actor_name'] }}
+                                </span>
+                                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                                     @if($log['actor_type'] === 'user')
-                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-600 text-white">
                                             User
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200 font-mono">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-white font-mono">
                                             {{ $log['system_actor'] ?? 'System Daemon' }}
                                         </span>
                                     @endif
-                                    <span class="text-[10px] text-gray-500 truncate max-w-36">
+                                    <span class="text-xs text-gray-600 truncate max-w-36">
                                         {{ $log['effective_role'] }}
                                     </span>
                                 </div>
                             </td>
 
                             <!-- Kolom Tindakan / Aksi -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
+                            <td class="py-2.5 px-3">
                                 <span class="font-bold text-gray-900 block">
                                     {{ $log['action_label'] }}
                                 </span>
-                                <code class="text-[10px] font-mono text-brand-maroon block mt-0.5">
+                                <code class="text-[11px] font-mono text-brand-maroon block mt-0.5">
                                     {{ $log['action'] }}
                                 </code>
                             </td>
 
                             <!-- Kolom Entitas Sumber Daya -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <span class="font-mono text-gray-700 block font-semibold">
+                            <td class="py-2.5 px-3">
+                                <span class="font-mono text-gray-800 block font-semibold">
                                     {{ $log['resource_type'] }}
                                 </span>
-                                <span class="text-[10px] font-mono text-gray-400 block">
+                                <span class="text-[11px] font-mono text-gray-500 block break-all">
                                     ID: {{ $log['resource_id'] }}
                                 </span>
                             </td>
 
                             <!-- Kolom Alasan -->
-                            <td class="py-3.5 px-4 max-w-xs">
-                                <p class="text-gray-600 line-clamp-2 text-xs leading-relaxed">
+                            <td class="py-2.5 px-3 max-w-xs">
+                                <p class="text-gray-700 line-clamp-2 text-xs leading-relaxed">
                                     {{ $log['reason'] ?? '—' }}
                                 </p>
                             </td>
 
                             <!-- Kolom Diff Data Mutasi -->
-                            <td class="py-3.5 px-4 whitespace-nowrap">
+                            <td class="py-2.5 px-3 whitespace-nowrap">
                                 @if($log['diff'])
                                     <details class="cursor-pointer group">
                                         <summary class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-maroon hover:underline">
@@ -193,11 +191,9 @@
                         <tr>
                             <td colspan="6" class="py-12 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
+                                    <svg class="w-8 h-8 text-gray-400 mb-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
                                     <h3 class="text-sm font-bold text-gray-800">Tidak ada log audit</h3>
                                     <p class="text-xs text-gray-500 mt-1">
                                         Tidak ditemukan catatan audit yang cocok dengan filter.

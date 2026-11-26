@@ -14,26 +14,26 @@
 
     const TOAST_ICONS = {
         warning: `
-            <svg class="w-3.5 h-3.5 text-amber-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
         `,
         error: `
-            <svg class="w-3.5 h-3.5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
                 <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
         `,
         success: `
-            <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         `,
         info: `
-            <svg class="w-3.5 h-3.5 text-blue-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -43,35 +43,35 @@
 
     const TOAST_STYLES = {
         warning: {
-            card: 'bg-amber-50 border-amber-200 text-amber-950 shadow-[0_4px_16px_rgba(245,158,11,0.08),0_1px_2px_rgba(0,0,0,0.04)]',
-            badge: 'bg-white text-amber-700 ring-1 ring-amber-300 shadow-2xs',
-            title: 'text-amber-950 font-semibold',
-            message: 'text-amber-800',
-            closeBtn: 'text-amber-600/80 hover:text-amber-950 hover:bg-amber-100/80',
+            card: 'bg-white border-gray-200 border-l-4 border-l-amber-600 text-gray-900 shadow-lg',
+            badge: 'bg-transparent',
+            title: 'text-gray-900 font-semibold',
+            message: 'text-gray-600',
+            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
             defaultTitle: 'Peringatan'
         },
         error: {
-            card: 'bg-red-50 border-red-200 text-red-950 shadow-[0_4px_16px_rgba(239,68,68,0.08),0_1px_2px_rgba(0,0,0,0.04)]',
-            badge: 'bg-white text-brand-maroon ring-1 ring-red-300 shadow-2xs',
-            title: 'text-red-950 font-semibold',
-            message: 'text-red-800',
-            closeBtn: 'text-red-500/80 hover:text-red-950 hover:bg-red-100/80',
+            card: 'bg-white border-gray-200 border-l-4 border-l-brand-maroon text-gray-900 shadow-lg',
+            badge: 'bg-transparent',
+            title: 'text-gray-900 font-semibold',
+            message: 'text-gray-600',
+            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
             defaultTitle: 'Terjadi Kesalahan'
         },
         success: {
-            card: 'bg-emerald-50 border-emerald-200 text-emerald-950 shadow-[0_4px_16px_rgba(16,185,129,0.08),0_1px_2px_rgba(0,0,0,0.04)]',
-            badge: 'bg-white text-emerald-700 ring-1 ring-emerald-300 shadow-2xs',
-            title: 'text-emerald-950 font-semibold',
-            message: 'text-emerald-800',
-            closeBtn: 'text-emerald-600/80 hover:text-emerald-950 hover:bg-emerald-100/80',
+            card: 'bg-white border-gray-200 border-l-4 border-l-emerald-600 text-gray-900 shadow-lg',
+            badge: 'bg-transparent',
+            title: 'text-gray-900 font-semibold',
+            message: 'text-gray-600',
+            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
             defaultTitle: 'Berhasil'
         },
         info: {
-            card: 'bg-blue-50 border-blue-200 text-blue-950 shadow-[0_4px_16px_rgba(59,130,246,0.08),0_1px_2px_rgba(0,0,0,0.04)]',
-            badge: 'bg-white text-blue-700 ring-1 ring-blue-300 shadow-2xs',
-            title: 'text-blue-950 font-semibold',
-            message: 'text-blue-800',
-            closeBtn: 'text-blue-500/80 hover:text-blue-950 hover:bg-blue-100/80',
+            card: 'bg-white border-gray-200 border-l-4 border-l-blue-600 text-gray-900 shadow-lg',
+            badge: 'bg-transparent',
+            title: 'text-gray-900 font-semibold',
+            message: 'text-gray-600',
+            closeBtn: 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
             defaultTitle: 'Informasi'
         }
     };

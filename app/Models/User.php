@@ -266,7 +266,7 @@ class User extends Authenticatable
                 return [];
             }
 
-            $allJournals = Journal::query()
+            $allJournals = Journal::withoutGlobalScope('portal_access')
                 ->where('status', '!=', 'archived')
                 ->orderBy('name')
                 ->get();
@@ -336,7 +336,7 @@ class User extends Authenticatable
             }
 
             if (is_string($activeId) && $activeId !== '') {
-                $journal = Journal::find($activeId);
+                $journal = Journal::withoutGlobalScope('portal_access')->find($activeId);
                 if ($journal) {
                     // Sysadmin atau peran author selalu valid pada setiap jurnal aktif
                     if ($this->isSysAdmin() || $roleCode === 'author' || $roleCode === null) {
@@ -359,7 +359,7 @@ class User extends Authenticatable
                     ->value('journal_id');
 
                 if ($firstJournalId) {
-                    $found = Journal::find($firstJournalId);
+                    $found = Journal::withoutGlobalScope('portal_access')->find($firstJournalId);
                     if ($found) {
                         return $found;
                     }
@@ -373,14 +373,14 @@ class User extends Authenticatable
                 ->value('journal_id');
 
             if ($userFirstJournalId) {
-                $found = Journal::find($userFirstJournalId);
+                $found = Journal::withoutGlobalScope('portal_access')->find($userFirstJournalId);
                 if ($found) {
                     return $found;
                 }
             }
 
             // Fallback 3: Jurnal pertama sistem
-            return Journal::first();
+            return Journal::withoutGlobalScope('portal_access')->first();
         } catch (\Throwable) {
             return null;
         }

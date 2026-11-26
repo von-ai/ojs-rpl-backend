@@ -19,6 +19,9 @@
     @stack('meta')
 </head>
 <body class="font-sans antialiased text-gray-900 bg-canvas selection:bg-brand-maroon selection:text-white min-h-screen flex flex-col justify-between overflow-x-hidden w-full max-w-full">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2.5 focus:rounded-lg focus:bg-brand-maroon focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
+        Lewati ke konten utama
+    </a>
 
     <!-- Topbar & Main Navigation Header -->
     <header class="w-full max-w-full bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
@@ -27,7 +30,7 @@
     </header>
 
     <!-- Main Page Content -->
-    <main class="grow w-full max-w-full overflow-x-clip">
+    <main id="main-content" tabindex="-1" class="grow w-full max-w-full overflow-x-clip focus:outline-none">
         @yield('content')
     </main>
 

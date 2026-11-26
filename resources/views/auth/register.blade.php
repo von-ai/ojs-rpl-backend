@@ -125,7 +125,7 @@
                     <!-- Row 2: Username & Email (Grid on sm) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                         <div>
-                            <x-label for="username" value="Username" />
+                            <x-label for="username" value="Nama pengguna" />
                             <x-input
                                 type="text"
                                 name="username"
@@ -137,8 +137,10 @@
                                 maxlength="50"
                                 required
                                 autocomplete="username"
+                                aria-describedby="username-hint"
                                 placeholder="budi_santoso"
                             />
+                            <p id="username-hint" class="mt-1 text-xs text-gray-600">Gunakan 3–50 huruf, angka, titik, garis bawah, atau tanda hubung.</p>
                             @error('username')
                                 <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p>
                             @enderror

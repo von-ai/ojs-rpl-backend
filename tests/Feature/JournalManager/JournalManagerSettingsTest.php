@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\JournalManager;
 
+use App\Models\Journal;
 use App\Models\User;
 use Database\Seeders\JournalManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class JournalManagerSettingsTest extends TestCase
@@ -105,5 +108,69 @@ class JournalManagerSettingsTest extends TestCase
         $resSettings = $this->post('/journalmanager/settings');
         $resSettings->assertRedirect('/journalmanager/settings');
         $resSettings->assertSessionHas('status', 'Pengaturan identitas dan kebijakan jurnal berhasil disimpan.');
+    }
+
+    public function test_journal_manager_dapat_mengunggah_mengunduh_dan_menghapus_template_panduan_penulisan(): void
+    {
+        Storage::fake();
+
+        $file = UploadedFile::fake()->create(
+            'Template-Resmi-SIRIDA-2026.docx',
+            128,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+
+        $uploadResponse = $this->post(route('journalmanager.settings.template.upload'), [
+            'guideline_file' => $file,
+        ]);
+
+        $uploadResponse->assertRedirect(route('journalmanager.settings.index'));
+        $uploadResponse->assertSessionHas('status');
+
+        $journal = Journal::query()->firstOrFail();
+        $this->assertNotNull($journal->author_guideline_path);
+        $this->assertSame('Template-Resmi-SIRIDA-2026.docx', $journal->author_guideline_filename);
+        Storage::disk()->assertExists($journal->author_guideline_path);
+
+        $settingsPage = $this->get(route('journalmanager.settings.index'));
+        $settingsPage->assertStatus(200);
+        $settingsPage->assertSee('Template-Resmi-SIRIDA-2026.docx');
+        $settingsPage->assertSee('Template Aktif');
+
+        $publicGuide = $this->get(route('journal.scoped.about.submissions', ['journalSlug' => $journal->slug]));
+        $publicGuide->assertStatus(200);
+        $publicGuide->assertSee('Template-Resmi-SIRIDA-2026.docx');
+
+        $downloadResponse = $this->get(route('journal.scoped.about.submissions.template', ['journalSlug' => $journal->slug]));
+        $downloadResponse->assertStatus(200);
+        $downloadResponse->assertHeader('content-disposition');
+        $this->assertStringContainsString(
+            'Template-Resmi-SIRIDA-2026.docx',
+            (string) $downloadResponse->headers->get('content-disposition')
+        );
+
+        $storedPath = (string) $journal->author_guideline_path;
+
+        $deleteResponse = $this->delete(route('journalmanager.settings.template.destroy'));
+        $deleteResponse->assertRedirect(route('journalmanager.settings.index'));
+        $deleteResponse->assertSessionHas('status');
+
+        $journal->refresh();
+        $this->assertNull($journal->author_guideline_path);
+        $this->assertNull($journal->author_guideline_filename);
+        Storage::disk()->assertMissing($storedPath);
+    }
+
+    public function test_upload_template_panduan_menolak_format_berkas_tidak_diizinkan(): void
+    {
+        Storage::fake();
+
+        $invalidFile = UploadedFile::fake()->create('script-berbahaya.php', 10, 'application/x-httpd-php');
+
+        $response = $this->post(route('journalmanager.settings.template.upload'), [
+            'guideline_file' => $invalidFile,
+        ]);
+
+        $response->assertSessionHasErrors('guideline_file');
     }
 }

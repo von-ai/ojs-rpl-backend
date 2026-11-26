@@ -161,7 +161,7 @@
                 </div>
 
                 @if($pendingExtensions->isEmpty())
-                    <p class="text-gray-400 py-2">Tidak ada permohonan perpanjangan waktu yang sedang pending.</p>
+                    <p class="text-gray-400 py-2">Belum ada permintaan tambahan waktu.</p>
                 @else
                     <div class="divide-y divide-gray-100">
                         @foreach($pendingExtensions as $ext)

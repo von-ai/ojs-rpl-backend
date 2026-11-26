@@ -22,6 +22,8 @@ export default {
     // Ubah hostname target ke ACA
     url.hostname = acaTargetFqdn;
 
+    const isDynamicPortal = /^\/(sysadmin|journalmanager|eic|section-editor|reviewer|copyeditor|layouteditor|proofreader|author|dashboard|auth|login|register|password|email)(\/|$)/.test(url.pathname);
+
     // Duplikasi request asli dengan URL target baru (Host Header otomatis disesuaikan oleh fetch)
     const newRequest = new Request(url.toString(), {
       method: request.method,
@@ -30,6 +32,21 @@ export default {
       redirect: "manual"
     });
 
-    return fetch(newRequest);
+    const response = await fetch(newRequest, isDynamicPortal ? { cf: { cacheTtl: 0, cacheEverything: false } } : undefined);
+    if (!isDynamicPortal) {
+      return response;
+    }
+
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, private");
+    responseHeaders.set("Pragma", "no-cache");
+    responseHeaders.set("Expires", "0");
+    responseHeaders.set("CDN-Cache-Control", "no-store");
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
   }
 };

@@ -229,7 +229,7 @@
                                 id="desk_se_search_input"
                                 type="text" 
                                 class="editor-combobox-input w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 focus:bg-white border border-gray-300 focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 rounded-lg pl-9 pr-16 py-2.5 text-gray-900 font-semibold placeholder:font-normal placeholder:text-gray-400 transition cursor-text focus:outline-hidden"
-                                placeholder="Ketik nama atau pilih editor..."
+                                placeholder="Cari atau pilih editor"
                                 value="{{ $selectedEditorObj ? $selectedEditorObj->name : '' }}"
                                 autocomplete="off"
                                 role="combobox"
@@ -725,6 +725,79 @@
                     </div>
                 </div>
 
+                <!-- Penugasan Penyunting Naskah / Copyeditor (Hanya tampil jika keputusan Terima Naskah) -->
+                @php
+                    $availableCopyeditors = $viewModel->availableCopyeditors();
+                    $selectedCopyeditorId = old('copy_editor_id', '');
+                    $selectedCopyeditor = $availableCopyeditors->firstWhere('id', $selectedCopyeditorId);
+                @endphp
+                <div id="copyeditor_assign_wrapper" class="space-y-1.5 {{ $defaultDec === 'accept' ? '' : 'hidden' }}">
+                    <label for="decision_copy_editor_id" class="font-bold text-gray-700 block">
+                        Penyunting Naskah (Copyeditor)
+                    </label>
+                    @if($availableCopyeditors->isNotEmpty())
+                        <div class="relative custom-dropdown-container" data-dropdown="decision-copyeditor">
+                            <select id="decision_copy_editor_id" name="copy_editor_id" class="sr-only" tabindex="-1">
+                                <option value="" {{ $selectedCopyeditorId === '' ? 'selected' : '' }}>Otomatis (Pilih Copyeditor tersedia)</option>
+                                @foreach($availableCopyeditors as $ce)
+                                    <option value="{{ $ce->id }}" {{ (string) $selectedCopyeditorId === (string) $ce->id ? 'selected' : '' }}>
+                                        {{ $ce->name }} ({{ $ce->active_copyedits_count ?? 0 }} naskah aktif)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button
+                                type="button"
+                                class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3.5 py-2.5 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                            >
+                                <span class="custom-dropdown-label truncate">
+                                    {{ $selectedCopyeditor ? $selectedCopyeditor->name : 'Otomatis (Pilih Copyeditor tersedia)' }}
+                                </span>
+                                <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
+                                <div
+                                    class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $selectedCopyeditorId === '' ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                    data-value=""
+                                    data-label="Otomatis (Pilih Copyeditor tersedia)"
+                                >
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-semibold leading-tight">Otomatis (Pilih Copyeditor tersedia)</div>
+                                        <div class="text-[11px] text-gray-500 font-normal mt-0.5 leading-snug">Sistem menugaskan Penyunting Naskah aktif pertama di jurnal ini.</div>
+                                    </div>
+                                    <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $selectedCopyeditorId === '' ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                @foreach($availableCopyeditors as $ce)
+                                    @php $isCeSelected = ((string) $selectedCopyeditorId === (string) $ce->id); @endphp
+                                    <div
+                                        class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isCeSelected ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                        data-value="{{ $ce->id }}"
+                                        data-label="{{ $ce->name }}"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <div class="font-semibold leading-tight truncate">{{ $ce->name }}</div>
+                                            <div class="text-[11px] text-gray-500 font-normal mt-0.5 truncate">{{ $ce->email }} • {{ $ce->active_copyedits_count ?? 0 }} naskah aktif</div>
+                                        </div>
+                                        <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isCeSelected ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+                            <p class="font-semibold">Belum ada Penyunting Naskah tersedia di jurnal ini.</p>
+                            <p class="mt-0.5 text-amber-800">Tambahkan peran <strong>Penyunting Naskah</strong> ke akun aktif (bukan penulis naskah) melalui Manajemen Pengguna sebelum menerbitkan keputusan terima.</p>
+                        </div>
+                    @endif
+                </div>
+
                 <!-- Batas Waktu Revisi (Hanya tampil jika keputusan butuh revisi) -->
                 <div id="revision_due_wrapper" class="space-y-1.5 {{ in_array($defaultDec, ['revisions_required', 'resubmit'], true) ? '' : 'hidden' }}">
                     <label for="revision_due_at" class="font-bold text-gray-700 block">
@@ -804,6 +877,82 @@
             <p class="text-[11px] text-gray-500 leading-snug">
                 Keputusan editorial akhir telah ditetapkan secara permanen dan tidak dapat diubah lagi.
             </p>
+
+            @if($submission->copyedit)
+                @php
+                    $assignedCopyeditor = $submission->copyedit->copyEditor;
+                    $canReassignCopyeditor = in_array($submission->status, ['accepted', 'in_production'], true)
+                        && $submission->copyedit->status !== 'completed';
+                    $reassignCopyeditors = $canReassignCopyeditor ? $viewModel->availableCopyeditors() : collect();
+                @endphp
+                <div class="pt-3 border-t border-gray-100 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-gray-700">Penyunting Naskah Bertugas</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+                            {{ $submission->copyedit->status === 'completed' ? 'Selesai' : 'Aktif' }}
+                        </span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[11px]">
+                        <div class="font-semibold text-gray-900 truncate">{{ $assignedCopyeditor?->name ?? '-' }}</div>
+                        <div class="text-gray-500 truncate">{{ $assignedCopyeditor?->email ?? '' }}</div>
+                    </div>
+
+                    @if($canReassignCopyeditor && $reassignCopyeditors->count() > 1)
+                        <form action="{{ route('eic.submissions.assign-copyeditor', $submission->id) }}" method="POST" class="space-y-2">
+                            @csrf
+                            <label for="reassign_copy_editor_id" class="block text-[11px] font-semibold text-gray-700">
+                                Ganti Penyunting Naskah
+                            </label>
+                            <div class="relative custom-dropdown-container" data-dropdown="reassign-copyeditor">
+                                <select id="reassign_copy_editor_id" name="copy_editor_id" class="sr-only" tabindex="-1" required>
+                                    @foreach($reassignCopyeditors as $ce)
+                                        <option value="{{ $ce->id }}" {{ (string) $submission->copyedit->copy_editor_id === (string) $ce->id ? 'selected' : '' }}>
+                                            {{ $ce->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button
+                                    type="button"
+                                    class="custom-dropdown-btn w-full text-xs bg-gray-50/90 hover:bg-gray-100/80 border border-gray-300 hover:border-gray-400 rounded-lg px-3 py-2 text-gray-900 font-semibold flex items-center justify-between gap-2 transition cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                >
+                                    <span class="custom-dropdown-label truncate">
+                                        {{ $assignedCopyeditor?->name ?? 'Pilih Penyunting Naskah' }}
+                                    </span>
+                                    <svg class="custom-dropdown-chevron w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
+                                    @foreach($reassignCopyeditors as $ce)
+                                        @php $isAssignedCe = ((string) $submission->copyedit->copy_editor_id === (string) $ce->id); @endphp
+                                        <div
+                                            class="custom-dropdown-item flex items-start justify-between gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer transition {{ $isAssignedCe ? 'bg-red-50 text-brand-maroon font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
+                                            data-value="{{ $ce->id }}"
+                                            data-label="{{ $ce->name }}"
+                                        >
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-semibold leading-tight truncate">{{ $ce->name }}</div>
+                                                <div class="text-[11px] text-gray-500 font-normal mt-0.5 truncate">{{ $ce->email }} • {{ $ce->active_copyedits_count ?? 0 }} naskah aktif</div>
+                                            </div>
+                                            <svg class="custom-dropdown-check w-4 h-4 text-brand-maroon shrink-0 mt-0.5 {{ $isAssignedCe ? '' : 'hidden' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <button
+                                type="submit"
+                                class="w-full py-2 text-xs font-semibold text-gray-800 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition cursor-pointer"
+                            >
+                                Simpan Penyunting Naskah
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            @endif
         @endif
     </section>
 
@@ -1334,6 +1483,16 @@
     function handleDecisionChange(decisionValue) {
         const dueWrapper = document.getElementById('revision_due_wrapper');
         const dueInput = document.getElementById('revision_due_at');
+        const copyeditorWrapper = document.getElementById('copyeditor_assign_wrapper');
+
+        if (copyeditorWrapper) {
+            if (decisionValue === 'accept') {
+                copyeditorWrapper.classList.remove('hidden');
+            } else {
+                copyeditorWrapper.classList.add('hidden');
+            }
+        }
+
         if (!dueWrapper || !dueInput) return;
 
         const needsDue = (decisionValue === 'revisions_required' || decisionValue === 'resubmit');

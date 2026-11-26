@@ -323,6 +323,49 @@ class JournalManagerController extends Controller
     }
 
     /**
+     * Mengunggah berkas template / panduan penulisan resmi jurnal.
+     */
+    public function uploadAuthorGuideline(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'guideline_file' => ['required', 'file', 'mimes:docx,doc,pdf,odt,rtf', 'max:10240'],
+        ], [
+            'guideline_file.required' => 'Pilih berkas template panduan penulisan terlebih dahulu.',
+            'guideline_file.file' => 'Berkas yang diunggah tidak valid.',
+            'guideline_file.mimes' => 'Format berkas harus berupa DOCX, DOC, PDF, ODT, atau RTF.',
+            'guideline_file.max' => 'Ukuran berkas template maksimal 10 MB.',
+        ]);
+
+        try {
+            $journal = $this->resolveJournal();
+            $this->journalManagerService->uploadAuthorGuideline($journal, $validated['guideline_file'], Auth::user());
+
+            return redirect()->route('journalmanager.settings.index')
+                ->with('status', 'Berkas template & panduan penulisan berhasil diunggah dan langsung tersedia di halaman Panduan Penulis.');
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.settings.index')
+                ->withErrors(['guideline_file' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Menghapus berkas template / panduan penulisan yang diunggah.
+     */
+    public function deleteAuthorGuideline(Request $request): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $this->journalManagerService->deleteAuthorGuideline($journal, Auth::user());
+
+            return redirect()->route('journalmanager.settings.index')
+                ->with('status', 'Berkas template & panduan penulisan berhasil dihapus.');
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.settings.index')
+                ->withErrors(['guideline_file' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Memverifikasi dan menyetujui bukti pembayaran APC naskah (Lunas).
      */
     public function verifyPayment(Request $request, string $id): RedirectResponse

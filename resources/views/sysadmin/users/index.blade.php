@@ -9,10 +9,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="min-w-0 flex-1">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
-                Direktori Pengguna &amp; Hak Akses Global
+                Pengguna dan hak akses
             </h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Kelola keanggotaan jurnal, penetapan wewenang dewan redaksi, dan hak akses System Administrator lintas portal.
+                Tambah pengguna dan atur peran mereka di setiap jurnal.
             </p>
         </div>
 
@@ -46,7 +46,7 @@
     <!-- Multi-Tenant Global Context Bar -->
     <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white border border-gray-200/90 text-xs shadow-none">
         <div class="flex items-center gap-2.5 min-w-0">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200/70 shrink-0">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-900 text-white shrink-0">
                 Ruang Kerja Sistem
             </span>
             <span class="font-semibold text-gray-900 truncate">
@@ -134,17 +134,18 @@
 
         <!-- Tabel Pengguna Terdaftar -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold text-[11px] uppercase tracking-wider">
-                        <th scope="col" class="py-3 px-3 sm:px-4 text-center whitespace-nowrap w-12 sm:w-14">NO</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Nama Pengguna</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-48 whitespace-nowrap">Email</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-44">Afiliasi</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-56 max-w-xs">Peran &amp; Keanggotaan</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 min-w-36 whitespace-nowrap">Hak Akses Sistem</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-center whitespace-nowrap">Status</th>
-                        <th scope="col" class="py-3 px-4 sm:px-5 text-right whitespace-nowrap">Aksi</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold text-[11px] uppercase tracking-wider">
+                        <th scope="col" class="py-2.5 px-2 text-center whitespace-nowrap w-8">NO</th>
+                        <th scope="col" class="py-2.5 px-2.5">Pengguna</th>
+                        <th scope="col" class="py-2.5 px-2.5">Email</th>
+                        <th scope="col" class="py-2.5 px-2.5 hidden xl:table-cell">Afiliasi</th>
+                        <th scope="col" class="py-2.5 px-2.5">Peran</th>
+                        <th scope="col" class="py-2.5 px-2.5 whitespace-nowrap">Akses</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-center whitespace-nowrap">Status</th>
+                        <th scope="col" class="py-2.5 px-2.5 text-right whitespace-nowrap">Aksi</th>
+                    </tr>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -158,37 +159,37 @@
                         @endphp
                         <tr class="hover:bg-gray-50/80 transition-colors group">
                             <!-- 1. Kolom NO -->
-                            <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+                            <td class="py-2.5 px-2 text-center whitespace-nowrap text-xs font-normal text-gray-500 tabular-nums">
                                 {{ $rowNumber }}
                             </td>
 
                             <!-- 2. Kolom Nama Pengguna (Klik Nama Membuka Modal Detail) -->
-                            <td class="py-3.5 px-4 sm:px-5">
+                            <td class="py-2.5 px-2.5 max-w-44">
                                 <div class="min-w-0">
                                     <button
                                         type="button"
                                         onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition text-left leading-tight cursor-pointer truncate max-w-xs block"
+                                        class="font-semibold text-gray-900 hover:text-brand-maroon transition text-left leading-tight cursor-pointer truncate max-w-full block"
                                         title="Klik untuk melihat detail profil pengguna"
                                     >
                                         {{ $user['name'] }}
                                     </button>
-                                    <span class="text-[11px] text-gray-400 block mt-0.5 truncate">
-                                        Terdaftar: {{ $user['created_at'] }}
+                                    <span class="text-[11px] text-gray-500 block mt-0.5 truncate">
+                                        {{ $user['created_at'] }}
                                     </span>
                                 </div>
                             </td>
 
                             <!-- 3. Kolom Email Terpisah (Font & Ukuran Konsisten) -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-xs text-gray-600 select-all font-sans">
+                            <td class="py-2.5 px-2.5 max-w-48">
+                                <div class="flex items-center gap-1 min-w-0">
+                                    <span class="text-xs text-gray-700 select-all font-sans truncate" title="{{ $user['email'] }}">
                                         {{ $user['email'] }}
                                     </span>
                                     <button
                                         type="button"
                                         onclick="copyUserEmail('{{ $user['email'] }}', this)"
-                                        class="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition cursor-pointer"
+                                        class="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition cursor-pointer shrink-0"
                                         data-tooltip="Salin Email"
                                         aria-label="Salin Email"
                                     >
@@ -200,14 +201,14 @@
                             </td>
 
                             <!-- 4. Kolom Afiliasi -->
-                            <td class="py-3.5 px-4 sm:px-5">
-                                <span class="text-xs text-gray-600 block line-clamp-2" title="{{ $user['affiliation'] }}">
+                            <td class="py-2.5 px-2.5 hidden xl:table-cell max-w-40">
+                                <span class="text-xs text-gray-700 block line-clamp-2" title="{{ $user['affiliation'] }}">
                                     {{ $user['affiliation'] }}
                                 </span>
                             </td>
 
                             <!-- 5. Kolom Peran & Keanggotaan (Cukup Peran Unik) -->
-                            <td class="py-3.5 px-4 sm:px-5 min-w-56 max-w-xs">
+                            <td class="py-2.5 px-2.5 max-w-48">
                                 @if(!empty($user['unique_roles']) && count($user['unique_roles']) > 0)
                                     @php
                                         $rolesCount = count($user['unique_roles']);
@@ -219,9 +220,9 @@
                                     @endphp
 
                                     <div class="space-y-1.5">
-                                        <div class="flex flex-wrap items-center gap-1.5">
+                                        <div class="flex flex-wrap items-center gap-1">
                                             @foreach($visibleRoles as $role)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
                                                     {{ $role['role_label'] }}
                                                 </span>
                                             @endforeach
@@ -230,12 +231,12 @@
                                                 <button
                                                     type="button"
                                                     onclick="toggleMoreRoles('{{ $user['id'] }}', this)"
-                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 transition-colors cursor-pointer select-none"
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 transition-colors cursor-pointer select-none"
                                                     title="Peran lainnya: {{ $hiddenRoleLabels }}"
                                                     data-count="{{ count($hiddenRoles) }}"
                                                     data-expanded="false"
                                                 >
-                                                    <span>+{{ count($hiddenRoles) }} lainnya</span>
+                                                    <span>+{{ count($hiddenRoles) }}</span>
                                                     <svg class="w-2.5 h-2.5 text-gray-500 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                                     </svg>
@@ -244,9 +245,9 @@
                                         </div>
 
                                         @if($showExpandable)
-                                            <div id="more-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-dashed border-gray-200">
+                                            <div id="more-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1 pt-1.5 border-t border-dashed border-gray-200">
                                                 @foreach($hiddenRoles as $role)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
                                                         {{ $role['role_label'] }}
                                                     </span>
                                                 @endforeach
@@ -254,92 +255,89 @@
                                         @endif
 
                                         @if($user['journal_memberships_count'] > 0)
-                                            <div class="flex items-center">
-                                                <button
-                                                    type="button"
-                                                    onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                                    class="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-brand-maroon transition cursor-pointer font-medium"
-                                                    title="Klik untuk melihat distribusi peran per instansi jurnal"
-                                                >
-                                                    <svg class="w-3 h-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                    </svg>
-                                                    <span>{{ $user['journal_memberships_count'] }} Instansi Jurnal</span>
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onclick="openUserDetailModal('{{ $user['id'] }}')"
+                                                class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-brand-maroon transition mt-1 cursor-pointer font-medium"
+                                                title="Klik untuk melihat distribusi peran per instansi jurnal"
+                                            >
+                                                <span>{{ $user['journal_memberships_count'] }} Jurnal</span>
+                                            </button>
                                         @endif
                                     </div>
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200/70">
-                                        Pengguna Terdaftar Global
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-200 text-gray-800">
+                                        Terdaftar Global
                                     </span>
                                 @endif
                             </td>
 
                             <!-- 6. Kolom Hak Akses Sistem -->
-                            <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                            <td class="py-2.5 px-2.5 whitespace-nowrap">
                                 @if($user['is_sysadmin'])
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                                        <svg class="w-3.5 h-3.5 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-900 text-white">
+                                        <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                         </svg>
-                                        <span>System Admin</span>
+                                        <span>SysAdmin</span>
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-50 text-gray-500 border border-gray-200/60">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-200 text-gray-800">
                                         Standar
                                     </span>
                                 @endif
                             </td>
 
                             <!-- 7. Kolom Status (Tanpa Dot Bulatan) -->
-                            <td class="py-3.5 px-4 sm:px-5 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border {{ $user['status_badge_class'] }}">
+                            <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $user['status_badge_class'] }}">
                                     {{ $user['status_label'] }}
                                 </span>
                             </td>
 
-                            <!-- 8. Kolom Aksi (Icon Buttons Berwarna dengan Tooltip) -->
-                            <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1.5">
-
-                                    <!-- Aksi 1: Lihat Detail Profil -->
+                            <!-- 8. Kolom Aksi (Konsisten: Ikon Detail, Reset Sandi, Ubah Peran + Tombol Admin) -->
+                            <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1">
+                                    <!-- Aksi 1: Lihat Detail Profil (Ikon Mata) -->
                                     <button
                                         type="button"
                                         onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition cursor-pointer"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-blue-700 hover:bg-gray-100 transition cursor-pointer"
                                         data-tooltip="Lihat Detail Profil"
+                                        title="Lihat Detail Profil"
                                         aria-label="Lihat Detail Profil"
                                     >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                     </button>
 
-                                    <!-- Aksi 2: Kelola Peran Jurnal -->
-                                    <button
-                                        type="button"
-                                        onclick="openAssignRoleModal('{{ $user['id'] }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-red-200/90 bg-red-50/70 text-brand-maroon hover:bg-red-100 hover:border-red-300 transition cursor-pointer"
-                                        data-tooltip="Kelola Peran Jurnal"
-                                        aria-label="Kelola Peran Jurnal"
-                                    >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                        </svg>
-                                    </button>
-
-                                    <!-- Aksi 3: Reset Sandi -->
+                                    <!-- Aksi 2: Reset Sandi (Ikon Kunci) -->
                                     <button
                                         type="button"
                                         onclick="openResetPasswordModal('{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
-                                        class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50/70 text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition cursor-pointer"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-amber-700 hover:bg-gray-100 transition cursor-pointer"
                                         data-tooltip="Reset Sandi Pengguna"
+                                        title="Reset Sandi Pengguna"
                                         aria-label="Reset Sandi Pengguna"
                                     >
-                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                                        </svg>
+                                    </button>
+
+                                    <!-- Aksi 3: Kelola Peran Jurnal (Ikon Sunting) -->
+                                    <button
+                                        type="button"
+                                        onclick="openAssignRoleModal('{{ $user['id'] }}')"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Kelola Peran Jurnal"
+                                        title="Kelola Peran Jurnal"
+                                        aria-label="Kelola Peran Jurnal"
+                                    >
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                         </svg>
                                     </button>
 
@@ -359,13 +357,11 @@
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
                                             <button
                                                 type="submit"
-                                                class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50/70 text-red-700 hover:bg-red-100 hover:border-red-300 transition cursor-pointer"
-                                                data-tooltip="Cabut Hak Akses SysAdmin"
+                                                class="min-h-7 px-2 py-1 inline-flex items-center justify-center rounded-md border border-gray-300 bg-white text-red-700 hover:bg-red-700 hover:text-white hover:border-red-700 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                                title="Cabut Hak Akses SysAdmin"
                                                 aria-label="Cabut Hak Akses SysAdmin"
                                             >
-                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                                </svg>
+                                                <span>Cabut Admin</span>
                                             </button>
                                         </form>
                                     @else
@@ -383,13 +379,11 @@
                                             <input type="hidden" name="user_id" value="{{ $user['id'] }}">
                                             <button
                                                 type="submit"
-                                                class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-purple-200 bg-purple-50/70 text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition cursor-pointer"
-                                                data-tooltip="Jadikan System Administrator"
+                                                class="min-h-7 px-2 py-1 inline-flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-800 hover:text-white hover:border-gray-800 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                                title="Jadikan System Administrator"
                                                 aria-label="Jadikan System Administrator"
                                             >
-                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                </svg>
+                                                <span>+ Admin</span>
                                             </button>
                                         </form>
                                     @endif
@@ -399,13 +393,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 px-4 text-center">
+                            <td colspan="8" class="py-10 px-4 text-center">
                                 <div class="max-w-xs mx-auto flex flex-col items-center">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                    </div>
+                                    <svg class="w-8 h-8 text-gray-400 mb-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
                                     <h3 class="text-sm font-bold text-gray-800">Tidak ada pengguna ditemukan</h3>
                                     <p class="text-xs text-gray-500 mt-1">
                                         Tidak ada akun anggota yang cocok dengan filter atau kata kunci pencarian ini.
@@ -485,7 +477,7 @@
                 Riwayat Pengimporan Massal Pengguna via CSV
             </h2>
             <p class="text-xs text-gray-500 mt-0.5">
-                Audit rekam jejak operasi impor akun massal, validasi baris, dan penanganan kegagalan format.
+                Periksa jumlah akun yang berhasil diimpor dan baris yang gagal.
             </p>
         </div>
 
@@ -555,11 +547,9 @@
             <!-- Header Modal -->
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                    </div>
+                    <svg class="w-5 h-5 text-blue-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                     <div>
                         <h3 class="text-sm sm:text-base font-bold text-gray-900 font-sans" id="modal-detail-title">
                             Detail Profil Pengguna
@@ -687,11 +677,9 @@
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                    </div>
+                    <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
                     <div>
                         <h3 class="text-sm sm:text-base font-bold text-gray-900 font-sans" id="modal-assign-title">
                             Kelola Peran Jurnal Pengguna
@@ -978,11 +966,9 @@
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                    </div>
+                    <svg class="w-5 h-5 text-amber-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
                     <div>
                         <h3 class="text-sm sm:text-base font-bold text-gray-900 font-sans" id="modal-reset-title">
                             Kirim Tautan Reset Sandi
@@ -1052,11 +1038,9 @@
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                    </div>
+                    <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
                     <div>
                         <h3 class="text-sm sm:text-base font-bold text-gray-900 font-sans" id="modal-import-title">
                             Impor Pengguna secara Massal (CSV)
@@ -1233,7 +1217,7 @@
                 journalContainer.innerHTML = `
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-200/70 text-center">
                         <p class="text-xs text-gray-500 font-medium">Pengguna Terdaftar Global</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Belum memiliki penugasan peran pada instansi jurnal spesifik.</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Belum punya peran di jurnal mana pun.</p>
                     </div>
                 `;
             } else {
