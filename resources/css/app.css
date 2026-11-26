@@ -4,10 +4,9 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    /* Tipografi Konsisten & Ramah Mata (ui-ux-pro-max: Corporate Trust / Accessible) */
-    --font-sans: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-heading: 'Lexend', 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-serif: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-heading: var(--font-sans);
+    --font-serif: 'Spectral', Georgia, serif;
 
     /* Identitas Warna Resmi BRIN & BRIDA (brin.go.id) */
     --color-brand-logo: #FA0019;
@@ -24,16 +23,24 @@
     /* Token Warna Latar Canvas & Panel (Lembut & Ramah Mata) */
     --color-canvas: #F5F6F8;
     --color-surface-subtle: #F3F4F6;
+    --color-divider: #e6e5e1;
+    --color-outline-variant: #d8d7d2;
+    --color-outline: #898883;
 
-    /* Standarisasi Sudut Lengkungan (Compact & Subtle: 4px - 6px) */
-    --radius-3xl: 8px;
-    --radius-2xl: 8px;
-    --radius-xl: 6px;
-    --radius-lg: 5px;
-    --radius-md: 4px;
-    --radius-sm: 2px;
+    --spacing-gutter: clamp(1rem, 3vw, 2.5rem);
+    --spacing-section: clamp(1.5rem, 3vw, 2.5rem);
+    --spacing-panel: clamp(1.25rem, 2vw, 2rem);
+    --shadow-menu: 0 2px 4px -2px rgb(0 0 0 / 12%), 0 6px 16px -6px rgb(0 0 0 / 16%);
+    --shadow-dialog: 0 3px 8px -3px rgb(0 0 0 / 12%), 0 14px 36px -14px rgb(0 0 0 / 22%);
 
-    /* Skala Tipografi Compact Namun Nyaman Dibaca (Anti-Kekecilan di Seluruh Web) */
+    --radius-dialog: 1.75rem;
+    --radius-3xl: 1.75rem;
+    --radius-2xl: 1rem;
+    --radius-xl: 0.75rem;
+    --radius-lg: 0.5rem;
+    --radius-md: 0.375rem;
+    --radius-sm: 0.25rem;
+
     --text-xs: 0.8125rem;
     --text-xs--line-height: 1.3;
     --text-sm: 0.9rem;
@@ -48,11 +55,10 @@
 
     body {
         font-family: var(--font-sans);
-        font-feature-settings: 'tnum';
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         letter-spacing: normal;
-        line-height: 1.42;
+        line-height: 1.5;
     }
 
     h1, h2, h3, h4 {
@@ -72,9 +78,9 @@
         cursor: pointer;
     }
 
-    /* Indikator fokus keyboard yang tegas (WCAG AA/AAA) */
-    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-        outline: 2.5px solid var(--color-brand-maroon);
+    /* Indikator fokus keyboard yang tegas untuk tautan & tombol (tanpa double-border pada input form) */
+    :where(a, button, summary, [tabindex]):focus-visible {
+        outline: 2px solid var(--color-brand-maroon);
         outline-offset: 2px;
     }
 }
@@ -361,9 +367,14 @@ html.text-scale-xl {
     z-index: 60 !important;
 }
 
-.portal-workspace :where(a, button, input, select, textarea, summary):focus-visible {
+.portal-workspace :where(a, button, summary):focus-visible {
     outline: 2px solid var(--color-brand-navy);
     outline-offset: 2px;
+}
+
+.portal-workspace :where(input, select, textarea):focus,
+.portal-workspace :where(input, select, textarea):focus-visible {
+    outline: none;
 }
 
 .portal-workspace [role="dialog"].overflow-y-auto.items-center {
@@ -375,24 +386,26 @@ html.text-scale-xl {
    2. Ikon tampil bersih tanpa kotak pastel (ukuran proporsional & tidak kekecilan).
    3. Badge status/peran memakai warna solid kontras tinggi (bukan pastel transparan).
    4. Kerapatan baris tabel rapi agar teks multi-baris tidak jomplang. */
-.portal-workspace > div > main {
-    padding: 1rem 1.25rem;
+#main-content :is(h1, h2, h3) {
+    font-family: var(--font-serif);
+    text-wrap: balance;
 }
-@media (min-width: 1024px) {
-    .portal-workspace > div > main {
-        padding: 1.25rem 1.5rem;
-    }
+
+.portal-workspace > div > main {
+    padding: var(--spacing-panel) var(--spacing-gutter);
+    scrollbar-gutter: stable;
 }
 
 .portal-workspace main h1 {
-    font-size: 1.375rem;
-    line-height: 1.25;
-    font-weight: 700;
-    letter-spacing: -0.015em;
+    font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2.125rem);
+    line-height: 1.2;
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
 }
 
 .portal-workspace main h2 {
-    font-size: 1rem;
+    font-size: 1.125rem;
     line-height: 1.3;
     font-weight: 700;
 }
@@ -411,8 +424,8 @@ html.text-scale-xl {
 .portal-workspace form :where(input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="url"], input[type="date"], input[type="tel"], select):not(.custom-dropdown-native) {
     font-size: 0.875rem;
     line-height: 1.4;
-    min-height: 2.375rem;
-    padding: 0.45rem 0.75rem;
+    min-height: 2.75rem;
+    padding-block: 0.45rem;
 }
 
 .portal-workspace form input[type="search"] {
@@ -424,12 +437,13 @@ html.text-scale-xl {
 .portal-workspace form textarea {
     font-size: 0.875rem;
     line-height: 1.45;
-    padding: 0.5rem 0.75rem;
+    padding-block: 0.5rem;
 }
 
 .portal-workspace table td,
 .portal-workspace table th {
-    line-height: 1.32;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
 }
 
 .portal-workspace :is(div, span):is([class*="w-6 h-6"], [class*="w-7 h-7"], [class*="w-8 h-8"], [class*="w-9 h-9"], [class*="w-10 h-10"]):is([class*="bg-red-50"], [class*="bg-rose-50"], [class*="bg-emerald-50"], [class*="bg-blue-50"], [class*="bg-amber-50"], [class*="bg-purple-50"], [class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-orange-50"], [class*="bg-green-50"], [class*="bg-brand-maroon/"], [class*="bg-red-100"], [class*="bg-rose-100"], [class*="bg-emerald-100"], [class*="bg-amber-100"], [class*="bg-blue-100"]):not(.rounded-full) {

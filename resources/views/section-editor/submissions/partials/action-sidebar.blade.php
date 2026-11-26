@@ -82,7 +82,7 @@
                         <label for="reviewer-combobox-input" class="font-bold text-gray-700 block">
                             Pilih Mitra Bestari <span class="text-rose-500">*</span>
                         </label>
-                        <span class="text-[10px] font-semibold text-brand-maroon bg-red-50 px-2 py-0.5 rounded border border-red-100 truncate max-w-[190px]" title="Kategori Naskah: {{ $viewModel->sectionName() }}">
+                        <span class="inline-flex items-center text-[11px] font-semibold text-white bg-brand-maroon px-2 py-0.5 rounded truncate max-w-[190px]" title="Kategori Naskah: {{ $viewModel->sectionName() }}">
                             Kategori: {{ $viewModel->sectionName() }}
                         </span>
                     </div>
@@ -147,7 +147,7 @@
                         </div>
 
                         <!-- Dropdown Panel -->
-                        <div id="reviewer-listbox" role="listbox" class="reviewer-combobox-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-80 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-40 space-y-1 absolute">
+                        <div id="reviewer-listbox" role="listbox" class="reviewer-combobox-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full max-h-80 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-menu p-1.5 z-40 space-y-1 absolute">
                             <!-- Info Bar Kategori Naskah & Jurnal (Sesuai ERD) -->
                             <div class="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg space-y-0.5 text-[11px] text-gray-600 mb-1">
                                 <div class="flex items-center justify-between gap-1">
@@ -455,7 +455,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-xl p-1.5 z-50 space-y-1 absolute">
+                        <div class="custom-dropdown-panel invisible opacity-0 scale-95 pointer-events-none transition-all duration-150 ease-out origin-top left-0 right-0 top-full mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-menu p-1.5 z-50 space-y-1 absolute">
                             @foreach($recommendationOptions as $val => $opt)
                                 @php $isRecSelected = ($currentRec === $val); @endphp
                                 <div 
@@ -795,7 +795,7 @@
         aria-modal="true" 
         aria-labelledby="modal-se-reject-payment-title"
     >
-        <div class="relative w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+        <div class="relative w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-dialog overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-rose-50/50">
                 <div class="flex items-center gap-2.5 text-rose-900">
                     <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">

@@ -51,6 +51,11 @@
                 $defaultColor = 'text-blue-700';
                 $resolvedIcon = '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>';
                 break;
+            case 'mail':
+            case 'envelope':
+                $defaultColor = 'text-amber-600';
+                $resolvedIcon = '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>';
+                break;
             case 'clock':
                 $defaultColor = 'text-amber-600';
                 $resolvedIcon = '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
@@ -117,7 +122,7 @@
     $colorClass = $iconColor ?? $defaultColor;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200 px-3.5 py-3 flex items-center gap-3.5 shadow-2xs']) }}>
+<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-outline-variant p-4 flex items-center gap-4']) }}>
     <div class="{{ $colorClass }} flex items-center justify-center shrink-0 [&_svg]:w-7 [&_svg]:h-7" aria-hidden="true">
         @if(isset($iconSlot))
             {{ $iconSlot }}
@@ -131,11 +136,11 @@
     </div>
 
     <div class="min-w-0 flex-1">
-        <span class="text-xs font-semibold text-gray-600 block truncate leading-tight" title="{{ $title }}">
+        <span class="text-xs font-semibold text-gray-600 block break-words leading-snug" title="{{ $title }}">
             {{ $title }}
         </span>
         <div class="mt-0.5 flex items-baseline">
-            <span class="{{ $valueClass ?? 'text-xl font-bold text-gray-900 tabular-nums tracking-tight leading-tight' }} truncate block" title="{{ $value }}">
+            <span class="{{ $valueClass ?? 'text-2xl font-semibold text-gray-900 tabular-nums tracking-tight leading-tight' }} truncate block" title="{{ $value }}">
                 {{ $value }}
             </span>
         </div>
