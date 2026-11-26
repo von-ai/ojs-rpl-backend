@@ -17,9 +17,11 @@ use App\Services\LayoutEditor\LayoutEditorService;
 use App\Services\PortalAccess;
 use App\Services\PublicationService;
 use DomainException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class JournalManagerService
@@ -437,5 +439,70 @@ class JournalManagerService
             }
         }
         Password::sendResetLink(['email' => $user->email]);
+    }
+
+    /**
+     * Mengunggah atau mengganti berkas template / panduan penulisan naskah resmi jurnal.
+     */
+    public function uploadAuthorGuideline(Journal $journal, UploadedFile $file, ?User $actor = null): Journal
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'docx');
+        $allowedExtensions = ['docx', 'doc', 'pdf', 'odt', 'rtf'];
+        if (! in_array($extension, $allowedExtensions, true)) {
+            throw new DomainException('Format berkas panduan tidak didukung. Gunakan .docx, .doc, .pdf, .odt, atau .rtf.');
+        }
+
+        $originalName = trim((string) $file->getClientOriginalName());
+        $safeFilename = $originalName !== '' ? basename($originalName) : "template-{$journal->slug}.{$extension}";
+        $storageDir = "journals/{$journal->id}/templates";
+        $storedName = strtolower((string) Str::ulid()).'.'.$extension;
+
+        $disk = Storage::disk();
+        $storedPath = $disk->putFileAs($storageDir, $file, $storedName);
+        if (! is_string($storedPath) || $storedPath === '') {
+            throw new DomainException('Gagal menyimpan berkas template panduan ke penyimpanan.');
+        }
+
+        $previousPath = $journal->author_guideline_path;
+
+        $journal->update([
+            'author_guideline_path' => $storedPath,
+            'author_guideline_filename' => $safeFilename,
+            'author_guideline_updated_at' => now(),
+        ]);
+
+        if (! empty($previousPath) && $previousPath !== $storedPath) {
+            try {
+                $disk->delete($previousPath);
+            } catch (\Throwable) {
+                // Best-effort cleanup of replaced template file
+            }
+        }
+
+        return $journal->fresh();
+    }
+
+    /**
+     * Menghapus berkas template / panduan penulisan naskah yang telah diunggah.
+     */
+    public function deleteAuthorGuideline(Journal $journal, ?User $actor = null): Journal
+    {
+        $previousPath = $journal->author_guideline_path;
+
+        $journal->update([
+            'author_guideline_path' => null,
+            'author_guideline_filename' => null,
+            'author_guideline_updated_at' => null,
+        ]);
+
+        if (! empty($previousPath)) {
+            try {
+                Storage::disk()->delete($previousPath);
+            } catch (\Throwable) {
+                // Best-effort cleanup of deleted template file
+            }
+        }
+
+        return $journal->fresh();
     }
 }

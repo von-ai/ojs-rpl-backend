@@ -41,6 +41,7 @@ Route::name('journal.')->group(function () {
     Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
     Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');
     Route::get('/about/submissions', [PublicJournalController::class, 'submissionsGuide'])->name('about.submissions');
+    Route::get('/about/submissions/template', [PublicJournalController::class, 'downloadAuthorGuideline'])->name('about.submissions.template');
     Route::get('/about/contact', [PublicJournalController::class, 'contact'])->name('about.contact');
 
     // Pengumuman Publik (Announcements)
@@ -213,6 +214,8 @@ Route::middleware(['auth', 'role.access:manager'])->prefix('journalmanager')->na
     // 4. Pengaturan Jurnal & Kebijakan
     Route::get('/settings', [JournalManagerController::class, 'settings'])->name('settings.index');
     Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/settings/template', [JournalManagerController::class, 'uploadAuthorGuideline'])->name('settings.template.upload');
+    Route::delete('/settings/template', [JournalManagerController::class, 'deleteAuthorGuideline'])->name('settings.template.destroy');
 
     // 5. Verifikasi & Pengelolaan Pembayaran APC Naskah
     Route::post('/submissions/{id}/payment/verify', [JournalManagerController::class, 'verifyPayment'])->name('submissions.payment.verify');
@@ -294,6 +297,7 @@ Route::prefix('{journalSlug}')
         Route::get('/about/editorial-team', [PublicJournalController::class, 'editorialTeam'])->name('about.editorial-team');
         Route::get('/about/policies', [PublicJournalController::class, 'policies'])->name('about.policies');
         Route::get('/about/submissions', [PublicJournalController::class, 'submissionsGuide'])->name('about.submissions');
+        Route::get('/about/submissions/template', [PublicJournalController::class, 'downloadAuthorGuideline'])->name('about.submissions.template');
         Route::get('/about/contact', [PublicJournalController::class, 'contact'])->name('about.contact');
         Route::get('/announcements', [PublicJournalController::class, 'announcements'])->name('announcements.index');
         Route::get('/announcements/{id}', [PublicJournalController::class, 'showAnnouncement'])->name('announcements.show');
