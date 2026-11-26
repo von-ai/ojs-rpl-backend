@@ -12,7 +12,7 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight font-sans">
                     Pengaturan Platform &amp; Kesehatan Server
                 </h1>
-                <span id="mode-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                <span id="mode-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-800 text-white">
                     Mode Baca
                 </span>
             </div>
@@ -97,7 +97,7 @@
                         id="btn-enter-edit"
                         type="button"
                         onclick="enableEditMode()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-maroon hover:text-white bg-brand-maroon/10 hover:bg-brand-maroon rounded-lg transition cursor-pointer shrink-0"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg shadow-2xs transition cursor-pointer shrink-0"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -124,24 +124,24 @@
                     </div>
 
                     <!-- Mode Pemeliharaan (Maintenance Mode) -->
-                    <div class="p-4 rounded-xl border {{ $settings['maintenance_mode'] ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200 bg-gray-50/40' }} space-y-2">
+                    <div class="p-4 rounded-xl border {{ $settings['maintenance_mode'] ? 'border-amber-500 bg-white' : 'border-gray-200 bg-gray-50' }} space-y-2">
                         <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold {{ $settings['maintenance_mode'] ? 'text-amber-900' : 'text-gray-900' }}">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-bold text-gray-900">
                                     Mode Pemeliharaan Sistem
                                 </span>
                                 @if ($settings['maintenance_mode'])
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-600 text-white">
                                         Aktif (Akses Dibatasi)
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-600 text-white">
                                         Non-Aktif (Publik Terbuka)
                                     </span>
                                 @endif
                             </div>
                         </div>
-                        <p class="text-[11px] {{ $settings['maintenance_mode'] ? 'text-amber-800' : 'text-gray-600' }} leading-relaxed">
+                        <p class="text-xs text-gray-700 leading-relaxed">
                             @if ($settings['maintenance_mode'])
                                 Saat ini situs dalam pemeliharaan. Seluruh pengunjung dan pengguna reguler dialihkan ke halaman HTTP 503.
                             @else
@@ -208,7 +208,7 @@
                             Ubah parameter operasional sistem. Klik "Simpan Perubahan" untuk menerapkan konfigurasi baru.
                         </p>
                     </div>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-600 text-white">
                         Mode Ubah
                     </span>
                 </div>
@@ -387,9 +387,9 @@
                         <span class="font-medium text-gray-800">{{ $health['timezone'] }}</span>
                     </div>
 
-                    <div class="flex items-center justify-between py-1 border-b border-gray-50">
-                        <span class="text-gray-500">Pemindai Malware:</span>
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <div class="flex items-center justify-between gap-2 py-1.5 border-b border-gray-100">
+                        <span class="text-gray-600 shrink-0">Pemindai Malware:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold text-white bg-emerald-600 text-right">
                             {{ $health['malware_scanner_status'] }}
                         </span>
                     </div>
@@ -452,12 +452,10 @@
 
         <!-- Panel Konten Modal -->
         <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200">
-            <div class="flex items-start gap-3.5">
-                <div class="w-10 h-10 rounded-xl bg-brand-maroon/10 text-brand-maroon flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-brand-maroon shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <div class="flex-1 min-w-0">
                     <h3 class="text-sm sm:text-base font-bold text-gray-900 leading-snug" id="modal-confirm-title">
                         Simpan Perubahan Konfigurasi Platform?
@@ -515,7 +513,7 @@
 
         if (badge) {
             badge.textContent = 'Mode Ubah';
-            badge.className = 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200';
+            badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-600 text-white';
         }
     }
 
@@ -531,7 +529,7 @@
 
         if (badge) {
             badge.textContent = 'Mode Baca';
-            badge.className = 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200';
+            badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-800 text-white';
         }
     }
 
