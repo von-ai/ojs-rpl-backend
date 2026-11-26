@@ -358,6 +358,11 @@ class SysAdminUsersViewModel
                         ];
                     }
 
+                    $catalogOrder = array_flip(array_keys(UserRole::roleCatalog()));
+                    uksort($uniqueRolesMap, function ($a, $b) use ($catalogOrder) {
+                        return ($catalogOrder[$a] ?? 99) <=> ($catalogOrder[$b] ?? 99);
+                    });
+
                     return [
                         'id' => (string) $user->id,
                         'name' => (string) $user->name,

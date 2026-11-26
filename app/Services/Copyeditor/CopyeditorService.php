@@ -150,7 +150,10 @@ class CopyeditorService
         return DB::transaction(function () use ($approval, $author, $note) {
             PortalAccess::lockSubmission($approval->copyedit->submission, $author, 'author');
             $approval = CopyeditApproval::query()->lockForUpdate()->findOrFail($approval->id);
-            if ($approval->author_id !== $author->id || $approval->invalidated_at !== null || $approval->decision !== 'requested') {
+            $isAuthorizedAuthor = $approval->author_id === $author->id
+                || $approval->copyedit->submission->author_id === $author->id
+                || $approval->copyedit->submission->contributors()->where('user_id', $author->id)->exists();
+            if (! $isAuthorizedAuthor || $approval->invalidated_at !== null || $approval->decision !== 'requested') {
                 throw new DomainException('Permintaan persetujuan tidak lagi berlaku atau bukan milik Anda.');
             }
 
@@ -190,7 +193,10 @@ class CopyeditorService
         return DB::transaction(function () use ($approval, $author, $reason) {
             PortalAccess::lockSubmission($approval->copyedit->submission, $author, 'author');
             $approval = CopyeditApproval::query()->lockForUpdate()->findOrFail($approval->id);
-            if ($approval->author_id !== $author->id || $approval->invalidated_at !== null || $approval->decision !== 'requested') {
+            $isAuthorizedAuthor = $approval->author_id === $author->id
+                || $approval->copyedit->submission->author_id === $author->id
+                || $approval->copyedit->submission->contributors()->where('user_id', $author->id)->exists();
+            if (! $isAuthorizedAuthor || $approval->invalidated_at !== null || $approval->decision !== 'requested') {
                 throw new DomainException('Permintaan persetujuan tidak lagi berlaku atau bukan milik Anda.');
             }
 

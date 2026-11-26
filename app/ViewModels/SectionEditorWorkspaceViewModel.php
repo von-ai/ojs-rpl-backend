@@ -126,6 +126,8 @@ class SectionEditorWorkspaceViewModel
             'revisions_requested' => 'Perlu Revisi Penulis',
             'accepted' => 'Diterima untuk Publikasi',
             'in_production' => 'Tahap Produksi',
+            'ready_for_issue' => 'Siap Masuk Terbitan',
+            'scheduled' => 'Terjadwal dalam Edisi',
             'published' => 'Telah Terbit Resmi',
             'declined' => 'Naskah Ditolak',
             'archived', 'withdrawn' => 'Naskah Diarsipkan',
@@ -138,6 +140,7 @@ class SectionEditorWorkspaceViewModel
             'revisions_requested' => 'bg-orange-50 text-orange-800 border-orange-200',
             'accepted' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'in_production' => 'bg-purple-50 text-purple-800 border-purple-200',
+            'ready_for_issue', 'scheduled' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'published' => 'bg-green-50 text-green-800 border-green-200',
             'declined' => 'bg-red-50 text-red-800 border-red-200',
             'archived', 'withdrawn' => 'bg-zinc-100 text-zinc-700 border-zinc-300',
@@ -148,7 +151,7 @@ class SectionEditorWorkspaceViewModel
             'submitted' => 'Tahap 2 dari 6',
             'in_review', 'under_review' => 'Tahap 3 dari 6',
             'revisions_requested' => 'Tahap 4 dari 6',
-            'accepted', 'in_production' => 'Tahap 5 dari 6',
+            'accepted', 'in_production', 'ready_for_issue', 'scheduled' => 'Tahap 5 dari 6',
             'published' => 'Tahap 6 dari 6',
             'declined', 'archived', 'withdrawn' => 'Alur Dihentikan',
             default => 'Tahap 1 dari 6',
@@ -170,11 +173,11 @@ class SectionEditorWorkspaceViewModel
     {
         $status = $this->submission->status;
         $hasDeskPassed = $this->submission->deskReviews->where('status', 'passed')->isNotEmpty()
-            || in_array($status, ['in_review', 'under_review', 'revisions_requested', 'accepted', 'in_production', 'published'], true);
+            || in_array($status, ['in_review', 'under_review', 'revisions_requested', 'accepted', 'in_production', 'ready_for_issue', 'scheduled', 'published'], true);
         $hasSe = true; // Section Editor sudah ditugaskan
         $hasDecision = $this->submission->editorialDecisions->where('status', '!=', 'draft')->whereNotNull('sent_at')->isNotEmpty()
-            || in_array($status, ['accepted', 'in_production', 'published', 'declined'], true);
-        $inProdOrPub = in_array($status, ['accepted', 'in_production', 'published'], true);
+            || in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled', 'published', 'declined'], true);
+        $inProdOrPub = in_array($status, ['accepted', 'in_production', 'ready_for_issue', 'scheduled', 'published'], true);
 
         if ($status === 'declined') {
             return [

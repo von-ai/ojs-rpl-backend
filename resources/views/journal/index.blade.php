@@ -88,6 +88,41 @@
                     <x-journal.issue-archives :archives="$viewModel->archives()" />
                 </section>
 
+                <!-- Direktori / Jurnal Lain dalam Portal BRIDA -->
+                @if(count($viewModel->availableJournals()) > 1)
+                    <section class="bg-white rounded-xl border border-gray-200/90 p-5 sm:p-6 space-y-4 shadow-2xs">
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                <h2 class="text-sm sm:text-base font-bold text-gray-900">Jurnal Ilmiah Terkait dalam Portal BRIDA</h2>
+                            </div>
+                            <a href="{{ route('journal.journals.index') }}" class="text-xs font-semibold text-brand-maroon hover:underline">
+                                Buka Katalog Lengkap &rarr;
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach($viewModel->availableJournals() as $aj)
+                                <a href="{{ $aj['url'] }}" class="p-3 rounded-lg border border-gray-200 hover:border-brand-maroon/40 hover:bg-red-50/20 transition flex items-start gap-3 group">
+                                    <div class="w-8 h-8 rounded-lg bg-red-50 border border-red-200 text-brand-maroon flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition-transform">
+                                        {{ substr($aj['initials'], 0, 3) }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <h3 class="text-xs font-bold text-gray-900 group-hover:text-brand-maroon transition-colors truncate">{{ $aj['name'] }}</h3>
+                                            @if($aj['is_current'])
+                                                <span class="inline-flex px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-maroon text-white shrink-0">Aktif</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-[11px] text-gray-500 mt-0.5">Inisial: <span class="font-mono font-medium text-gray-700">{{ $aj['initials'] }}</span></p>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
             </div>
 
             <!-- Right Sidebar Column (Span 1) -->

@@ -44,6 +44,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
+                    @elseif(!empty($submission['approval']['author_signoff']['ready']))
+                        <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     @else
                         <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center shrink-0">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,8 +62,10 @@
                         <span class="text-[11px] text-gray-500">
                             @if($submission['approval']['author_signoff']['approved'])
                                 Telah disetujui pada: <strong class="text-gray-700">{{ $submission['approval']['author_signoff']['approved_at'] }}</strong>
-                            @else
+                            @elseif(!empty($submission['approval']['author_signoff']['ready']))
                                 Menunggu konfirmasi persetujuan dari penulis korespondensi.
+                            @else
+                                Putaran proofreading belum selesai. Galai akan siap ditinjau penulis setelah tahap proofreading tuntas.
                             @endif
                         </span>
                     </div>
@@ -67,9 +75,13 @@
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 self-start sm:self-center">
                         Disetujui Penulis
                     </span>
+                @elseif(!empty($submission['approval']['author_signoff']['ready']))
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200 self-start sm:self-center">
+                        Menunggu Penulis
+                    </span>
                 @else
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200 self-start sm:self-center">
-                        Menunggu Penulis
+                        Menunggu Proofreading
                     </span>
                 @endif
             </div>

@@ -424,6 +424,32 @@
                         <p class="text-[11px] text-gray-600">
                             Dipublikasikan pada: <strong class="text-gray-800">{{ $issue['published_at'] }}</strong>
                         </p>
+
+                        @if(!empty($issue['public_url']))
+                            <div class="pt-2 flex flex-col gap-1.5 border-t border-emerald-200/80">
+                                <a
+                                    href="{{ $issue['public_url'] }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    <span>Buka di Halaman Publik</span>
+                                </a>
+                                @if(!empty($issue['archives_url']))
+                                    <a
+                                        href="{{ $issue['archives_url'] }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-emerald-800 bg-white hover:bg-emerald-100/60 rounded-lg border border-emerald-200 transition"
+                                    >
+                                        <span>Lihat Arsip Jurnal Ini</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     @if(!$issue['is_current'])

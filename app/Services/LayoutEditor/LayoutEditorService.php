@@ -411,7 +411,9 @@ class LayoutEditorService
         return DB::transaction(function () use ($galley, $author, $note) {
             $submission = PortalAccess::lockSubmission($galley->submission, $author, 'author');
             $galley = Galley::query()->lockForUpdate()->findOrFail($galley->id);
-            abort_unless($submission->author_id === $author->id, 404);
+            $isAuthorizedAuthor = $submission->author_id === $author->id
+                || $submission->contributors()->where('user_id', $author->id)->exists();
+            abort_unless($isAuthorizedAuthor, 404);
             if (! in_array($submission->status, ['accepted', 'in_production'], true)
                 || $submission->activeGalley?->id !== $galley->id || ! $galley->readyForAuthorSignoff()) {
                 throw new DomainException('Galai ini belum siap disetujui atau sudah diganti.');

@@ -115,9 +115,9 @@ class AuthorSubmissionDetailViewModel
         $stageNumber = match ($sub->status) {
             'draft' => 1,
             'submitted' => 2,
-            'in_review' => 3,
+            'in_review', 'under_review' => 3,
             'revisions_requested' => 4,
-            'in_production', 'accepted' => 5,
+            'in_production', 'accepted', 'ready_for_issue', 'scheduled' => 5,
             'published' => 6,
             'declined', 'archived', 'withdrawn' => 2, // Posisi terminasi pada tahapan editorial
             default => 2,
@@ -126,10 +126,12 @@ class AuthorSubmissionDetailViewModel
         $statusLabel = match ($sub->status) {
             'draft' => 'Draf Belum Diajukan',
             'submitted' => 'Pemeriksaan Awal Editor',
-            'in_review' => 'Proses Telaah',
+            'in_review', 'under_review' => 'Proses Telaah',
             'revisions_requested' => 'Perlu Revisi Penulis',
             'in_production' => 'Tahap Produksi & Pemeriksaan Galai',
             'accepted' => 'Naskah Diterima untuk Produksi',
+            'ready_for_issue' => 'Siap Masuk Terbitan (Galai Disetujui)',
+            'scheduled' => 'Terjadwal dalam Edisi Terbitan',
             'published' => 'Telah Terbit Resmi',
             'declined' => 'Naskah Ditolak',
             'archived' => 'Naskah Diarsipkan',
@@ -140,9 +142,10 @@ class AuthorSubmissionDetailViewModel
         $statusBadgeClass = match ($sub->status) {
             'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
             'submitted' => 'bg-blue-50 text-blue-700 border-blue-200',
-            'in_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'in_review', 'under_review' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             'revisions_requested' => 'bg-red-50 text-red-700 border-red-200',
             'in_production', 'accepted' => 'bg-amber-50 text-amber-800 border-amber-200',
+            'ready_for_issue', 'scheduled' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'published' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             'declined' => 'bg-rose-100 text-rose-800 border-rose-300',
             'archived', 'withdrawn' => 'bg-stone-100 text-stone-700 border-stone-300',
@@ -243,9 +246,9 @@ class AuthorSubmissionDetailViewModel
             'files' => $files,
             'timeline' => $this->buildTimelineForSubmission($sub, $stageNumber),
             'editorial_feedback' => ($sub->status === 'revisions_requested') ? $this->buildEditorialFeedback($sub) : null,
-            'review_info' => ($sub->status === 'in_review') ? $this->buildReviewInfo($sub) : null,
+            'review_info' => in_array($sub->status, ['in_review', 'under_review'], true) ? $this->buildReviewInfo($sub) : null,
             'initial_screening' => ($sub->status === 'submitted') ? $this->buildInitialScreeningInfo($sub) : null,
-            'production_info' => in_array($sub->status, ['in_production', 'accepted'], true) ? $this->buildProductionInfo($sub, $user) : null,
+            'production_info' => in_array($sub->status, ['in_production', 'accepted', 'ready_for_issue', 'scheduled'], true) ? $this->buildProductionInfo($sub, $user) : null,
             'publication' => ($sub->status === 'published') ? $this->buildPublicationInfo($sub) : null,
             'declined_info' => ($sub->status === 'declined') ? $this->buildDeclinedInfo($sub) : null,
             'withdrawn_info' => in_array($sub->status, ['archived', 'withdrawn'], true) ? $this->buildWithdrawnInfo($sub) : null,
@@ -733,17 +736,55 @@ class AuthorSubmissionDetailViewModel
         $issue = $sub->issue;
         $targetIssue = $issue ? ($issue->title ?: 'Volume '.$issue->volume.' Nomor '.$issue->number.' ('.$issue->year.')') : 'Edisi Mendatang (2026)';
 
-        $hasCopyedit = $sub->copyedits->isNotEmpty();
-        $copyeditStatus = $hasCopyedit ? 'Penyuntingan Kebahasaan Selesai' : 'Dalam Proses Tata Bahasa';
+        $latestCopyedit = $sub->copyedits->first();
+        $copyeditStatus = 'Belum Dimulai';
+        if ($latestCopyedit) {
+            $latestApproval = $latestCopyedit->approvals->first(fn ($a) => is_null($a->invalidated_at))
+                ?? $latestCopyedit->approvals->first();
+            if ($latestCopyedit->status === 'completed') {
+                $copyeditStatus = 'Penyuntingan Selesai (Telah Masuk Layout)';
+            } elseif ($latestApproval?->decision === 'approved') {
+                $copyeditStatus = 'Disetujui Penulis';
+            } elseif ($latestApproval?->decision === 'requested') {
+                $copyeditStatus = 'Menunggu Persetujuan Penulis';
+            } elseif ($latestApproval?->decision === 'revisions_requested') {
+                $copyeditStatus = 'Perlu Perbaikan Suntingan';
+            } else {
+                $copyeditStatus = 'Dalam Proses Penyuntingan';
+            }
+        }
 
         $hasGalley = $sub->galleys->isNotEmpty();
-        $layoutStatus = $hasGalley ? 'Penataan Tata Letak (Typesetting Galai Selesai)' : 'Penataan Tata Letak (Sedang Dikerjakan)';
-
         $galley = $sub->activeGalley;
-        $canReviewGalley = $user?->id === $sub->author_id && $galley?->readyForAuthorSignoff();
-        $authorApproved = $canReviewGalley && $galley->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
-            && $approval->invalidated_at === null && $approval->approved_by === $sub->author_id
-            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256);
+        $isAuthorizedAuthor = $user && ($user->id === $sub->author_id || $sub->contributors()->where('user_id', $user->id)->exists());
+        $isGalleyReady = (bool) ($galley?->readyForAuthorSignoff());
+        $canReviewGalley = $isAuthorizedAuthor && $isGalleyReady;
+        $authorApproved = $isAuthorizedAuthor && (bool) ($galley?->approvals->contains(fn ($approval) => $approval->stage === 'author_signoff'
+            && $approval->invalidated_at === null
+            && $approval->file_id === $galley->file_id && $approval->checksum_sha256 === $galley->checksum_sha256));
+
+        if ($authorApproved) {
+            $layoutStatus = 'Pemeriksaan Galai Selesai (Disetujui Penulis)';
+        } elseif ($canReviewGalley) {
+            $layoutStatus = 'Menunggu Persetujuan Galai oleh Penulis';
+        } elseif ($galley?->stage === 'proofreading') {
+            $layoutStatus = 'Penataan Selesai — Sedang Ditinjau Proofreader';
+        } elseif ($hasGalley) {
+            $layoutStatus = 'Draf Galai PDF Tersedia (Menunggu Proofreader)';
+        } else {
+            $layoutStatus = 'Penataan Tata Letak (Sedang Dikerjakan)';
+        }
+
+        $instructions = match (true) {
+            $authorApproved => 'Anda telah menyetujui draf galai publikasi ini. Saat ini dewan redaksi sedang memproses otorisasi akhir untuk penerbitan resmi artikel.',
+            $canReviewGalley => 'Galai cetak sementara (galley proof) telah selesai ditinjau oleh Proofreader dan siap untuk pemeriksaan akhir Anda. Silakan unduh dan berikan persetujuan penerbitan.',
+            $hasGalley && $galley?->stage === 'proofreading' => 'Draf galai PDF telah diunggah oleh Layout Editor dan saat ini sedang dalam proses peninjauan oleh Proofreader. Anda dapat mengunduh pratinjau draf berkas ini di bawah.',
+            $hasGalley => 'Draf galai telah diunggah oleh penata letak. Menunggu proses proofreading sebelum pemeriksaan akhir oleh penulis.',
+            default => 'Penata letak sedang menyusun berkas galai PDF (typesetting). Anda akan dapat memeriksa berkas setelah draf galai tersedia.',
+        };
+
+        $galleyDownloadUrl = ($hasGalley && $galley) ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null;
+        $galleyApprovalUrl = ($canReviewGalley && ! $authorApproved) ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null;
 
         return [
             'stage_title' => 'Tahap Produksi & Pemeriksaan Galai',
@@ -753,10 +794,12 @@ class AuthorSubmissionDetailViewModel
             'layout_status' => $layoutStatus,
             'proofreading_deadline' => now()->addDays(7)->format('d M Y'),
             'galley_preview_ready' => $canReviewGalley,
-            'galley_download_url' => $canReviewGalley ? route('author.submissions.galleys.download', [$sub->id, $galley->id]) : null,
-            'galley_approval_url' => $canReviewGalley && ! $authorApproved ? route('author.submissions.galleys.approve', [$sub->id, $galley->id]) : null,
+            'galley_download_url' => $galleyDownloadUrl,
+            'galley_approval_url' => $galleyApprovalUrl,
             'galley_author_approved' => $authorApproved,
-            'instructions' => 'Penulis dimohon untuk memeriksa berkas galai cetak sementara (galley proof) guna memastikan tidak ada kesalahan tipografi, rumus, atau tabel sebelum artikel diterbitkan secara resmi.',
+            'instructions' => $instructions,
+            'galley_version' => $galley?->version ?? 1,
+            'is_proofreading_in_progress' => $hasGalley && ! $isGalleyReady && ! $authorApproved,
         ];
     }
 
@@ -993,9 +1036,9 @@ class AuthorSubmissionDetailViewModel
 
         return match ($status) {
             'draft' => null,
-            'in_review' => 'Naskah telah masuk tahap penelaahan oleh mitra bestari (peer review) sehingga tidak dapat ditarik kembali secara sepihak.',
+            'in_review', 'under_review' => 'Naskah telah masuk tahap penelaahan oleh mitra bestari (peer review) sehingga tidak dapat ditarik kembali secara sepihak.',
             'revisions_requested' => 'Naskah telah ditindaklanjuti oleh dewan redaksi dengan permintaan perbaikan/revisi.',
-            'in_production', 'accepted' => 'Naskah telah disetujui untuk terbit dan sedang dalam proses tata letak (galai).',
+            'in_production', 'accepted', 'ready_for_issue', 'scheduled' => 'Naskah telah disetujui untuk terbit dan sedang dalam proses tata letak (galai).',
             'published' => 'Naskah telah terbit resmi dengan identifikasi Digital Object Identifier (DOI).',
             'declined' => 'Alur editorial naskah telah berakhir dengan status naskah ditolak.',
             'archived' => 'Naskah telah dibekukan dalam arsip editorial jurnal.',

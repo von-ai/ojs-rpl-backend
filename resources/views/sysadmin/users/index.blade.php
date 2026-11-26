@@ -146,6 +146,7 @@
                         <th scope="col" class="py-2.5 px-2.5 text-center whitespace-nowrap">Status</th>
                         <th scope="col" class="py-2.5 px-2.5 text-right whitespace-nowrap">Aksi</th>
                     </tr>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @php
@@ -209,23 +210,61 @@
                             <!-- 5. Kolom Peran & Keanggotaan (Cukup Peran Unik) -->
                             <td class="py-2.5 px-2.5 max-w-48">
                                 @if(!empty($user['unique_roles']) && count($user['unique_roles']) > 0)
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        @foreach($user['unique_roles'] as $role)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-700 text-white border-gray-700' }}">
-                                                {{ $role['role_label'] }}
-                                            </span>
-                                        @endforeach
+                                    @php
+                                        $rolesCount = count($user['unique_roles']);
+                                        $showExpandable = $rolesCount > 3;
+                                        $visibleCount = $showExpandable ? 2 : $rolesCount;
+                                        $visibleRoles = array_slice($user['unique_roles'], 0, $visibleCount);
+                                        $hiddenRoles = $showExpandable ? array_slice($user['unique_roles'], $visibleCount) : [];
+                                        $hiddenRoleLabels = implode(', ', array_column($hiddenRoles, 'role_label'));
+                                    @endphp
+
+                                    <div class="space-y-1.5">
+                                        <div class="flex flex-wrap items-center gap-1">
+                                            @foreach($visibleRoles as $role)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                    {{ $role['role_label'] }}
+                                                </span>
+                                            @endforeach
+
+                                            @if($showExpandable)
+                                                <button
+                                                    type="button"
+                                                    onclick="toggleMoreRoles('{{ $user['id'] }}', this)"
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 transition-colors cursor-pointer select-none"
+                                                    title="Peran lainnya: {{ $hiddenRoleLabels }}"
+                                                    data-count="{{ count($hiddenRoles) }}"
+                                                    data-expanded="false"
+                                                >
+                                                    <span>+{{ count($hiddenRoles) }}</span>
+                                                    <svg class="w-2.5 h-2.5 text-gray-500 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        @if($showExpandable)
+                                            <div id="more-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1 pt-1.5 border-t border-dashed border-gray-200">
+                                                @foreach($hiddenRoles as $role)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                                        {{ $role['role_label'] }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+
+                                        @if($user['journal_memberships_count'] > 0)
+                                            <button
+                                                type="button"
+                                                onclick="openUserDetailModal('{{ $user['id'] }}')"
+                                                class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-brand-maroon transition mt-1 cursor-pointer font-medium"
+                                                title="Klik untuk melihat distribusi peran per instansi jurnal"
+                                            >
+                                                <span>{{ $user['journal_memberships_count'] }} Jurnal</span>
+                                            </button>
+                                        @endif
                                     </div>
-                                    @if($user['journal_memberships_count'] > 0)
-                                        <button
-                                            type="button"
-                                            onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                            class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-brand-maroon transition mt-1 cursor-pointer font-medium"
-                                            title="Klik untuk melihat distribusi peran per instansi jurnal"
-                                        >
-                                            <span>{{ $user['journal_memberships_count'] }} Jurnal</span>
-                                        </button>
-                                    @endif
                                 @else
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-200 text-gray-800">
                                         Terdaftar Global
@@ -1099,6 +1138,32 @@
     // Inisialisasi Cache Pengguna
     const USERS_CACHE = @js(collect($viewModel->users())->keyBy('id'));
     let activeDetailUser = null;
+
+    /**
+     * Toggle Tampilan Peran Tambahan pada Tabel
+     */
+    function toggleMoreRoles(userId, btn) {
+        const target = document.getElementById('more-roles-' + userId);
+        if (!target) return;
+
+        const isHidden = target.classList.contains('hidden');
+        const icon = btn.querySelector('svg');
+        const count = btn.getAttribute('data-count') || '';
+
+        if (isHidden) {
+            target.classList.remove('hidden');
+            btn.setAttribute('data-expanded', 'true');
+            btn.querySelector('span').textContent = 'Sembunyikan';
+            btn.classList.add('bg-gray-200');
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            target.classList.add('hidden');
+            btn.setAttribute('data-expanded', 'false');
+            btn.querySelector('span').textContent = `+${count} lainnya`;
+            btn.classList.remove('bg-gray-200');
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
 
     /**
      * Buka Modal Detail Pengguna

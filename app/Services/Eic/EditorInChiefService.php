@@ -452,7 +452,7 @@ class EditorInChiefService
         if ($statusTab === 'submitted') {
             $query->where('status', 'submitted');
         } elseif ($statusTab === 'in_review') {
-            $query->where('status', 'in_review');
+            $query->whereIn('status', ['in_review', 'under_review']);
         } elseif ($statusTab === 'revisions') {
             $query->where('status', 'revisions_requested');
         } elseif ($statusTab === 'decided') {
