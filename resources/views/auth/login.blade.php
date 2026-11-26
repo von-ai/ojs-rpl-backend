@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="w-full max-w-md mx-auto my-auto">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
+    <div class="bg-white rounded-2xl border border-outline-variant shadow-sm">
         <div class="p-5 sm:p-8 flex flex-col justify-between">
             <div>
                 <!-- Form Header -->
@@ -100,7 +100,7 @@
                                 type="checkbox"
                                 name="remember"
                                 id="remember"
-                                class="w-4 h-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon cursor-pointer transition"
+                                class="w-4 h-4 rounded border-outline text-brand-maroon focus:ring-brand-maroon cursor-pointer transition"
                                 {{ old('remember') ? 'checked' : '' }}
                             >
                             <span class="ml-2 text-xs font-medium text-gray-600">Ingat saya</span>
