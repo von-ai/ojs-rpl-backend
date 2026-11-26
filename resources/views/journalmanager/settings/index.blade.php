@@ -62,6 +62,7 @@
         $identity = $viewModel->journalIdentity();
         $policies = $viewModel->editorialPolicies();
         $announcements = $viewModel->announcements();
+        $guideline = $viewModel->authorGuideline();
     @endphp
 
     @if ($errors->any())
@@ -271,12 +272,128 @@
             </div>
         </div>
 
-        <!-- Kartu 4: Warta Pengumuman Publik Terkini -->
+        <!-- Kartu 4: Template & Panduan Penulisan Naskah -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
+            <div class="p-4 sm:p-5 border-b border-gray-200 bg-gray-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-gray-900">
+                            Template &amp; Panduan Penulisan Naskah
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Berkas yang diunggah otomatis tersedia pada tombol <strong>Unduh Template</strong> di halaman publik Panduan Penulis.
+                        </p>
+                    </div>
+                </div>
+                @if($guideline['has_template'])
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-600 text-white shrink-0 self-start sm:self-auto">
+                        Template Aktif
+                    </span>
+                @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-600 text-white shrink-0 self-start sm:self-auto">
+                        Template Bawaan
+                    </span>
+                @endif
+            </div>
+
+            <div class="p-4 sm:p-5 space-y-4">
+                @if($guideline['has_template'])
+                    <div class="p-3.5 rounded-lg border border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <svg class="w-6 h-6 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 truncate" title="{{ $guideline['filename'] }}">
+                                    {{ $guideline['filename'] }}
+                                </p>
+                                @if($guideline['updated_at'])
+                                    <p class="text-xs text-gray-500">
+                                        Terakhir diperbarui: {{ $guideline['updated_at'] }}
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a
+                                href="{{ $guideline['download_url'] }}"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-gray-800 bg-white hover:bg-gray-100 border border-gray-300 transition shadow-2xs"
+                            >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                <span>Unduh</span>
+                            </a>
+
+                            <form
+                                action="{{ route('journalmanager.settings.template.destroy') }}"
+                                method="POST"
+                                class="inline"
+                                data-confirm="Apakah Anda yakin ingin menghapus berkas template panduan ini? Halaman Panduan Penulis akan kembali menggunakan template bawaan."
+                                data-confirm-title="Hapus Template Panduan?"
+                                data-confirm-btn="Ya, Hapus"
+                                data-confirm-cancel="Batal"
+                                data-confirm-type="danger"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                    type="submit"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-white hover:bg-red-700 hover:text-white border border-gray-300 hover:border-red-700 transition shadow-2xs cursor-pointer"
+                                >
+                                    <span>Hapus</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
+                <form
+                    action="{{ route('journalmanager.settings.template.upload') }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="flex flex-col sm:flex-row sm:items-end gap-3"
+                >
+                    @csrf
+                    <div class="flex-1 min-w-0">
+                        <label for="guideline_file" class="block font-semibold text-gray-800 mb-1">
+                            {{ $guideline['has_template'] ? 'Ganti Berkas Template / Panduan Penulisan' : 'Unggah Berkas Template / Panduan Penulisan' }}
+                        </label>
+                        <input
+                            type="file"
+                            name="guideline_file"
+                            id="guideline_file"
+                            required
+                            accept=".docx,.doc,.pdf,.odt,.rtf"
+                            class="block w-full text-xs text-gray-800 bg-white border border-gray-300 rounded-lg cursor-pointer file:mr-3 file:py-2 file:px-3 file:rounded-l-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200 transition"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">
+                            Format didukung: DOCX, DOC, PDF, ODT, atau RTF (maksimal 10 MB).
+                        </p>
+                    </div>
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg shadow-2xs transition cursor-pointer shrink-0 sm:mb-5"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <span>{{ $guideline['has_template'] ? 'Perbarui Template' : 'Unggah Template' }}</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Kartu 5: Warta Pengumuman Publik Terkini -->
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="p-4 sm:p-5 border-b border-gray-200/90 bg-gray-50/50 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
                     <div class="w-7 h-7 rounded-lg bg-brand-maroon/10 text-brand-maroon font-bold text-xs flex items-center justify-center">
-                        4
+                        5
                     </div>
                     <h2 class="text-sm sm:text-base font-bold text-gray-900">
                         Warta Pengumuman Publik Terkini
