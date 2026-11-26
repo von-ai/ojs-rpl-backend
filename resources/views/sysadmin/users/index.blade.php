@@ -44,7 +44,7 @@
     </div>
 
     <!-- Multi-Tenant Global Context Bar -->
-    <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white border border-gray-200/90 text-xs shadow-none">
+    <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-white border border-outline-variant text-xs shadow-none">
         <div class="flex items-center gap-2.5 min-w-0">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-900 text-white shrink-0">
                 Ruang Kerja Sistem
@@ -78,12 +78,12 @@
     </div>
 
     <!-- Main Container: Filter Peran, Pencarian & Tabel Pengguna -->
-    <div class="bg-white rounded-xl border border-gray-200/90 shadow-none overflow-hidden">
+    <div class="bg-white rounded-xl border border-outline-variant shadow-none overflow-hidden">
 
         <!-- Filter Tabs & Search Bar Terpadu -->
-        <div class="p-3.5 sm:p-4 border-b border-gray-200/90 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
+        <div class="p-3.5 sm:p-4 border-b border-divider flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50">
             <!-- Tabs Peran Pengguna -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none" aria-label="Filter Peran Pengguna">
+            <div class="section-menu grow" aria-label="Filter Peran Pengguna">
                 @php
                     $tabs = $viewModel->tabs();
                 @endphp
@@ -116,7 +116,7 @@
                     name="q"
                     value="{{ request('q') }}"
                     placeholder="Cari nama, surel, username, atau afiliasi..."
-                    class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                    class="w-full pl-9 pr-8 py-1.5 text-xs text-gray-900 bg-white border border-outline rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
                 @if(request('q'))
                     <a
@@ -136,7 +136,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold text-[11px] uppercase tracking-wider">
+                    <tr class="bg-gray-50 border-b border-divider text-gray-600 font-semibold text-[11px] uppercase tracking-wider">
                         <th scope="col" class="py-2.5 px-2 text-center whitespace-nowrap w-8">NO</th>
                         <th scope="col" class="py-2.5 px-2.5">Pengguna</th>
                         <th scope="col" class="py-2.5 px-2.5">Email</th>
@@ -148,7 +148,7 @@
                     </tr>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-divider">
                     @php
                         $pagination = $viewModel->pagination();
                         $usersList = $viewModel->users();
@@ -245,7 +245,7 @@
                                         </div>
 
                                         @if($showExpandable)
-                                            <div id="more-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1 pt-1.5 border-t border-dashed border-gray-200">
+                                            <div id="more-roles-{{ $user['id'] }}" class="hidden flex flex-wrap items-center gap-1 pt-1.5 border-t border-dashed border-divider">
                                                 @foreach($hiddenRoles as $role)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {{ $role['badge_class'] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
                                                         {{ $role['role_label'] }}
@@ -416,7 +416,7 @@
         </div>
 
         <!-- Pagination Interaktif -->
-        <div class="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+        <div class="px-5 py-3 border-t border-divider bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
             <span>
                 Menampilkan <strong class="text-gray-800">{{ $pagination['from'] }}</strong> - <strong class="text-gray-800">{{ $pagination['to'] }}</strong> dari <strong class="text-gray-800">{{ $pagination['total'] }}</strong> pengguna
             </span>
@@ -430,7 +430,7 @@
                         Sebelumnya
                     </a>
                 @else
-                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                    <span class="px-2.5 py-1 rounded-md border border-outline-variant bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
                         Sebelumnya
                     </span>
                 @endif
@@ -462,7 +462,7 @@
                         Selanjutnya
                     </a>
                 @else
-                    <span class="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
+                    <span class="px-2.5 py-1 rounded-md border border-outline-variant bg-gray-100/70 text-gray-400 cursor-not-allowed select-none">
                         Selanjutnya
                     </span>
                 @endif
@@ -471,8 +471,8 @@
     </div>
 
     <!-- Container Utama 2: Riwayat Pengimporan Massal CSV (Tanpa Font Mono, Tanpa Shadow Card) -->
-    <div class="bg-white rounded-xl border border-gray-200/90 shadow-none p-5 sm:p-6 space-y-4">
-        <div class="border-b border-gray-100 pb-3">
+    <div class="bg-white rounded-xl border border-outline-variant shadow-none p-5 sm:p-6 space-y-4">
+        <div class="border-b border-divider pb-3">
             <h2 class="text-base font-bold text-gray-900 tracking-tight font-sans">
                 Riwayat Pengimporan Massal Pengguna via CSV
             </h2>
@@ -484,7 +484,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
+                    <tr class="bg-gray-50/70 border-b border-divider text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
                         <th class="py-2.5 px-3">ID &amp; Jurnal Tujuan</th>
                         <th class="py-2.5 px-3">Nama Berkas CSV</th>
                         <th class="py-2.5 px-3">Total Baris</th>
@@ -493,7 +493,7 @@
                         <th class="py-2.5 px-3 text-right">Waktu Eksekusi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-divider">
                     @forelse ($viewModel->recentImports() as $import)
                         <tr class="hover:bg-gray-50/50">
                             <td class="py-3 px-3 whitespace-nowrap">
@@ -545,7 +545,7 @@
         <!-- Panel Konten Modal -->
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 my-auto">
             <!-- Header Modal -->
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center justify-between pb-3 border-b border-divider">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-5 h-5 text-blue-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -575,7 +575,7 @@
             <!-- Body Modal -->
             <div class="mt-4 space-y-4">
                 <!-- Header Card Profil -->
-                <div class="p-3.5 bg-gray-50/90 rounded-xl border border-gray-200/80">
+                <div class="p-3.5 bg-gray-50/90 rounded-xl border border-outline-variant">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
@@ -604,7 +604,7 @@
                     </div>
 
                     <!-- Afiliasi & Tanggal Daftar -->
-                    <div class="mt-3 pt-3 border-t border-gray-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div class="mt-3 pt-3 border-t border-divider grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <div>
                             <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider block">Afiliasi / Institusi:</span>
                             <span id="detail_user_affiliation" class="text-gray-800 font-medium block mt-0.5"></span>
@@ -625,7 +625,7 @@
                             </svg>
                             <span>Distribusi Peran Per Jurnal</span>
                         </span>
-                        <span id="detail_journal_count_badge" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200"></span>
+                        <span id="detail_journal_count_badge" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full border border-outline-variant"></span>
                     </div>
 
                     <div id="detail_journal_cards_container" class="space-y-2 max-h-56 overflow-y-auto pr-0.5">
@@ -635,7 +635,7 @@
             </div>
 
             <!-- Footer Modal Detail dengan Quick Action -->
-            <div class="mt-5 pt-3.5 border-t border-gray-100 flex items-center justify-between gap-2">
+            <div class="mt-5 pt-3.5 border-t border-divider flex items-center justify-between gap-2">
                 <button
                     type="button"
                     onclick="closeUserDetailModal()"
@@ -675,7 +675,7 @@
 
         <!-- Panel Modal -->
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div class="flex items-center justify-between border-b border-divider pb-3">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -703,7 +703,7 @@
             </div>
 
             <!-- Card Profil Pengguna yang Dipilih (Jika Dipilih) -->
-            <div id="assign_user_info_card" class="hidden p-3 bg-gray-50/90 rounded-xl border border-gray-200/80 text-xs">
+            <div id="assign_user_info_card" class="hidden p-3 bg-gray-50/90 rounded-xl border border-outline-variant text-xs">
                 <div class="flex items-center justify-between">
                     <div>
                         <span id="assign_user_name_display" class="font-bold text-gray-900 block font-sans"></span>
@@ -724,7 +724,7 @@
             </div>
 
             <template id="active-role-template">
-                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
+                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-outline-variant text-xs">
                     <div class="min-w-0 pr-2">
                         <span data-journal-name class="font-bold text-gray-900 block truncate"></span>
                         <span data-role-label class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border mt-0.5"></span>
@@ -768,7 +768,7 @@
                     <select
                         id="assign_select_user"
                         onchange="onSelectUserChanged(this.value)"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
+                        class="w-full text-xs text-gray-900 bg-white border border-outline rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
                         <option value="">Pilih Pengguna Terdaftar</option>
                         @foreach ($viewModel->filteredUsers() as $u)
@@ -806,7 +806,7 @@
                             id="assign_journal_combobox_trigger"
                             aria-haspopup="listbox"
                             aria-expanded="false"
-                            class="w-full text-left bg-white hover:bg-gray-50 border border-gray-300 hover:border-gray-400 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2.5 shadow-2xs focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition cursor-pointer group"
+                            class="w-full text-left bg-white hover:bg-gray-50 border border-outline hover:border-gray-400 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2.5 shadow-2xs focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition cursor-pointer group"
                         >
                             <div class="flex items-center gap-2 min-w-0 flex-1">
                                 <span class="w-6 h-6 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
@@ -817,7 +817,7 @@
                                 <span id="assign_journal_display_text" class="text-xs font-normal text-gray-500 truncate flex-1">
                                     Pilih Instansi Jurnal
                                 </span>
-                                <span id="assign_journal_display_badge" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 shrink-0"></span>
+                                <span id="assign_journal_display_badge" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-outline-variant shrink-0"></span>
                             </div>
                             <div class="flex items-center text-gray-400 group-hover:text-gray-600 transition shrink-0">
                                 <svg id="assign_journal_chevron" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -829,10 +829,10 @@
                         <!-- Dropdown Popover dengan Kolom Pencarian -->
                         <div
                             id="assign_journal_combobox_dropdown"
-                            class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl border border-gray-200 shadow-2xl z-50 overflow-hidden transition-all duration-150"
+                            class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl border border-outline-variant shadow-2xl z-50 overflow-hidden transition-all duration-150"
                         >
                             <!-- Search Input Box -->
-                            <div class="p-2 border-b border-gray-100 bg-gray-50/90">
+                            <div class="p-2 border-b border-divider bg-gray-50/90">
                                 <div class="relative flex items-center">
                                     <svg class="w-4 h-4 text-gray-400 absolute left-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -842,7 +842,7 @@
                                         id="assign_journal_search_input"
                                         placeholder="Ketik untuk mencari jurnal atau singkatan..."
                                         autocomplete="off"
-                                        class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 text-gray-800 placeholder-gray-400 transition"
+                                        class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-outline-variant rounded-lg focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 text-gray-800 placeholder-gray-400 transition"
                                     >
                                     <button
                                         type="button"
@@ -858,7 +858,7 @@
                             </div>
 
                             <!-- List of Options -->
-                            <div id="assign_journal_options_list" class="max-h-56 overflow-y-auto divide-y divide-gray-50 p-1" role="listbox">
+                            <div id="assign_journal_options_list" class="max-h-56 overflow-y-auto divide-y divide-divider p-1" role="listbox">
                                 @foreach ($viewModel->selectableJournals() as $j)
                                     <button
                                         type="button"
@@ -876,7 +876,7 @@
                                         </div>
                                         <div class="flex items-center gap-1.5 shrink-0">
                                             @if(!empty($j['initials']))
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 group-hover:bg-red-100 group-hover:text-brand-maroon group-hover:border-red-200 transition-colors">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-outline-variant group-hover:bg-red-100 group-hover:text-brand-maroon group-hover:border-red-200 transition-colors">
                                                     {{ $j['initials'] }}
                                                 </span>
                                             @endif
@@ -908,7 +908,7 @@
                         id="assign_role_code"
                         name="role_code"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
+                        class="w-full text-xs text-gray-900 bg-white border border-outline rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
                         <option value="manager">Journal Manager (Manajer Jurnal)</option>
                         <option value="editor_in_chief">Editor in Chief (Pimpinan Redaksi)</option>
@@ -930,11 +930,11 @@
                         id="assign_expertise_keywords"
                         name="expertise_keywords"
                         placeholder="Contoh: Tata Kelola Publik, Smart City (pisahkan koma)"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="w-full text-xs text-gray-900 bg-white border border-outline rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <div class="flex justify-end gap-2 pt-2 border-t border-divider">
                     <button
                         type="button"
                         onclick="closeAssignRoleModal()"
@@ -964,7 +964,7 @@
 
         <!-- Panel Modal -->
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center justify-between pb-3 border-b border-divider">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-5 h-5 text-amber-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -1006,7 +1006,7 @@
                     Tautan reset sandi ini berlaku selama 60 menit dan hanya dapat digunakan satu kali.
                 </p>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <div class="flex justify-end gap-2 pt-2 border-t border-divider">
                     <button
                         type="button"
                         onclick="closeResetPasswordModal()"
@@ -1036,7 +1036,7 @@
 
         <!-- Panel Modal -->
         <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div class="flex items-center justify-between border-b border-divider pb-3">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -1074,7 +1074,7 @@
                         id="import_journal_id"
                         name="journal_id"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
+                        class="w-full text-xs text-gray-900 bg-white border border-outline rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
                         <option value="">Pilih Instansi Jurnal</option>
                         @foreach ($viewModel->selectableJournals() as $journalOption)
@@ -1114,7 +1114,7 @@
                     </label>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <div class="flex justify-end gap-2 pt-2 border-t border-divider">
                     <button
                         type="button"
                         onclick="closeImportUsersModal()"
@@ -1215,7 +1215,7 @@
 
             if (grouped.length === 0) {
                 journalContainer.innerHTML = `
-                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200/70 text-center">
+                    <div class="p-3 bg-gray-50 rounded-lg border border-outline-variant text-center">
                         <p class="text-xs text-gray-500 font-medium">Pengguna Terdaftar Global</p>
                         <p class="text-[11px] text-gray-400 mt-0.5">Belum punya peran di jurnal mana pun.</p>
                     </div>
@@ -1223,7 +1223,7 @@
             } else {
                 grouped.forEach(function(j) {
                     const card = document.createElement('div');
-                    card.className = 'p-3 bg-gray-50/70 rounded-lg border border-gray-200/90 space-y-2';
+                    card.className = 'p-3 bg-gray-50/70 rounded-lg border border-outline-variant space-y-2';
 
                     let rolesHtml = '';
                     let expertiseList = [];
@@ -1244,7 +1244,7 @@
                     if (expertiseList.length > 0) {
                         const uniqueExp = [...new Set(expertiseList)];
                         expHtml = `
-                            <div class="text-[10px] text-gray-500 pt-1 border-t border-gray-100 flex items-center gap-1 flex-wrap">
+                            <div class="text-[10px] text-gray-500 pt-1 border-t border-divider flex items-center gap-1 flex-wrap">
                                 <span class="font-medium text-gray-600">Kepakaran:</span>
                                 <span class="italic text-gray-500">${uniqueExp.join(', ')}</span>
                             </div>
@@ -1256,7 +1256,7 @@
                             <span class="text-xs font-bold text-gray-900 truncate block font-sans">${j.journal_name}</span>
                             <span class="text-[10px] text-gray-400 font-medium shrink-0">${j.roles.length} Peran</span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-gray-200/60">
+                        <div class="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-divider">
                             ${rolesHtml}
                         </div>
                         ${expHtml}
@@ -1362,7 +1362,7 @@
         listContainer.replaceChildren();
 
         if (!roles || roles.length === 0) {
-            listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50/80 p-3 rounded-xl border border-gray-200/70 text-center">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
+            listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50/80 p-3 rounded-xl border border-outline-variant text-center">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
         } else {
             const template = document.getElementById('active-role-template');
             roles.forEach(function(role) {
