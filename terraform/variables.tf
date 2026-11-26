@@ -181,12 +181,6 @@ variable "create_storage_account" {
   default     = true
 }
 
-variable "separate_storage_resource_group" {
-  description = "Tempatkan Azure Blob Storage dalam Resource Group terpisah (Stateful RG) agar terisolasi dari siklus hidup aplikasi (Stateless RG)"
-  type        = bool
-  default     = true
-}
-
 variable "storage_resource_group_name" {
   description = "Nama Resource Group khusus untuk Storage (kosongkan untuk menggunakan penamaan default 'rg-{project_name}-storage-{environment}')"
   type        = string

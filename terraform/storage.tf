@@ -33,7 +33,7 @@ moved {
 # dan data persisten tidak ikut terhapus saat teardown aplikasi (NF-08)
 # -----------------------------------------------------------------------------
 resource "azurerm_resource_group" "storage_rg" {
-  count    = var.create_storage_account && var.separate_storage_resource_group ? 1 : 0
+  count    = var.create_storage_account ? 1 : 0
   name     = var.storage_resource_group_name != "" ? var.storage_resource_group_name : "rg-${var.project_name}-storage-${var.environment}"
   location = var.storage_location
   tags     = var.tags
@@ -54,9 +54,12 @@ resource "random_string" "storage_suffix" {
 # Enkripsi AES-256 bawaan, TLS 1.2+, versioning & soft delete (NF-02, NF-08)
 # -----------------------------------------------------------------------------
 resource "azurerm_storage_account" "storage" {
-  count                    = var.create_storage_account ? 1 : 0
-  name                     = "st${var.project_name}${var.environment}${random_string.storage_suffix[0].result}"
-  resource_group_name      = var.separate_storage_resource_group ? azurerm_resource_group.storage_rg[0].name : azurerm_resource_group.rg.name
+  count = var.create_storage_account ? 1 : 0
+  name  = "st${var.project_name}${var.environment}${random_string.storage_suffix[0].result}"
+  # JANGAN mereferensikan resource aplikasi di sini (termasuk di cabang kondisional yang
+  # tidak terpakai). Terraform tetap mencatatnya sebagai dependensi, sehingga
+  # `destroy.sh --app-only` ikut menghapus Storage Account beserta seluruh berkas.
+  resource_group_name      = azurerm_resource_group.storage_rg[0].name
   location                 = var.storage_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
