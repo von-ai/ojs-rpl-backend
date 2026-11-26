@@ -475,8 +475,8 @@ class JournalManagerUsersViewModel
                         'status' => (string) ($u->status ?? 'active'),
                         'status_label' => ($u->status === 'active' || empty($u->status)) ? 'Aktif' : ucfirst($u->status),
                         'status_badge_class' => ($u->status === 'active' || empty($u->status))
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-blue-50 text-blue-800 border-blue-200',
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-gray-600 text-white border-gray-600',
                         'expertise' => array_values(array_unique($expertise)),
                         'active_assignments_count' => $assignmentsCount,
                         'is_last_admin' => $isLastAdmin,
