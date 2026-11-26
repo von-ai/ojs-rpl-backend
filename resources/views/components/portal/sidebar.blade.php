@@ -96,23 +96,6 @@
             </div>
         </a>
 
-        <!-- Bottom Collapse / Expand Toggle Button for Desktop -->
-        <button
-            id="sidebar-bottom-collapse-btn"
-            type="button"
-            title="Kecilkan Sidebar"
-            aria-label="Kecilkan atau perluas sidebar"
-            class="sidebar-collapse-btn w-full group flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition duration-150 sidebar-nav-item cursor-pointer text-left"
-        >
-            <svg id="bottom-collapse-icon-left" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
-            <svg id="bottom-collapse-icon-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 shrink-0 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            </svg>
-            <span class="truncate sidebar-label">Kecilkan Sidebar</span>
-        </button>
-
         <form action="{{ route('logout') }}" method="POST" class="m-0">
             @csrf
             <button
@@ -146,11 +129,8 @@
         const openBtn = document.getElementById('open-sidebar-btn');
         const closeBtn = document.getElementById('close-sidebar-btn');
         const collapseBtn = document.getElementById('sidebar-collapse-toggle-btn');
-        const bottomCollapseBtn = document.getElementById('sidebar-bottom-collapse-btn');
         const iconLeft = document.getElementById('collapse-icon-left');
         const iconRight = document.getElementById('collapse-icon-right');
-        const bottomIconLeft = document.getElementById('bottom-collapse-icon-left');
-        const bottomIconRight = document.getElementById('bottom-collapse-icon-right');
 
         if (!sidebar) {
             return;
@@ -164,26 +144,12 @@
                 sidebar.classList.add('sidebar-collapsed');
                 iconLeft?.classList.add('hidden');
                 iconRight?.classList.remove('hidden');
-                bottomIconLeft?.classList.add('hidden');
-                bottomIconRight?.classList.remove('hidden');
                 if (collapseBtn) collapseBtn.setAttribute('title', 'Perluas Navigasi');
-                if (bottomCollapseBtn) {
-                    bottomCollapseBtn.setAttribute('title', 'Perluas Sidebar');
-                    const label = bottomCollapseBtn.querySelector('.sidebar-label');
-                    if (label) label.textContent = 'Perluas Sidebar';
-                }
             } else {
                 sidebar.classList.remove('sidebar-collapsed');
                 iconLeft?.classList.remove('hidden');
                 iconRight?.classList.add('hidden');
-                bottomIconLeft?.classList.remove('hidden');
-                bottomIconRight?.classList.add('hidden');
                 if (collapseBtn) collapseBtn.setAttribute('title', 'Kecilkan Navigasi');
-                if (bottomCollapseBtn) {
-                    bottomCollapseBtn.setAttribute('title', 'Kecilkan Sidebar');
-                    const label = bottomCollapseBtn.querySelector('.sidebar-label');
-                    if (label) label.textContent = 'Kecilkan Sidebar';
-                }
             }
         }
 
@@ -204,7 +170,6 @@
         }
 
         collapseBtn?.addEventListener('click', toggleSidebarDesktop);
-        bottomCollapseBtn?.addEventListener('click', toggleSidebarDesktop);
 
         function toggleMobileDrawer(open) {
             if (open) {

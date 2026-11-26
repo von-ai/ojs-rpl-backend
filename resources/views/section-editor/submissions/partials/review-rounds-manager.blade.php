@@ -31,20 +31,49 @@
     </div>
 
     @if(!$isFinalized && (!$activeRound->hasDistinctAnonymizedFile() || $activeRound->assignments->whereIn('status', ['invited', 'accepted', 'overdue'])->isEmpty()))
-        <form action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3 rounded-lg border border-gray-200 p-4">
+        <form id="form-siapkan-putaran" action="{{ route('section-editor.rounds.store', $submission->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4 rounded-xl border border-amber-200 bg-amber-50/50 p-5 scroll-mt-6">
             @csrf
-            <h3 class="text-sm font-semibold text-gray-900">Siapkan putaran telaah anonim</h3>
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-sm font-bold text-gray-900 leading-snug">Siapkan Putaran Telaah Anonim (Double-Blind Review)</h3>
+                    <p class="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                        Sesuai standar telaah sejawat OJS, unggah naskah yang telah dibersihkan dari identitas penulis serta verifikasi judul dan abstrak sebelum mengundang mitra bestari.
+                    </p>
+                </div>
+            </div>
+
             @if($activeRound->exists && !$activeRound->hasDistinctAnonymizedFile())
-                <p class="text-xs text-amber-800">Berkas anonim putaran ini gagal diverifikasi. Menyiapkan putaran baru akan membatalkan penugasan yang masih aktif.</p>
+                <p class="text-xs text-amber-800 bg-amber-100/70 p-2.5 rounded-lg border border-amber-200">Berkas anonim putaran ini belum diverifikasi. Menyiapkan putaran baru akan memperbarui naskah acuan penelaah.</p>
             @endif
-            <label for="anonymous_file" class="block text-xs font-medium text-gray-700">Berkas anonim PDF atau DOCX</label>
-            <x-input id="anonymous_file" type="file" name="anonymous_file" accept=".pdf,.docx" required />
-            <label for="reviewer_title" class="block text-xs font-medium text-gray-700">Judul tanpa identitas penulis</label>
-            <x-input id="reviewer_title" name="reviewer_title" maxlength="500" :value="old('reviewer_title')" required />
-            <label for="reviewer_abstract" class="block text-xs font-medium text-gray-700">Abstrak tanpa identitas penulis</label>
-            <textarea id="reviewer_abstract" name="reviewer_abstract" maxlength="20000" required rows="4" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-brand-maroon">{{ old('reviewer_abstract') }}</textarea>
-            <label class="flex items-start gap-2 text-xs text-gray-700"><input type="checkbox" name="anonymity_confirmed" value="1" required class="accent-brand-maroon">Saya telah menghapus identitas penulis dari isi, metadata dokumen, judul, dan abstrak.</label>
-            <x-button>Siapkan putaran baru</x-button>
+
+            <div class="space-y-1.5">
+                <label for="anonymous_file" class="block text-xs font-bold text-gray-700">Berkas Naskah Anonim (PDF atau DOCX) <span class="text-rose-500">*</span></label>
+                <input id="anonymous_file" type="file" name="anonymous_file" accept=".pdf,.docx" required class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-maroon/10 file:text-brand-maroon hover:file:bg-brand-maroon/20 cursor-pointer border border-gray-300 rounded-lg p-1.5 bg-white" />
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="reviewer_title" class="block text-xs font-bold text-gray-700">Judul Tanpa Identitas Penulis <span class="text-rose-500">*</span></label>
+                <input id="reviewer_title" name="reviewer_title" maxlength="500" value="{{ old('reviewer_title', $submission->title) }}" required class="w-full p-2.5 text-xs bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon focus:outline-hidden" />
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="reviewer_abstract" class="block text-xs font-bold text-gray-700">Abstrak Tanpa Identitas Penulis <span class="text-rose-500">*</span></label>
+                <textarea id="reviewer_abstract" name="reviewer_abstract" maxlength="20000" required rows="4" class="w-full p-2.5 text-xs bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon focus:outline-hidden leading-relaxed">{{ old('reviewer_abstract', $submission->abstract) }}</textarea>
+            </div>
+
+            <label class="flex items-start gap-2.5 text-xs text-gray-700 cursor-pointer select-none">
+                <input type="checkbox" name="anonymity_confirmed" value="1" required class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-maroon focus:ring-brand-maroon cursor-pointer shrink-0">
+                <span>Saya telah memeriksa dan memastikan identitas penulis telah dihapus dari isi naskah, metadata dokumen, judul, dan abstrak.</span>
+            </label>
+
+            <button type="submit" class="px-4 py-2.5 rounded-lg bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active text-white font-bold text-xs transition cursor-pointer shadow-none">
+                Simpan &amp; Buka Putaran Telaah Anonim
+            </button>
         </form>
     @endif
 

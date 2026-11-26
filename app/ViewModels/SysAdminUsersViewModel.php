@@ -267,18 +267,24 @@ class SysAdminUsersViewModel
     }
 
     /**
-     * Opsi jurnal ilmiah untuk alokasi pengguna saat impor CSV.
+     * Opsi jurnal ilmiah untuk alokasi pengguna saat impor CSV dan penugasan peran.
      *
-     * @return array<int, array{id: string, name: string}>
+     * @return array<int, array{id: string, name: string, initials: string, slug: string}>
      */
     public function selectableJournals(): array
     {
         try {
             if (Schema::hasTable('journals')) {
-                return Journal::orderBy('name')->get()->map(fn ($j) => [
-                    'id' => (string) $j->id,
-                    'name' => (string) $j->name,
-                ])->toArray();
+                return Journal::query()
+                    ->where('status', '!=', 'archived')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn ($j) => [
+                        'id' => (string) $j->id,
+                        'name' => (string) $j->name,
+                        'initials' => (string) ($j->initials ?: strtoupper(substr($j->slug ?? '', 0, 6))),
+                        'slug' => (string) ($j->slug ?? ''),
+                    ])->toArray();
             }
         } catch (\Throwable) {
             // Graceful fallback

@@ -307,15 +307,15 @@
 <!-- Modal Dialog Tambah Jurnal Baru -->
 <div
     id="modal-add-journal"
-    class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden"
+    class="fixed inset-0 z-50 overflow-y-auto bg-gray-950/60 backdrop-blur-sm flex items-center justify-center p-4 hidden"
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-add-journal-title"
 >
     <!-- Click outside backdrop to close -->
-    <div class="fixed inset-0" onclick="closeAddJournalModal()"></div>
+    <div class="fixed inset-0 cursor-pointer" onclick="closeAddJournalModal()"></div>
 
-    <div class="relative bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4 z-10">
+    <div class="relative bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl shadow-gray-950/20 border border-gray-100 space-y-4 z-10 my-auto">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
                 <h3 id="modal-add-journal-title" class="text-base font-semibold text-gray-900">
@@ -328,7 +328,7 @@
             <button
                 type="button"
                 onclick="closeAddJournalModal()"
-                class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
                 aria-label="Tutup dialog"
             >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -395,7 +395,7 @@
                     onchange="if(this.options[this.selectedIndex].dataset.name) { document.getElementById('primary_contact').value = this.options[this.selectedIndex].dataset.name; }"
                     class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                 >
-                    <option value="">-- Pilih Akun Pengguna Terdaftar (Opsional) --</option>
+                    <option value="">Pilih Akun Pengguna Terdaftar (Opsional)</option>
                     @foreach ($viewModel->selectableUsers() as $userOption)
                         <option value="{{ $userOption['id'] }}" data-name="{{ $userOption['name'] }}">
                             {{ $userOption['name'] }} ({{ $userOption['email'] }})
@@ -469,15 +469,15 @@
 <!-- Modal Dialog Edit Metadata Jurnal -->
 <div
     id="modal-edit-journal"
-    class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden"
+    class="fixed inset-0 z-50 overflow-y-auto bg-gray-950/60 backdrop-blur-sm flex items-center justify-center p-4 hidden"
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-edit-journal-title"
 >
     <!-- Click outside backdrop to close -->
-    <div class="fixed inset-0" onclick="closeEditJournalModal()"></div>
+    <div class="fixed inset-0 cursor-pointer" onclick="closeEditJournalModal()"></div>
 
-    <div class="relative bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 space-y-4 z-10">
+    <div class="relative bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl shadow-gray-950/20 border border-gray-100 space-y-4 z-10 my-auto">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
                 <h3 id="modal-edit-journal-title" class="text-base font-semibold text-gray-900">
@@ -490,7 +490,7 @@
             <button
                 type="button"
                 onclick="closeEditJournalModal()"
-                class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
+                class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition cursor-pointer"
                 aria-label="Tutup dialog"
             >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -19,8 +19,8 @@
         <div class="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
             <button
                 type="button"
-                onclick="document.getElementById('modal-import-users').classList.remove('hidden')"
-                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-300 rounded-lg transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
+                onclick="openImportUsersModal()"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-300 rounded-xl transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
                 data-tooltip="Impor data pengguna secara massal via berkas CSV"
             >
                 <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -508,14 +508,14 @@
 <div id="modal-user-detail" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-detail-title" role="dialog" aria-modal="true">
     <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeUserDetailModal()"></div>
+        <div class="fixed inset-0 bg-gray-950/60 transition-opacity backdrop-blur-sm cursor-pointer" onclick="closeUserDetailModal()"></div>
 
         <!-- Panel Konten Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 my-auto">
+        <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 my-auto">
             <!-- Header Modal -->
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -533,7 +533,7 @@
                 <button
                     type="button"
                     onclick="closeUserDetailModal()"
-                    class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                    class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
                     aria-label="Tutup dialog"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -545,7 +545,7 @@
             <!-- Body Modal -->
             <div class="mt-4 space-y-4">
                 <!-- Header Card Profil -->
-                <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80">
+                <div class="p-3.5 bg-gray-50/90 rounded-xl border border-gray-200/80">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
@@ -609,7 +609,7 @@
                 <button
                     type="button"
                     onclick="closeUserDetailModal()"
-                    class="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-lg border border-gray-300 transition cursor-pointer"
+                    class="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-xl border border-gray-300 transition cursor-pointer"
                 >
                     Tutup
                 </button>
@@ -618,14 +618,14 @@
                     <button
                         type="button"
                         onclick="triggerResetFromDetail()"
-                        class="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 transition cursor-pointer"
+                        class="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 transition cursor-pointer"
                     >
                         Reset Sandi
                     </button>
                     <button
                         type="button"
                         onclick="triggerAssignRoleFromDetail()"
-                        class="px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-lg transition cursor-pointer"
+                        class="px-3.5 py-2 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover active:bg-brand-maroon-active rounded-xl transition cursor-pointer"
                     >
                         Kelola Peran
                     </button>
@@ -641,13 +641,13 @@
 <div id="modal-journal-roles" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-assign-title" role="dialog" aria-modal="true">
     <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeAssignRoleModal()"></div>
+        <div class="fixed inset-0 bg-gray-950/60 transition-opacity backdrop-blur-sm cursor-pointer" onclick="closeAssignRoleModal()"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
+        <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
@@ -665,7 +665,8 @@
                 <button
                     type="button"
                     onclick="closeAssignRoleModal()"
-                    class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    aria-label="Tutup dialog"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -674,7 +675,7 @@
             </div>
 
             <!-- Card Profil Pengguna yang Dipilih (Jika Dipilih) -->
-            <div id="assign_user_info_card" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200/80 text-xs">
+            <div id="assign_user_info_card" class="hidden p-3 bg-gray-50/90 rounded-xl border border-gray-200/80 text-xs">
                 <div class="flex items-center justify-between">
                     <div>
                         <span id="assign_user_name_display" class="font-bold text-gray-900 block font-sans"></span>
@@ -695,7 +696,7 @@
             </div>
 
             <template id="active-role-template">
-                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200/80 text-xs">
+                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
                     <div class="min-w-0 pr-2">
                         <span data-journal-name class="font-bold text-gray-900 block truncate"></span>
                         <span data-role-label class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border mt-0.5"></span>
@@ -712,7 +713,7 @@
                         <input type="hidden" name="user_id">
                         <input type="hidden" name="journal_id">
                         <input type="hidden" name="role_code">
-                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded transition cursor-pointer">
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded-lg transition cursor-pointer">
                             Cabut
                         </button>
                     </form>
@@ -739,30 +740,136 @@
                     <select
                         id="assign_select_user"
                         onchange="onSelectUserChanged(this.value)"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
-                        <option value="">-- Pilih Pengguna Terdaftar --</option>
+                        <option value="">Pilih Pengguna Terdaftar</option>
                         @foreach ($viewModel->filteredUsers() as $u)
                             <option value="{{ $u['id'] }}">{{ $u['name'] }} ({{ $u['email'] }})</option>
                         @endforeach
                     </select>
                 </div>
 
+                <!-- Opsi Pemilihan Instansi Jurnal dengan Live Search Dropdown -->
                 <div>
-                    <label for="assign_journal_id" class="block text-xs font-semibold text-gray-700 mb-1">
+                    <label for="assign_journal_combobox_trigger" class="block text-xs font-semibold text-gray-700 mb-1">
                         Pilih Instansi Jurnal <span class="text-red-500">*</span>
                     </label>
+
+                    <!-- Native select tersembunyi untuk integritas form HTML & validasi -->
                     <select
                         id="assign_journal_id"
                         name="journal_id"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="sr-only"
+                        tabindex="-1"
+                        aria-hidden="true"
                     >
-                        <option value="">-- Pilih Instansi Jurnal --</option>
+                        <option value="">Pilih Instansi Jurnal</option>
                         @foreach ($viewModel->selectableJournals() as $j)
-                            <option value="{{ $j['id'] }}">{{ $j['name'] }}</option>
+                            <option value="{{ $j['id'] }}" data-name="{{ $j['name'] }}" data-initials="{{ $j['initials'] ?? '' }}">{{ $j['name'] }}</option>
                         @endforeach
                     </select>
+
+                    <!-- Custom Searchable Combobox Component -->
+                    <div class="relative" id="assign_journal_combobox_wrapper">
+                        <!-- Trigger Button -->
+                        <button
+                            type="button"
+                            id="assign_journal_combobox_trigger"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                            class="w-full text-left bg-white hover:bg-gray-50 border border-gray-300 hover:border-gray-400 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2.5 shadow-2xs focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 transition cursor-pointer group"
+                        >
+                            <div class="flex items-center gap-2 min-w-0 flex-1">
+                                <span class="w-6 h-6 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                </span>
+                                <span id="assign_journal_display_text" class="text-xs font-normal text-gray-500 truncate flex-1">
+                                    Pilih Instansi Jurnal
+                                </span>
+                                <span id="assign_journal_display_badge" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 shrink-0"></span>
+                            </div>
+                            <div class="flex items-center text-gray-400 group-hover:text-gray-600 transition shrink-0">
+                                <svg id="assign_journal_chevron" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </button>
+
+                        <!-- Dropdown Popover dengan Kolom Pencarian -->
+                        <div
+                            id="assign_journal_combobox_dropdown"
+                            class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl border border-gray-200 shadow-2xl z-50 overflow-hidden transition-all duration-150"
+                        >
+                            <!-- Search Input Box -->
+                            <div class="p-2 border-b border-gray-100 bg-gray-50/90">
+                                <div class="relative flex items-center">
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        id="assign_journal_search_input"
+                                        placeholder="Ketik untuk mencari jurnal atau singkatan..."
+                                        autocomplete="off"
+                                        class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:border-brand-maroon focus:ring-2 focus:ring-brand-maroon/20 text-gray-800 placeholder-gray-400 transition"
+                                    >
+                                    <button
+                                        type="button"
+                                        id="assign_journal_search_clear"
+                                        class="hidden absolute right-2 text-gray-400 hover:text-gray-600 p-0.5 rounded cursor-pointer"
+                                        aria-label="Hapus pencarian"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- List of Options -->
+                            <div id="assign_journal_options_list" class="max-h-56 overflow-y-auto divide-y divide-gray-50 p-1" role="listbox">
+                                @foreach ($viewModel->selectableJournals() as $j)
+                                    <button
+                                        type="button"
+                                        data-journal-option
+                                        data-id="{{ $j['id'] }}"
+                                        data-name="{{ $j['name'] }}"
+                                        data-initials="{{ $j['initials'] ?? '' }}"
+                                        role="option"
+                                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50/80 text-xs text-gray-800 flex items-center justify-between gap-2 transition cursor-pointer group"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <span class="font-medium text-gray-900 group-hover:text-brand-maroon transition-colors line-clamp-1">
+                                                {{ $j['name'] }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            @if(!empty($j['initials']))
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 group-hover:bg-red-100 group-hover:text-brand-maroon group-hover:border-red-200 transition-colors">
+                                                    {{ $j['initials'] }}
+                                                </span>
+                                            @endif
+                                            <svg data-journal-check class="w-4 h-4 text-brand-maroon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="assign_journal_empty_state" class="hidden py-6 px-4 text-center text-xs text-gray-400">
+                                <svg class="w-6 h-6 mx-auto mb-1.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="font-medium text-gray-500">Instansi jurnal tidak ditemukan</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">Coba gunakan kata kunci atau singkatan lain</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div>
@@ -773,7 +880,7 @@
                         id="assign_role_code"
                         name="role_code"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
                         <option value="manager">Journal Manager (Manajer Jurnal)</option>
                         <option value="editor_in_chief">Editor in Chief (Pimpinan Redaksi)</option>
@@ -795,7 +902,7 @@
                         id="assign_expertise_keywords"
                         name="expertise_keywords"
                         placeholder="Contoh: Tata Kelola Publik, Smart City (pisahkan koma)"
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
                     >
                 </div>
 
@@ -803,13 +910,13 @@
                     <button
                         type="button"
                         onclick="closeAssignRoleModal()"
-                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-lg border border-gray-300 transition cursor-pointer"
+                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-xl border border-gray-300 transition cursor-pointer"
                     >
                         Batal
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg transition shadow-none cursor-pointer"
+                        class="px-4 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-xl transition shadow-none cursor-pointer"
                     >
                         Simpan Peran Jurnal
                     </button>
@@ -825,13 +932,13 @@
 <div id="modal-reset-password" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-reset-title" role="dialog" aria-modal="true">
     <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="closeResetPasswordModal()"></div>
+        <div class="fixed inset-0 bg-gray-950/60 transition-opacity backdrop-blur-sm cursor-pointer" onclick="closeResetPasswordModal()"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
+        <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-md w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                         </svg>
@@ -849,7 +956,8 @@
                 <button
                     type="button"
                     onclick="closeResetPasswordModal()"
-                    class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                    class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    aria-label="Tutup dialog"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -861,7 +969,7 @@
                 @csrf
                 <input type="hidden" name="email" id="reset_password_email" value="">
 
-                <div class="p-3 bg-amber-50/60 rounded-lg border border-amber-200/70 text-xs space-y-1">
+                <div class="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80 text-xs space-y-1">
                     <p class="text-gray-700">
                         Tautan instruksi pengaturan ulang kata sandi akan dikirimkan ke surel:
                     </p>
@@ -876,13 +984,13 @@
                     <button
                         type="button"
                         onclick="closeResetPasswordModal()"
-                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-lg border border-gray-300 transition cursor-pointer"
+                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-xl border border-gray-300 transition cursor-pointer"
                     >
                         Batal
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition shadow-none cursor-pointer"
+                        class="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition shadow-none cursor-pointer"
                     >
                         Kirim Tautan Reset
                     </button>
@@ -898,13 +1006,13 @@
 <div id="modal-import-users" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-import-title" role="dialog" aria-modal="true">
     <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 py-6 sm:py-10">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900/60 transition-opacity backdrop-blur-xs cursor-pointer" onclick="document.getElementById('modal-import-users').classList.add('hidden')"></div>
+        <div class="fixed inset-0 bg-gray-950/60 transition-opacity backdrop-blur-sm cursor-pointer" onclick="closeImportUsersModal()"></div>
 
         <!-- Panel Modal -->
-        <div class="relative bg-white rounded-xl text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-200 space-y-4 my-auto">
+        <div class="relative bg-white rounded-2xl text-left overflow-visible shadow-2xl shadow-gray-950/20 transform transition-all sm:my-8 sm:max-w-lg w-full p-5 sm:p-6 border border-gray-100 space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-red-50 text-brand-maroon flex items-center justify-center shrink-0">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
@@ -921,8 +1029,9 @@
 
                 <button
                     type="button"
-                    onclick="document.getElementById('modal-import-users').classList.add('hidden')"
-                    class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 flex items-center justify-center hover:bg-gray-100 transition cursor-pointer"
+                    onclick="closeImportUsersModal()"
+                    class="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-600 flex items-center justify-center hover:bg-gray-100 transition cursor-pointer"
+                    aria-label="Tutup dialog"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -941,8 +1050,9 @@
                         id="import_journal_id"
                         name="journal_id"
                         required
-                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none"
+                        class="w-full text-xs text-gray-900 bg-white border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-maroon/20 focus:border-brand-maroon transition shadow-none cursor-pointer"
                     >
+                        <option value="">Pilih Instansi Jurnal</option>
                         @foreach ($viewModel->selectableJournals() as $journalOption)
                             <option value="{{ $journalOption['id'] }}">{{ $journalOption['name'] }}</option>
                         @endforeach
@@ -959,7 +1069,7 @@
                         name="file"
                         accept=".csv"
                         required
-                        class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-maroon/10 file:text-brand-maroon hover:file:bg-brand-maroon/20 cursor-pointer border border-gray-300 rounded-lg p-1.5"
+                        class="w-full text-xs text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-maroon/10 file:text-brand-maroon hover:file:bg-brand-maroon/20 cursor-pointer border border-gray-300 rounded-xl p-1.5"
                     >
                     <p class="text-[11px] text-gray-400 mt-1">
                         Format kolom header wajib: <span class="font-medium text-gray-600">name, email, affiliation, role</span>.
@@ -983,14 +1093,14 @@
                 <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
                     <button
                         type="button"
-                        onclick="document.getElementById('modal-import-users').classList.add('hidden')"
-                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-lg border border-gray-300 transition cursor-pointer"
+                        onclick="closeImportUsersModal()"
+                        class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 rounded-xl border border-gray-300 transition cursor-pointer"
                     >
                         Batal
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg transition shadow-none cursor-pointer"
+                        class="px-4 py-2 text-xs font-bold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-xl transition shadow-none cursor-pointer"
                     >
                         Unggah &amp; Proses Antrean CSV
                     </button>
@@ -1107,11 +1217,11 @@
             }
         }
 
-        document.getElementById('modal-user-detail').classList.remove('hidden');
+        openModal('modal-user-detail');
     }
 
     function closeUserDetailModal() {
-        document.getElementById('modal-user-detail').classList.add('hidden');
+        closeModal('modal-user-detail');
     }
 
     /**
@@ -1133,6 +1243,9 @@
 
         if (idInput) idInput.value = userId || '';
 
+        // Reset pilihan combobox instansi jurnal ke keadaan awal
+        resetAssignJournalCombobox();
+
         if (userData) {
             // Mode per-pengguna
             if (titleEl) titleEl.textContent = 'Kelola Peran Jurnal: ' + userData.name;
@@ -1151,7 +1264,8 @@
             if (titleEl) titleEl.textContent = 'Tetapkan Peran Pengguna';
             if (userPickerGroup) {
                 userPickerGroup.classList.remove('hidden');
-                document.getElementById('assign_select_user').value = '';
+                const userSelect = document.getElementById('assign_select_user');
+                if (userSelect) userSelect.value = '';
             }
             if (userInfoCard) userInfoCard.classList.add('hidden');
             if (activeRolesSection) activeRolesSection.classList.add('hidden');
@@ -1161,15 +1275,22 @@
         // Toggle bidang kepakaran bila peran reviewer dipilih
         const roleSelect = document.getElementById('assign_role_code');
         const expField = document.getElementById('expertise_field');
-        roleSelect.onchange = function() {
-            if (this.value === 'reviewer') {
+        if (roleSelect && expField) {
+            roleSelect.onchange = function() {
+                if (this.value === 'reviewer') {
+                    expField.classList.remove('hidden');
+                } else {
+                    expField.classList.add('hidden');
+                }
+            };
+            if (roleSelect.value === 'reviewer') {
                 expField.classList.remove('hidden');
             } else {
                 expField.classList.add('hidden');
             }
-        };
+        }
 
-        document.getElementById('modal-journal-roles').classList.remove('hidden');
+        openModal('modal-journal-roles');
     }
 
     function onSelectUserChanged(selectedId) {
@@ -1191,7 +1312,7 @@
         listContainer.replaceChildren();
 
         if (!roles || roles.length === 0) {
-            listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200/60">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
+            listContainer.innerHTML = '<p class="text-xs text-gray-400 italic bg-gray-50/80 p-3 rounded-xl border border-gray-200/70 text-center">Pengguna belum memiliki peran pada jurnal spesifik (Pengguna Terdaftar Global).</p>';
         } else {
             const template = document.getElementById('active-role-template');
             roles.forEach(function(role) {
@@ -1209,7 +1330,8 @@
     }
 
     function closeAssignRoleModal() {
-        document.getElementById('modal-journal-roles').classList.add('hidden');
+        closeAssignJournalCombobox();
+        closeModal('modal-journal-roles');
     }
 
     /**
@@ -1218,12 +1340,229 @@
     function openResetPasswordModal(email, name) {
         document.getElementById('reset_password_email').value = email;
         document.getElementById('reset_password_user_summary').textContent = name + ' (' + email + ')';
-        document.getElementById('modal-reset-password').classList.remove('hidden');
+        openModal('modal-reset-password');
     }
 
     function closeResetPasswordModal() {
-        document.getElementById('modal-reset-password').classList.add('hidden');
+        closeModal('modal-reset-password');
     }
+
+    /**
+     * Buka & Tutup Modal Impor Pengguna CSV
+     */
+    function openImportUsersModal() {
+        openModal('modal-import-users');
+    }
+
+    function closeImportUsersModal() {
+        closeModal('modal-import-users');
+    }
+
+    /**
+     * Helper Pengelolaan Modal & Body Scroll Lock
+     */
+    function openModal(modalId) {
+        const el = document.getElementById(modalId);
+        if (el) {
+            el.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+    }
+
+    function closeModal(modalId) {
+        const el = document.getElementById(modalId);
+        if (el) {
+            el.classList.add('hidden');
+        }
+        const openModals = document.querySelectorAll('#modal-user-detail:not(.hidden), #modal-journal-roles:not(.hidden), #modal-reset-password:not(.hidden), #modal-import-users:not(.hidden)');
+        if (openModals.length === 0) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    }
+
+    /**
+     * Searchable Dropdown Combobox untuk Instansi Jurnal
+     */
+    const journalSelect = document.getElementById('assign_journal_id');
+    const journalTrigger = document.getElementById('assign_journal_combobox_trigger');
+    const journalDropdown = document.getElementById('assign_journal_combobox_dropdown');
+    const journalChevron = document.getElementById('assign_journal_chevron');
+    const journalDisplayText = document.getElementById('assign_journal_display_text');
+    const journalDisplayBadge = document.getElementById('assign_journal_display_badge');
+    const journalSearchInput = document.getElementById('assign_journal_search_input');
+    const journalSearchClear = document.getElementById('assign_journal_search_clear');
+    const journalEmptyState = document.getElementById('assign_journal_empty_state');
+    const journalOptionBtns = document.querySelectorAll('[data-journal-option]');
+
+    function toggleAssignJournalCombobox(forceState = null) {
+        if (!journalDropdown) return;
+        const willOpen = forceState !== null ? forceState : journalDropdown.classList.contains('hidden');
+        if (willOpen) {
+            journalDropdown.classList.remove('hidden');
+            if (journalTrigger) journalTrigger.setAttribute('aria-expanded', 'true');
+            if (journalChevron) journalChevron.classList.add('rotate-180');
+            if (journalSearchInput) {
+                setTimeout(() => journalSearchInput.focus(), 50);
+            }
+        } else {
+            journalDropdown.classList.add('hidden');
+            if (journalTrigger) journalTrigger.setAttribute('aria-expanded', 'false');
+            if (journalChevron) journalChevron.classList.remove('rotate-180');
+        }
+    }
+
+    function closeAssignJournalCombobox() {
+        if (journalDropdown && !journalDropdown.classList.contains('hidden')) {
+            toggleAssignJournalCombobox(false);
+            return true;
+        }
+        return false;
+    }
+
+    function selectAssignJournal(id, name, initials) {
+        if (journalSelect) {
+            journalSelect.value = id;
+            journalSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (journalDisplayText) {
+            journalDisplayText.textContent = name;
+            journalDisplayText.classList.remove('text-gray-500', 'font-normal');
+            journalDisplayText.classList.add('text-gray-900', 'font-semibold');
+        }
+        if (journalDisplayBadge) {
+            if (initials) {
+                journalDisplayBadge.textContent = initials;
+                journalDisplayBadge.classList.remove('hidden');
+            } else {
+                journalDisplayBadge.classList.add('hidden');
+            }
+        }
+        if (journalOptionBtns) {
+            journalOptionBtns.forEach(btn => {
+                const check = btn.querySelector('[data-journal-check]');
+                if (btn.getAttribute('data-id') === String(id)) {
+                    btn.classList.add('bg-red-50/70');
+                    if (check) check.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('bg-red-50/70');
+                    if (check) check.classList.add('hidden');
+                }
+            });
+        }
+        toggleAssignJournalCombobox(false);
+    }
+
+    function resetAssignJournalCombobox() {
+        if (journalSelect) journalSelect.value = '';
+        if (journalDisplayText) {
+            journalDisplayText.textContent = 'Pilih Instansi Jurnal';
+            journalDisplayText.classList.remove('text-gray-900', 'font-semibold');
+            journalDisplayText.classList.add('text-gray-500', 'font-normal');
+        }
+        if (journalDisplayBadge) journalDisplayBadge.classList.add('hidden');
+        if (journalSearchInput) journalSearchInput.value = '';
+        if (journalSearchClear) journalSearchClear.classList.add('hidden');
+        filterAssignJournalOptions('');
+        if (journalOptionBtns) {
+            journalOptionBtns.forEach(btn => {
+                btn.classList.remove('bg-red-50/70');
+                const check = btn.querySelector('[data-journal-check]');
+                if (check) check.classList.add('hidden');
+            });
+        }
+    }
+
+    function filterAssignJournalOptions(query) {
+        const q = (query || '').toLowerCase().trim();
+        let matchCount = 0;
+        if (journalOptionBtns) {
+            journalOptionBtns.forEach(btn => {
+                const name = (btn.getAttribute('data-name') || '').toLowerCase();
+                const initials = (btn.getAttribute('data-initials') || '').toLowerCase();
+                const isMatch = !q || name.includes(q) || initials.includes(q);
+                if (isMatch) {
+                    btn.classList.remove('hidden');
+                    matchCount++;
+                } else {
+                    btn.classList.add('hidden');
+                }
+            });
+        }
+        if (journalEmptyState) {
+            if (matchCount === 0) {
+                journalEmptyState.classList.remove('hidden');
+            } else {
+                journalEmptyState.classList.add('hidden');
+            }
+        }
+        if (journalSearchClear) {
+            if (q.length > 0) {
+                journalSearchClear.classList.remove('hidden');
+            } else {
+                journalSearchClear.classList.add('hidden');
+            }
+        }
+    }
+
+    if (journalTrigger) {
+        journalTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleAssignJournalCombobox();
+        });
+    }
+
+    if (journalSearchInput) {
+        journalSearchInput.addEventListener('input', function(e) {
+            filterAssignJournalOptions(e.target.value);
+        });
+    }
+
+    if (journalSearchClear) {
+        journalSearchClear.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (journalSearchInput) {
+                journalSearchInput.value = '';
+                filterAssignJournalOptions('');
+                journalSearchInput.focus();
+            }
+        });
+    }
+
+    if (journalOptionBtns) {
+        journalOptionBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                selectAssignJournal(
+                    btn.getAttribute('data-id'),
+                    btn.getAttribute('data-name'),
+                    btn.getAttribute('data-initials')
+                );
+            });
+        });
+    }
+
+    // Tutup dropdown combobox saat klik di luar
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#assign_journal_combobox_wrapper')) {
+            closeAssignJournalCombobox();
+        }
+    });
+
+    // Dukungan tombol Escape untuk menutup combobox atau modal aktif
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (closeAssignJournalCombobox()) {
+                return;
+            }
+            closeUserDetailModal();
+            closeAssignRoleModal();
+            closeResetPasswordModal();
+            closeImportUsersModal();
+        }
+    });
 
     /**
      * Quick actions dari dalam User Detail Modal
