@@ -417,8 +417,11 @@ window.addEventListener('pageshow', function (event) {
     const STORAGE_KEY = 'sirida_text_scale';
     const SCALES = ['normal', 'lg', 'xl'];
 
+    let currentScale;
+
     function applyScale(scale) {
         const valid = SCALES.includes(scale) ? scale : 'normal';
+        currentScale = valid;
         const root = document.documentElement;
         root.classList.remove('text-scale-lg', 'text-scale-xl');
         if (valid === 'lg') {
@@ -472,7 +475,7 @@ window.addEventListener('pageshow', function (event) {
     applyScale(getSavedScale());
 
     document.addEventListener('DOMContentLoaded', function () {
-        applyScale(getSavedScale());
+        applyScale(currentScale);
     });
 
     document.addEventListener('click', function (e) {
@@ -480,8 +483,7 @@ window.addEventListener('pageshow', function (event) {
         if (!btn) return;
         const target = btn.getAttribute('data-text-scale-btn');
         if (target === 'cycle') {
-            const current = getSavedScale();
-            const next = SCALES[(SCALES.indexOf(current) + 1) % SCALES.length];
+            const next = SCALES[(SCALES.indexOf(currentScale) + 1) % SCALES.length];
             applyScale(next);
         } else {
             applyScale(target);
