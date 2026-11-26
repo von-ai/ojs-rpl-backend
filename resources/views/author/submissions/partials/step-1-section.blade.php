@@ -31,7 +31,7 @@
             @php
                 $selectedSectionId = old('section_id', $draft?->section_id);
             @endphp
-            <option value="" disabled @selected(!$selectedSectionId)>-- Pilih Seksi / Bidang Jurnal --</option>
+            <option value="" disabled @selected(!$selectedSectionId)>Pilih Seksi / Bidang Jurnal</option>
             @foreach($viewModel->wizardJournalSections() as $section)
                 <option 
                     value="{{ $section['id'] }}"

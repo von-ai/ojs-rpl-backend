@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Eic;
 
 use App\Http\Controllers\Controller;
 use App\Models\EditorialDecision;
+use App\Models\FileEntry;
 use App\Models\Section;
 use App\Models\Submission;
 use App\Models\User;
@@ -137,22 +138,72 @@ class EditorInChiefController extends Controller
      */
     public function downloadFile(string $id, string $fileId): StreamedResponse|RedirectResponse
     {
-        $submission = Submission::with('files.file')
+        $submission = Submission::with([
+            'files.file',
+            'reviewRounds.anonymizedFile',
+            'reviewRounds.manuscriptFile',
+            'revisions.manuscriptFile',
+            'revisions.responseLetterFile',
+        ])
             ->where('id', $id)
             ->orWhere('submission_number', $id)
             ->firstOrFail();
 
+        // 1. Cek dari submission_files (berkas utama/lampiran)
         $subFile = $submission->files->first(function ($item) use ($fileId): bool {
             return $item->id === $fileId || $item->file_id === $fileId;
         });
+        $targetFile = $subFile?->file;
 
-        if (! $subFile || ! $subFile->file) {
+        // 2. Cek dari berkas anonim atau naskah acuan putaran telaah (review_rounds)
+        if (! $targetFile) {
+            foreach ($submission->reviewRounds as $round) {
+                if (($round->anonymized_file_id === $fileId || $round->anonymizedFile?->id === $fileId) && $round->anonymizedFile) {
+                    $targetFile = $round->anonymizedFile;
+                    break;
+                }
+                if (($round->manuscript_file_id === $fileId || $round->manuscriptFile?->id === $fileId) && $round->manuscriptFile) {
+                    $targetFile = $round->manuscriptFile;
+                    break;
+                }
+            }
+        }
+
+        // 3. Cek dari berkas revisi naskah
+        if (! $targetFile) {
+            foreach ($submission->revisions as $revision) {
+                if (($revision->manuscript_file_id === $fileId || $revision->manuscriptFile?->id === $fileId) && $revision->manuscriptFile) {
+                    $targetFile = $revision->manuscriptFile;
+                    break;
+                }
+                if (($revision->response_letter_file_id === $fileId || $revision->responseLetterFile?->id === $fileId) && $revision->responseLetterFile) {
+                    $targetFile = $revision->responseLetterFile;
+                    break;
+                }
+            }
+        }
+
+        // 4. Fallback langsung ke FileEntry jika terbukti berelasi dengan alur naskah ini
+        if (! $targetFile) {
+            $candidateFile = FileEntry::find($fileId);
+            if ($candidateFile) {
+                $isLinked = $submission->reviewRounds()->where('anonymized_file_id', $candidateFile->id)->orWhere('manuscript_file_id', $candidateFile->id)->exists()
+                    || $submission->revisions()->where('manuscript_file_id', $candidateFile->id)->orWhere('response_letter_file_id', $candidateFile->id)->exists()
+                    || $submission->files()->where('file_id', $candidateFile->id)->exists();
+
+                if ($isLinked) {
+                    $targetFile = $candidateFile;
+                }
+            }
+        }
+
+        if (! $targetFile) {
             return redirect()
                 ->route('eic.submissions.show', $submission->id)
                 ->with('error', 'Berkas manuskrip tidak ditemukan pada naskah ini.');
         }
 
-        return app(PrivateFileService::class)->stream($subFile->file);
+        return app(PrivateFileService::class)->stream($targetFile);
     }
 
     /**

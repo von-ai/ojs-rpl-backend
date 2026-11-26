@@ -44,6 +44,15 @@ class AuthorSubmissionController extends Controller
      */
     public function create(Request $request): View
     {
+        /** @var User|null $user */
+        $user = $request->user();
+        if ($request->hasSession() && ! $request->session()->has('active_journal_id')) {
+            $defaultJournal = $user?->activeJournal('author');
+            if ($defaultJournal) {
+                $request->session()->put('active_journal_id', $defaultJournal->id);
+            }
+        }
+
         $viewModel = new AuthorSubmissionsViewModel;
         $draft = null;
         $draftId = $request->query('draft_id') ?? $request->query('id');
@@ -75,7 +84,9 @@ class AuthorSubmissionController extends Controller
         $data = $request->validate(['q' => ['nullable', 'string', 'max:200'], 'page' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:30']]);
         $query = Section::where('accepting_submissions', true)->whereHas('journal', fn ($q) => $q->where('status', 'active'));
 
-        $selectedJournalId = $this->selectedJournalId();
+        /** @var User|null $user */
+        $user = $request->user();
+        $selectedJournalId = $this->selectedJournalId() ?? $user?->activeJournal('author')?->id;
         if ($selectedJournalId) {
             $query->where('journal_id', $selectedJournalId);
         }

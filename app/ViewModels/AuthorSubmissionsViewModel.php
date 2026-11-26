@@ -24,7 +24,8 @@ class AuthorSubmissionsViewModel
 
     public function __construct(?User $user = null)
     {
-        $this->user = $user ?? Auth::user();
+        $u = $user ?? Auth::user();
+        $this->user = $u instanceof User ? $u : null;
     }
 
     /**
@@ -32,9 +33,7 @@ class AuthorSubmissionsViewModel
      */
     public function activeJournal(): ?Journal
     {
-        $u = $this->user ?? Auth::user();
-
-        return $u?->activeJournal('author');
+        return $this->user?->activeJournal('author');
     }
 
     /**
@@ -69,7 +68,7 @@ class AuthorSubmissionsViewModel
      */
     public function userProfile(): array
     {
-        $u = $this->user ?? Auth::user();
+        $u = $this->user;
 
         return [
             'name' => $u?->full_name ?? $u?->name ?? 'Dr. Andi Muhammad Ilyas, M.Si.',
@@ -316,7 +315,7 @@ class AuthorSubmissionsViewModel
 
         try {
             if (Schema::hasTable('submissions')) {
-                $user = $this->user ?? Auth::user();
+                $user = $this->user;
                 $userId = $user?->id;
                 $userEmail = $user?->email;
 
@@ -535,7 +534,7 @@ class AuthorSubmissionsViewModel
      */
     public function wizardJournalSections(): array
     {
-        $selectedJournalId = $this->selectedJournalId();
+        $selectedJournalId = $this->selectedJournalId() ?? $this->activeJournal()?->id;
         $query = Section::where('accepting_submissions', true)
             ->whereHas('journal', fn ($q) => $q->where('status', 'active'));
 

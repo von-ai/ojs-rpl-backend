@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedOpt && selectedOpt.value) {
                 if (comboboxDisplay) comboboxDisplay.textContent = selectedOpt.getAttribute('data-name') || selectedOpt.text;
             } else {
-                if (comboboxDisplay) comboboxDisplay.textContent = '-- Pilih Seksi / Bidang Jurnal --';
+                if (comboboxDisplay) comboboxDisplay.textContent = 'Pilih Seksi / Bidang Jurnal';
             }
         }
     }
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const checklistItems = document.querySelectorAll('.checklist-item');
     const masterAccepted = document.getElementById('author_guidelines_accepted');
 
-    // Step 2: File upload & Azure Direct SAS Upload (SRS NF-01)
+    // Step 2: File upload & Direct SAS Upload (SRS NF-01)
     const manuscriptInput = document.getElementById('manuscript_file');
     const dropzonePrompt = document.getElementById('dropzone-prompt');
     const dropzoneUploading = document.getElementById('dropzone-uploading');
@@ -402,6 +402,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnReselectFile = document.getElementById('btn-reselect-file');
     const btnRemoveFile = document.getElementById('btn-remove-file');
     const fileErrorMsg = document.getElementById('file-error-msg');
+    const fileStatusText = document.getElementById('file-status-text');
+    const fileStatusBadge = document.getElementById('file-status-badge');
 
     const blobPathInput = document.getElementById('blob_path');
     const blobNameInput = document.getElementById('blob_name');
@@ -602,12 +604,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Helper fungsi update status visual dropzone naskah
-    function updateDropzoneUI(hasFile, fileName = '', fileSize = 0) {
+    function updateDropzoneUI(hasFile, fileName = '', fileSize = 0, statusType = 'selected') {
         if (dropzoneUploading) dropzoneUploading.classList.add('hidden');
         if (hasFile) {
             updateFileStatusBadge();
             if (selectedFileName) selectedFileName.textContent = fileName;
             if (selectedFileSize) selectedFileSize.textContent = formatFileSize(fileSize);
+
+            if (fileStatusText && fileStatusBadge) {
+                if (statusType === 'uploaded') {
+                    fileStatusText.textContent = 'Berhasil Diunggah';
+                    fileStatusBadge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200';
+                } else if (statusType === 'draft') {
+                    fileStatusText.textContent = 'Tersimpan di Draf';
+                    fileStatusBadge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200';
+                } else {
+                    fileStatusText.textContent = 'Berkas Terpilih';
+                    fileStatusBadge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-blue-50 text-blue-700 border border-blue-200';
+                }
+            }
+
             if (dropzonePrompt) dropzonePrompt.classList.add('hidden');
             if (dropzoneSelected) {
                 dropzoneSelected.classList.remove('hidden');
@@ -633,14 +649,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (blobChecksumInput) blobChecksumInput.value = '';
 
         const file = manuscriptInput?.files?.[0];
-        updateDropzoneUI(!!file, file?.name, file?.size);
+        updateDropzoneUI(!!file, file?.name, file?.size, 'selected');
         if (file) {
             await saveFileToDraftDB(file);
             saveDraftToStorage();
         }
         if (fileErrorMsg) {
-            fileErrorMsg.textContent = 'Unggahan langsung gagal. Berkas yang dipilih akan dikirim bersama formulir.';
-            fileErrorMsg.classList.remove('hidden');
+            fileErrorMsg.textContent = '';
+            fileErrorMsg.classList.add('hidden');
         }
     }
 
@@ -678,14 +694,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!sessionRes.ok) {
                 const errData = await sessionRes.json().catch(() => ({}));
-                throw new Error(errData.message || 'Gagal membuat sesi izin unggah ke penyimpanan cloud.');
+                throw new Error(errData.message || 'Gagal membuat sesi izin unggah berkas.');
             }
 
             const sessionData = await sessionRes.json();
             const uploadUrl = sessionData.upload_url;
             const headers = sessionData.headers || {};
 
-            // Mengunggah langsung dari peramban ke Azure Blob Storage (Bypass server Laravel)
+            // Mengunggah langsung dari peramban (Bypass server Laravel)
             const xhr = new XMLHttpRequest();
             currentUploadXhr = xhr;
 
@@ -715,12 +731,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (blobSizeInput) blobSizeInput.value = sessionData.byte_size;
                     if (blobMimeInput) blobMimeInput.value = sessionData.mime_type;
 
-                    updateDropzoneUI(true, file.name, file.size);
+                    updateDropzoneUI(true, file.name, file.size, 'uploaded');
                     await saveFileToDraftDB(file);
                     saveDraftToStorage();
 
                     if (window.toast && typeof window.toast.success === 'function') {
-                        window.toast.success('Berkas naskah berhasil diunggah langsung ke Azure Blob Storage.', 'Unggah Sukses');
+                        window.toast.success('Berkas naskah berhasil diunggah.', 'Unggah Sukses');
                     }
                 } else {
                     await handleUploadFailure();
@@ -776,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const removeManuscriptInput = document.getElementById('remove_manuscript');
                 if (removeManuscriptInput) removeManuscriptInput.value = '0';
 
-                // Jalankan proses unggah langsung ke Azure Blob Storage via SAS URL (NF-01)
+                // Jalankan proses unggah langsung via SAS URL (NF-01)
                 await uploadFileDirectToAzure(file);
             }
         });
@@ -1521,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (isUploadingToAzure) {
                 await window.showAlertModal({
                     title: 'Unggahan Sedang Berjalan',
-                    message: 'Mohon tunggu hingga proses unggah berkas ke penyimpanan cloud selesai 100%.',
+                    message: 'Mohon tunggu hingga proses unggah berkas selesai 100%.',
                     type: 'warning'
                 });
                 return false;
@@ -1700,7 +1716,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
                 await window.showAlertModal({
                     title: 'Unggahan Sedang Berjalan',
-                    message: 'Mohon tunggu hingga proses unggah berkas ke penyimpanan cloud selesai 100%.',
+                    message: 'Mohon tunggu hingga proses unggah berkas selesai 100%.',
                     type: 'warning'
                 });
                 setStep(2);
@@ -1923,7 +1939,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const dt = new DataTransfer();
                     dt.items.add(storedFile);
                     manuscriptInput.files = dt.files;
-                    updateDropzoneUI(true, storedFile.name, storedFile.size);
+                    updateDropzoneUI(true, storedFile.name, storedFile.size, 'draft');
                     if (fileErrorMsg) fileErrorMsg.classList.add('hidden');
                 } catch (dtError) {
                     console.warn('DataTransfer tidak didukung oleh browser:', dtError);
@@ -1966,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateSectionDetail();
             }
             if (comboboxDisplay) {
-                comboboxDisplay.textContent = '-- Pilih Seksi / Bidang Jurnal --';
+                comboboxDisplay.textContent = 'Pilih Seksi / Bidang Jurnal';
             }
             syncComboboxUI();
 

@@ -53,7 +53,7 @@
                 </div>
             </div>
 
-            <!-- State 2: Visual Progress Bar Unggah Langsung ke Azure Blob Storage (SRS NF-01) -->
+            <!-- State 2: Visual Progress Bar Unggah Langsung (SRS NF-01) -->
             <div 
                 id="dropzone-uploading" 
                 class="hidden rounded-xl border border-red-200 bg-red-50/30 py-4 px-4 sm:px-5 space-y-3 shadow-2xs transition-all duration-200"
@@ -69,7 +69,7 @@
                             <div class="flex items-center gap-2">
                                 <p id="uploading-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">naskah.pdf</p>
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-50 text-amber-700 border border-amber-200">
-                                    Mengunggah ke Cloud...
+                                    Mengunggah...
                                 </span>
                             </div>
                             <p id="uploading-file-stats" class="text-[11px] text-gray-500 mt-0.5 tabular-nums">
@@ -110,17 +110,15 @@
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <p id="selected-file-name" class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $existingManuscript?->original_name ?? 'naskah-ilmiah.pdf' }}</p>
-                            <span id="file-status-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span id="file-status-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded {{ $existingManuscript ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200' }}">
                                 <svg id="file-status-icon" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                <span id="file-status-text">{{ $existingManuscript ? 'Tersimpan di Draf' : 'Tersimpan di Cloud' }}</span>
+                                <span id="file-status-text">{{ $existingManuscript ? 'Tersimpan di Draf' : 'Berkas Terpilih' }}</span>
                             </span>
                         </div>
                         <div class="flex items-center gap-2 mt-0.5 text-gray-500 text-[11px]">
                             <span id="selected-file-size" class="tabular-nums font-medium">{{ $existingManuscript ? number_format(($existingManuscript->byte_size ?? 0) / 1024, 1) . ' KB' : '0 KB' }}</span>
-                            <span class="text-gray-300">&bull;</span>
-                            <span class="text-gray-400">Azure Blob Storage</span>
                         </div>
                     </div>
                 </div>

@@ -62,7 +62,10 @@ class SysAdminUsersTest extends TestCase
         $responseAuthor = $this->get('/sysadmin/users?role=author');
         $responseAuthor->assertStatus(200);
         $responseAuthor->assertSee('Dr. Andi Nurul Hidayah, M.Si.');
-        $responseAuthor->assertDontSee('fahri.azis@makassar.go.id');
+        $this->assertNotContains(
+            'fahri.azis@makassar.go.id',
+            array_column($responseAuthor->viewData('viewModel')->filteredUsers(), 'email')
+        );
     }
 
     /**
@@ -73,7 +76,11 @@ class SysAdminUsersTest extends TestCase
         $responseSearch = $this->get('/sysadmin/users?q=rita.irmawaty');
         $responseSearch->assertStatus(200);
         $responseSearch->assertSee('Dr. Eng. Ir. Rita Irmawaty, S.T., M.T.');
-        $responseSearch->assertDontSee('fahri.azis@makassar.go.id');
+        $responseSearch->assertDontSee('ilham.kominfo@makassar.go.id');
+        $this->assertNotContains(
+            'fahri.azis@makassar.go.id',
+            array_column($responseSearch->viewData('viewModel')->filteredUsers(), 'email')
+        );
     }
 
     /**

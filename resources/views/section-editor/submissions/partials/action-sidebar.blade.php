@@ -2,7 +2,10 @@
 @php
     $activeRound = $viewModel->activeRound;
     $availableReviewers = $viewModel->availableReviewers;
-    $isFinalized = $viewModel->isWorkflowFinalized() || ! $activeRound->hasDistinctAnonymizedFile() || $activeRound->anonymizedFile->virus_scan_status !== 'clean';
+    $isWorkflowFinalized = $viewModel->isWorkflowFinalized();
+    $hasAnonymizedRound = $activeRound->exists && $activeRound->hasDistinctAnonymizedFile();
+    $isScanClean = $hasAnonymizedRound && ($activeRound->anonymizedFile?->virus_scan_status === 'clean');
+    $canAssignReviewer = ! $isWorkflowFinalized && $hasAnonymizedRound && $isScanClean;
     $canRecommend = $viewModel->canRecommendToEic();
     $completedCount = $viewModel->completedReviewsCount();
     $minReq = $viewModel->minimumCompletedReviews();
@@ -50,19 +53,27 @@
                     Undang Mitra Bestari
                 </h3>
             </div>
-            @if(!$isFinalized)
+            @if($canAssignReviewer)
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 shrink-0">
                     Putaran {{ $activeRound->round }}
                 </span>
-            @else
+            @elseif($isWorkflowFinalized)
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 shrink-0">
-                    Terkunci
+                    Keputusan Final
+                </span>
+            @elseif(!$hasAnonymizedRound)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 shrink-0">
+                    Perlu Berkas Anonim
+                </span>
+            @else
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 shrink-0">
+                    Pemindaian Berkas
                 </span>
             @endif
         </div>
 
-        @if(!$isFinalized)
-            <form action="{{ route('section-editor.reviewers.assign', $activeRound->id) }}" method="POST" class="space-y-4">
+        @if($canAssignReviewer)
+            <form action="{{ route('section-editor.reviewers.assign', $activeRound->id ?? '') }}" method="POST" class="space-y-4">
                 @csrf
 
                 <!-- Combobox: Pilih Mitra Bestari (Standar Jurnal OJS) -->
@@ -79,7 +90,7 @@
                     <div class="relative reviewer-combobox-container" data-combobox="assign-reviewer">
                         <!-- Hidden native select for standard HTML5 validation & form submit -->
                         <select id="reviewer_id" name="reviewer_id" class="sr-only" tabindex="-1" required>
-                            <option value="">-- Pilih dari Direktori Reviewer --</option>
+                            <option value="">Pilih dari Direktori Reviewer</option>
                             @foreach($availableReviewers as $reviewer)
                                 <option value="{{ $reviewer->id }}" {{ $selectedReviewerId === (string) $reviewer->id ? 'selected' : '' }}>
                                     {{ $reviewer->name }}
@@ -252,9 +263,28 @@
                     Kirim Undangan Reviewer
                 </button>
             </form>
+        @elseif($isWorkflowFinalized)
+            <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
+                Penugasan mitra bestari telah ditutup karena alur editorial naskah ini telah mencapai keputusan final oleh Pemimpin Redaksi.
+            </div>
+        @elseif(!$hasAnonymizedRound)
+            <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 space-y-2.5">
+                <div class="flex items-center gap-2 font-bold text-xs text-amber-950">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Berkas Anonim Belum Disiapkan</span>
+                </div>
+                <p class="text-xs text-amber-800 leading-relaxed">
+                    Sesuai standar <em>Double-Blind Peer Review</em> OJS, sebelum mengundang mitra bestari, Editor Bagian wajib menyiapkan dan mengunggah naskah tanpa identitas penulis terlebih dahulu.
+                </p>
+                <a href="#form-siapkan-putaran" onclick="scrollToSiapkanPutaran(event)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition cursor-pointer">
+                    <span>Siapkan Berkas Anonim &darr;</span>
+                </a>
+            </div>
         @else
-            <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
-                Penugasan mitra bestari telah dikunci karena alur editorial naskah ini telah mencapai keputusan final.
+            <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-800 leading-relaxed">
+                Berkas naskah anonim sedang dalam proses pemindaian keamanan antivirus. Formulir penugasan mitra bestari akan aktif segera setelah berkas dinyatakan bersih dan aman.
             </div>
         @endif
     </section>
@@ -290,6 +320,10 @@
                     </svg>
                     <span>Terkirim</span>
                 </span>
+            @elseif(!$activeRound->exists)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 shrink-0">
+                    Belum Dimulai
+                </span>
             @elseif(!$canRecommend)
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 shrink-0">
                     Menunggu Kuorum
@@ -301,9 +335,24 @@
             @endif
         </div>
 
-        @if($isFinalized)
-            <div class="p-3.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
-                Rekomendasi editorial telah ditutup karena naskah telah berstatus final.
+        @if($isWorkflowFinalized)
+            <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 leading-relaxed">
+                Rekomendasi editorial telah ditutup karena naskah telah mencapai keputusan final oleh Pemimpin Redaksi.
+            </div>
+        @elseif(!$activeRound->exists)
+            <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 space-y-2.5">
+                <div class="flex items-center gap-2 font-bold text-xs text-gray-800">
+                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Putaran Telaah Belum Dibuat</span>
+                </div>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                    Siapkan berkas naskah anonim dan mulai putaran telaah terlebih dahulu sebelum dapat mengirimkan rekomendasi editorial ke Pemimpin Redaksi (EIC).
+                </p>
+                <a href="#form-siapkan-putaran" onclick="scrollToSiapkanPutaran(event)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-semibold text-xs transition cursor-pointer">
+                    <span>Siapkan Berkas Anonim &darr;</span>
+                </a>
             </div>
         @else
             @if($viewModel->minimumReviewOverrideReason())
@@ -321,7 +370,7 @@
             @endif
 
             <form id="se-recommendation-form"
-                  action="{{ route('section-editor.rounds.recommendation', $activeRound->id) }}" 
+                  action="{{ route('section-editor.rounds.recommendation', $activeRound->id ?? '') }}" 
                   method="POST" 
                   class="space-y-4"
                   data-confirm="Apakah Anda yakin ingin menyerahkan rekomendasi editorial ini kepada Pemimpin Redaksi (EIC)?"
@@ -1121,6 +1170,22 @@
         if (window.initCustomDropdowns) {
             window.initCustomDropdowns();
         }
+
+        // Scroll handler untuk tombol pintas siapkan berkas anonim
+        window.scrollToSiapkanPutaran = function (e) {
+            if (e) e.preventDefault();
+            const form = document.getElementById('form-siapkan-putaran');
+            if (form) {
+                form.classList.remove('hidden');
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                form.classList.add('ring-4', 'ring-amber-400', 'transition-all', 'duration-500');
+                setTimeout(() => {
+                    form.classList.remove('ring-4', 'ring-amber-400');
+                }, 2500);
+                const fileInput = form.querySelector('input[type="file"]');
+                if (fileInput) fileInput.focus();
+            }
+        };
 
         // Initialize Reviewer Combobox
         initReviewerCombobox();

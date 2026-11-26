@@ -282,11 +282,8 @@ function initSidebarCollapse() {
     const openBtn = document.getElementById('open-sidebar-btn');
     const closeBtn = document.getElementById('close-sidebar-btn');
     const collapseBtn = document.getElementById('sidebar-collapse-toggle-btn');
-    const bottomCollapseBtn = document.getElementById('sidebar-bottom-collapse-btn');
     const iconLeft = document.getElementById('collapse-icon-left');
     const iconRight = document.getElementById('collapse-icon-right');
-    const bottomIconLeft = document.getElementById('bottom-collapse-icon-left');
-    const bottomIconRight = document.getElementById('bottom-collapse-icon-right');
 
     const STORAGE_KEY = 'sirida_portal_sidebar_collapsed';
 
@@ -296,26 +293,12 @@ function initSidebarCollapse() {
             sidebar.classList.add('sidebar-collapsed');
             iconLeft?.classList.add('hidden');
             iconRight?.classList.remove('hidden');
-            bottomIconLeft?.classList.add('hidden');
-            bottomIconRight?.classList.remove('hidden');
             if (collapseBtn) collapseBtn.setAttribute('title', 'Perluas Navigasi');
-            if (bottomCollapseBtn) {
-                bottomCollapseBtn.setAttribute('title', 'Perluas Sidebar');
-                const label = bottomCollapseBtn.querySelector('.sidebar-label');
-                if (label) label.textContent = 'Perluas Sidebar';
-            }
         } else {
             sidebar.classList.remove('sidebar-collapsed');
             iconLeft?.classList.remove('hidden');
             iconRight?.classList.add('hidden');
-            bottomIconLeft?.classList.remove('hidden');
-            bottomIconRight?.classList.add('hidden');
             if (collapseBtn) collapseBtn.setAttribute('title', 'Kecilkan Navigasi');
-            if (bottomCollapseBtn) {
-                bottomCollapseBtn.setAttribute('title', 'Kecilkan Sidebar');
-                const label = bottomCollapseBtn.querySelector('.sidebar-label');
-                if (label) label.textContent = 'Kecilkan Sidebar';
-            }
         }
     }
 
@@ -336,7 +319,6 @@ function initSidebarCollapse() {
     }
 
     collapseBtn?.addEventListener('click', toggleSidebarDesktop);
-    bottomCollapseBtn?.addEventListener('click', toggleSidebarDesktop);
 
     function toggleMobileDrawer(open) {
         if (open) {

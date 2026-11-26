@@ -159,24 +159,16 @@
     }
 
     .portal-sidebar.sidebar-collapsed #collapse-icon-left,
-    .portal-sidebar.sidebar-collapsed #bottom-collapse-icon-left,
     aside[id$="-sidebar"].sidebar-collapsed #collapse-icon-left,
-    aside[id$="-sidebar"].sidebar-collapsed #bottom-collapse-icon-left,
     html.sidebar-is-collapsed .portal-sidebar #collapse-icon-left,
-    html.sidebar-is-collapsed .portal-sidebar #bottom-collapse-icon-left,
-    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-left,
-    html.sidebar-is-collapsed aside[id$="-sidebar"] #bottom-collapse-icon-left {
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-left {
         display: none !important;
     }
 
     .portal-sidebar.sidebar-collapsed #collapse-icon-right,
-    .portal-sidebar.sidebar-collapsed #bottom-collapse-icon-right,
     aside[id$="-sidebar"].sidebar-collapsed #collapse-icon-right,
-    aside[id$="-sidebar"].sidebar-collapsed #bottom-collapse-icon-right,
     html.sidebar-is-collapsed .portal-sidebar #collapse-icon-right,
-    html.sidebar-is-collapsed .portal-sidebar #bottom-collapse-icon-right,
-    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-right,
-    html.sidebar-is-collapsed aside[id$="-sidebar"] #bottom-collapse-icon-right {
+    html.sidebar-is-collapsed aside[id$="-sidebar"] #collapse-icon-right {
         display: block !important;
     }
 

@@ -27,8 +27,22 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
         return $this->client;
     }
 
+    protected function isLocalFallback(): bool
+    {
+        return app()->environment('local') && empty($this->client->getAccountName());
+    }
+
+    protected function localPath(string $path): string
+    {
+        return storage_path('app/azure/'.ltrim($path, '/'));
+    }
+
     public function fileExists(string $path): bool
     {
+        if ($this->isLocalFallback()) {
+            return file_exists($this->localPath($path));
+        }
+
         try {
             return $this->client->blobExists($path);
         } catch (Throwable $e) {
@@ -38,6 +52,10 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function directoryExists(string $path): bool
     {
+        if ($this->isLocalFallback()) {
+            return is_dir($this->localPath($path));
+        }
+
         try {
             return $this->client->directoryExists($path);
         } catch (Throwable $e) {
@@ -47,6 +65,17 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function write(string $path, string $contents, Config $config): void
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            $dir = dirname($fullPath);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            file_put_contents($fullPath, $contents);
+
+            return;
+        }
+
         try {
             $mimeType = $config->get('ContentType') ?? $config->get('mimetype');
             $this->client->putBlob($path, $contents, $mimeType);
@@ -67,6 +96,15 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function read(string $path): string
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            if (! file_exists($fullPath)) {
+                throw UnableToReadFile::fromLocation($path, 'Berkas tidak ditemukan pada penyimpanan lokal.');
+            }
+
+            return (string) file_get_contents($fullPath);
+        }
+
         try {
             return $this->client->getBlob($path);
         } catch (Throwable $e) {
@@ -76,6 +114,15 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function readStream(string $path)
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            if (! file_exists($fullPath)) {
+                throw UnableToReadFile::fromLocation($path, 'Berkas tidak ditemukan pada penyimpanan lokal.');
+            }
+
+            return fopen($fullPath, 'rb');
+        }
+
         try {
             return $this->client->getBlobStream($path);
         } catch (Throwable $e) {
@@ -85,6 +132,15 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function delete(string $path): void
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            return;
+        }
+
         try {
             $this->client->deleteBlob($path);
         } catch (Throwable $e) {
@@ -114,6 +170,13 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function mimeType(string $path): FileAttributes
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            $mime = file_exists($fullPath) ? (mime_content_type($fullPath) ?: 'application/octet-stream') : 'application/octet-stream';
+
+            return new FileAttributes($path, null, 'private', null, $mime);
+        }
+
         try {
             $props = $this->client->getBlobProperties($path);
 
@@ -125,6 +188,13 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function lastModified(string $path): FileAttributes
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            $modified = file_exists($fullPath) ? filemtime($fullPath) : time();
+
+            return new FileAttributes($path, null, 'private', (int) $modified);
+        }
+
         try {
             $props = $this->client->getBlobProperties($path);
 
@@ -136,6 +206,13 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function fileSize(string $path): FileAttributes
     {
+        if ($this->isLocalFallback()) {
+            $fullPath = $this->localPath($path);
+            $size = file_exists($fullPath) ? (int) filesize($fullPath) : 0;
+
+            return new FileAttributes($path, $size);
+        }
+
         try {
             $props = $this->client->getBlobProperties($path);
 
@@ -177,6 +254,20 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     public function copy(string $source, string $destination, Config $config): void
     {
+        if ($this->isLocalFallback()) {
+            $src = $this->localPath($source);
+            $dst = $this->localPath($destination);
+            $dir = dirname($dst);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            if (file_exists($src)) {
+                copy($src, $dst);
+            }
+
+            return;
+        }
+
         try {
             $this->client->copyBlob($source, $destination);
         } catch (Throwable $e) {
