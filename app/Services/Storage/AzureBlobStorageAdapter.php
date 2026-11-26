@@ -29,7 +29,7 @@ class AzureBlobStorageAdapter implements FilesystemAdapter
 
     protected function isLocalFallback(): bool
     {
-        return empty($this->client->getAccountName()) && ! app()->environment('production');
+        return app()->environment('local') && empty($this->client->getAccountName());
     }
 
     protected function localPath(string $path): string
