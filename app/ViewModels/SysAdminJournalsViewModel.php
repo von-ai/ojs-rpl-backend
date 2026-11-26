@@ -244,7 +244,7 @@ class SysAdminJournalsViewModel
         try {
             if (class_exists(User::class) && Schema::hasTable('users')) {
                 return User::with('profile')
-                    ->orderBy('name')
+                    ->orderBy('full_name')
                     ->get()
                     ->map(fn (User $u) => [
                         'id' => (string) $u->id,
