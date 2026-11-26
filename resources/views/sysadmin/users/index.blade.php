@@ -256,41 +256,50 @@
                                 </span>
                             </td>
 
-                            <!-- 8. Kolom Aksi -->
+                            <!-- 8. Kolom Aksi (Konsisten: Ikon Detail, Reset Sandi, Ubah Peran + Tombol Admin) -->
                             <td class="py-2.5 px-2.5 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1">
-
-                                    <!-- Aksi 1: Lihat Detail Profil -->
+                                    <!-- Aksi 1: Lihat Detail Profil (Ikon Mata) -->
                                     <button
                                         type="button"
                                         onclick="openUserDetailModal('{{ $user['id'] }}')"
-                                        class="min-h-7 px-2 py-1 inline-flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-blue-700 hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Lihat Detail Profil"
                                         title="Lihat Detail Profil"
                                         aria-label="Lihat Detail Profil"
                                     >
-                                        <span>Detail</span>
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
                                     </button>
 
-                                    <!-- Aksi 2: Kelola Peran Jurnal -->
-                                    <button
-                                        type="button"
-                                        onclick="openAssignRoleModal('{{ $user['id'] }}')"
-                                        class="min-h-7 px-2 py-1 inline-flex items-center justify-center rounded-md border border-brand-maroon bg-brand-maroon text-white hover:bg-brand-maroon-hover text-xs font-semibold transition shadow-2xs cursor-pointer"
-                                        title="Kelola Peran Jurnal"
-                                        aria-label="Kelola Peran Jurnal"
-                                    >
-                                        <span>Peran</span>
-                                    </button>
-
-                                    <!-- Aksi 3: Reset Sandi -->
+                                    <!-- Aksi 2: Reset Sandi (Ikon Kunci) -->
                                     <button
                                         type="button"
                                         onclick="openResetPasswordModal('{{ $user['email'] }}', '{{ addslashes($user['name']) }}')"
-                                        class="min-h-7 px-2 py-1 inline-flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-amber-700 hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Reset Sandi Pengguna"
                                         title="Reset Sandi Pengguna"
                                         aria-label="Reset Sandi Pengguna"
                                     >
-                                        <span>Sandi</span>
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                                        </svg>
+                                    </button>
+
+                                    <!-- Aksi 3: Kelola Peran Jurnal (Ikon Sunting) -->
+                                    <button
+                                        type="button"
+                                        onclick="openAssignRoleModal('{{ $user['id'] }}')"
+                                        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-gray-700 hover:text-brand-maroon hover:bg-gray-100 transition cursor-pointer"
+                                        data-tooltip="Kelola Peran Jurnal"
+                                        title="Kelola Peran Jurnal"
+                                        aria-label="Kelola Peran Jurnal"
+                                    >
+                                        <svg class="w-4.5 h-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
                                     </button>
 
                                     <!-- Aksi 4: Toggle Hak Akses System Administrator -->
