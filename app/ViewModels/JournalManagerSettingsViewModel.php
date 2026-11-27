@@ -181,6 +181,31 @@ class JournalManagerSettingsViewModel
         ];
     }
 
+    /**
+     * Informasi gambar sampul resmi jurnal untuk halaman pengaturan.
+     *
+     * @return array{
+     *     has_cover: bool,
+     *     filename: ?string,
+     *     updated_at: ?string,
+     *     cover_url: ?string
+     * }
+     */
+    public function coverImage(): array
+    {
+        $journal = $this->resolveJournal();
+        $hasCover = $journal !== null && $journal->hasCoverImage();
+
+        return [
+            'has_cover' => $hasCover,
+            'filename' => $hasCover ? (string) ($journal->cover_image_filename ?: basename((string) $journal->cover_image_path)) : null,
+            'updated_at' => $hasCover && $journal->cover_image_updated_at
+                ? $journal->cover_image_updated_at->translatedFormat('d M Y, H:i').' WITA'
+                : null,
+            'cover_url' => $hasCover ? $journal->coverImageUrl() : null,
+        ];
+    }
+
     private function resolveJournal(): ?Journal
     {
         if ($this->journal !== null) {

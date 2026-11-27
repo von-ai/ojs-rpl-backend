@@ -1,6 +1,6 @@
 @props(['topbarData' => null, 'journal' => null])
 
-<div class="bg-gray-50 border-b border-divider text-xs py-1.5 px-3.5 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden">
+<div id="public-topbar" class="bg-gray-50 border-b border-divider text-xs py-1.5 px-3.5 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden transition-colors duration-200">
     <div class="max-w-7xl mx-auto flex flex-row items-center justify-between gap-2 text-gray-700 text-xs">
         <!-- Left Metadata -->
         <div class="flex items-center gap-1.5 sm:gap-2 truncate">

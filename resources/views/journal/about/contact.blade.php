@@ -3,36 +3,15 @@
 @section('title', 'Kontak Redaksi — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <x-journal.page-banner
+        eyebrow="Sekretariat & Narahubung"
+        title="Kontak dan Sekretariat Redaksi"
+        :description="'Hubungi pengelola jurnal dan tim sekretariat redaksi ' . ($journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA)') . ' untuk pertanyaan seputar proses submisi naskah, kerja sama penerbitan, atau kendala teknis sistem.'"
+        :crumbs="[['label' => 'Tentang Jurnal', 'url' => route('journal.about')], ['label' => 'Kontak Redaksi']]"
+    />
 
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('journal.about') }}" class="hover:text-brand-maroon">Tentang Jurnal</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium">Kontak Redaksi</span>
-    </nav>
-
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-            Sekretariat & Narahubung
-        </span>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-            Kontak dan Sekretariat Redaksi
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Hubungi pengelola jurnal dan tim sekretariat redaksi {{ $journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA)' }} untuk pertanyaan seputar proses submisi naskah, kerja sama penerbitan, atau kendala teknis sistem.
-        </p>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
-            
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
             <x-journal.about-subnav />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
@@ -104,18 +83,5 @@
             </section>
 
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

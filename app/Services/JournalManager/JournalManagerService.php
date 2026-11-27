@@ -505,4 +505,69 @@ class JournalManagerService
 
         return $journal->fresh();
     }
+
+    /**
+     * Mengunggah gambar sampul resmi jurnal (PNG/JPG/JPEG/WEBP).
+     */
+    public function uploadCoverImage(Journal $journal, UploadedFile $file, ?User $actor = null): Journal
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'png');
+        $allowedExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+        if (! in_array($extension, $allowedExtensions, true)) {
+            throw new DomainException('Format sampul jurnal tidak didukung. Gunakan berkas gambar .png, .jpg, .jpeg, atau .webp.');
+        }
+
+        $originalName = trim((string) $file->getClientOriginalName());
+        $safeFilename = $originalName !== '' ? basename($originalName) : "cover-{$journal->slug}.{$extension}";
+        $storageDir = "journals/{$journal->id}/covers";
+        $storedName = strtolower((string) Str::ulid()).'.'.$extension;
+
+        $disk = Storage::disk();
+        $storedPath = $disk->putFileAs($storageDir, $file, $storedName);
+        if (! is_string($storedPath) || $storedPath === '') {
+            throw new DomainException('Gagal menyimpan berkas sampul jurnal ke penyimpanan.');
+        }
+
+        $previousPath = $journal->cover_image_path;
+
+        $journal->update([
+            'cover_image_path' => $storedPath,
+            'cover_image_filename' => $safeFilename,
+            'cover_image_updated_at' => now(),
+        ]);
+
+        if (! empty($previousPath) && $previousPath !== $storedPath) {
+            try {
+                $disk->delete($previousPath);
+            } catch (\Throwable) {
+                // Best-effort cleanup of replaced cover image
+            }
+        }
+
+        return $journal->fresh();
+    }
+
+    /**
+     * Menghapus gambar sampul resmi jurnal yang telah diunggah.
+     */
+    public function deleteCoverImage(Journal $journal, ?User $actor = null): Journal
+    {
+        $previousPath = $journal->cover_image_path;
+
+        $journal->update([
+            'cover_image_path' => null,
+            'cover_image_filename' => null,
+            'cover_image_updated_at' => null,
+        ]);
+
+        if (! empty($previousPath)) {
+            try {
+                Storage::disk()->delete($previousPath);
+            } catch (\Throwable) {
+                // Best-effort cleanup of deleted cover image
+            }
+        }
+
+        return $journal->fresh();
+    }
 }

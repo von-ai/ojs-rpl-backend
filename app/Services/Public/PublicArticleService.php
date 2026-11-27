@@ -146,7 +146,7 @@ class PublicArticleService
                 return new ConcretePaginator([], 0, $perPage);
             }
 
-            $query = Article::with(['contributors', 'section', 'galleys', 'issues'])
+            $query = Article::with(['contributors', 'section', 'galleys', 'issues', 'journal'])
                 ->where('status', 'published');
 
             if ($journal !== null) {
@@ -155,12 +155,13 @@ class PublicArticleService
                 $query->whereHas('journal', fn ($q) => $q->where('status', 'active'));
             }
 
-            // Filter kata kunci (judul, abstrak, referensi)
+            // Filter kata kunci (judul, abstrak, DOI, penulis/afiliasi)
             if (! empty($filters['q'])) {
                 $keyword = trim((string) $filters['q']);
                 $query->where(function ($q) use ($keyword): void {
                     $q->where('title', 'like', "%{$keyword}%")
                         ->orWhere('abstract', 'like', "%{$keyword}%")
+                        ->orWhere('doi', 'like', "%{$keyword}%")
                         ->orWhereHas('contributors', function ($cq) use ($keyword): void {
                             $cq->where('given_name', 'like', "%{$keyword}%")
                                 ->orWhere('family_name', 'like', "%{$keyword}%")
@@ -502,10 +503,13 @@ class PublicArticleService
                 return new ConcretePaginator([], 0, $perPage);
             }
 
-            $journal = $journal ?? Journal::where('status', 'active')->first();
-
-            return Announcement::where('is_published', true)
-                ->when($journal, fn ($q) => $q->where('journal_id', $journal->id))
+            return Announcement::with(['journal'])
+                ->where('is_published', true)
+                ->when(
+                    $journal !== null,
+                    fn ($q) => $q->where('journal_id', $journal->id),
+                    fn ($q) => $q->whereHas('journal', fn ($jq) => $jq->where('status', 'active'))
+                )
                 ->orderBy('published_at', 'desc')
                 ->paginate($perPage);
         } catch (\Throwable) {
@@ -523,9 +527,14 @@ class PublicArticleService
                 return null;
             }
 
-            return Announcement::where('is_published', true)
+            return Announcement::with(['journal'])
+                ->where('is_published', true)
                 ->where('id', $id)
-                ->when($journal, fn ($q) => $q->where('journal_id', $journal->id))
+                ->when(
+                    $journal !== null,
+                    fn ($q) => $q->where('journal_id', $journal->id),
+                    fn ($q) => $q->whereHas('journal', fn ($jq) => $jq->where('status', 'active'))
+                )
                 ->first();
         } catch (\Throwable) {
             return null;

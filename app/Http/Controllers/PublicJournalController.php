@@ -74,7 +74,7 @@ class PublicJournalController extends Controller
         $query = $filters['q'] ?? null;
         $category = $filters['category'] ?? null;
 
-        $results = $this->publicArticleService->searchArticles($filters, 10, $journal);
+        $results = $this->publicArticleService->searchArticles($filters, 10, $journalSlug !== null ? $journal : null);
 
         $viewModel = new PublicJournalViewModel(
             searchQuery: $query,
@@ -326,6 +326,32 @@ class PublicJournalController extends Controller
     }
 
     /**
+     * Menyajikan gambar sampul resmi jurnal untuk halaman beranda dan direktori publik.
+     */
+    public function showJournalCover(?string $journalSlug = null): StreamedResponse|BinaryFileResponse
+    {
+        $journal = $this->resolveJournal($journalSlug);
+
+        if ($journal->hasCoverImage()) {
+            $disk = Storage::disk();
+            if ($disk->exists((string) $journal->cover_image_path)) {
+                $mimeType = $disk->mimeType((string) $journal->cover_image_path) ?: 'image/png';
+
+                return $disk->response(
+                    (string) $journal->cover_image_path,
+                    (string) ($journal->cover_image_filename ?: basename((string) $journal->cover_image_path)),
+                    [
+                        'Content-Type' => $mimeType,
+                        'Cache-Control' => 'public, max-age=86400',
+                    ]
+                );
+            }
+        }
+
+        abort(404, 'Gambar sampul jurnal belum tersedia.');
+    }
+
+    /**
      * Menampilkan Informasi Kontak & Sekretariat Redaksi BRIDA Makassar.
      */
     public function contact(?string $journalSlug = null): View
@@ -342,7 +368,7 @@ class PublicJournalController extends Controller
     public function announcements(?string $journalSlug = null): View
     {
         $journal = $this->resolveJournal($journalSlug);
-        $announcements = $this->publicArticleService->getAnnouncements($journal, 10);
+        $announcements = $this->publicArticleService->getAnnouncements($journalSlug !== null ? $journal : null, 10);
         $viewModel = new PublicJournalViewModel(journal: $journal);
 
         return view('journal.announcements.index', compact('announcements', 'viewModel', 'journal'));
@@ -356,12 +382,14 @@ class PublicJournalController extends Controller
         if ($announcementId !== null) {
             $journal = $this->resolveJournal($slugOrId);
             $targetId = $announcementId;
+            $scopeJournal = $journal;
         } else {
             $journal = $this->resolveJournal(null);
             $targetId = $slugOrId;
+            $scopeJournal = null;
         }
 
-        $announcement = $this->publicArticleService->findAnnouncement($targetId, $journal);
+        $announcement = $this->publicArticleService->findAnnouncement($targetId, $scopeJournal);
 
         if (! $announcement) {
             abort(404, 'Pengumuman tidak ditemukan atau belum dipublikasikan.');

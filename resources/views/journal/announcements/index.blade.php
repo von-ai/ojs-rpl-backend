@@ -3,93 +3,72 @@
 @section('title', 'Warta & Pengumuman — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <!-- Header Banner Pengumuman Konsisten dengan Beranda -->
+    <x-journal.page-banner
+        eyebrow="Informasi Redaksi Resmi"
+        description="Panggilan pengajuan naskah, agenda lokakarya penulisan artikel ilmiah, dan kabar pembaruan tata kelola berkala ilmiah."
+        :crumbs="[['label' => 'Warta & Pengumuman']]"
+    >
+        <x-slot:heading>Warta, Berita & Pengumuman Jurnal</x-slot:heading>
+    </x-journal.page-banner>
 
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium">Warta & Pengumuman</span>
-    </nav>
+    <!-- Daftar Pengumuman Bersih (Single-Column Editorial, Tanpa Sidebar) -->
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10">
+            <div class="divide-y divide-divider">
+                @forelse($announcements as $ann)
+                    <article class="py-6 sm:py-7 first:pt-0 space-y-2.5">
+                        <div class="flex flex-wrap items-center gap-2.5 text-xs">
+                            <time class="font-mono font-medium text-gray-600 tabular-nums">
+                                {{ $ann->published_at ? $ann->published_at->format('d F Y') : $ann->created_at->format('d F Y') }}
+                            </time>
+                            <span class="text-gray-300" aria-hidden="true">&middot;</span>
+                            <span class="font-semibold text-brand-maroon-hover uppercase tracking-wider text-[11px]">
+                                Pengumuman Resmi
+                            </span>
+                            @if($ann->journal)
+                                <span class="text-gray-300" aria-hidden="true">&middot;</span>
+                                <span class="font-semibold text-gray-700">
+                                    {{ $ann->journal->initials ?: $ann->journal->name }}
+                                </span>
+                            @endif
+                        </div>
 
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-            Informasi Redaksi Resmi
-        </span>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-            Warta, Berita & Pengumuman Jurnal
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Panggilan pengajuan naskah, agenda lokakarya penulisan artikel ilmiah, dan kabar pembaruan tata kelola berkala ilmiah {{ $journal->name ?? 'BRIDA Kota Makassar' }}.
-        </p>
-    </div>
+                        <h2 class="text-lg sm:text-xl font-bold text-gray-900 leading-snug">
+                            <a href="{{ route('journal.announcements.show', $ann->id) }}" class="hover:text-brand-maroon transition-colors">
+                                {{ $ann->title }}
+                            </a>
+                        </h2>
 
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Kolom Pengumuman (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 space-y-5">
-            
-            @forelse($announcements as $ann)
-                <article class="bg-white rounded-xl border border-gray-200 p-6 hover:border-brand-maroon/40 transition-all space-y-3">
-                    <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="px-2.5 py-0.5 rounded-full font-medium bg-brand-maroon/10 text-brand-maroon text-[11px] uppercase tracking-normal">
-                            Pengumuman Resmi
-                        </span>
-                        <time class="text-gray-400 font-medium">
-                            {{ $ann->published_at ? $ann->published_at->format('d F Y') : $ann->created_at->format('d F Y') }}
-                        </time>
+                        <p class="text-sm text-gray-600 leading-relaxed line-clamp-3 text-left">
+                            {{ Str::limit(strip_tags($ann->body), 260) }}
+                        </p>
+
+                        <div class="pt-1">
+                            <a href="{{ route('journal.announcements.show', $ann->id) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-maroon hover:text-brand-maroon-hover hover:underline">
+                                <span>Baca Selengkapnya</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                @empty
+                    <div class="py-16 text-center space-y-2">
+                        <svg class="w-10 h-10 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <p class="text-base font-bold text-gray-900">Belum ada warta atau pengumuman yang diterbitkan saat ini.</p>
+                        <p class="text-sm text-gray-600">Informasi panggilan naskah dan kabar redaksi terbaru akan tampil di halaman ini.</p>
                     </div>
+                @endforelse
+            </div>
 
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900 hover:text-brand-maroon transition-colors leading-snug">
-                        <a href="{{ route('journal.announcements.show', $ann->id) }}">
-                            {{ $ann->title }}
-                        </a>
-                    </h2>
-
-                    <div class="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                        {{ Str::limit(strip_tags($ann->body), 250) }}
-                    </div>
-
-                    <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                        <a href="{{ route('journal.announcements.show', $ann->id) }}" class="font-bold text-brand-maroon hover:underline flex items-center gap-1">
-                            <span>Baca Selengkapnya</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-            @empty
-                <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-xs">
-                    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                    <p class="font-bold text-gray-700">Belum ada warta atau pengumuman yang diterbitkan saat ini.</p>
-                </div>
-            @endforelse
-
-            <!-- Pagination -->
             @if(method_exists($announcements, 'links'))
-                <div class="pt-4">
+                <div class="pt-6 border-t border-divider">
                     {{ $announcements->links() }}
                 </div>
             @endif
-
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

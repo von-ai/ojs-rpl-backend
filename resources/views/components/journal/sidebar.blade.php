@@ -23,27 +23,27 @@
 
             <div class="pt-2 flex items-center justify-between gap-3">
                 <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Penelaahan</dt>
-                <dd class="font-medium text-gray-800 text-right">Double-Blind Peer Review</dd>
+                <dd class="font-medium text-gray-800 text-right truncate">{{ \Illuminate\Support\Str::limit($publisherInfo['peer_review_model'] ?? 'Double-Blind Peer Review', 34) }}</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
                 <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Frekuensi</dt>
-                <dd class="font-medium text-gray-800 text-right">2 Kali / Tahun (Juni & Des)</dd>
+                <dd class="font-medium text-gray-800 text-right truncate">{{ \Illuminate\Support\Str::limit($publisherInfo['frequency'] ?? '2 Kali / Tahun', 34) }}</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
                 <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Biaya APC</dt>
-                <dd class="font-medium text-emerald-800 text-right">Rp 0</dd>
+                <dd class="font-medium text-emerald-800 text-right truncate">{{ \Illuminate\Support\Str::limit($publisherInfo['apc_status'] ?? 'Rp 0', 34) }}</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
                 <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Penerbit</dt>
-                <dd class="font-medium text-gray-800 text-right truncate">BRIDA Kota Makassar</dd>
+                <dd class="font-medium text-gray-800 text-right truncate">{{ $publisherInfo['publisher'] ?? 'BRIDA Kota Makassar' }}</dd>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
                 <dt class="text-[11px] font-medium text-gray-500 uppercase tracking-normal shrink-0">Bahasa</dt>
-                <dd class="font-medium text-gray-800 text-right">Indonesia & Inggris</dd>
+                <dd class="font-medium text-gray-800 text-right">{{ $publisherInfo['languages'] ?? 'Indonesia & Inggris' }}</dd>
             </div>
         </dl>
 

@@ -366,6 +366,49 @@ class JournalManagerController extends Controller
     }
 
     /**
+     * Mengunggah gambar sampul resmi jurnal untuk ditampilkan di beranda publik.
+     */
+    public function uploadCoverImage(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'cover_image' => ['required', 'file', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
+        ], [
+            'cover_image.required' => 'Pilih berkas gambar sampul jurnal terlebih dahulu.',
+            'cover_image.image' => 'Berkas yang diunggah harus berupa gambar yang valid.',
+            'cover_image.mimes' => 'Format sampul harus berupa PNG, JPG, JPEG, atau WEBP.',
+            'cover_image.max' => 'Ukuran gambar sampul maksimal 5 MB.',
+        ]);
+
+        try {
+            $journal = $this->resolveJournal();
+            $this->journalManagerService->uploadCoverImage($journal, $validated['cover_image'], Auth::user());
+
+            return redirect()->route('journalmanager.settings.index')
+                ->with('status', 'Sampul jurnal berhasil diunggah dan langsung tampil di beranda portal publik.');
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.settings.index')
+                ->withErrors(['cover_image' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Menghapus gambar sampul resmi jurnal yang telah diunggah.
+     */
+    public function deleteCoverImage(Request $request): RedirectResponse
+    {
+        try {
+            $journal = $this->resolveJournal();
+            $this->journalManagerService->deleteCoverImage($journal, Auth::user());
+
+            return redirect()->route('journalmanager.settings.index')
+                ->with('status', 'Sampul jurnal berhasil dihapus. Beranda publik kini menggunakan sampul standar SIRIDA.');
+        } catch (DomainException $e) {
+            return redirect()->route('journalmanager.settings.index')
+                ->withErrors(['cover_image' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Memverifikasi dan menyetujui bukti pembayaran APC naskah (Lunas).
      */
     public function verifyPayment(Request $request, string $id): RedirectResponse

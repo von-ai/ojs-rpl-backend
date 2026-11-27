@@ -3,176 +3,138 @@
 @section('title', 'Tentang Jurnal — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    @php
+        $aboutTitle = ($journal && $journal->slug !== 'sirida-makassar')
+            ? 'Tentang ' . $journal->name
+            : 'Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)';
+    @endphp
 
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium">Tentang Jurnal</span>
-    </nav>
+    <!-- Header Banner Konsisten dengan Beranda -->
+    <section data-hero-banner class="relative bg-[#1E1214] text-white border-b border-black/15 overflow-hidden">
+        <img src="{{ asset('images/hero-sirida-bg.jpg') }}" alt="" aria-hidden="true" class="pointer-events-none absolute inset-0 w-full h-full object-cover object-center">
+        <div class="pointer-events-none absolute inset-0 bg-linear-to-r from-[#2B1014]/88 via-[#5B141D]/65 to-[#1F1316]/35" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-[#1A0C0F]/50 via-transparent to-[#1A0C0F]/20" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-4">
+            <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-white/80 flex-wrap">
+                <a href="{{ route('journal.index') }}" class="hover:text-white transition">Beranda</a>
+                <span class="text-white/40" aria-hidden="true">/</span>
+                <span class="text-white font-semibold">Tentang Jurnal</span>
+            </nav>
+            <div class="max-w-3xl space-y-2">
+                <p class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white/85">Informasi Resmi Penerbitan</p>
+                <h1 class="font-sans text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight text-left">
+                    @if($journal && $journal->slug !== 'sirida-makassar')
+                        Tentang {{ $journal->name }}
+                    @else
+                        Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)
+                    @endif
+                </h1>
+                <p class="text-sm sm:text-[15px] text-white/85 leading-relaxed text-left">
+                    Media publikasi berkala ilmiah resmi {{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar' }} yang berfokus pada diseminasi hasil riset terapan, inovasi daerah, dan kajian kebijakan publik strategis.
+                </p>
+            </div>
+        </div>
+    </section>
 
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-            Informasi Resmi Penerbitan
-        </span>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-            Tentang Jurnal Riset & Inovasi Daerah (SIRIDA)
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Media publikasi berkala ilmiah resmi {{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar' }} yang berfokus pada diseminasi hasil riset terapan, inovasi daerah, dan kajian kebijakan publik strategis.
-        </p>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-        <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
-
+    <!-- Konten Editorial Terbuka (Material 3 Flat Surface, Tanpa Sidebar & Kotak Berlapis) -->
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-10">
             <x-journal.about-subnav />
 
-            <!-- Seksi 1: Profil & Identitas Jurnal (Data Backend & ERD) -->
-            <section class="space-y-4">
-                <h2 class="text-base sm:text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                    </svg>
-                    <span>Profil dan Identitas Jurnal</span>
+            <!-- Seksi 1: Profil & Identitas Jurnal -->
+            <section class="space-y-5">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 pb-2.5 border-b border-divider">
+                    Profil dan Identitas Jurnal
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-left">
+                <p class="text-sm text-gray-700 leading-relaxed text-left">
                     <strong>{{ $journal->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar (SIRIDA)' }}</strong> diterbitkan oleh {{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Kota Makassar' }} sebagai wadah ilmiah bagi para peneliti, akademisi, perekayasa, dan praktisi untuk mendiseminasikan naskah ilmiah orisinal yang berimplikasi langsung terhadap perumusan kebijakan pembangunan berkelanjutan dan ketahanan perkotaan.
                 </p>
 
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">Nama Terbitan Berkala:</span>
-                        <strong class="text-gray-900">{{ $journal->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar' }}</strong>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 pt-2 border-t border-divider text-sm">
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">Nama Terbitan Berkala</dt>
+                        <dd class="font-semibold text-gray-900 mt-1">{{ $journal->name ?? 'Jurnal Penelitian dan Inovasi Daerah Kota Makassar' }}</dd>
                     </div>
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">Inisial / Singkatan Resmi:</span>
-                        <strong class="text-gray-900 font-mono">{{ $journal->initials ?? 'SIRIDA' }}</strong>
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inisial / Singkatan Resmi</dt>
+                        <dd class="font-mono font-semibold text-gray-900 mt-1">{{ $journal->initials ?? 'SIRIDA' }}</dd>
                     </div>
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">p-ISSN (Cetak) / e-ISSN (Elektronik):</span>
-                        <strong class="text-gray-900 font-mono">{{ $journal->issn ?? '2746-8194' }} / {{ $journal->eissn ?? '2746-8208' }}</strong>
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">p-ISSN / e-ISSN</dt>
+                        <dd class="font-mono font-semibold text-gray-900 mt-1 tabular-nums">{{ $journal->issn ?? '2746-8194' }} / {{ $journal->eissn ?? '2746-8208' }}</dd>
                     </div>
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">Digital Object Identifier (DOI) Prefix:</span>
-                        <strong class="text-gray-900 font-mono">10.55981/sirida</strong>
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">DOI Prefix</dt>
+                        <dd class="font-mono font-semibold text-gray-900 mt-1">{{ $journal?->currentIssue?->doi_prefix ?: '10.55981/sirida' }}</dd>
                     </div>
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">Penerbit:</span>
-                        <strong class="text-gray-900">{{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar' }}</strong>
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">Penerbit</dt>
+                        <dd class="font-semibold text-gray-900 mt-1">{{ $journal->publisher ?? 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar' }}</dd>
                     </div>
-                    <div>
-                        <span class="text-gray-500 block text-[11px]">Email & Kontak Redaksi:</span>
-                        <strong class="text-gray-900">{{ $journal->editorial_email ?? 'jurnal.brida@makassar.go.id' }}</strong>
+                    <div class="py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">Email &amp; Kontak Redaksi</dt>
+                        <dd class="font-semibold text-gray-900 mt-1">{{ $journal->editorial_email ?? 'jurnal.brida@makassar.go.id' }}</dd>
                     </div>
-                    <div class="sm:col-span-2">
-                        <span class="text-gray-500 block text-[11px]">Lisensi Publikasi:</span>
-                        <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-emerald-200 inline-block">
-                            {{ $viewModel->licenseLabel() }}
-                        </strong>
+                    <div class="sm:col-span-2 py-1">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-gray-500">Lisensi Publikasi</dt>
+                        <dd class="font-semibold text-emerald-800 mt-1">{{ $viewModel->licenseLabel() }}</dd>
                     </div>
-                </div>
+                </dl>
             </section>
 
-            <!-- Seksi 2: Fokus dan Ruang Lingkup (Focus & Scope dari Database) -->
-            <section class="space-y-4">
-                <h2 class="text-base sm:text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Fokus dan Ruang Lingkup</span>
+            <!-- Seksi 2: Fokus dan Ruang Lingkup -->
+            <section class="space-y-5">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 pb-2.5 border-b border-divider">
+                    Fokus dan Ruang Lingkup
                 </h2>
 
-                <p class="text-xs text-gray-600 leading-relaxed text-left">
+                <p class="text-sm text-gray-700 leading-relaxed text-left">
                     {{ $journal->focus_scope ?? 'SIRIDA menerima naskah hasil penelitian empiris, studi komparatif, dan analisis kebijakan berbasis data yang relevan dengan dinamika pembangunan daerah dan perkotaan.' }}
                 </p>
 
                 @if(isset($journal->sections) && $journal->sections->isNotEmpty())
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="divide-y divide-divider border-y border-divider">
                         @foreach($journal->sections as $sec)
-                            <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                                <h3 class="font-bold text-gray-900">
-                                    {{ $sec->name }}
-                                </h3>
+                            <div class="py-4 space-y-1">
+                                <h3 class="text-sm sm:text-base font-bold text-gray-900">{{ $sec->name }}</h3>
                                 @if($sec->description)
-                                    <p class="text-gray-500 text-[11px] leading-relaxed">
-                                        {{ $sec->description }}
-                                    </p>
+                                    <p class="text-sm text-gray-600 leading-relaxed text-left">{{ $sec->description }}</p>
                                 @endif
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900">
-                                Kebijakan Publik & Tata Kelola Daerah
-                            </h3>
-                            <p class="text-gray-500 text-[11px] leading-relaxed">
-                                Inovasi pelayanan publik, reformasi birokrasi, desentralisasi fiskal, efektivitas regulasi daerah, serta partisipasi masyarakat.
-                            </p>
+                    <div class="divide-y divide-divider border-y border-divider">
+                        <div class="py-4 space-y-1">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900">Kebijakan Publik &amp; Tata Kelola Daerah</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed text-left">Inovasi pelayanan publik, reformasi birokrasi, desentralisasi fiskal, efektivitas regulasi daerah, serta partisipasi masyarakat.</p>
                         </div>
-                        <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900">
-                                Makassar Smart City & Rekayasa IoT
-                            </h3>
-                            <p class="text-gray-500 text-[11px] leading-relaxed">
-                                Transformasi digital pemerintahan, jaringan sensor cerdas mikroklimat lorong, sistem kecerdasan artifisial, dan analisis data perkotaan.
-                            </p>
+                        <div class="py-4 space-y-1">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900">Makassar Smart City &amp; Rekayasa IoT</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed text-left">Transformasi digital pemerintahan, jaringan sensor cerdas mikroklimat lorong, sistem kecerdasan artifisial, dan analisis data perkotaan.</p>
                         </div>
-                        <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900">
-                                Resiliensi Pesisir & Lingkungan Hidup
-                            </h3>
-                            <p class="text-gray-500 text-[11px] leading-relaxed">
-                                Mitigasi banjir rob, manajemen tata ruang pulau-pulau Sangkarrang, pengelolaan sampah terpadu, dan adaptasi perubahan iklim.
-                            </p>
+                        <div class="py-4 space-y-1">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900">Resiliensi Pesisir &amp; Lingkungan Hidup</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed text-left">Mitigasi banjir rob, manajemen tata ruang pulau-pulau Sangkarrang, pengelolaan sampah terpadu, dan adaptasi perubahan iklim.</p>
                         </div>
-                        <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1.5">
-                            <h3 class="font-bold text-gray-900">
-                                Ekonomi Sirkular & Pengembangan UMKM
-                            </h3>
-                            <p class="text-gray-500 text-[11px] leading-relaxed">
-                                Pemberdayaan ekonomi lorong wisata, inkubasi bisnis rintisan daerah, pemanfaatan biokonversi limbah, dan ketahanan pangan perkotaan.
-                            </p>
+                        <div class="py-4 space-y-1">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900">Ekonomi Sirkular &amp; Pengembangan UMKM</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed text-left">Pemberdayaan ekonomi lorong wisata, inkubasi bisnis rintisan daerah, pemanfaatan biokonversi limbah, dan ketahanan pangan perkotaan.</p>
                         </div>
                     </div>
                 @endif
             </section>
 
-            <!-- Seksi 3: Frekuensi & Jadwal Penerbitan (Dari Database) -->
-            <section class="space-y-4">
-                <h2 class="text-base sm:text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>Frekuensi Penerbitan</span>
+            <!-- Seksi 3: Frekuensi Penerbitan -->
+            <section class="space-y-3">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 pb-2.5 border-b border-divider">
+                    Frekuensi Penerbitan
                 </h2>
-
-                <p class="text-xs text-gray-600 leading-relaxed text-left">
+                <p class="text-sm text-gray-700 leading-relaxed text-left">
                     {{ $journal->frequency ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) diterbitkan secara berkala sebanyak 2 (dua) kali per tahun, yaitu pada bulan Juni dan Desember. Setiap edisi memuat minimal 8 hingga 15 naskah ilmiah hasil telaah sejawat.' }}
                 </p>
             </section>
-
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

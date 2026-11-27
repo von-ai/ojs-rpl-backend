@@ -40,6 +40,9 @@ class Journal extends Model
         'author_guideline_path',
         'author_guideline_filename',
         'author_guideline_updated_at',
+        'cover_image_path',
+        'cover_image_filename',
+        'cover_image_updated_at',
         'status',
         'current_issue_id',
         'version',
@@ -49,6 +52,7 @@ class Journal extends Model
         'apc_enabled' => 'boolean',
         'apc_amount' => 'decimal:2',
         'author_guideline_updated_at' => 'datetime',
+        'cover_image_updated_at' => 'datetime',
     ];
 
     /**
@@ -57,6 +61,32 @@ class Journal extends Model
     public function hasAuthorGuidelineTemplate(): bool
     {
         return ! empty($this->author_guideline_path);
+    }
+
+    /**
+     * Memeriksa apakah jurnal memiliki gambar sampul (cover) yang diunggah.
+     */
+    public function hasCoverImage(): bool
+    {
+        return ! empty($this->cover_image_path);
+    }
+
+    /**
+     * Mengembalikan URL publik gambar sampul jurnal dengan cache-buster versi unggahan.
+     */
+    public function coverImageUrl(): ?string
+    {
+        if (! $this->hasCoverImage()) {
+            return null;
+        }
+
+        $baseUrl = ! empty($this->slug)
+            ? route('journal.scoped.cover', ['journalSlug' => $this->slug])
+            : route('journal.cover');
+
+        $version = $this->cover_image_updated_at?->timestamp;
+
+        return $version ? "{$baseUrl}?v={$version}" : $baseUrl;
     }
 
     /**
@@ -103,6 +133,14 @@ class Journal extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(Submission::class);
+    }
+
+    /**
+     * @return HasMany<Article, $this>
+     */
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class);
     }
 
     /**

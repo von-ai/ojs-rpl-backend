@@ -388,6 +388,112 @@
             </div>
         </div>
 
+        <!-- Kartu Sampul Jurnal Resmi (Cover Image untuk Beranda Publik) -->
+        @php
+            $coverInfo = $viewModel->coverImage();
+        @endphp
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="p-4 sm:p-5 border-b border-gray-200/90 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-5 h-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-gray-900">
+                            Sampul Resmi Jurnal (Journal Cover)
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Ditampilkan pada banner utama beranda publik dan kartu katalog jurnal (disarankan rasio potret 3:4).
+                        </p>
+                    </div>
+                </div>
+                @if($coverInfo['has_cover'])
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-600 text-white shrink-0 self-start sm:self-auto">
+                        Sampul Kustom Aktif
+                    </span>
+                @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-600 text-white shrink-0 self-start sm:self-auto">
+                        Sampul Standar SIRIDA
+                    </span>
+                @endif
+            </div>
+
+            <div class="p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-5">
+                <x-journal.cover-card :journal="$journal ?? null" size="md" />
+
+                <div class="flex-1 min-w-0 w-full space-y-4">
+                    @if($coverInfo['has_cover'])
+                        <div class="p-3.5 rounded-lg border border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 truncate" title="{{ $coverInfo['filename'] }}">
+                                    {{ $coverInfo['filename'] }}
+                                </p>
+                                @if($coverInfo['updated_at'])
+                                    <p class="text-xs text-gray-500">
+                                        Terakhir diperbarui: {{ $coverInfo['updated_at'] }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            <form
+                                action="{{ route('journalmanager.settings.cover.destroy') }}"
+                                method="POST"
+                                class="inline shrink-0"
+                                data-confirm="Apakah Anda yakin ingin menghapus sampul kustom ini? Beranda publik akan kembali menampilkan sampul standar SIRIDA."
+                                data-confirm-title="Hapus Sampul Jurnal?"
+                                data-confirm-btn="Ya, Hapus"
+                                data-confirm-cancel="Batal"
+                                data-confirm-type="danger"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                    type="submit"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-white hover:bg-red-700 hover:text-white border border-gray-300 hover:border-red-700 transition shadow-2xs cursor-pointer"
+                                >
+                                    <span>Hapus Sampul</span>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    <form
+                        action="{{ route('journalmanager.settings.cover.upload') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="flex flex-col sm:flex-row sm:items-end gap-3"
+                    >
+                        @csrf
+                        <div class="flex-1 min-w-0">
+                            <label for="cover_image" class="block font-semibold text-gray-800 mb-1 text-xs">
+                                {{ $coverInfo['has_cover'] ? 'Ganti Gambar Sampul Jurnal' : 'Unggah Gambar Sampul Jurnal' }}
+                            </label>
+                            <input
+                                type="file"
+                                name="cover_image"
+                                id="cover_image"
+                                required
+                                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                                class="block w-full text-xs text-gray-800 bg-white border border-gray-300 rounded-lg cursor-pointer file:mr-3 file:py-2 file:px-3 file:rounded-l-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200 transition"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">
+                                Format didukung: PNG, JPG, JPEG, atau WEBP (maksimal 5 MB, rekomendasi 600×800 px).
+                            </p>
+                        </div>
+                        <button
+                            type="submit"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-brand-maroon hover:bg-brand-maroon-hover rounded-lg shadow-2xs transition cursor-pointer shrink-0 sm:mb-5"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                            </svg>
+                            <span>{{ $coverInfo['has_cover'] ? 'Perbarui Sampul' : 'Unggah Sampul' }}</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Kartu 5: Warta Pengumuman Publik Terkini -->
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="p-4 sm:p-5 border-b border-gray-200/90 bg-gray-50/50 flex items-center justify-between">
