@@ -176,7 +176,8 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Jurnal Riset & Inovasi BRIDA Makassar', false);
         $response->assertSee('Edisi Terkini');
-        $response->assertSee('Optimalisasi Sensor Kualitas Udara');
+        $response->assertSee('Transformasi Digital dan Ketahanan Perkotaan');
+        $response->assertSee('Cari Artikel');
     }
 
     public function test_halaman_edisi_terkini_dapat_diakses(): void

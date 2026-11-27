@@ -170,8 +170,9 @@ class PublicJournalPortalTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('2985-7821'); // ISSN
-        $response->assertSee('Akselerasi Ekosistem Digital Kota Makassar'); // Current Issue Title
-        $response->assertSee('Evaluasi Kebijakan Lorong Wisata Berbasis Smart City'); // Published Article
+        $response->assertSee('Akselerasi Ekosistem Digital Kota Makassar'); // Current Issue Title in Hero Carousel
+        $response->assertSee('Cari Artikel'); // Single large search bar at top
+        $response->assertSee('Artikel Terbit'); // Simple stats strip below hero
     }
 
     /**
