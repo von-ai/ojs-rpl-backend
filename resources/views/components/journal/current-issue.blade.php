@@ -1,4 +1,4 @@
-@props(['issue' => null])
+@props(['issue' => null, 'journal' => null])
 
 <div id="edisi-terkini" class="bg-white rounded-xl border border-outline-variant overflow-hidden">
     <!-- Header Row (Responsive: Compact on Mobile, Full on Desktop) -->
@@ -76,18 +76,21 @@
 
     <!-- Desktop View (md:grid): 2-Column Balanced Editorial Grid -->
     <div class="hidden md:grid md:grid-cols-12 md:gap-6 p-6 items-stretch">
-        <!-- Left: Issue Identity Card (md:col-span-4) -->
-        <div class="md:col-span-4 min-w-0 bg-gray-50/90 rounded-xl p-5 border border-outline-variant flex flex-col justify-between space-y-4">
-            <div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                    TERBITAN RESMI
-                </span>
-                <h4 class="text-lg font-bold text-gray-900 leading-tight break-words line-clamp-2" title="{{ $issue['volume_label'] ?? 'Vol. 5 No. 2 (2025)' }}">
-                    {{ $issue['volume_label'] ?? 'Vol. 5 No. 2 (2025)' }}
-                </h4>
-                <p class="text-xs text-gray-500 mt-1">
-                    Terbit: <strong class="text-gray-700 font-medium">{{ $issue['published_at'] ?? date('d F Y') }}</strong>
-                </p>
+        <!-- Left: Issue Cover & Identity Card (md:col-span-4) -->
+        <div class="md:col-span-4 min-w-0 bg-gray-50/90 rounded-xl p-4 border border-outline-variant flex flex-col justify-between space-y-4">
+            <div class="flex flex-col items-center text-center space-y-3">
+                <x-journal.cover-card :journal="$journal" :issue="$issue" size="md" />
+                <div class="min-w-0 w-full">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">
+                        TERBITAN RESMI
+                    </span>
+                    <h4 class="text-base font-bold text-gray-900 leading-tight break-words line-clamp-2" title="{{ $issue['volume_label'] ?? 'Vol. 5 No. 2 (2025)' }}">
+                        {{ $issue['volume_label'] ?? 'Vol. 5 No. 2 (2025)' }}
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Terbit: <strong class="text-gray-700 font-medium">{{ $issue['published_at'] ?? date('d F Y') }}</strong>
+                    </p>
+                </div>
             </div>
 
             <div class="space-y-2 pt-3 border-t border-divider text-xs">
