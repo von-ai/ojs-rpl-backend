@@ -474,7 +474,7 @@ html.text-scale-xl {
    3. Badge status/peran memakai warna solid kontras tinggi (bukan pastel transparan).
    4. Kerapatan baris tabel rapi agar teks multi-baris tidak jomplang. */
 #main-content :is(h1, h2, h3) {
-    font-family: var(--font-serif);
+    font-family: var(--font-heading);
     text-wrap: balance;
 }
 
@@ -617,5 +617,167 @@ html.text-scale-xl {
     .portal-workspace form :where(input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], input[type="url"], input[type="date"], textarea, select):not(.custom-dropdown-native) {
         font-size: 1rem;
         min-height: 2.75rem;
+    }
+}
+
+/* =========================================================================
+   Header Publik Transparan di Puncak Halaman -> Putih Kontras Saat Di-scroll
+   ========================================================================= */
+#public-site-header[data-header-mode="transparent"] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(20, 8, 10, 0.58) 0%, rgba(20, 8, 10, 0.22) 72%, rgba(20, 8, 10, 0) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar {
+    background-color: transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar div,
+#public-site-header[data-header-mode="transparent"] #public-topbar span {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar strong,
+#public-site-header[data-header-mode="transparent"] #public-topbar a {
+    color: #ffffff;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar [role="group"] {
+    background-color: rgba(0, 0, 0, 0.28);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar [data-text-scale-btn] {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-topbar [data-text-scale-btn][aria-pressed="true"] {
+    background-color: var(--color-brand-maroon);
+    color: #ffffff;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar {
+    background-color: transparent;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar .public-brand-title {
+    color: #ffffff;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar .public-brand-subtitle {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar .desktop-navbar a {
+    color: rgba(255, 255, 255, 0.88);
+    background-color: transparent;
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar .desktop-navbar a:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+#public-site-header[data-header-mode="transparent"] #public-navbar .desktop-navbar a[aria-current="page"] {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#public-site-header[data-header-mode="transparent"] #mobile-nav-toggle-btn {
+    background-color: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
+#public-site-header[data-header-mode="solid"] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-bottom-color: var(--color-divider);
+    box-shadow: 0 2px 12px -4px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(12px);
+}
+
+body[data-transparent-header="true"] [data-hero-banner] > div.relative {
+    padding-top: 7.5rem;
+}
+
+@media (min-width: 640px) {
+    body[data-transparent-header="true"] [data-hero-banner] > div.relative {
+        padding-top: 8.25rem;
+    }
+}
+
+/* =========================================================================
+   Material 3 Motion & Micro-Interactions (GPU-Composited, Reduced-Motion Safe)
+   ========================================================================= */
+@keyframes siridaFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes siridaSlideEnter {
+    from {
+        opacity: 0;
+        transform: translateX(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+[data-hero-banner] h1,
+[data-hero-banner] form,
+[data-hero-banner] [data-hero-slide]:not(.hidden) {
+    animation: siridaFadeUp 420ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+[data-hero-banner] [data-hero-slide].is-slide-entering {
+    animation: siridaSlideEnter 340ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.sirida-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 380ms cubic-bezier(0.2, 0, 0, 1), transform 380ms cubic-bezier(0.2, 0, 0, 1);
+    will-change: opacity, transform;
+}
+
+.sirida-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-hero-banner] h1,
+    [data-hero-banner] form,
+    [data-hero-banner] [data-hero-slide]:not(.hidden),
+    [data-hero-banner] [data-hero-slide].is-slide-entering {
+        animation: none !important;
+    }
+
+    .sirida-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
     }
 }
