@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // Portal Publik Jurnal SIRIDA (Aktor 1: Public User - UC-03 & UC-04)
 Route::name('journal.')->group(function () {
     Route::get('/', [PublicJournalController::class, 'index'])->name('index');
+    Route::get('/cover', [PublicJournalController::class, 'showJournalCover'])->name('cover');
     Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
     Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('articles.show');
     Route::get('/articles/{slugOrId}/galleys/{galleyId}/download', [PublicJournalController::class, 'downloadGalley'])->name('articles.galleys.download');
@@ -217,6 +218,8 @@ Route::middleware(['auth', 'role.access:manager'])->prefix('journalmanager')->na
     Route::post('/settings', [JournalManagerController::class, 'updateSettings'])->name('settings.update');
     Route::post('/settings/template', [JournalManagerController::class, 'uploadAuthorGuideline'])->name('settings.template.upload');
     Route::delete('/settings/template', [JournalManagerController::class, 'deleteAuthorGuideline'])->name('settings.template.destroy');
+    Route::post('/settings/cover', [JournalManagerController::class, 'uploadCoverImage'])->name('settings.cover.upload');
+    Route::delete('/settings/cover', [JournalManagerController::class, 'deleteCoverImage'])->name('settings.cover.destroy');
 
     // 5. Verifikasi & Pengelolaan Pembayaran APC Naskah
     Route::post('/submissions/{id}/payment/verify', [JournalManagerController::class, 'verifyPayment'])->name('submissions.payment.verify');
@@ -286,9 +289,10 @@ Route::get('/dashboard', function () {
 
 // Portal Publik Multi-Tenancy per Instansi Jurnal (/{journalSlug})
 Route::prefix('{journalSlug}')
-    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions|journals$)[^/]+$'])
+    ->where(['journalSlug' => '^(?!author|eic|section-editor|reviewer|copyeditor|layouteditor|journalmanager|proofreader|sysadmin|login|register|logout|dashboard|password|email|articles|issues|archives|about|announcements|submissions|journals|cover$)[^/]+$'])
     ->name('journal.scoped.')->group(function () {
         Route::get('/', [PublicJournalController::class, 'index'])->name('index');
+        Route::get('/cover', [PublicJournalController::class, 'showJournalCover'])->name('cover');
         Route::get('/articles/search', [PublicJournalController::class, 'search'])->name('articles.search');
         Route::get('/articles/{slugOrId}', [PublicJournalController::class, 'showArticle'])->name('articles.show');
         Route::get('/issues/current', [PublicJournalController::class, 'currentIssue'])->name('issues.current');
