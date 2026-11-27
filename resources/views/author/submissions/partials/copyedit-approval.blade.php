@@ -91,10 +91,20 @@
             </div>
         </div>
 
+        @php
+            $selectedDecision = old('decision', 'approved') === 'revisions_requested' ? 'revisions_requested' : 'approved';
+        @endphp
+
         <!-- Formulir Keputusan Penulis Interaktif -->
-        <form method="POST" action="{{ route('copyeditor.author-decision') }}" x-data="{ decision: 'approved' }" class="space-y-4 pt-4 border-t border-gray-100">
+        <form id="copyedit-decision-form" method="POST" action="{{ route('copyeditor.author-decision') }}" class="space-y-4 pt-4 border-t border-gray-100">
             @csrf
             <input type="hidden" name="submission_id" value="{{ $submission['id'] }}">
+
+            @if($errors->has('approval') || $errors->has('decision') || $errors->has('reason'))
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                    {{ $errors->first('approval') ?: ($errors->first('reason') ?: $errors->first('decision')) }}
+                </div>
+            @endif
 
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -102,11 +112,11 @@
                 </label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <!-- Opsi 1: Setujui -->
-                    <label :class="decision === 'approved' ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30' : 'border-gray-200 bg-white hover:border-gray-300'"
-                           class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition select-none">
+                    <label id="copyedit-option-approved"
+                           class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition select-none {{ $selectedDecision === 'approved' ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30' : 'border-gray-200 bg-white hover:border-gray-300' }}">
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5">
-                                <input type="radio" name="decision" value="approved" x-model="decision" class="text-emerald-600 focus:ring-emerald-500 w-4 h-4">
+                                <input type="radio" name="decision" value="approved" @checked($selectedDecision === 'approved') class="text-emerald-600 focus:ring-emerald-500 w-4 h-4">
                                 <span class="text-xs sm:text-sm font-bold text-gray-900">Setujui Hasil Suntingan</span>
                             </div>
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
@@ -119,10 +129,10 @@
                     </label>
 
                     <!-- Opsi 2: Minta Koreksi Ulang -->
-                    <label :class="decision === 'revisions_requested' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30' : 'border-gray-200 bg-white hover:border-gray-300'"
-                           class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition select-none">
+                    <label id="copyedit-option-revisions"
+                           class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition select-none {{ $selectedDecision === 'revisions_requested' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30' : 'border-gray-200 bg-white hover:border-gray-300' }}">
                         <div class="flex items-center gap-2.5">
-                            <input type="radio" name="decision" value="revisions_requested" x-model="decision" class="text-rose-600 focus:ring-rose-500 w-4 h-4">
+                            <input type="radio" name="decision" value="revisions_requested" @checked($selectedDecision === 'revisions_requested') class="text-rose-600 focus:ring-rose-500 w-4 h-4">
                             <span class="text-xs sm:text-sm font-bold text-gray-900">Minta Perbaikan / Koreksi Ulang</span>
                         </div>
                         <p class="text-[11px] text-gray-500 mt-2 pl-6.5 leading-relaxed">
@@ -133,7 +143,7 @@
             </div>
 
             <!-- Catatan Apresiasi Opsional jika Disetujui -->
-            <div x-show="decision === 'approved'" x-transition class="space-y-1.5">
+            <div id="copyedit-note-group" class="space-y-1.5 {{ $selectedDecision === 'approved' ? '' : 'hidden' }}">
                 <label for="copyedit-note" class="block text-xs font-semibold text-gray-700">
                     Catatan untuk Redaksi / Copyeditor (Opsional)
                 </label>
@@ -143,12 +153,12 @@
             </div>
 
             <!-- Alasan Perbaikan Wajib jika Minta Revisi -->
-            <div x-show="decision === 'revisions_requested'" x-cloak x-transition class="space-y-1.5">
+            <div id="copyedit-reason-group" class="space-y-1.5 {{ $selectedDecision === 'revisions_requested' ? '' : 'hidden' }}">
                 <label for="copyedit-reason" class="block text-xs font-semibold text-rose-700">
                     Uraian Catatan Perbaikan <span class="text-rose-500">*</span>
                 </label>
                 <textarea name="reason" id="copyedit-reason" rows="3" maxlength="4000"
-                          :required="decision === 'revisions_requested'"
+                          @required($selectedDecision === 'revisions_requested')
                           placeholder="Jelaskan secara spesifik kalimat, halaman, tabel, atau bagian sitasi yang perlu diperbaiki ulang oleh Copyeditor..."
                           class="w-full rounded-xl border border-rose-300 p-3 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden transition">{{ old('reason') }}</textarea>
                 <p class="text-[11px] text-gray-500">Copyeditor akan menerima notifikasi dan memperbaiki berkas naskah sesuai catatan ini.</p>
@@ -156,28 +166,77 @@
 
             <!-- Tombol Aksi Kirim -->
             <div class="flex items-center justify-end gap-3 pt-2">
-                <button type="submit"
-                        :class="decision === 'approved' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white'"
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <template x-if="decision === 'approved'">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Setujui & Lanjutkan ke Tahap Produksi
-                        </span>
-                    </template>
-                    <template x-if="decision === 'revisions_requested'">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            Kirim Permintaan Perbaikan ke Copyeditor
-                        </span>
-                    </template>
+                <button id="copyedit-decision-submit" type="submit"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer {{ $selectedDecision === 'approved' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white' }}">
+                    <span id="copyedit-submit-approved-label" class="inline-flex items-center gap-2 {{ $selectedDecision === 'approved' ? '' : 'hidden' }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Setujui & Lanjutkan ke Tahap Produksi</span>
+                    </span>
+                    <span id="copyedit-submit-revisions-label" class="inline-flex items-center gap-2 {{ $selectedDecision === 'revisions_requested' ? '' : 'hidden' }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Kirim Permintaan Perbaikan ke Copyeditor</span>
+                    </span>
                 </button>
             </div>
         </form>
+
+        <script>
+            (function () {
+                const form = document.getElementById('copyedit-decision-form');
+                if (!form) return;
+
+                const radios = form.querySelectorAll('input[name="decision"]');
+                const approvedCard = document.getElementById('copyedit-option-approved');
+                const revisionsCard = document.getElementById('copyedit-option-revisions');
+                const noteGroup = document.getElementById('copyedit-note-group');
+                const reasonGroup = document.getElementById('copyedit-reason-group');
+                const reasonField = document.getElementById('copyedit-reason');
+                const submitBtn = document.getElementById('copyedit-decision-submit');
+                const approvedLabel = document.getElementById('copyedit-submit-approved-label');
+                const revisionsLabel = document.getElementById('copyedit-submit-revisions-label');
+
+                const inactiveCardClasses = ['border-gray-200', 'bg-white', 'hover:border-gray-300'];
+
+                function syncCopyeditDecisionUI() {
+                    const checked = form.querySelector('input[name="decision"]:checked');
+                    const isApproved = !checked || checked.value === 'approved';
+
+                    approvedCard?.classList.toggle('border-emerald-500', isApproved);
+                    approvedCard?.classList.toggle('ring-2', isApproved);
+                    approvedCard?.classList.toggle('ring-emerald-500/20', isApproved);
+                    approvedCard?.classList.toggle('bg-emerald-50/30', isApproved);
+                    inactiveCardClasses.forEach((cls) => approvedCard?.classList.toggle(cls, !isApproved));
+
+                    revisionsCard?.classList.toggle('border-rose-500', !isApproved);
+                    revisionsCard?.classList.toggle('ring-2', !isApproved);
+                    revisionsCard?.classList.toggle('ring-rose-500/20', !isApproved);
+                    revisionsCard?.classList.toggle('bg-rose-50/30', !isApproved);
+                    inactiveCardClasses.forEach((cls) => revisionsCard?.classList.toggle(cls, isApproved));
+
+                    noteGroup?.classList.toggle('hidden', !isApproved);
+                    reasonGroup?.classList.toggle('hidden', isApproved);
+                    if (reasonField) {
+                        reasonField.required = !isApproved;
+                    }
+
+                    if (submitBtn) {
+                        submitBtn.classList.toggle('bg-emerald-600', isApproved);
+                        submitBtn.classList.toggle('hover:bg-emerald-700', isApproved);
+                        submitBtn.classList.toggle('bg-rose-600', !isApproved);
+                        submitBtn.classList.toggle('hover:bg-rose-700', !isApproved);
+                    }
+                    approvedLabel?.classList.toggle('hidden', !isApproved);
+                    revisionsLabel?.classList.toggle('hidden', isApproved);
+                }
+
+                radios.forEach((radio) => radio.addEventListener('change', syncCopyeditDecisionUI));
+                syncCopyeditDecisionUI();
+            })();
+        </script>
     </div>
 </section>
 @endif
