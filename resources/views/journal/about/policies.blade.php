@@ -3,30 +3,16 @@
 @section('title', 'Kebijakan & Etika Publikasi — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <x-journal.page-banner
+        eyebrow="Integritas & Tata Kelola Ilmiah"
+        description="Pernyataan kepatuhan integritas publikasi mengacu pada pedoman standar internasional Committee on Publication Ethics (COPE) dan peraturan penerbitan berkala ilmiah nasional."
+        :crumbs="[['label' => 'Tentang Jurnal', 'url' => route('journal.about')], ['label' => 'Kebijakan & Etika Publikasi']]"
+    >
+        <x-slot:heading>Kebijakan Redaksi & Etika Publikasi Ilmiah</x-slot:heading>
+    </x-journal.page-banner>
 
-    <!-- Breadcrumb Navigasi -->
-    <x-journal.breadcrumb :crumbs="[['label' => 'Tentang Jurnal', 'url' => route('journal.about')], ['label' => 'Kebijakan & Etika Publikasi']]" />
-
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-            Integritas & Tata Kelola Ilmiah
-        </span>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-            Kebijakan Redaksi & Etika Publikasi Ilmiah
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Pernyataan kepatuhan integritas publikasi mengacu pada pedoman standar internasional Committee on Publication Ethics (COPE) dan peraturan penerbitan berkala ilmiah nasional.
-        </p>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-        <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
-
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
             <x-journal.about-subnav />
 
             <!-- 1. Kebijakan Akses Terbuka -->
@@ -129,18 +115,5 @@
             </section>
 
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

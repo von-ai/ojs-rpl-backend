@@ -3,69 +3,43 @@
 @section('title', $announcement->title . ' — Warta ' . ($journal->name ?? 'SIRIDA BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <x-journal.page-banner
+        eyebrow="Pengumuman Resmi"
+        :title="$announcement->title"
+        :crumbs="[
+            ['label' => 'Warta & Pengumuman', 'url' => route('journal.announcements.index')],
+            ['label' => \Illuminate\Support\Str::limit($announcement->title, 56)],
+        ]"
+    />
 
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('journal.announcements.index') }}" class="hover:text-brand-maroon">Warta & Pengumuman</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-md">{{ $announcement->title }}</span>
-    </nav>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Konten Pengumuman (2 Kolom Kiri) -->
-        <article class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-6">
-            
-            <div class="border-b border-gray-100 pb-5 space-y-3">
-                <div class="flex items-center justify-between gap-2 text-xs">
-                    <span class="px-2.5 py-0.5 rounded-full font-medium bg-brand-maroon/10 text-brand-maroon text-[11px] uppercase tracking-normal">
-                        Pengumuman Resmi
-                    </span>
-                    <time class="text-gray-400 font-normal">
-                        {{ $announcement->published_at ? $announcement->published_at->format('d F Y') : $announcement->created_at->format('d F Y') }}
-                    </time>
-                </div>
-
-                <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 leading-snug">
-                    {{ $announcement->title }}
-                </h1>
+    <section class="bg-white">
+        <article class="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
+            <div class="flex flex-wrap items-center gap-3 pb-4 border-b border-divider text-xs text-gray-600">
+                <time class="font-mono font-medium tabular-nums">
+                    Diterbitkan {{ $announcement->published_at ? $announcement->published_at->format('d F Y') : $announcement->created_at->format('d F Y') }}
+                </time>
+                @if($announcement->journal)
+                    <span class="text-gray-300" aria-hidden="true">&middot;</span>
+                    <span class="font-semibold text-gray-900">{{ $announcement->journal->name }}</span>
+                @endif
             </div>
 
-            <!-- Isi Pengumuman -->
-            <div class="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line space-y-4">
+            <div class="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-line space-y-4 text-left">
                 {!! nl2br(e($announcement->body)) !!}
             </div>
 
-            <div class="pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <a href="{{ route('journal.announcements.index') }}" class="font-bold text-gray-600 hover:text-brand-maroon flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="pt-6 border-t border-divider flex flex-wrap items-center justify-between gap-3 text-sm">
+                <a href="{{ route('journal.announcements.index') }}" class="font-semibold text-gray-700 hover:text-brand-maroon inline-flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                     <span>Kembali ke Daftar Pengumuman</span>
                 </a>
 
-                <a href="{{ route('login') }}" class="font-bold text-brand-maroon hover:underline">
+                <a href="{{ route('login') }}" class="font-semibold text-brand-maroon hover:underline">
                     Masuk ke Akun Penulis &rarr;
                 </a>
             </div>
-
         </article>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

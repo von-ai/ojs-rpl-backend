@@ -3,45 +3,22 @@
 @section('title', 'Panduan Penulis — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('journal.about') }}" class="hover:text-brand-maroon">Tentang Jurnal</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium">Panduan Penulis</span>
-    </nav>
-
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-md border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-                Petunjuk Penyiapan Naskah
-            </span>
-            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-                Panduan Penulis
-            </h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-                Pedoman format, sistematika penulisan, dan tata cara pengajuan naskah ilmiah hasil riset ke {{ $journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) BRIDA Kota Makassar' }}.
-            </p>
-        </div>
-
-        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-brand-maroon text-white font-bold text-xs hover:bg-brand-maroon-hover transition shrink-0 self-start sm:self-auto border border-brand-maroon">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <x-journal.page-banner
+        eyebrow="Petunjuk Penyiapan Naskah"
+        title="Panduan Penulis"
+        :description="'Pedoman format, sistematika penulisan, dan tata cara pengajuan naskah ilmiah hasil riset ke ' . ($journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA) BRIDA Kota Makassar') . '.'"
+        :crumbs="[['label' => 'Tentang Jurnal', 'url' => route('journal.about')], ['label' => 'Panduan Penulis']]"
+    >
+        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white hover:bg-gray-100 text-brand-maroon-hover font-bold text-sm transition cursor-pointer shadow-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span>Kirim Naskah Baru</span>
         </a>
-    </div>
+    </x-journal.page-banner>
 
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 bg-white rounded-md border border-gray-200 p-5 sm:p-8 space-y-8">
-            
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
             <x-journal.about-subnav />
 
             <!-- Box Unduh Template Naskah -->
@@ -183,18 +160,5 @@
             </section>
 
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection

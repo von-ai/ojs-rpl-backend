@@ -3,36 +3,16 @@
 @section('title', 'Dewan Redaksi & Mitra Bestari — ' . ($journal->name ?? 'Jurnal Riset & Inovasi BRIDA Makassar'))
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <x-journal.page-banner
+        eyebrow="Tim Pengelola Ilmiah"
+        :description="'Susunan dewan redaksi, editor bagian, dan direktori mitra bestari penjamin mutu saintifik naskah publikasi ' . ($journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA)') . '.'"
+        :crumbs="[['label' => 'Tentang Jurnal', 'url' => route('journal.about')], ['label' => 'Dewan Redaksi']]"
+    >
+        <x-slot:heading>Dewan Redaksi & Mitra Bestari</x-slot:heading>
+    </x-journal.page-banner>
 
-    <!-- Breadcrumb Navigasi -->
-    <nav class="flex items-center text-xs text-gray-500 gap-2 flex-wrap">
-        <a href="{{ route('journal.index') }}" class="hover:text-brand-maroon">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('journal.about') }}" class="hover:text-brand-maroon">Tentang Jurnal</a>
-        <span>/</span>
-        <span class="text-gray-900 font-medium">Dewan Redaksi</span>
-    </nav>
-
-    <!-- Header Halaman -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-normal block mb-1">
-            Tim Pengelola Ilmiah
-        </span>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900">
-            Dewan Redaksi & Mitra Bestari
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Susunan dewan redaksi, editor bagian, dan direktori mitra bestari penjamin mutu saintifik naskah publikasi {{ $journal->name ?? 'Jurnal Riset dan Inovasi Daerah (SIRIDA)' }}.
-        </p>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Konten Utama (2 Kolom Kiri) -->
-        <div class="lg:col-span-2 min-w-0 bg-white rounded-xl border border-gray-200 p-5 sm:p-8 space-y-8">
-            
+    <section class="bg-white">
+        <div class="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
             <x-journal.about-subnav />
 
             <!-- 1. Pemimpin Redaksi -->
@@ -176,18 +156,5 @@
             </section>
 
         </div>
-
-        <!-- Kolom Samping (1 Kolom Kanan) -->
-        <aside class="lg:col-span-1 min-w-0 space-y-6">
-            <x-journal.sidebar
-                :publisherInfo="$viewModel->publisherInfo()"
-                :indexingData="$viewModel->indexingData()"
-                :impactMetrics="$viewModel->impactMetrics()"
-                :announcements="$viewModel->editorialAnnouncements()"
-            />
-        </aside>
-
-    </div>
-
-</div>
+    </section>
 @endsection
