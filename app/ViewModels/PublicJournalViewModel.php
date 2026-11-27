@@ -15,6 +15,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class PublicJournalViewModel
 {
@@ -66,12 +67,16 @@ class PublicJournalViewModel
 
             return Journal::where('status', 'active')
                 ->orderBy('name')
-                ->get(['id', 'name', 'slug', 'initials'])
+                ->get(['id', 'name', 'slug', 'initials', 'publisher', 'issn', 'eissn', 'cover_image_path', 'cover_image_updated_at'])
                 ->map(fn ($j) => [
                     'id' => (string) $j->id,
                     'name' => (string) $j->name,
                     'initials' => (string) ($j->initials ?: strtoupper(substr($j->name, 0, 6))),
                     'slug' => (string) $j->slug,
+                    'publisher' => (string) ($j->publisher ?: 'BRIDA Kota Makassar'),
+                    'issn' => $j->issn,
+                    'eissn' => $j->eissn,
+                    'cover_url' => $j->coverImageUrl(),
                     'url' => url('/'.$j->slug),
                     'archives_url' => url('/'.$j->slug.'/archives'),
                     'is_current' => $this->journal && (string) $this->journal->id === (string) $j->id,
@@ -98,7 +103,7 @@ class PublicJournalViewModel
                 ->where('status', 'active')
                 ->withCount([
                     'issues' => fn ($q) => $q->where('status', 'published'),
-                    'submissions as published_articles_count' => fn ($q) => $q->where('status', 'published'),
+                    'articles as published_articles_count' => fn ($q) => $q->where('status', 'published'),
                 ])
                 ->with(['currentIssue']);
 
@@ -140,6 +145,7 @@ class PublicJournalViewModel
                         'year' => (int) $j->currentIssue->year,
                     ] : null,
                     'url' => url('/'.$slug),
+                    'cover_url' => $j->coverImageUrl(),
                     'archives_url' => url('/'.$slug.'/archives'),
                     'current_issue_url' => url('/'.$slug.'/issues/current'),
                     'about_url' => url('/'.$slug.'/about'),
@@ -149,6 +155,123 @@ class PublicJournalViewModel
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Menyusun daftar slide Hero Beranda yang berganti-ganti dari semua edisi & jurnal aktif.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function heroSlides(): array
+    {
+        try {
+            if (! Schema::hasTable('journals')) {
+                return [];
+            }
+
+            $slides = [];
+
+            if (Schema::hasTable('issues')) {
+                $publishedIssues = Issue::query()
+                    ->where('status', 'published')
+                    ->whereHas('journal', fn ($q) => $q->where('status', 'active'))
+                    ->with(['journal'])
+                    ->orderByDesc('is_current')
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('year')
+                    ->orderByDesc('volume')
+                    ->orderByDesc('number')
+                    ->limit(8)
+                    ->get();
+
+                foreach ($publishedIssues as $issue) {
+                    $j = $issue->journal;
+                    if (! $j) {
+                        continue;
+                    }
+
+                    $volumeLabel = "Vol. {$issue->volume} No. {$issue->number} ({$issue->year})";
+                    $slides[] = [
+                        'journal_id' => (string) $j->id,
+                        'name' => (string) $j->name,
+                        'initials' => (string) ($j->initials ?: strtoupper(substr($j->name, 0, 6))),
+                        'publisher' => (string) ($j->publisher ?: 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar'),
+                        'issn' => $j->issn ?: '2746-8194',
+                        'eissn' => $j->eissn ?: '2746-8208',
+                        'cover_url' => $j->coverImageUrl(),
+                        'volume_label' => $volumeLabel,
+                        'issue_title' => $issue->title ? (string) $issue->title : null,
+                        'description' => (string) ($issue->description ?: $j->focus_scope ?: 'Publikasi ilmiah berkala resmi Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar.'),
+                        'is_paid' => $j->isPaidApc(),
+                        'apc_label' => $j->isPaidApc() ? ($j->apc_fee ?: 'Berbayar') : 'Rp 0 (Open Access)',
+                        'issue_url' => url('/'.$j->slug.'/issues/'.$issue->id),
+                        'journal_url' => url('/'.$j->slug),
+                        'about_url' => url('/'.$j->slug.'/about'),
+                        'submissions_url' => url('/'.$j->slug.'/about/submissions'),
+                    ];
+                }
+            }
+
+            // Pastikan seluruh jurnal aktif yang belum memiliki edisi terbit juga tampil di rotasi hero
+            $coveredJournalIds = collect($slides)->pluck('journal_id')->unique()->all();
+            $remainingJournals = Journal::query()
+                ->where('status', 'active')
+                ->when(! empty($coveredJournalIds), fn ($q) => $q->whereNotIn('id', $coveredJournalIds))
+                ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$this->journal?->id ?? ''])
+                ->orderBy('name')
+                ->get();
+
+            foreach ($remainingJournals as $j) {
+                $slides[] = [
+                    'journal_id' => (string) $j->id,
+                    'name' => (string) $j->name,
+                    'initials' => (string) ($j->initials ?: strtoupper(substr($j->name, 0, 6))),
+                    'publisher' => (string) ($j->publisher ?: 'Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar'),
+                    'issn' => $j->issn ?: '2746-8194',
+                    'eissn' => $j->eissn ?: '2746-8208',
+                    'cover_url' => $j->coverImageUrl(),
+                    'volume_label' => null,
+                    'issue_title' => null,
+                    'description' => (string) ($j->focus_scope ?: 'Publikasi ilmiah berkala resmi Badan Riset dan Inovasi Daerah (BRIDA) Pemerintah Kota Makassar.'),
+                    'is_paid' => $j->isPaidApc(),
+                    'apc_label' => $j->isPaidApc() ? ($j->apc_fee ?: 'Berbayar') : 'Rp 0 (Open Access)',
+                    'issue_url' => url('/'.$j->slug.'/issues/current'),
+                    'journal_url' => url('/'.$j->slug),
+                    'about_url' => url('/'.$j->slug.'/about'),
+                    'submissions_url' => url('/'.$j->slug.'/about/submissions'),
+                ];
+            }
+
+            return $slides;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Statistik ringkas lintas portal untuk strip metrik sederhana di bawah hero beranda.
+     *
+     * @return array{total_journals: int, total_articles: int, total_issues: int, pdf_downloads: int}
+     */
+    public function portalSummaryMetrics(): array
+    {
+        $metrics = $this->impactMetrics();
+        $totalJournals = 1;
+
+        try {
+            if (Schema::hasTable('journals')) {
+                $totalJournals = max(1, Journal::where('status', 'active')->count());
+            }
+        } catch (\Throwable) {
+            $totalJournals = 1;
+        }
+
+        return [
+            'total_journals' => $totalJournals,
+            'total_articles' => (int) ($metrics['total_articles'] ?? 0),
+            'total_issues' => (int) ($metrics['total_issues'] ?? 0),
+            'pdf_downloads' => (int) ($metrics['pdf_downloads'] ?? 0),
+        ];
     }
 
     /**
@@ -165,26 +288,27 @@ class PublicJournalViewModel
             ['label' => 'Beranda', 'url' => $scopedSlug ? url($basePrefix) : $this->safeRoute('journal.index', [], '/'), 'active' => request()->routeIs('journal.index') || request()->routeIs('journal.scoped.index')],
             ['label' => 'Katalog Jurnal', 'url' => $this->safeRoute('journal.journals.index', [], '/journals'), 'active' => request()->routeIs('journal.journals.*') || request()->routeIs('journal.scoped.journals.*')],
             ['label' => 'Cari Artikel', 'url' => $scopedSlug ? url("{$basePrefix}/articles/search") : $this->safeRoute('journal.articles.search', [], '/articles/search'), 'active' => request()->routeIs('journal.articles.search') || request()->routeIs('journal.scoped.articles.search')],
-            ['label' => 'Edisi Terkini', 'url' => $scopedSlug ? url("{$basePrefix}/issues/current") : $this->safeRoute('journal.issues.current', [], '#edisi-terkini'), 'active' => request()->routeIs('journal.issues.current') || request()->routeIs('journal.scoped.issues.current')],
-            ['label' => 'Arsip Edisi', 'url' => $scopedSlug ? url("{$basePrefix}/archives") : $this->safeRoute('journal.archives', [], '#arsip-edisi'), 'active' => request()->routeIs('journal.archives') || request()->routeIs('journal.scoped.archives') || request()->routeIs('journal.issues.show') || request()->routeIs('journal.scoped.issues.show')],
-            ['label' => 'Tentang Jurnal', 'url' => $scopedSlug ? url("{$basePrefix}/about") : $this->safeRoute('journal.about', [], '#tentang-jurnal'), 'active' => request()->routeIs('journal.about*') || request()->routeIs('journal.scoped.about*')],
-            ['label' => 'Dewan Redaksi', 'url' => $scopedSlug ? url("{$basePrefix}/about/editorial-team") : $this->safeRoute('journal.about.editorial-team', [], '#dewan-redaksi'), 'active' => request()->routeIs('journal.about.editorial-team') || request()->routeIs('journal.scoped.about.editorial-team')],
-            ['label' => 'Panduan Penulis', 'url' => $scopedSlug ? url("{$basePrefix}/about/submissions") : $this->safeRoute('journal.about.submissions', [], '#panduan-penulis'), 'active' => request()->routeIs('journal.about.submissions') || request()->routeIs('journal.scoped.about.submissions')],
-            ['label' => 'Pengumuman', 'url' => $scopedSlug ? url("{$basePrefix}/announcements") : $this->safeRoute('journal.announcements.index', [], '#pengumuman'), 'active' => request()->routeIs('journal.announcements.*') || request()->routeIs('journal.scoped.announcements.*')],
+            ['label' => 'Pengumuman', 'url' => $scopedSlug ? url("{$basePrefix}/announcements") : $this->safeRoute('journal.announcements.index', [], '/announcements'), 'active' => request()->routeIs('journal.announcements.*') || request()->routeIs('journal.scoped.announcements.*')],
+            ['label' => 'Tentang', 'url' => $scopedSlug ? url("{$basePrefix}/about") : $this->safeRoute('journal.about', [], '/about'), 'active' => request()->routeIs('journal.about*') || request()->routeIs('journal.scoped.about*')],
         ];
     }
 
     /**
-     * Get active Call For Papers announcement banner data.
+     * Get active Call For Papers announcement banner data from database.
      *
-     * @return array{title: string, deadline: string, detail_url: string}
+     * @return array{title: string, deadline: string, detail_url: string}|null
      */
-    public function announcement(): array
+    public function announcement(): ?array
     {
         try {
             if (Schema::hasTable('announcements')) {
+                $scopedSlug = request()->route('journalSlug');
                 $latest = Announcement::query()
-                    ->when($this->journal, fn ($q) => $q->where('journal_id', $this->journal->id))
+                    ->when(
+                        $scopedSlug && $this->journal,
+                        fn ($q) => $q->where('journal_id', $this->journal->id),
+                        fn ($q) => $q->whereHas('journal', fn ($jq) => $jq->where('status', 'active'))
+                    )
                     ->where('is_published', true)
                     ->latest('published_at')
                     ->first();
@@ -193,19 +317,62 @@ class PublicJournalViewModel
                     return [
                         'title' => $latest->title,
                         'deadline' => $latest->published_at ? $latest->published_at->translatedFormat('d F Y') : 'Terbuka',
-                        'detail_url' => $this->safeRoute('journal.announcements.show', ['id' => $latest->id], $this->safeRoute('journal.announcements.index', [], '#pengumuman')),
+                        'detail_url' => $this->safeRoute('journal.announcements.show', ['id' => $latest->id], $this->safeRoute('journal.announcements.index', [], '/announcements')),
                     ];
                 }
             }
         } catch (\Throwable) {
-            // Fail gracefully to default banner
+            return null;
         }
 
-        return [
-            'title' => 'Volume 6 Nomor 2 (Edisi Desember 2026): Inovasi Kebijakan Publik & Ketahanan Perkotaan Menuju Makassar Kota Dunia.',
-            'deadline' => '15 November 2026',
-            'detail_url' => $this->safeRoute('journal.announcements.index', [], '#pengumuman'),
-        ];
+        return null;
+    }
+
+    /**
+     * Mengambil hingga 3 pengumuman terbit terbaru dari database untuk ditampilkan di beranda.
+     *
+     * @return array<int, array{id: string, title: string, excerpt: string, date: string, journal_initials: ?string, url: string}>
+     */
+    public function latestAnnouncements(int $limit = 3): array
+    {
+        try {
+            if (! Schema::hasTable('announcements')) {
+                return [];
+            }
+
+            $scopedSlug = request()->route('journalSlug');
+
+            return Announcement::with(['journal'])
+                ->where('is_published', true)
+                ->when(
+                    $scopedSlug && $this->journal,
+                    fn ($q) => $q->where('journal_id', $this->journal->id),
+                    fn ($q) => $q->whereHas('journal', fn ($jq) => $jq->where('status', 'active'))
+                )
+                ->orderByDesc('published_at')
+                ->orderByDesc('created_at')
+                ->limit($limit)
+                ->get()
+                ->map(function (Announcement $ann) use ($scopedSlug): array {
+                    $url = $scopedSlug
+                        ? url("/{$scopedSlug}/announcements/{$ann->id}")
+                        : $this->safeRoute('journal.announcements.show', ['id' => $ann->id], '/announcements');
+
+                    return [
+                        'id' => (string) $ann->id,
+                        'title' => (string) $ann->title,
+                        'excerpt' => Str::limit(trim(strip_tags((string) $ann->body)), 160),
+                        'date' => $ann->published_at
+                            ? $ann->published_at->translatedFormat('d M Y')
+                            : ($ann->created_at ? $ann->created_at->translatedFormat('d M Y') : ''),
+                        'journal_initials' => $ann->journal?->initials ?: $ann->journal?->name,
+                        'url' => $url,
+                    ];
+                })
+                ->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
